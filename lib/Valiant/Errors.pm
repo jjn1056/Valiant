@@ -3,154 +3,216 @@ package Valiant::Errors;
 use Moo;
 use List::Util;
 
-has _fields => (
-  init_arg => 'fields',
-  is => 'rw',
+has 'object' => (
+  is => 'ro',
   required => 1,
+  weak_ref => 1,
 );
 
-has _mapping => (
-  init_arg => undef,
-  is => 'rw',
+has ['details', 'messages'] => (
+  is => 'rwp',
   required => 1,
-  builder => '_build__mapping'
+  default => sub { +{} }
 );
 
-  # Initialize the field mappings to a hash of the initialized fields
-  # with a value of an arrayref.
-
-  sub _build__mapping {
-    my %initial = map {
-      $_ => [];
-    } shift->fields;
-    return \%initial;
-  }
-
-sub fields { return @{ shift->_fields } }
-
-sub field {
-  my ($self, $field) = @_;
-  return my @errors = @{ 
-    $self->_mapping->{$field}
-    || die "No field '$field' in Errors"
-  };
-}
-
-sub add {
-  my ($self, $field, $message) = @_;
-  push @{ $self->_mapping->{$field} }, $message;
-}
-
-sub unshift {
-  my ($self, $field, $message) = @_;
-  unshift @{ $self->_mapping->{$field} }, $message;
-}
-
-# Delete all errors for a given field
-sub delete {
-  my ($self, $field) = @_;
-  $self->_mapping->{$field} = [];
-  return $self;
-}
-
-# Clear all errors
-sub clear {
-  my ($self) = @_;
-  $self->delete($_)
-    for $self->fields;
-  return $self;
-}
-
-# The given error is already attached to this field
-sub added {
-  my ($self, $field, $to_check) = @_;
-  foreach my $error ($self->field($field)) {
-    return 1 if $to_check eq $error;
-  }
-  return 0;
-}
-
-# Return the number of errors for a field, or 0/false if none
-*include = \&count_for;
-*size_for = \&count_for;
-sub count_for {
-  my ($self, $field) = @_;
-  return scalar(@{$self->_mapping->{$field}});
-}
-
-# fields with errors
-sub keys {
-  my ($self) = @_;
-  return my @keys = grep {
-    $self->count_for($_) > 0;
-  } $self->fields;
-}
-
-# Return the number of errors, or 0/false if none
-*size = \&count;
-sub count {
-  my ($self) = @_;
-  return my $count = List::Util::sum map {
-    $self->count_for($_);
-  } $self->fields;
-}
-
-# Is the error list empty or not?
-*blank = \&empty;
-sub empty {
-  my ($self) = @_;
-  return my $is_empty = $self->count ? 0:1;
-}
-
-#Untranslated messages added to a field
-sub messages {
-  my ($self, $field) = @_;
-  return my @messages = @{$self->_mapping->{$field} || []};
-}
-
-# translated message for  given attribute and message TODO
-sub full_message {
-  my ($self, $field, $message) = @_;
-  my ($message_to_translate) = grep { $message eq $_ } $self->messages($field);
-  # magic translation stuff
-  return $message_to_translate;
-}
-
-# For each field with an error message, execute a callback
-sub each {
-  my ($self, $callback) = @_;
-  foreach my $field ($self->keys) {
-    $callback->($field, $_)
-      for $self->messages($field);
-  }
-  return $self;
-}
-
-# Is the error list empty or not?
-*has_key = \&include;
-sub include {
-  my ($self) = @_;
-  return my $is_empty = $self->count ? 0:1;
-}
-
-# Copy error state from another error object. This overwrites
-# The original.
 sub copy {
   my ($self, $other) = @_;
-  $self->_fields([$other->_fields]);
-  $self->_mapping([$other->_mapping]);
-  return $self;
+  $self->_set_details($other->details);
+  $self->_set_messages($other->messages);
 }
 
-# merge info from a target error into this one
 sub merge {
   my ($self, $other) = @_;
-  $self->_fields([ @{$self->_fields}, @{$other->_fields} ]);
-  $self->_mapping({ %{$self->_mapping}, %{$other->_mapping} });
-  return $self;
+  $self->_set_details(+{ %{$self->details}, %{$other->details} });
+  $self->set_->messages(+{ %{$self->messages}, %{$other->messages} });
 }
 
+sub slice {
+  my ($self, @keys) = @_;
+  my %new_details; @new_details{@keys} = @{$self->details}{@keys};
+  my %new_messages; @new_messages{@keys} = @{$self->messages}{@keys};
+  $self->_set_details(\%new_details);
+  $self->_set_messages(\%new_messages);
+}
 
+sub clear {
+  my ($self) = @_;
+  $self->_set_details(+{});
+  $self->_set_messages(+{});
+}
+
+sub include {
+  my ($self, $key) = @_;
+  return $self->messages->{$key} ? 1 : undef;
+}
+
+*key = \&include;
+*has_key = \&include;
+
+sub delete {
+  my ($self, $key) = @_;
+  delete $self->_set_details->{$key};
+  delete $self->_set_messages->{$key};
+}
+
+sub messages_for {
+  my ($self, $key) = @_;
+  return $self->messages->{$key};
+}
+
+sub each {
+  my ($self, $cb) = @_;
+  foreach my $key (keys %{$self->messages}) {
+    my $proto = $self->messages->{$key};
+    if(ref $proto) {
+      $cb->($key, $_) for @$proto;
+    } else {
+      $cb->($key, $proto);
+    }
+  }
+}
+
+sub values {
+  my ($self) = @_;
+  return values %{$self->messages};
+}
+
+sub values_flat {
+  my ($self) = @_;
+  return map { ref $_ eq 'ARRAY' ? @$_ : $_ } $self->values;
+}
+
+sub size {
+  my ($self) = @_;
+  return scalar($self->values_flat);
+}
+
+sub keys {
+  my ($self) = @_;
+  return keys %{$self->messages};
+}
+
+sub empty {
+  my ($self) = @_;
+  return $self->size ? 1:0;
+}
+*blank = \&empty;
+
+sub to_hash {
+  my ($self, %options) = @_;
+  if($options{full_messages}) {
+    map {
+      my $key = $_;
+      $key => [
+        map {
+          $self->full_message($key, $_) 
+        } @{ $self->messages->{$key} }
+      ];
+    } CORE::keys %{ $self->messages};
+  } else {
+    %{ $self->messages };
+  }
+}
+
+sub TO_JSON {
+  my ($self, %options) = @_;
+  my %messages = $self->to_hash(%options);
+  return \%messages;
+}
+*to_json = \&TO_JSON;
+
+sub _normalize_message {
+  my ($self, $attribute, $message, $options) = @_;
+  if(ref $message) {
+    # TODO need to remove some things from %options
+    return $self->generate_message($attribute, $message, $options);
+  } else {
+    return $message;
+  }
+}
+
+sub _normalize_detail {
+  my ($self, $message, $options) = @_;
+  # TODO need to remove some things from %options
+  return +{ error => $message, %{$options||+{}} };
+}
+
+# $attribute, ?$message, ?\%options where $message is Str|ArrayRef|CodeRef
+sub add {
+  my ($self, $attribute) = (shift, shift);
+  my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();
+  my $message = shift || ['Is Invalid'];
+
+  $message = delete $options{message} if $options{message};
+  $message = $message->($self, $attribute, \%options) if (ref($message)||'') eq 'CODE';
+
+  my $detail  = $self->_normalize_detail($message, \%options);
+  $message = $self->_normalize_message($attribute, $message, \%options);
+
+  if(my $exception = $options{strict}) {
+    die $self->full_message($attribute, $message) if $exception == 1;
+    $exception->throw($self->full_message($attribute, $message));
+  }
+
+  my %messages = %{ $self->messages };
+  push @{$messages{$attribute}}, $message;
+  $self->_set_messages(\%messages);
+
+  my %details = %{ $self->details };
+  push @{ $details{$attribute} }, $detail;
+  $self->_set_details(\%details);
+}
+
+sub added {
+  my ($self, $attribute) = (shift, shift);
+  my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();
+  my $message = shift || 'Is Invalid';
+
+  $message = $message->($self) if (ref($message)||'') eq 'CODE';
+  my @messages = @{ $self->messages_for($attribute) ||[] };
+
+  return scalar(grep { $_ eq $message } @messages) ? 1:0;
+}
+
+sub full_messages {
+  my ($self) = @_;
+  return my @messages = map {
+    my $attribute = $_;
+    map {
+      $self->full_message($attribute, $_);
+    } @{ $self->messages->{$attribute} };
+  } CORE::keys %{ $self->messages };
+}
+*to_a = \&full_messages;
+
+sub full_messages_for {
+  my ($self, $attribute) = @_;
+  return map {
+    $self->full_message($attribute, $_);
+  } @{ $self->messages->{$attribute} };
+}
+
+sub full_message {
+  my ($self, $attribute, $message) = @_;
+  # TODO a lot
+  return $message;
+}
+
+sub generate_message {
+  my ($self, $attribute, $message, $options) = @_;
+  my $value = $attribute ne 'base' ? 
+    $self->object->read_attribute_for_validation($attribute) :
+    undef;
+
+  %options = (
+    model => $self->object->@base.model_name.human,
+        attribute: @base.class.human_attribute_name(attribute),
+        value: value,
+        object: @base
+      }.merge!(options)   
+
+  
+}
 
 
 1;

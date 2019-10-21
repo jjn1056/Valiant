@@ -5,7 +5,7 @@ use Moo::_Utils;
 use Module::Runtime 'use_module';
 require Moo::Role;
 
-sub default_roles { 'Valiant::Object' }
+sub default_roles { 'Valiant::Validatable' }
 sub default_meta { 'Valiant::Meta' }
 
 sub import {
@@ -16,18 +16,17 @@ sub import {
 
   my $meta = use_module('Valiant::Meta')->new;
   my $validate = sub {
-    $meta->validations->push(\@_);
+    $meta->validations->push(@_);
   };
 
   _install_coderef "${target}::validate" => "ValiantMeta::validate" => $validate;
-  _install_coderef "${target}::validations" => "ValiantMeta::::validations" => sub {
-    my $class = shift;
-    $class = ref $class if ref $class;
-    use Devel::Dwarn;  
-    no strict 'refs';
-    Dwarn +{ $class => \@{ "${class}::ISA" } };
-    return $meta;
-  };  
+  eval "package ${target}; sub validations { shift->maybe::next::method(\@_) } ";
+
+  my $around = \&{"${target}::around"};
+      $around->(validations => sub {
+          my ($orig, $self) = @_;
+          return ($self->$orig, $meta->validations->all);
+      });
 }
 
 1;

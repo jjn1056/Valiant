@@ -2,36 +2,86 @@ use Test::Most;
 
 ok 1;
 
+# So we create a base object and a role to make sure we can aggregate
+# validation rules on the object in the expected manner (at least for
+# Moo and probably Moose).
+
 {
-  package A;
+  package Person;
 
   use Moo;
+  use Valiant::Validations;
 
-  my $a = '';
-  sub a {
-    my ($self, $value) = @_;
-    no strict 'refs';
-    my $class = ref $self;
-    return ${"${class}::a"} ||= $value;
+  has 'name' => (is=>'ro');
+  has 'age' => (is=>'ro');
+
+  validate \&valid_person;
+  validate \&is_nok;
+
+  sub valid_person {
+    my ($self) = @_;
+    $self->errors->add(name => 'Too Long') if length($self->name) > 10;
+    $self->errors->add(name => 'Too Short') if length($self->name) < 2; 
+    $self->errors->add(age => 'Too Young') if $self->age < 10; 
   }
 
-  package B;
+  sub is_nok {
+    my ($self) = @_;
+    $self->errors->add(base => 'Just Bad', +{ details=>'This always fails'});
+  }
+
+  package TestRole;
+
+  use Moo::Role;
+  use Valiant::Validations;
+
+  validate sub {
+    my ($self) = @_;
+    $self->errors->add(base => 'Failed TestRole');
+  };
+
+  package Retiree;
 
   use Moo;
-  extends 'A';
+  use Valiant::Validations;
+
+  extends 'Person';
+  with 'TestRole';
+
+  has 'retirement_date' => (is=>'ro');
+
+  validate sub {
+    my ($self) = @_;
+    $self->errors->add(base => 'Failed Retiree');
+  };
+
 }
 
-my $a = A->new;
-my $b = B->new;
+ok my $retiree = Retiree->new(
+  name=>'B',
+  age=>4,
+  retirement_date=>'2020');
 
-$a->a('B');
+use Devel::Dwarn;
 
-warn $a->a || 'na';
-warn $b->a || 'na';
+#Dwarn [$retiree->validations];
 
-$b->a('C');
-
-warn $a->a || 'na';
-warn $b->a || 'na';
+$retiree->run_validations;
+Dwarn $retiree->errors;
 
 done_testing;
+
+
+__END__
+
+  package MyValidator;
+
+  use Moo;
+  with 'Valiant::Validator';
+
+  sub validate {
+    my ($self, $object) = @_;
+    $object->errors->add(name => 'Too Long') if length($object->name) > 10;
+    $object->errors->add(name => 'Too Short') if length($object->name) < 2; 
+    $object->errors->add(age => 'Too Young') if $object->age < 10; 
+  }
