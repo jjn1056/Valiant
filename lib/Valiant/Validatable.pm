@@ -50,11 +50,11 @@ sub read_attribute_for_validation {
 }
 
 sub human_attribute_name {
-  my ($self, $attribute, $options) = @_;
-  $options = +{} unless $options;
-  return $attribute;
-  # TODO localization
-  return $self->localize($attribute, %$options);
+  my ($self, $attribute, @options) = @_;
+  return if $attribute eq 'base';
+  $attribute =~s/_/ /g;
+  $attribute = ucfirst $attribute;  
+  return my $localized = $self->localize($attribute, @options);
 }
 
 sub run_validations {
@@ -65,5 +65,10 @@ sub run_validations {
 }
 
 ## TODO valid, invalid
+
+sub localize {
+  my ($self, $string, @options) = @_;
+  return $string; # TODO reallu localize!!
+}
 
 1;

@@ -69,6 +69,11 @@ use Devel::Dwarn;
 $retiree->run_validations;
 Dwarn $retiree->errors;
 
+Dwarn $retiree->errors->to_hash;
+Dwarn $retiree->errors->size;
+
+#Dwarn $retiree->errors->{base};
+
 done_testing;
 
 

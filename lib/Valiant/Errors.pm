@@ -2,6 +2,12 @@ package Valiant::Errors;
 
 use Moo;
 use List::Util;
+use overload
+#  '@{}'    => sub { shift->child_nodes },
+  '%{}'    => sub { shift->to_hash },
+  #  bool     => sub {1},
+  #  '""'     => sub { shift->to_string },
+  fallback => 0;
 
 has 'object' => (
   is => 'ro',
@@ -123,7 +129,8 @@ sub TO_JSON {
 
 sub _normalize_message {
   my ($self, $attribute, $message, $options) = @_;
-  if(ref $message) {
+  # If the message is ['key', %args] that means we want to localize it
+  if((ref($message)||'') eq 'ARRAY') {
     # TODO need to remove some things from %options
     return $self->generate_message($attribute, $message, $options);
   } else {
@@ -200,19 +207,25 @@ sub full_message {
 
 sub generate_message {
   my ($self, $attribute, $message, $options) = @_;
+  my $human_attribute_name = $self->object->human_attribute_name($attribute, %$options);
+  
   my $value = $attribute ne 'base' ? 
     $self->object->read_attribute_for_validation($attribute) :
     undef;
-
-  %options = (
-    model => $self->object->@base.model_name.human,
-        attribute: @base.class.human_attribute_name(attribute),
-        value: value,
-        object: @base
-      }.merge!(options)   
-
   
-}
+  my %options = (
+    model => $self->object->model_name->human,
+    attribute => $human_attribute_name,
+    value => $value,
+    object => $self->object,
+    %$options,
+  );
 
+  my $key = join ' ',
+    grep { defined($_) }
+    ($human_attribute_name,$message);
+
+  return $self->object->localize($key, %options);
+}
 
 1;
