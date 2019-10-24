@@ -3,11 +3,8 @@ package Valiant::Errors;
 use Moo;
 use List::Util;
 use overload
-#  '@{}'    => sub { shift->child_nodes },
-  '%{}'    => sub { shift->to_hash },
-  #  bool     => sub {1},
-  #  '""'     => sub { shift->to_string },
-  fallback => 0;
+  '%{}'    => sub { +{ shift->to_hash } },
+  fallback => 1;
 
 has 'object' => (
   is => 'ro',
@@ -114,9 +111,9 @@ sub to_hash {
           $self->full_message($key, $_) 
         } @{ $self->messages->{$key} }
       ];
-    } CORE::keys %{ $self->messages};
+    } CORE::keys %{ $self->messages ||+{} };
   } else {
-    %{ $self->messages };
+    %{ $self->messages ||+{} };
   }
 }
 
@@ -161,11 +158,11 @@ sub add {
     $exception->throw($self->full_message($attribute, $message));
   }
 
-  my %messages = %{ $self->messages };
+  my %messages = %{ $self->messages ||+{} };
   push @{$messages{$attribute}}, $message;
   $self->_set_messages(\%messages);
 
-  my %details = %{ $self->details };
+  my %details = %{ $self->details ||+{} };
   push @{ $details{$attribute} }, $detail;
   $self->_set_details(\%details);
 }

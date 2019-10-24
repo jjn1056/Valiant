@@ -1,7 +1,5 @@
 use Test::Most;
 
-ok 1;
-
 # So we create a base object and a role to make sure we can aggregate
 # validation rules on the object in the expected manner (at least for
 # Moo and probably Moose).
@@ -72,7 +70,7 @@ Dwarn $retiree->errors;
 Dwarn $retiree->errors->to_hash;
 Dwarn $retiree->errors->size;
 
-#Dwarn $retiree->errors->{base};
+Dwarn $retiree->errors->{base};
 
 done_testing;
 
