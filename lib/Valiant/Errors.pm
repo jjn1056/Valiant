@@ -2,9 +2,7 @@ package Valiant::Errors;
 
 use Moo;
 use List::Util;
-use overload
-  '%{}'    => sub { +{ shift->to_hash } },
-  fallback => 1;
+use Module::Runtime;
 
 has 'object' => (
   is => 'ro',
@@ -16,6 +14,14 @@ has ['details', 'messages'] => (
   is => 'rwp',
   required => 1,
   default => sub { +{} }
+);
+
+sub i18n_class { 'Valiant::I18N' }
+
+has 'i18n' => (
+  is => 'ro',
+  required => 1,
+  default => sub { Module::Runtime::use_module(shift->i18n_class) },
 );
 
 sub copy {
@@ -54,8 +60,8 @@ sub include {
 
 sub delete {
   my ($self, $key) = @_;
-  delete $self->_set_details->{$key};
-  delete $self->_set_messages->{$key};
+  delete $self->{details}->{$key}; # maybe too much a hack...
+  delete $self->{messages}->{$key};
 }
 
 sub messages_for {
@@ -126,8 +132,8 @@ sub TO_JSON {
 
 sub _normalize_message {
   my ($self, $attribute, $message, $options) = @_;
-  # If the message is ['key', %args] that means we want to localize it
-  if((ref($message)||'') eq 'ARRAY') {
+  # If the message is a scalar ref, that means we want to localize it
+  if(ref $message) {
     # TODO need to remove some things from %options
     return $self->generate_message($attribute, $message, $options);
   } else {
@@ -145,7 +151,7 @@ sub _normalize_detail {
 sub add {
   my ($self, $attribute) = (shift, shift);
   my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();
-  my $message = shift || ['Is Invalid'];
+  my $message = shift || $self->i18n->make_tag('invalid');
 
   $message = delete $options{message} if $options{message};
   $message = $message->($self, $attribute, \%options) if (ref($message)||'') eq 'CODE';
@@ -170,7 +176,7 @@ sub add {
 sub added {
   my ($self, $attribute) = (shift, shift);
   my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();
-  my $message = shift || 'Is Invalid';
+  my $message = shift || $self->i18n->make_tag('invalid');
 
   $message = $message->($self) if (ref($message)||'') eq 'CODE';
   my @messages = @{ $self->messages_for($attribute) ||[] };
@@ -199,30 +205,52 @@ sub full_messages_for {
 sub full_message {
   my ($self, $attribute, $message) = @_;
   # TODO a lot
+  #   my $human_attribute_name = ;
   return $message;
 }
 
 sub generate_message {
-  my ($self, $attribute, $message, $options) = @_;
-  my $human_attribute_name = $self->object->human_attribute_name($attribute, %$options);
-  
-  my $value = $attribute ne 'base' ? 
+  my ($self, $attribute, $type, $options) = @_;
+  $type ||= $self->i18n->make_tag('invalid');
+  $options ||= +{};
+  $type = delete $options->{message} if $self->i18n->i18n_tag($options->{message}||'');
+
+  my $value = $attribute ne '_base' ? 
     $self->object->read_attribute_for_validation($attribute) :
     undef;
-  
+ 
+  use Devel::Dwarn;
+  Dwarn $options;
+
   my %options = (
     model => $self->object->model_name->human,
-    attribute => $human_attribute_name,
+    #attribute => $self->object->human_attribute_name($attribute, $options),
     value => $value,
     object => $self->object,
-    %$options,
+    %{$options||+{}},
   );
 
-  my $key = join ' ',
-    grep { defined($_) }
-    ($human_attribute_name,$message);
+  my @defaults = ();
+  if($self->object->can('i18n_scope')) {
+    my $i18n_scope = $self->object->i18n_scope;
+    # TODO add @ISA and @DOES info
+    push @defaults, $self->i18n->make_tag("${i18n_scope}.errors.messages.${$type}");
+  }
 
-  return $self->object->localize($key, %options);
+  push @defaults, $self->i18n->make_tag("errors.attributes.${attribute}.${$type}");
+  push @defaults, $self->i18n->make_tag("errors.messages.${$type}");
+
+  my $key = shift(@defaults);
+  if($options->{message}) {
+    my $message = delete $options->{message};
+    @defaults = ref($message) ? @$message : ($message);
+  }
+  $options{default} = \@defaults;
+
+  use Devel::Dwarn;
+  Dwarn [$key, $options{default}];
+
+  return my $translated = $self->object->translate($key, \%options);
 }
 
 1;

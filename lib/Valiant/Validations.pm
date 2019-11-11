@@ -3,6 +3,7 @@ package Valiant::Validations;
 use Moo;
 use Moo::_Utils;
 use Module::Runtime 'use_module';
+
 require Moo::Role;
 
 sub default_roles { 'Valiant::Validatable' }

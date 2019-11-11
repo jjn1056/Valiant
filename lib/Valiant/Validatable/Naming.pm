@@ -34,8 +34,8 @@ has _human => (
 );
 
 sub human {
-  my ($self, @options) = @_;
-  $self->object->localize($self->_human, @options);
+  my ($self, %options) = @_;
+  $self->object->translate($self->_human, \%options);
 }
 
 

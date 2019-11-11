@@ -13,16 +13,24 @@ has '_errors' => (
   builder => '_build_errors',
 );
 
+sub i18n_class { 'Valiant::I18N' }
+
+has 'i18n' => (
+  is => 'ro',
+  required => 1,
+  default => sub { Module::Runtime::use_module(shift->i18n_class) },
+);
+
   sub _build_errors {
     my ($self) = @_;
     my $error_class = $self->error_class;
-    return Module::Runtime::use_module($error_class)->new(object=>$self);
+    return Module::Runtime::use_module($error_class)->new(object=>$self, i18n=>$self->i18n);
   }
 
 sub errors {
   my $self = shift;
-  if(my $field = shift) {
-    return $self->_errors->field($field);
+  if(my $attribute = shift) {
+    return @{ $self->_errors->messages->{$attribute}||[] };
   } else {
     return $self->_errors;
   }
@@ -46,15 +54,15 @@ has 'model_name' => (
 
 sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
-  return $self->$attribute;
+  return my $value = $self->$attribute;
 }
 
 sub human_attribute_name {
-  my ($self, $attribute, @options) = @_;
-  return if $attribute eq 'base';
+  my ($self, $attribute, $options) = @_;
+  return undef if $attribute eq '_base';
   $attribute =~s/_/ /g;
   $attribute = ucfirst $attribute;  
-  return my $localized = $self->localize($attribute, @options);
+  return my $localized = $self->translate($self->i18n->make_tag($attribute), $options);
 }
 
 sub run_validations {
@@ -66,9 +74,9 @@ sub run_validations {
 
 ## TODO valid, invalid
 
-sub localize {
-  my ($self, $string, @options) = @_;
-  return $string; # TODO reallu localize!!
+sub translate {
+  my ($self, $string, $options) = @_;
+  return $self->i18n->translate($self->i18n->make_tag($string), %{$options||+{}});
 }
 
 1;
