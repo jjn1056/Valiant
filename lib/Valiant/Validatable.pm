@@ -11,6 +11,9 @@ has '_errors' => (
   lazy => 1,
   init_arg => undef,
   builder => '_build_errors',
+  handles => {
+    add_error => 'add',
+  },
 );
 
 sub i18n_class { 'Valiant::I18N' }
@@ -54,29 +57,71 @@ has 'model_name' => (
 
 sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
-  return my $value = $self->$attribute;
+  return my $value = $self->$attribute
+    if $self->can($attribute);
 }
 
 sub human_attribute_name {
   my ($self, $attribute, $options) = @_;
   return undef if $attribute eq '_base';
-  $attribute =~s/_/ /g;
-  $attribute = ucfirst $attribute;  
-  return my $localized = $self->translate($self->i18n->make_tag($attribute), $options);
+
+  $options->{count} = 1;
+
+  my @defaults = ();
+  if($self->can('i18n_scope')) { # Rails defines this in activemodel translations
+    my $i18n_scope = $self->i18n_scope;
+    my @parts = split '.', $attribute;
+    my $attribute_name = pop @parts;
+    my $namespace = join '/', @parts if @parts;
+    my $attributes_scope = "${i18n_scope}.attributes";
+
+    if($namespace) {
+        @defaults = map {
+          my $class = $_;
+          "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.${attribute}"     
+        } $self->object->ancestors;
+    } else {
+        @defaults = map {
+          my $class = $_;
+          "${attributes_scope}.${\$class->model_name->i18n_key}.${attribute}"    
+        } $self->object->ancestors;
+    }
+  }
+
+  @defaults = map { $self->i18n->make_tag($_) } (@defaults, "attributes.${attribute}");
+
+  # Not sure if this should move up above the preceeding map...
+  if(exists $options->{default}) {
+    my $default = delete $options->{default};
+    my @default = ref($default) ? @$default : ($default);
+    push @defaults, @default;
+  }
+
+  # The final default is just our best attempt to make a name out of the actual
+  # attribute name.  This is passed as a plain string so we don't actually try
+  # to localize it.
+  push @defaults, do {
+    my $human_attr = $attribute;
+    $human_attr =~s/_/ /g;
+    $human_attr = ucfirst $human_attr;
+    $human_attr;
+  };
+
+  my $key = shift @defaults;
+  $options->{default} = \@defaults;
+
+  return my $localized = $self->i18n->translate($key, %{$options||+{}});
 }
 
-sub run_validations {
-  my ($self) = @_;
+sub validate {
+  my ($self, %args) = @_;
+  # TODO deal with if, unless, on, etc
   foreach my $validation ($self->validations) {
-    $validation->($self);
+    my %options = %{$validation->[1]};
+    $validation->[0]($self, %options);
   }
 }
 
-## TODO valid, invalid
-
-sub translate {
-  my ($self, $string, $options) = @_;
-  return $self->i18n->translate($self->i18n->make_tag($string), %{$options||+{}});
-}
+## TODO valid, invalid, i18n_key, docs for i18n_scope
 
 1;

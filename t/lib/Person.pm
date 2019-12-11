@@ -4,11 +4,11 @@ use Moo;
 use Valiant::Validations;
 use Valiant::I18N;
 
-has 'name' => (is=>'ro');
+has 'name' => (is=>'ro',);
 has 'age' => (is=>'ro');
 
-validate \&valid_person;
-validate \&is_nok;
+validates \&valid_person, if => sub { my ($self, $options) = @_;  return $self->age ? 1:0  };
+validates \&is_nok;
 
 sub valid_person {
   my ($self) = @_;
@@ -19,7 +19,7 @@ sub valid_person {
 
 sub is_nok {
   my ($self) = @_;
-  $self->errors->add(_base => _t 'bad', +{ details=>'This always fails'});
+  $self->errors->add(_base => _t('bad'), +{ details=>'This always fails'});
 }
 
 1;

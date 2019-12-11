@@ -2,11 +2,13 @@ package TestRole;
 
 use Moo::Role;
 use Valiant::Validations;
+use Valiant::I18N;
 
-validate sub {
+validates sub {
   my ($self) = @_;
   $self->errors->add(_base => 'Failed TestRole');
   $self->errors->add('name');
-  $self->errors->add(name => bad => +{ all=>1 } );
+  $self->errors->add(name => _t 'bad', +{ all=>1 } );
 };
 
+1;

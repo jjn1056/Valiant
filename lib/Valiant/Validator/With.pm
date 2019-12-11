@@ -1,15 +1,33 @@
-package Valiant::Validator::Each;
+package Valiant::Validator::With;
 
-use Moo::Role;
+use Moo;
 
-extends 'Valiant::Validator::Each';
+with 'Valiant::Validator::Each';
 
-has with => (is=>'ro', required=>1);
+has cb => (is=>'ro', predicate=>'has_cb');
+has method => (is=>'ro', predicate=>'has_method');
+
+around BUILDARGS => sub {
+  my ( $orig, $class, @args ) = @_;
+  return +{ cb => $args[0], attributes => $args[1] } if ref($args[0]) eq 'CODE';
+  return $class->$orig(@args);
+};
+
+sub BUILD {
+  my ($self, $args) = @_;
+  $self->_requires_one_of($args, 'cb', 'method');
+}
 
 sub validate_each {
   my ($self, $record, $attribute, $value) = @_;
-  my $method = $record->can($self->with);
-  $record->method($attribute, $value);
+  $self->cb->($record, $attribute, $value, $self->options) if $self->has_cb;
+  if($self->has_method) {
+    if(my $method_cb = $record->can($self->method)) {
+      $method_cb->($record, $attribute, $value, $self->options);
+    } else {
+      die ref($record) ." has no method '${\$self->method}'";
+    }
+  }
 }
 
 1;

@@ -3,6 +3,7 @@ package Valiant::Errors;
 use Moo;
 use List::Util;
 use Module::Runtime;
+use Carp;
 
 has 'object' => (
   is => 'ro',
@@ -133,18 +134,20 @@ sub TO_JSON {
 sub _normalize_message {
   my ($self, $attribute, $message, $options) = @_;
   # If the message is a scalar ref, that means we want to localize it
-  if(ref $message) {
-    # TODO need to remove some things from %options
-    return $self->generate_message($attribute, $message, $options);
+  if($self->i18n->is_i18n_tag($message)) {
+    my %options = %{$options||+{}};
+    delete @options{qw(if unless allow_undef allow_blank strict message)};
+    return $self->generate_message($attribute, $message, \%options);
   } else {
     return $message;
   }
 }
-
+    
 sub _normalize_detail {
   my ($self, $message, $options) = @_;
-  # TODO need to remove some things from %options
-  return +{ error => $message, %{$options||+{}} };
+  my %options = %{$options||+{}};
+  delete @options{qw(if unless allow_undef allow_blank strict message)};
+  return +{ error => $message, %options };
 }
 
 # $attribute, ?$message, ?\%options where $message is Str|ArrayRef|CodeRef
@@ -160,7 +163,7 @@ sub add {
   $message = $self->_normalize_message($attribute, $message, \%options);
 
   if(my $exception = $options{strict}) {
-    die $self->full_message($attribute, $message) if $exception == 1;
+    Carp::croak $self->full_message($attribute, $message) if $exception == 1;
     $exception->throw($self->full_message($attribute, $message));
   }
 
@@ -204,27 +207,58 @@ sub full_messages_for {
 
 sub full_message {
   my ($self, $attribute, $message) = @_;
-  # TODO a lot
-  #   my $human_attribute_name = ;
-  return $message;
+  return $message if $attribute eq '_base';
+  
+  my @defaults = ();
+  if($self->object->can('i18n_scope')) {
+    my $i18n_scope = $self->object->i18n_scope;
+    my @parts = split '.', $attribute;
+    my $attribute_name = pop @parts;
+    my $namespace = join '/', @parts if @parts;
+    my $attributes_scope = "${i18n_scope}.errors.models";
+    if($namespace) {
+      @defaults = map {
+        my $class = $_;
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.attributes.${attribute_name}.format",
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.format";      
+      } $self->object->ancestors;
+    } else {
+      @defaults = map {
+        my $class = $_;
+        "${attributes_scope}.${\$class->model_name->i18n_key}.attributes.${attribute_name}.format",
+        "${attributes_scope}.${\$class->model_name->i18n_key}.format";    
+      } $self->object->ancestors;
+    }
+  }
+
+  @defaults = map { $self->i18n->make_tag($_) } @defaults;
+
+  push @defaults, $self->i18n->make_tag("errors.format");
+  push @defaults, "{{attribute}} {{message}}";
+
+  my $attr_name = $self->object->human_attribute_name($attribute);
+  
+  return my $translated = $self->i18n->translate(
+    shift @defaults,
+    default => \@defaults,
+    attribute => $attr_name,
+    message => $message
+  );
 }
 
 sub generate_message {
   my ($self, $attribute, $type, $options) = @_;
   $type ||= $self->i18n->make_tag('invalid');
   $options ||= +{};
-  $type = delete $options->{message} if $self->i18n->i18n_tag($options->{message}||'');
+  $type = delete $options->{message} if $self->i18n->is_i18n_tag($options->{message}||'');
 
   my $value = $attribute ne '_base' ? 
     $self->object->read_attribute_for_validation($attribute) :
     undef;
  
-  use Devel::Dwarn;
-  Dwarn $options;
-
   my %options = (
     model => $self->object->model_name->human,
-    #attribute => $self->object->human_attribute_name($attribute, $options),
+    attribute => $self->object->human_attribute_name($attribute, $options),
     value => $value,
     object => $self->object,
     %{$options||+{}},
@@ -233,12 +267,18 @@ sub generate_message {
   my @defaults = ();
   if($self->object->can('i18n_scope')) {
     my $i18n_scope = $self->object->i18n_scope;
-    # TODO add @ISA and @DOES info
-    push @defaults, $self->i18n->make_tag("${i18n_scope}.errors.messages.${$type}");
+    @defaults = map {
+      my $class = $_;
+      "${i18n_scope}.errors.models.${\$class->model_name->i18n_key}.attributes.${attribute}.${type}",
+      "${i18n_scope}.errors.models.${\$class->model_name->i18n_key}.${type}";      
+    } $self->object->ancestors;
+    push @defaults, "${i18n_scope}.errors.messages.${$type}";
   }
 
-  push @defaults, $self->i18n->make_tag("errors.attributes.${attribute}.${$type}");
-  push @defaults, $self->i18n->make_tag("errors.messages.${$type}");
+  push @defaults, "errors.attributes.${attribute}.${$type}";
+  push @defaults, "errors.messages.${$type}";
+
+  @defaults = map { $self->i18n->make_tag($_) } @defaults;
 
   my $key = shift(@defaults);
   if($options->{message}) {
@@ -247,10 +287,7 @@ sub generate_message {
   }
   $options{default} = \@defaults;
 
-  use Devel::Dwarn;
-  Dwarn [$key, $options{default}];
-
-  return my $translated = $self->object->translate($key, \%options);
+  return my $translated = $self->i18n->translate($key, %options);
 }
 
 1;

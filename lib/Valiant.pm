@@ -10,6 +10,14 @@ has 'validators' => (
 
 1;
 
+#TODO lots of tests
+#TODO DBIC integration
+#TODO validate_associated
+#TODO lots more prebuild validators
+#TODO improve default localizations
+#TODO add time/date/currency locations to i18n
+#TODO make sure options are properly passed
+
 =head1 TITLE
 
 Valiant - Validation Library
@@ -17,43 +25,6 @@ Valiant - Validation Library
 =head1 SYNOPSIS
 
   { 
-      a => 'b',
-      c => ['d','e'],
-      f => {
-        g => 'h',
-        i => 'j',
-      },
-  }
-
-    field "  "
-    object { ...  }
-    list [ ... ]
-
-    # Option #1, dynamic
-
-    my $validator = Valiant->new;
-
-    my $compiled_check = $validator
-      ->field(first_name => sub {
-        my($field, $context) = @_;
-        $field->required
-          ->string(max=>12, min=>2, pattern=>qr/AZaz/)
-          ->cb(sub {
-              my $context = shift;
-          });
-      })
-      ->object(sub {
-        ->field('name')->add_constraint(...)
-        ->field
-        
-      });
-
-
-    my $result = $compiled_check->run($object, \%params);
-        
-
-
-    # Option, reflection
 
     package Local::DomainUser;
 
@@ -78,21 +49,6 @@ Valiant - Validation Library
     sub bind_model {
       $self, $form = @_
     }
-
-    my $compiled_checks = $validator->model(
-
-
-    $c->view("JSON", $user);
-
-    ## alternative reflectiojn...
-    
-    package Local::Validation::User;
-
-    use Valiant::Factory +{
-      class => 'Local::User',
-      
-    };
-
 
 =head1 AUTHOR
  
@@ -149,13 +105,9 @@ my $validator =$c->model('Validator::User')
 
 my $result = $validator->run;
 
-ValidateNewUser shoulld be different than ValidateUser
-
-
-
 =head1 COPYRIGHT & LICENSE
  
-Copyright 2019, John Napiorkowski L<email:jjnapiork@cpan.org>
+Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
  
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
@@ -182,17 +134,6 @@ $result->errors->field('name')->validators->{String}
 $result->errors->{name}->messages
 $result->errors->field('address')->field('city')->messages
 $result->errors->{name}->value
-
-
-  $user->errors->{name}
-
-validates
-  field 'name' => ( 
-    String => {min=>3, max=24},
-    filters => ['trim', 'collapse_whitespace', 'normalize_whitespace']
-  ),
-  object '
-
 
 
   name => ( String->min(3)->max(3) ),
@@ -233,71 +174,6 @@ validates
       )
     ]
   );
-
-  Valiant::MOP::Object->new(
-    fields => [
-      Valiant::MOP::Scalar->new
-
-Valiant
-  MOP
-    Object
-    Scalar
-    Array
-  Schema.pm
-  ObjectType.pm
-  ScalarType.pm
-  Type.pm
-  Type
-    Code.pm
-    String.pm
-  Util.pm
-  Exporter
-
-Valiant
-  Schema
-  Type/Validator
-  Utils
-  Filter
-
-package MyApp::Validation::Type;
-
-use Moo;
-use Valiant::ObjectType;
-
-type 'Object';
-
-
-
-  Validator
-    Name
-    Address
-
-package Valiant::Validator::Name;
-
-use Moo;
-
-extends 'Valiant::Validator::String';
-
-sub looks_like_a_name { ... }
-
-around 'check', sub {
-  my ($self, $orig, $value) = @_;
-  return 0 unless $self->$orig($value);
-  return 0 unless looks_like_a_name($value);
-};
-
-package Valiant::Validator::Address;
-
-use Moo;
-
-with 'Valiant::Validator';
-
-has 
-
-
-
-wild ideas for catalyst
-
 
 
 MyApp->config(

@@ -5,20 +5,20 @@ use File::Spec;
 use Data::Localize;
 use Data::Localize::MultiLevel;
 use Scalar::Util;
+use Carp;
 
 our $dl;
 our %locale_paths;
 
-# add -namespace='namespace to use to find the locale dir'
+#TODO  add -namespace='namespace to use to find the locale dir'
 sub import {
   my $class = shift;
   my $target = caller;
   $class->init;
-  $class->add_locale_path(_locale_path_from_module($target));
+  $class->add_locale_path(_locale_path_from_module($target)); #TODO Should we also look it parent directories?
 
   no strict 'refs';
-  *{"${target}::_t"} = sub { $class->_t(@_) };
-  #\&{"${class}::_t"};
+  *{"${target}::_t"} = sub { $class->make_tag(@_) };
 }
 
 sub dl { $dl };
@@ -27,13 +27,14 @@ sub init {
   my $class = shift;
   return if $dl;
   $dl = Data::Localize->new;
-  $class->add_locale_path(_locale_path_from_module($class));
+  $class->add_locale_path(_locale_path_from_module($class)); #TODO do we need to load the $class @ISA as well?
   return $dl;
 }
 
 sub add_locale_path {
   my ($class, $path) = @_;
   return if $locale_paths{$path};
+  # TODO need to skip if there's no locale directory
   warn "Adding locale_path at $path" if $ENV{VALIANT_DEBUG};
   $dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
   $locale_paths{$path} = 1;
@@ -54,15 +55,39 @@ sub _locale_path_from_module {
 
 sub translate { 
   my ($self, $key, %args) = @_;
-  return $key unless $self->i18n_tag($key);
+  my @defaults = @{ delete($args{default})||[] };
+  my $scope = delete($args{scope})||'';
+  my $count = delete($args{count})||undef;
+  $scope = join('.',@{$scope}) if (ref($scope)||'') eq 'ARRAY';
 
-  # TODO handle scope, defaults, count and model
-  my @keys = ($key, @{delete($args{default})||[]});
-  foreach my $possible (@keys) {
-    warn "trying $$possible";
-    my $translated = $dl->localize($$possible, \%args);
-    return $translated unless $translated eq $$possible;
+  # TODO deal with $count
+
+  # $key can be either a string or a tag.
+  $key = $$key if $self->is_i18n_tag($key);
+  $key = "${scope}.${key}" if $scope;
+  my $translated = $dl->localize($key, \%args);
+
+  # Is this a bug in Data::Localize?  Seems like ->localize just returns
+  # the $key if it fails to actually localize.  I would think it should
+  # return undef;
+  return $translated unless $translated eq $key;
+
+  # Ok if we got here that means the $key failed to localize.  So we will 
+  # iterate over $args{defaults}.  If a defaut is a tag we try to localize
+  # it.  First tag to localize is returned.  If however we encounter a 
+  # default that is not a tag we just return that without trying to localize
+  # it.  So you should stick your ultimate fallback string at the very end
+  # of the defaults list.
+
+  foreach my $default(@defaults) {
+    return $default unless $self->is_i18n_tag($default);
+    my $tag = $$default;
+    my $translated = $dl->localize($tag, \%args);
+    return $translated unless $translated eq $tag; # See note above
   }
+
+  my $list = join (', ', $key, map { $$_ if $self->is_i18n_tag($_) } @defaults);
+  Carp::croak "Can't find a translation in ($list)";
 }
 
 sub detect_languages_from_header {
@@ -75,12 +100,11 @@ sub set_languages {
   $dl->set_languages(@languages);
 }
 
-sub i18n_tag {
+sub is_i18n_tag {
   my ($class, $tag) = @_;
   return (ref($tag)||'') eq 'Valiant::I18N::Tag' ? 1:0;
 }
 
-*_t = \&make_tag;
 sub make_tag($) {
   my ($class, $tag) = @_;
   return bless \$tag, 'Valiant::I18N::Tag';
