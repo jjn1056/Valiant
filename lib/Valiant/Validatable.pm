@@ -115,41 +115,8 @@ sub human_attribute_name {
 
 sub validate {
   my ($self, %args) = @_;
-  foreach my $validation ($self->validations) {
-    my %options = %{$validation->[1]};
-
-    # TODO this is duplicated in Valiant::Validator::Each
-    if(my $if = delete $options{if}) {
-      if((ref($if)||'') eq 'CODE') {
-        next unless $if->($self);
-      } else {
-        if(my $method_cb = $self->can($if)) {
-          next unless $method_cb->($self);
-        } else {
-          die ref($self) ." has no method '$if'";
-        }
-      }
-    }
-    if(my $unless = delete $options{unless}) {
-      if((ref($unless)||'') eq 'CODE') {
-        next if $unless->($self);
-      } else {
-        if(my $method_cb = $self->can($unless)) {
-          next if $method_cb->($self);
-        } else {
-          die ref($self) ." has no method '$unless'";
-        }
-      }
-    }
-    if(my $on = delete $options{on}) {
-      my @on = ref($on) ? @{$on} : ($on);
-      my $context = $args{context}||'';
-
-      #skip unless $context matches one of the 'on' list.
-      my $matches = grep { $_ eq $context } @on;
-      next unless $matches;
-    }    
-    $validation->[0]($self, %options);
+  foreach my $validation ($self->validations) {  
+    $validation->[0]($self, $validation->[1]);
   }
 }
 

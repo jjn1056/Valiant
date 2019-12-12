@@ -22,7 +22,9 @@ sub options {
 }
 
 sub validate {
-  my ($self, $object, %options) = @_;
+  my ($self, $object, $options) = @_;
+
+  # Loop over each attribute and run the validators
   foreach my $attribute (@{ $self->attributes }) {
     my $value = $object->read_attribute_for_validation($attribute);
     next if $self->allow_undef && not(defined $value);
@@ -55,14 +57,14 @@ sub validate {
 
     if($self->has_on) {
       my @on = ref($self->on) ? @{$self->on} : ($self->on);
-      my $context = $options{context}||'';
+      my $context = $options->{context}||'';
 
       #skip unless $context matches one of the 'on' list.
       my $matches = grep { $_ eq $context } @on;
       next unless $matches;
     }
 
-    $self->validate_each($object, $attribute, $value, %options);
+    $self->validate_each($object, $attribute, $value, $options);
   }
 }
 

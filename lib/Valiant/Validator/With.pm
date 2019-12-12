@@ -10,6 +10,7 @@ has method => (is=>'ro', predicate=>'has_method');
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
   return +{ cb => $args[0], attributes => $args[1] } if ref($args[0]) eq 'CODE';
+  #return +{ method => $args[0], attributes => $args[1] } if ref($args[0]) eq 'CODE';
   return $class->$orig(@args);
 };
 

@@ -44,7 +44,8 @@ sub _validates_coderef {
 sub _is_reserved_option_key {
   my ($class, $key) = @_;
   return 1 if $key eq 'if' || $key eq 'unless' || $key eq 'on'
-    || $key eq 'strict' || $key eq 'allow_blank' || $key eq 'allow_undef';
+    || $key eq 'strict' || $key eq 'allow_blank' || $key eq 'allow_undef'
+    || $key eq 'message';
   return 0;
 }
 
@@ -107,7 +108,11 @@ sub validates {
     push @validators, $class->_create_validator($validator_package,\@attributes, $value);
   }
   my $coderef = sub { $_->validate(@_) foreach @validators };
-  $class->_validates_coderef($target, $meta, $coderef, %global_options);
+  $class->validates_with($target, $meta, '+Valiant::Validator::With', cb=>$coderef, attributes=>\@attributes, %global_options);
+
+  # $class->_validates_coderef($target, $meta, $coderef, %global_options);
+  #  $meta->validations->push([$coderef, \%global_options]);
+
 }
 
 sub validates_each {
@@ -133,6 +138,7 @@ sub _normalize_validator_package {
   return $package;
 }
 
+# TODO this needs to handle if unless on
 sub validates_with {
   my ($class, $target, $meta, $validators_proto, %options) = @_;
   my @with = ref($validators_proto) eq 'ARRAY' ? 
