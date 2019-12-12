@@ -14,6 +14,12 @@ has too_long => (is=>'ro', required=>1, default=>sub {_t 'too_long'});
 has too_short => (is=>'ro', required=>1, default=>sub {_t 'too_short'});
 has wrong_length => (is=>'ro', required=>1, default=>sub {_t 'wrong_length'});
 
+around BUILDARGS => sub {
+  my ( $orig, $class, @args ) = @_;
+  return +{ in => $args[0], attributes => $args[1] } if ref($args[0]) eq 'ARRAY';
+  return $class->$orig(@args);
+};
+
 sub BUILD {
   my ($self, $args) = @_;
   $self->_requires_one_of($args, 'maximum', 'minimum', 'in', 'is');

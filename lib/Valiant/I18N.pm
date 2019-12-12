@@ -53,6 +53,14 @@ sub _locale_path_from_module {
   return $locale_path;
 }
 
+sub _lookup_translation_by_count {
+  my ($self, $count, $translated) = @_;
+  $translated = $translated->{zero} if $count == 0 and $translated->{zero};
+  $translated = $translated->{one} if $count == 1 and $translated->{one};
+  $translated = $translated->{other} if $count > 1 and $translated->{other};
+  return $translated;
+}
+
 sub translate { 
   my ($self, $key, %args) = @_;
   my @defaults = @{ delete($args{default})||[] };
@@ -67,9 +75,14 @@ sub translate {
   $key = "${scope}.${key}" if $scope;
   my $translated = $dl->localize($key, \%args);
 
+  # If $translated is a hashref that means we need to apply the $count
+  $translated = $self->_lookup_translation_by_count($count, $translated)
+    if ref($translated) and $count;
+
   # Is this a bug in Data::Localize?  Seems like ->localize just returns
   # the $key if it fails to actually localize.  I would think it should
   # return undef;
+
   return $translated unless $translated eq $key;
 
   # Ok if we got here that means the $key failed to localize.  So we will 
@@ -83,6 +96,10 @@ sub translate {
     return $default unless $self->is_i18n_tag($default);
     my $tag = $$default;
     my $translated = $dl->localize($tag, \%args);
+
+    $translated = $self->_lookup_translation_by_count($count, $translated)
+      if ref($translated) and $count;
+
     return $translated unless $translated eq $tag; # See note above
   }
 
