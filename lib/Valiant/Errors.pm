@@ -255,7 +255,7 @@ sub generate_message {
   my $value = $attribute ne '_base' ? 
     $self->object->read_attribute_for_validation($attribute) :
     undef;
- 
+
   my %options = (
     model => $self->object->model_name->human,
     attribute => $self->object->human_attribute_name($attribute, $options),
@@ -286,6 +286,7 @@ sub generate_message {
     @defaults = ref($message) ? @$message : ($message);
   }
   $options{default} = \@defaults;
+
 
   return my $translated = $self->i18n->translate($key, %options);
 }

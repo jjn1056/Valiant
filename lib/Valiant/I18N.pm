@@ -65,7 +65,7 @@ sub translate {
   my ($self, $key, %args) = @_;
   my @defaults = @{ delete($args{default})||[] };
   my $scope = delete($args{scope})||'';
-  my $count = delete($args{count})||undef;
+  my $count = $args{count};
   $scope = join('.',@{$scope}) if (ref($scope)||'') eq 'ARRAY';
 
   # TODO deal with $count

@@ -18,7 +18,13 @@ has attributes => (is=>'ro', required=>1);
 
 sub options { 
   my $self = shift;
-  return +{ %{$self->opts}, strict=>$self->strict };
+  my %opts = (
+    %{$self->opts},
+    strict => $self->strict,
+    @_);
+
+  $opts{message} = $self->message if $self->has_message;
+  return \%opts;
 }
 
 sub validate {
@@ -58,9 +64,18 @@ sub validate {
     if($self->has_on) {
       my @on = ref($self->on) ? @{$self->on} : ($self->on);
       my $context = $options->{context}||'';
+      my @context = ref($context) ? @$context : ($context);
+      my $matches = 0;
 
-      #skip unless $context matches one of the 'on' list.
-      my $matches = grep { $_ eq $context } @on;
+      OUTER: foreach my $c (@context) {
+        foreach my $o (@on) {
+          if($c eq $o) {
+            $matches = 1;
+            last OUTER;
+          }
+        }
+      }
+
       next unless $matches;
     }
 

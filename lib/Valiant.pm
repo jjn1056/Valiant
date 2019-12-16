@@ -17,6 +17,7 @@ has 'validators' => (
 #TODO improve default localizations
 #TODO add time/date/currency locations to i18n
 #TODO make sure options are properly passed
+#TODO Allow my $validations = Valiant::Class->new->validations()->validations()->validate(%params);
 
 =head1 TITLE
 

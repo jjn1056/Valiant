@@ -25,7 +25,6 @@ validates 'name' => (
       my ($self) = @_;
       warn 333; 1;
     },
-
   },
   if => sub { warn 111; 1 },
 );

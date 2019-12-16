@@ -53,8 +53,8 @@ sub _prepare_validator_packages {
   my ($class, $target, $key) = @_;
   return (
     $class->_normalize_validator_package($target, camelize($key)),
+    'Valiant::ValidatorX::'.camelize($key), # Look here first in case someday we have XS versions of the built-ins
     'Valiant::Validator::'.camelize($key),
-    'Valiant::ValidatorX::'.camelize($key),
   );
 }
 
@@ -74,7 +74,7 @@ sub _validator_package {
 }
 
 sub _create_validator {
-  my ($class, $validator_package, $attributes, $args) = @_;
+  my ($class, $validator_package, $attributes, $args, %global_options) = @_;
   my @args = (ref($args)||'') eq 'HASH' ?
     (attributes=>$attributes, %$args) :
     ($args, $attributes);
@@ -96,23 +96,26 @@ sub validates {
   my @attributes = ref($attributes||'') eq 'ARRAY' 
     ? @$attributes : ($attributes);
 
-  # We want to preserve the order of validators
-  my (@validators, %global_options) = ();
+  # We want to preserve the order of validators while stripping out global_options
+  my (@validator_info, %global_options) = ();
   while(@options) {
-    my ($key, $value) = (shift @options, shift @options);
+    my ($key, $args) = (shift @options, shift @options);
     if($class->_is_reserved_option_key($key)) {
-      $global_options{$key} = $value;
-      next;
+      $global_options{$key} = $args;
+    } else {
+      push @validator_info, [$key, $args];
     }
-    my $validator_package = $class->_validator_package($target, $key);
-    push @validators, $class->_create_validator($validator_package,\@attributes, $value);
+  }
+  my @validators = ();
+  foreach my $info(@validator_info) {
+    my ($package_part, $args) = @$info;
+    my $validator_package = $class->_validator_package($target, $package_part);
+    # some global args need to get copied over (strict, ...)
+    $args->{strict} = 1 if $global_options{strict};
+    push @validators, $class->_create_validator($validator_package,\@attributes, $args);
   }
   my $coderef = sub { $_->validate(@_) foreach @validators };
   $class->validates_with($target, $meta, '+Valiant::Validator::With', cb=>$coderef, attributes=>\@attributes, %global_options);
-
-  # $class->_validates_coderef($target, $meta, $coderef, %global_options);
-  #  $meta->validations->push([$coderef, \%global_options]);
-
 }
 
 sub validates_each {

@@ -65,7 +65,8 @@ sub human_attribute_name {
   my ($self, $attribute, $options) = @_;
   return undef if $attribute eq '_base';
 
-  $options->{count} = 1;
+  # TODO I think we need to clean $option here so I don't need to manually
+  # set count=>1 as I do below.
 
   my @defaults = ();
   if($self->can('i18n_scope')) { # Rails defines this in activemodel translations
@@ -110,14 +111,16 @@ sub human_attribute_name {
   my $key = shift @defaults;
   $options->{default} = \@defaults;
 
-  return my $localized = $self->i18n->translate($key, %{$options||+{}});
+  return my $localized = $self->i18n->translate($key, %{$options||+{}}, count=>1);
 }
 
 sub validate {
   my ($self, %args) = @_;
-  foreach my $validation ($self->validations) {  
-    $validation->[0]($self, $validation->[1]);
+  foreach my $validation ($self->validations) {
+    my %validation_args = (%{$validation->[1]}, %args);
+    $validation->[0]($self, \%validation_args);
   }
+  return $self->errors->size ? 0 : 1; # return False if there's errors
 }
 
 ## TODO valid, invalid, i18n_key, docs for i18n_scope
