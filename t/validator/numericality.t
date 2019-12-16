@@ -12,13 +12,6 @@ use Test::Most;
   validates age => (
     numericality => {
       is_integer => 1,
-      less_than => 200,
-    },
-  );
-
-  validates age => (
-    numericality => {
-      is_integer => 1,
       greater_than_or_equal_to => 18,
       message => 'not voting age',
     },
@@ -41,6 +34,13 @@ use Test::Most;
       message => 'not over 99 yet!',
     },
     on => 'centarion',
+  );
+
+  validates age => (
+    numericality => {
+      is_integer => 1,
+      less_than => 200,
+    },
   );
 
 }
