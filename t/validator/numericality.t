@@ -13,7 +13,7 @@ use Test::Most;
     numericality => {
       is_integer => 1,
       greater_than_or_equal_to => 18,
-      message => 'not voting age',
+      message => _t('not_voting_age'),
     },
     on => 'voter',
   );
