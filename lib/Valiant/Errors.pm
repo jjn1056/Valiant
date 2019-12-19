@@ -3,6 +3,7 @@ package Valiant::Errors;
 use Moo;
 use List::Util;
 use Module::Runtime;
+use Data::Dumper ();
 use Carp;
 
 has 'object' => (
@@ -289,6 +290,10 @@ sub generate_message {
 
 
   return my $translated = $self->i18n->translate($key, %options);
+}
+
+sub _dump {
+  return Data::Dumper::Dumper( +{shift->to_hash(full_messages=>1)} );
 }
 
 1;

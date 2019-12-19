@@ -8,40 +8,20 @@ use Test::Most;
   use Valiant::I18N;
 
   has age => (is=>'ro');
+  has equals => (is=>'ro', default=>33);
 
   validates age => (
     numericality => {
-      is_integer => 1,
-      greater_than_or_equal_to => 18,
-      message => _t('not_voting_age'),
-    },
-    on => 'voter',
-  );
-
-  validates age => (
-    numericality => {
-      is_integer => 1,
-      greater_than_or_equal_to => 65,
-      message => 'not eligible for retirement yet',
-    },
-    on => 'retiree',
-  );
-
-  validates age => (
-    numericality => {
-      is_integer => 1,
-      greater_than_or_equal_to => 100,
-      message => 'not over 99 yet!',
-    },
-    on => 'centarion',
-  );
-
-  validates age => (
-    numericality => {
-      is_integer => 1,
+      only_integer => 1,
       less_than => 200,
+      less_than_or_equal_to => 199,
+      greater_than => 10,
+      greater_than_or_equal_to => 9,
+      equal_to => \&equals,
     },
   );
+
+  validates equals => (numericality => [5,100]);
 
 }
 
@@ -51,41 +31,58 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
+        "Age must be equal to 33",
         "Age must be less than 200",
+        "Age must be less than or equal to 199",
       ],
     };
 }
 
 {
-  ok my $object = Local::Test::Numericality->new(age=>11);
-  ok !$object->validate(context=>'voter');
+  ok my $object = Local::Test::Numericality->new(age=>8);
+  ok !$object->validate;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
-        "Age not voting age",
+        "Age must be equal to 33",
+        "Age must be greater than 10",
+        "Age must be greater than or equal to 9",
       ],
     };
 }
 
 {
-  ok my $object = Local::Test::Numericality->new(age=>50);
-  ok !$object->validate(context=>'centarion');
+  ok my $object = Local::Test::Numericality->new(age=>33.3);
+  ok !$object->validate;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
-        "Age not over 99 yet!",
+        "Age must be an integer",
       ],
     };
 }
 
 {
-  ok my $object = Local::Test::Numericality->new(age=>11);
-  ok !$object->validate(context=>['centarion', 'voter']);
+  ok my $object = Local::Test::Numericality->new(age=>"woow");
+  ok !$object->validate;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
-        "Age not voting age",
-        "Age not over 99 yet!",
+        "Age must be an integer",
+      ],
+    };
+}
+
+{
+  ok my $object = Local::Test::Numericality->new(age=>15, equals=>101 );
+  ok !$object->validate;
+  is_deeply +{ $object->errors->to_hash(full_messages=>1) },
+    {
+      age => [
+        "Age must be equal to 101",
+      ],
+      equals => [
+        "Equals must be less than or equal to 100",
       ],
     };
 }

@@ -6,16 +6,16 @@
     errors => {
       messages => {
         # numericality
-        not_less_than_or_equal_to => 'must be less than or equal to {{count}}',
-        not_a_number => "is not a number",
-        not_an_integer => "must be an integer",
-        not_greater_than => "must be greater than {{count}}",
-        not_greater_than_or_equal_to => "must be greater than or equal to {{count}}",
-        not_equal_to => "must be equal to {{count}}",
-        not_less_than => "must be less than {{count}}",
-        not_other_than => "must be other than {{count}}",
-        not_odd => "must be odd",
-        not_even => "must be even",     
+        less_than_or_equal_to_err => 'must be less than or equal to {{count}}',
+        is_number_err => "is not a number",
+        is_integer_err => "must be an integer",
+        greater_than_err => "must be greater than {{count}}",
+        greater_than_or_equal_to_err => "must be greater than or equal to {{count}}",
+        equal_to_err => "must be equal to {{count}}",
+        less_than_err => "must be less than {{count}}",
+        other_than_err => "must be other than {{count}}",
+        odd_err => "must be odd",
+        even_err => "must be even",     
         # length
         too_short => {
           one => 'is too short (minimum is 1 character)',

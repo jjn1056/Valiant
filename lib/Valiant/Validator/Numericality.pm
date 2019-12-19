@@ -36,42 +36,53 @@ my %INIT; @INIT{@INIT} = delete @CHECKS{@INIT};
 # someone to override individual error messages.
 foreach my $attr (keys %CHECKS) {
   has $attr => (is=>'ro', predicate=>"has_${attr}");
-  has "not_${attr}" => (is=>'ro', required=>1, default=>sub { _t "not_${attr}" });
+  has "${attr}_err" => (is=>'ro', required=>1, default=>sub { _t "${attr}_err" });
 }
 
 foreach my $attr (keys %INIT) {
-  has "not_${attr}" => (is=>'ro', required=>1, default=>sub { _t "not_${attr}" });
+  has "${attr}_err" => (is=>'ro', required=>1, default=>sub { _t "${attr}_err" });
 }
 
 has only_integer => (is=>'ro', required=>1, default=>0);
 
-sub BUILD {
-  my ($self, $args) = @_;
-  $self->_requires_one_of($args, keys %CHECKS);
-}
+around BUILDARGS => sub {
+  my ( $orig, $class, @args ) = @_;
 
+  if((@args) == 2) {
+    my %args = (attributes => pop @args);
+
+    # numericality => [1,100],
+    if(ref($args[0]) eq 'ARRAY') {
+      $args{greater_than_or_equal_to} =  $args[0]->[0];
+      $args{less_than_or_equal_to} =  $args[0]->[1];
+    }
+    return $class->$orig(%args)
+  }
+
+  return $class->$orig(@args);
+};
 
 sub validate_each {
   my ($self, $record, $attr, $value) = @_;
 
   if($self->only_integer) {
     unless($INIT{is_integer}->($value)) {
-      $record->errors->add($attr, $self->not_is_integer, $self->options); 
+      $record->errors->add($attr, $self->is_integer_err, $self->options); 
       return;
     }
   } else {
     unless($INIT{is_number}->($value)) {
-      $record->errors->add($attr, $self->not_is_number, $self->options); 
+      $record->errors->add($attr, $self->is_number_err, $self->options); 
       return;
     }
   }
 
-  foreach my $key (keys %CHECKS) {
+  foreach my $key (sort keys %CHECKS) {
     next unless $self->${\"has_${key}"};
     my $constraint_value = $self->$key;
     $constraint_value = $constraint_value->($record)
       if((ref($constraint_value)||'') eq 'CODE');
-    $record->errors->add($attr, $self->${\"not_$key"}, $self->options(count=>$constraint_value))
+    $record->errors->add($attr, $self->${\"${key}_err"}, $self->options(count=>$constraint_value))
       unless $CHECKS{$key}->($value, $constraint_value);
   }
 }
@@ -84,6 +95,131 @@ Valiant::Validator::Numericality - Validate numeric attributes
 
 =head1 SYNOPSIS
 
+    package Local::Test::Numericality;
+
+    use Moo;
+    use Valiant::Validations;
+
+    has age => (is => 'ro');
+    has equals => (is => 'ro', default => 33);
+
+    validates age => (
+      numericality => {
+        only_integer => 1,
+        less_than => 200,
+        less_than_or_equal_to => 199,
+        greater_than => 10,
+        greater_than_or_equal_to => 9,
+        equal_to => \&equals,
+      },
+    );
+
+    validates equals => (numericality => [5, 100]);
+
+    my $object = Local::Test::Numericality->new(age=>8, equal=>40);
+    $object->validate; # Returns false
+
+    warn $object->_dump;
+
+    $VAR1 = {
+      age => [
+        "Age must be equal to 40",
+        "Age must be greater than 10",
+        "Age must be greater than or equal to 9",
+      ],
+    };
+
+=head1 DESCRIPTION
+
+Validates that your attributes have only numeric values. By default, it will
+match an optional sign followed by an integral or floating point number. To
+specify that only integral numbers are allowed set C<only_integer> to true.
+
+There's several parameters you can set to place different type of numeric
+limits on the value.  There's no checks on creating non sense rules (you can
+set a C<greater_than> of 10 and a C<less_than> of 5, for example) so pay
+attention.
+
+All parameter values can be either a constant or a coderef (which will get
+C<$self> as as argument).  The coderef option
+exists to make it easier to write dynamic checks without resorting to writing
+your own custom validators.  Each value also defines a translation tag which
+folows the pattern "${rule}_err" (for example the C<greater_than> rules has a
+translation tag C<greater_than_err>).  You can use the C<message> parameter to
+set a custom message (either a string value or a translation tag).
+
+=head1 CONSTRAINTS
+
+Besides an overall test for either floating point or integer numericality this
+validator supports the following constraints:
+
+=over
+
+=item greater_than
+
+Accepts numeric value or coderef.  Returns error message tag V<greater_than> if
+the attribute value isn't greater.
+
+=item greater_than_or_equal_to
+
+Accepts numeric value or coderef.  Returns error message tag V<greater_than_or_equal_to_err> if
+the attribute value isn't equal or greater.
+
+=item equal_to
+
+Accepts numeric value or coderef.  Returns error message tag V<equal_to_err> if
+the attribute value isn't equal.
+
+=item other_than
+
+Accepts numeric value or coderef.  Returns error message tag V<other_than_err> if
+the attribute value isn't different.
+
+=item less_than
+
+Accepts numeric value or coderef.  Returns error message tag V<less_than_err> if
+the attribute value isn't less than.
+
+=item less_than_or_equal_to
+
+Accepts numeric value or coderef.  Returns error message tag V<less_than_or_equal_to_err> if
+the attribute value isn't less than or equal.
+
+=item even
+
+Accepts numeric value or coderef.  Returns error message tag V<even_err> if
+the attribute value isn't an even number.
+
+=item odd
+
+Accepts numeric value or coderef.  Returns error message tag V<odd_err> if
+the attribute value isn't an odd number.
+
+=back
+
+=head1 SHORTCUT FORM
+
+This validator supports the follow shortcut forms:
+
+    validates attribute => ( numericality => [1,10], ... );
+
+Which is the same as:
+
+    validates attribute => (
+      numericality => {
+        greater_than_or_equal_to => 1,
+        less_than_or_equal_to => 10,
+      },
+    );
+
+If you merely wish to test for overall numericality you can use:
+
+    validates attribute => ( numericality => +{}, ... );
+ 
+=head1 GLOBAL PARAMETERS
+
+This validator supports all the standard shared parameters: C<if>, C<unless>,
+C<message>, C<strict>, C<allow_undef>, C<allow_blank>.
 
 =head1 AUTHOR
  
@@ -91,7 +227,7 @@ John Napiorkowski L<email:jjnapiork@cpan.org>
   
 =head1 SEE ALSO
  
-L<Valiant>, L<Valiant::Validator>
+L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
     
 =head1 COPYRIGHT & LICENSE
  
