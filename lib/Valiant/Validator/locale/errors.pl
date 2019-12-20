@@ -21,6 +21,14 @@
           one => 'is too short (minimum is 1 character)',
           other => 'is too short (minimum is {{count}} characters',
         },
+        too_long => {
+          one => 'is too long (maximum is 1 character)',
+          other => 'is too long (maximum is {{count}} characters)',
+        },
+        wrong_length => {
+          one => "is the wrong length (should be 1 character)",
+          other => "is the wrong length (should be {{count}} characters)",
+        },
       },
     }
   },

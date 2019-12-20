@@ -27,6 +27,15 @@ sub options {
   return \%opts;
 }
 
+sub _cb_value {
+  my ($self, $object, $value) = @_;
+  if((ref($value)||'') eq 'CODE') {
+    return $value->($object) || die "no value";
+  } else {
+    return $value;
+  } 
+}
+
 sub validate {
   my ($self, $object, $options) = @_;
 

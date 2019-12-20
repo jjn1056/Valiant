@@ -63,9 +63,11 @@ sub _validator_package {
   my @validator_packages = $class->_prepare_validator_packages($target, $key);
   my ($validator_package, @rest) = grep {
     eval { use_module $_ } || do {
-      if($ENV{VALIANT_DEBUG}) {
-        warn $@=~m/^Can't locate/ ? "Can't find $_ in \@INC\n" : $@;
+      if($@=~m/^Can't locate/) {
+        warn "Can't find $_ in \@INC\n" if $ENV{VALIANT_DEBUG};
         0;
+      } else {
+        die $@;
       }
     }
   }  @validator_packages;
