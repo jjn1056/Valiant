@@ -26,13 +26,11 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'name' => [
-        'Name is too short (minimum is 3 characters',
+        'Name is too short (minimum is 3 characters)',
         'Name is the wrong length (should be 5 characters)',
         'Name is too short (minimum is 4 characters)'
       ]
     };
-
-  warn $object->errors->_dump;
 }
 
 done_testing;

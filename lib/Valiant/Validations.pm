@@ -10,6 +10,7 @@ require Moo::Role;
 sub default_roles { 'Valiant::Validatable' }
 sub default_meta { 'Valiant::Meta' }
 sub default_validator_namepart { 'Validator' }
+sub default_collection_class { 'Valiant::Validator::Collection' }
 
 sub import {
   my $class = shift;
@@ -76,7 +77,7 @@ sub _validator_package {
 }
 
 sub _create_validator {
-  my ($class, $validator_package, $attributes, $args, %global_options) = @_;
+  my ($class, $validator_package, $attributes, $args) = @_;
   my @args = (ref($args)||'') eq 'HASH' ?
     (attributes=>$attributes, %$args) :
     ($args, $attributes);
@@ -112,12 +113,27 @@ sub validates {
   foreach my $info(@validator_info) {
     my ($package_part, $args) = @$info;
     my $validator_package = $class->_validator_package($target, $package_part);
-    # some global args need to get copied over (strict, ...)
-    $args->{strict} = 1 if $global_options{strict};
+
+    # merge global options into args
+    $args->{strict} = 1 if $global_options{strict} and !exists $args->{strict};
+    $args->{allow_undef} = 1 if $global_options{allow_undef} and !exists $args->{allow_undef};
+    $args->{allow_blank} = 1 if $global_options{allow_blank} and !exists $args->{allow_blank};
+
+    foreach my $opt(qw(if unless on)) {
+      next unless my $val = $global_options{$opt};
+      my @val = (ref($val)||'') eq 'ARRAY' ? @$val : ($val);
+      if(exists $args->{$opt}) {
+        my $current = $args->{$opt};
+        my @current = (ref($current)||'') eq 'ARRAY' ? @$current : ($current);
+        @val = (@current, @val);
+      }
+      $args->{$opt} = \@val;
+    }
+    
     push @validators, $class->_create_validator($validator_package,\@attributes, $args);
   }
   my $coderef = sub { $_->validate(@_) foreach @validators };
-  $class->validates_with($target, $meta, '+Valiant::Validator::With', cb=>$coderef, attributes=>\@attributes, %global_options);
+  $class->_validates_coderef($target, $meta, $coderef); 
 }
 
 sub validates_each {
@@ -143,17 +159,35 @@ sub _normalize_validator_package {
   return $package;
 }
 
-# TODO this needs to handle if unless on
+sub _strip_reserved_options {
+  my ($class, %options) = @_;
+  my %reserved = ();
+  foreach my $key (keys %options) {
+    if($class->_is_reserved_option_key($key)) {
+      $reserved{$key} = delete $options{$key};
+    }
+  }
+  return %reserved;
+}
+
+# TODO this needs to handle if unless on 
 sub validates_with {
   my ($class, $target, $meta, $validators_proto, %options) = @_;
+  my %reserved = $class->_strip_reserved_options(%options);
   my @with = ref($validators_proto) eq 'ARRAY' ? 
     @{$validators_proto} : ($validators_proto);
+  my @validators = ();
   foreach my $with (@with) {
     my $package = $class->_normalize_validator_package($target, $with);
-    my $validator = use_module($package)->new(%options);
-    my $validator_coderef = sub { $validator->validate(@_) };
-    $class->_validates_coderef($target, $meta, $validator_coderef, %options);  
+    my $validator = eval {
+      use_module($package);
+      $package->new(%options);
+    } || do { die $@ };
+    push @validators, $validator; 
   }
+  my $collection = use_module($class->default_collection_class)
+    ->new(validators=>\@validators, %reserved);
+  $class->_validates_coderef($target, $meta, sub { $collection->validate(@_) }); 
 }
 
 1;

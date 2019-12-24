@@ -19,7 +19,7 @@
         # length
         too_short => {
           one => 'is too short (minimum is 1 character)',
-          other => 'is too short (minimum is {{count}} characters',
+          other => 'is too short (minimum is {{count}} characters)',
         },
         too_long => {
           one => 'is too long (maximum is 1 character)',

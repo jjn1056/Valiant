@@ -60,7 +60,7 @@ sub validate_each {
 
 =head1 TITLE
 
-Valiant::Validator::Numericality - Validate numeric attributes
+Valiant::Validator::With - Validate using a coderef or method
 
 =head1 SYNOPSIS
 
