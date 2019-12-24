@@ -78,12 +78,14 @@ Valiant::Validator::Collection - A validator that contains and runs other valida
 
 =head1 SYNOPSIS
 
-    TBD
-
+    NA
 
 =head1 DESCRIPTION
 
-    TBD
+This is used internally by L<Valiant> and I can't imagine a good use for it elsewhere
+so the documentation here is light.  There's no reason to NOT use it if for some
+reason a good use comes to mind (I don't plan to change this so you can consider it
+public API but just perhaps tricky bits for very advanced use cases).
 
 =head1 ATTRIBUTES
 
