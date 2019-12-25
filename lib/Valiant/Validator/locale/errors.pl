@@ -29,6 +29,17 @@
           one => "is the wrong length (should be 1 character)",
           other => "is the wrong length (should be {{count}} characters)",
         },
+        # presence
+        is_blank => "can't be blank",
+        # absence
+        is_present => 'must be blank',
+        # inclusion
+        inclusion => 'is not in the list',
+        # exclusion
+        exclusion => 'is reserved',
+        # format
+        invalid_format_match => 'does not match the required pattern',
+        invalid_format_without => 'contains invalid characters',
       },
     }
   },

@@ -60,5 +60,3 @@ is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   };
 
 done_testing;
-
-warn $object->errors->_dump;

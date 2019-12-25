@@ -34,7 +34,7 @@ sub validate {
   ATTRIBUTE_LOOP: foreach my $attribute (@{ $self->attributes }) {
     my $value = $object->read_attribute_for_validation($attribute);
     next if $self->allow_undef && not(defined $value);
-    next if $self->allow_blank && ($value eq '' || $value =~m/^\s+$/);
+    next if $self->allow_blank && ( not(defined $value) || $value eq '' || $value =~m/^\s+$/ );
 
     if($self->has_if) {
       my @if = (ref($self->if)||'') eq 'ARRAY' ? @{$self->if} : ($self->if);

@@ -152,8 +152,6 @@ use Test::Most;
       ]
     };  
     
-  warn $object->errors->_dump;
-
 }
 
 done_testing;

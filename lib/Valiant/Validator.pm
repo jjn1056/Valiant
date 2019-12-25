@@ -46,8 +46,6 @@ using a custom validator with a validatable object:
       }
     }
 
-    1;
-
     package Local::Test::Box;
 
     use Moo;
@@ -59,9 +57,9 @@ using a custom validator with a validatable object:
 
     validates_with 'Box', max_size=>25;
     validates_with 'Box', max_size=>50, on=>'big', message=>'Big for Big!!';
-    validates_with 'Box', max_size=>30, on=>'big', if=>'is_odd_shape';
+    validates_with 'Box', max_size=>30, on=>'big', if=>'is_very_tall';
 
-    sub is_odd_shape {
+    sub is_very_tall {
       my ($self) = @_;
       return $self->height > 30 ? 1:0;
     }
