@@ -40,6 +40,8 @@
         # format
         invalid_format_match => 'does not match the required pattern',
         invalid_format_without => 'contains invalid characters',
+        # confirmation
+        confirmation => "doesn't match '{{attribute}}'",
       },
     }
   },
