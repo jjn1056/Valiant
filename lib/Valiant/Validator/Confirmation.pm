@@ -55,7 +55,7 @@ Valiant::Validator::Confirmation - Checks for a 'confirming' attributes equality
 
     $VAR1 = {
       'email_confirmation' => [
-        "Email confirmation doesn't match 'email'",
+        "Email confirmation doesn't match 'Email'",
       ]
     };
 
