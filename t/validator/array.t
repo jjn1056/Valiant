@@ -26,6 +26,23 @@ ok my $object = Local::Test::Array->new(
 
 ok !$object->validate; # Returns false
 
+# for now...
+is_deeply +{ $object->errors->to_hash(full_messages=>1) },
+  {
+          'status.1' => [
+                          'Status.1 is not in the list'
+                        ],
+          'status.5' => [
+                          'Status.5 is not in the list'
+                        ],
+          'status.4' => [
+                          'Status.4 is not in the list'
+                        ],
+          'status.6' => [
+                          'Status.6 is not in the list'
+                        ] 
+    };
+
 warn $object->errors->_dump;
 
 
@@ -33,14 +50,5 @@ done_testing;
 
 __END__
 
-is_deeply +{ $object->errors->to_hash(full_messages=>1) },
-  {
-    'status' => [
-                  'Status is not in the list'
-                ],
-    'type' => [
-                'Type is not in the list'
-              ]
-  };
 
 
