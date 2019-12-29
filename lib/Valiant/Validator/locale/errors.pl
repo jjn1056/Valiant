@@ -42,6 +42,11 @@
         invalid_format_without => 'contains invalid characters',
         # confirmation
         confirmation => "doesn't match '{{attribute}}'",
+        #only_of
+        only_of => {
+          one => 'please choose only {{count}} field',
+          other => 'please choose only {{count}} fields'
+        },
       },
     }
   },

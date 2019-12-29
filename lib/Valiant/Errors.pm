@@ -179,7 +179,7 @@ sub add {
 
 # TODO I think this should allow an instance of ::Error instead of just a message
 # and possible an index....?
-# 
+#
 sub added {
   my ($self, $attribute) = (shift, shift);
   my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();

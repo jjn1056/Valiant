@@ -15,7 +15,7 @@ our $meta;
 
 sub BUILD {
   my ($self, $args) = @_;
-  $meta = Valiant::Meta->new(target=>ref($self));
+  $meta = Valiant::Meta->new(target=>ref($self)); # TODO this might need to be ref $record so it finds custom validators properly
   $meta->validates($self->attributes, @{$self->validates});
 }
 
@@ -29,12 +29,16 @@ sub validate_each {
     my $result = Valiant::Result->new(data=>+{$attribute=>$values[$i]});
     unless($meta->validate($result)) {
       #Dwarn $result->errors->to_hash(full_messages=>1);
-      foreach my $err (@{$result->errors->details->{$attribute}}) {
-        my $message = delete $err->{error};
-        $record->errors->add("${attribute}.$i", $message, +{%opts, %$err});
-
-
+      my @messages = ();
+      foreach my $err ($result->errors->full_messages_for($attribute)) {
+        # TODO maybe gather all the rrors into an index first... and then
+        # add the entire error object
+        use Devel::Dwarn;
+        Dwarn [$i, $err];
+        $messages[$i] = $err;
       }
+      Dwarn \@messages;
+      $record->errors->add("${attribute}", \@messages, +{%opts});
 
     }
   }
