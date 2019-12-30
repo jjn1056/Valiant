@@ -20,13 +20,14 @@ use Test::Needs 'Types::Standard';
   );
 
   validates voting_age => (
-    allow_undef => 1,
     check => Int->where('$_ >= 18'),
+    allow_undef => 1,
   );
 
   validates drinking_age => (
-    Int->where('$_ >= 21'),
-    allow_undef => 1,
+    Int->where('$_ >= 21'), +{
+      allow_undef => 1,
+    },
     message => 'is too young to drink!',
   );
 

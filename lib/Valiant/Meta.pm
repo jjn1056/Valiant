@@ -85,9 +85,17 @@ sub validates {
     if(blessed($key) && $key->can('check')) { # This bit allows for Type::Tiny instead of a validator => \%params setup
       $args = { constraint => $key };
       $key = 'check';
+      if((ref($options[0])||'') eq 'HASH') {
+        my $base_args = shift(@options);
+        $args = +{ %$args, %$base_args };
+      }
     } elsif((ref($key)||'') eq 'CODE') { # This bit allows for callbacks instead of a validator => \%params setup
       $args = { cb => $key };
       $key = 'with';
+      if((ref($options[0])||'') eq 'HASH') {
+        my $base_args = shift(@options);
+        $args = +{ %$args, %$base_args };
+      }
     } else { # Otherwise its a normal validator with params
       $args = shift(@options);
     }
