@@ -8,13 +8,10 @@ with 'Valiant::Validator::Each';
 has in => (is=>'ro', required=>1);
 has inclusion => (is=>'ro', required=>1, default=>sub {_t 'inclusion'});
 
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-  if(@args == 2 && ref($args[1]) eq 'ARRAY') {
-    return +{ in => $args[0], attributes => $args[1] }
-  }
-  return $class->$orig(@args);
-};
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  return +{ in=>$arg };
+}
 
 sub validate_each {
   my ($self, $record, $attribute, $value) = @_;

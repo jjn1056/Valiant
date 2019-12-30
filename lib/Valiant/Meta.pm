@@ -4,6 +4,7 @@ use Moo;
 use Data::Perl qw/array/;
 use String::CamelCase 'camelize';
 use Module::Runtime 'use_module';
+use Scalar::Util 'blessed';
 
 sub default_validator_namepart { 'Validator' }
 sub default_collection_class { 'Valiant::Validator::Collection' }
@@ -57,11 +58,8 @@ sub _validator_package {
 }
 
 sub _create_validator {
-  my ($self, $validator_package, $attributes, $args) = @_;
-  my @args = (ref($args)||'') eq 'HASH' ?
-    (attributes=>$attributes, %$args) :
-    ($args, $attributes);
-  return $validator_package->new(@args);
+  my ($self, $validator_package, $args) = @_;
+  return $validator_package->new($args);
 }
 
 sub validates {
@@ -82,22 +80,39 @@ sub validates {
   # We want to preserve the order of validators while stripping out global_options
   my (@validator_info, %global_options) = ();
   while(@options) {
-    my ($key, $args) = (shift @options, shift @options);
+    my $args;
+    my $key = shift(@options);
+    if(blessed($key) && $key->can('check')) { # This bit allows for Type::Tiny instead of a validator => \%params setup
+      $args = { constraint => $key };
+      $key = 'check';
+    } elsif((ref($key)||'') eq 'CODE') { # This bit allows for callbacks instead of a validator => \%params setup
+      $args = { cb => $key };
+      $key = 'with';
+    } else { # Otherwise its a normal validator with params
+      $args = shift(@options);
+    }
+
     if($self->_is_reserved_option_key($key)) {
       $global_options{$key} = $args;
     } else {
       push @validator_info, [$key, $args];
     }
   }
+
   my @validators = ();
   foreach my $info(@validator_info) {
     my ($package_part, $args) = @$info;
     my $validator_package = $self->_validator_package($package_part);
 
+    unless((ref($args)||'') eq 'HASH') {
+      $args = $validator_package->normalize_shortcut($args);
+    }
+
     # merge global options into args
     $args->{strict} = 1 if $global_options{strict} and !exists $args->{strict};
     $args->{allow_undef} = 1 if $global_options{allow_undef} and !exists $args->{allow_undef};
     $args->{allow_blank} = 1 if $global_options{allow_blank} and !exists $args->{allow_blank};
+    $args->{message} = $global_options{message} if exists $global_options{message} and !exists $args->{message};
 
     foreach my $opt(qw(if unless on)) {
       next unless my $val = $global_options{$opt};
@@ -110,7 +125,9 @@ sub validates {
       $args->{$opt} = \@val;
     }
     
-    push @validators, $self->_create_validator($validator_package,\@attributes, $args);
+    $args->{attributes} = \@attributes;
+
+    push @validators, $self->_create_validator($validator_package, $args);
   }
   my $coderef = sub { $_->validate(@_) foreach @validators };
   $self->_validates_coderef($coderef, %global_options); 

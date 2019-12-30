@@ -8,30 +8,26 @@ has cb => (is=>'ro', predicate=>'has_cb');
 has method => (is=>'ro', predicate=>'has_method');
 has message_if_false => (is=>'ro', predicate=>'has_message_if_false');
 
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-  
-  if(@args == 2 && (ref($args[0])||'') eq 'ARRAY') {
-    if((ref($args[0]->[0])||'') eq 'CODE') {
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  if ((ref($arg)||'') eq 'ARRAY') {
+    if((ref($arg->[0])||'') eq 'CODE') {
       return +{
-        cb => $args[0]->[0],
-        message_if_false => $args[0]->[1],
-        attributes => $args[1],
+        cb => $arg->[0],
+        message_if_false => $arg->[1],
       };
     } else {
       return +{
-        method => $args[0]->[0],
-        message_if_false => $args[0]->[1],
-        attributes => $args[1],
+        method => $arg->[0],
+        message_if_false => $arg->[1],
       };
     }
   }
 
-  return +{ cb => $args[0], attributes => $args[1] } if (ref($args[0])||'') eq 'CODE';
-  return +{ method => $args[0], attributes => $args[1] } if (@args == 2) && (ref($args[1])||'') eq 'ARRAY';
+  return +{ cb => $arg  } if (ref($arg)||'') eq 'CODE';
+  return +{ method => $arg }; # Its a scalar
+}
 
-  return $class->$orig(@args);
-};
 
 sub BUILD {
   my ($self, $args) = @_;

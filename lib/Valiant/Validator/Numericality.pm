@@ -45,22 +45,13 @@ foreach my $attr (keys %INIT) {
 
 has only_integer => (is=>'ro', required=>1, default=>0);
 
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-
-  if((@args) == 2) {
-    my %args = (attributes => pop @args);
-
-    # numericality => [1,100],
-    if(ref($args[0]) eq 'ARRAY') {
-      $args{greater_than_or_equal_to} =  $args[0]->[0];
-      $args{less_than_or_equal_to} =  $args[0]->[1];
-    }
-    return $class->$orig(%args)
-  }
-
-  return $class->$orig(@args);
-};
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  return +{
+    greater_than_or_equal_to => $arg->[0],
+    less_than_or_equal_to => $arg->[1],
+  };
+}
 
 sub validate_each {
   my ($self, $record, $attr, $value) = @_;

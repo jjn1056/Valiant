@@ -9,13 +9,10 @@ has members => (is=>'ro', required=>1);
 has max_allowed => (is=>'ro', required=>1, default=>1);
 has only_of => (is=>'ro', required=>1, default=>sub {_t 'only_of'});
 
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-  if(@args == 2 && ref($args[1]) eq 'ARRAY') {
-    return +{  members => $args[0], attributes => $args[1] }
-  }
-  return $class->$orig(@args);
-};
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  return {members => $arg};
+}
 
 sub validate_each {
   my ($self, $record, $attribute, $value) = @_;

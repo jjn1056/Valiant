@@ -7,13 +7,10 @@ with 'Valiant::Validator::Each';
 
 has is_blank => (is=>'ro', required=>1, default=>sub {_t 'is_blank'});
 
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-  if(@args == 2 && ref($args[1]) eq 'ARRAY') {
-    return +{  attributes => $args[1] }
-  }
-  return $class->$orig(@args);
-};
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  return +{} if $arg eq '1' ;
+}
 
 sub validate_each {
   my ($self, $record, $attribute, $value) = @_;

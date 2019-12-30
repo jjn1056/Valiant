@@ -47,6 +47,8 @@
           one => 'please choose only {{count}} field',
           other => 'please choose only {{count}} fields'
         },
+        #check
+        check => 'is invalid',
       },
     }
   },

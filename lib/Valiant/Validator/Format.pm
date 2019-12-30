@@ -18,13 +18,10 @@ sub BUILD {
   $self->_requires_one_of($args, 'match', 'without');
 }
 
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-  if(@args == 2 && ref($args[1]) eq 'ARRAY') {
-    return +{ with => $args[0], attributes => $args[1] }
-  }
-  return $class->$orig(@args);
-};
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  return +{ match => $arg };
+}
 
 sub validate_each {
   my ($self, $record, $attribute, $value) = @_;
