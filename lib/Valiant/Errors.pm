@@ -6,6 +6,8 @@ use Module::Runtime;
 use Data::Dumper ();
 use Carp;
 
+## TODO need overloading on boolean cast to check errors size
+
 has 'object' => (
   is => 'ro',
   required => 1,

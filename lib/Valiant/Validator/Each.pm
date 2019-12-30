@@ -98,7 +98,6 @@ sub _requires_one_of {
 
 sub _cb_value {
   my ($self, $object, $value) = @_;
-  die "Missing value parameter" unless $value; #seems common error to leave it out
   if((ref($value)||'') eq 'CODE') {
     return $value->($object) || die "no value";
   } else {

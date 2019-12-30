@@ -49,6 +49,9 @@
         },
         #check
         check => 'is invalid',
+        #boolean
+        is_not_true => 'must be a true value',
+        is_not_false => 'must be a false value',
       },
     }
   },

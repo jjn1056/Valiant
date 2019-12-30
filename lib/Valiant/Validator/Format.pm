@@ -3,7 +3,9 @@ package Valiant::Validator::Format;
 use Moo;
 use Valiant::I18N;
 
-with 'Valiant::Validator::Each';
+with 'Valiant::Validator::Each';     
+
+# TODO allow for a number of predefined patterns like alphanum, etc  
 
 has match => (is=>'ro', predicate=>'has_match');
 has without => (is=>'ro', predicate=>'has_without');

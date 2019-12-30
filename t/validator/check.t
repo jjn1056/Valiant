@@ -30,7 +30,6 @@ use Test::Needs 'Types::Standard';
     },
     message => 'is too young to drink!',
   );
-
 }
 
 {

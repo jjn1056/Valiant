@@ -5,6 +5,8 @@ use Valiant::I18N;
 
 with 'Valiant::Validator::Each';
 
+# TODO add postive, negative /postive_or_zero, negative_or_zero
+
 # ($value_to_test, ?$constraint_value)
 our %CHECKS = (
   greater_than              => sub { $_[0] > $_[1] ? 1:0 },
