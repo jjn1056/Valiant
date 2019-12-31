@@ -1,12 +1,13 @@
 package Valiant::Errors;
 
 use Moo;
-use List::Util;
+use Scalar::Util 'blessed';
 use Module::Runtime;
 use Data::Dumper ();
 use Carp;
 
-## TODO need overloading on boolean cast to check errors size
+## TODO need overloading on boolean cast to check errors size. 
+# $errors->{user_name}->[0] for example needs to work
 
 has 'object' => (
   is => 'ro',
@@ -14,7 +15,7 @@ has 'object' => (
   weak_ref => 1,
 );
 
-has ['details', 'messages'] => (
+has ['details', 'messages', 'nested'] => (
   is => 'rwp',
   required => 1,
   default => sub { +{} }
@@ -116,11 +117,11 @@ sub to_hash {
   if($options{full_messages}) {
     map {
       my $key = $_;
-      $key => [
-        map {
+      my @values = map {
           $self->full_message($key, $_) 
-        } @{ $self->messages->{$key} }
-      ];
+        } @{ $self->messages->{$key} };
+      my $values = ref($values[0]) ? $values[0] : \@values; # handle nested errors
+      $key => $values;
     } CORE::keys %{ $self->messages ||+{} };
   } else {
     %{ $self->messages ||+{} };
@@ -158,6 +159,19 @@ sub add {
   my ($self, $attribute) = (shift, shift);
   my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();
   my $message = shift || $self->i18n->make_tag('invalid');
+
+  if(blessed($message) and $message->isa('Valiant::Errors')) {
+
+    my %messages = %{ $self->messages ||+{} };
+    push @{$messages{$attribute}}, $message->messages;
+    $self->_set_messages(\%messages);
+
+    my %details = %{ $self->details ||+{} };
+    push @{ $details{$attribute} }, $message->details;
+    $self->_set_details(\%details);
+
+    return;
+  }
 
   $message = delete $options{message} if $options{message};
   $message = $message->($self, $attribute, \%options) if (ref($message)||'') eq 'CODE';
@@ -204,6 +218,7 @@ sub full_messages {
 }
 *to_a = \&full_messages;
 
+# TODO need to figure out nested paths here...
 sub full_messages_for {
   my ($self, $attribute) = @_;
   return map {
@@ -211,9 +226,21 @@ sub full_messages_for {
   } @{ $self->messages->{$attribute} };
 }
 
-sub full_message {
+sub full_message { # should be 'format_message' :)
   my ($self, $attribute, $message) = @_;
   return $message if $attribute eq '_base';
+
+  if(ref $message) {
+    if(ref $message eq 'HASH') {
+      my %result = ();
+      foreach my $key (CORE::keys %$message) {
+        foreach my $m (@{ $message->{$key} }) {
+          push @{$result{$key}}, $self->full_message($key, $m); # TODO this probably doesn't localise the right model name
+        }
+      }
+      return \%result;
+    }
+  }
   
   my @defaults = ();
   if($self->object->can('i18n_scope')) {
@@ -225,14 +252,14 @@ sub full_message {
     if($namespace) {
       @defaults = map {
         my $class = $_;
-        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.attributes.${attribute_name}.format",
-        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.format";      
+        "${attributes_scope}.${\$class->i18n_key}/${namespace}.attributes.${attribute_name}.format",
+        "${attributes_scope}.${\$class->i18n_key}/${namespace}.format";      
       } $self->object->ancestors;
     } else {
       @defaults = map {
         my $class = $_;
-        "${attributes_scope}.${\$class->model_name->i18n_key}.attributes.${attribute_name}.format",
-        "${attributes_scope}.${\$class->model_name->i18n_key}.format";    
+        "${attributes_scope}.${\$class->i18n_key}.attributes.${attribute_name}.format",
+        "${attributes_scope}.${\$class->i18n_key}.format";    
       } $self->object->ancestors;
     }
   }
@@ -263,7 +290,7 @@ sub generate_message {
     undef;
 
   my %options = (
-    model => $self->object->model_name->human,
+    model => $self->object->human,
     attribute => $self->object->human_attribute_name($attribute, $options),
     value => $value,
     object => $self->object,
@@ -275,8 +302,8 @@ sub generate_message {
     my $i18n_scope = $self->object->i18n_scope;
     @defaults = map {
       my $class = $_;
-      "${i18n_scope}.errors.models.${\$class->model_name->i18n_key}.attributes.${attribute}.${type}",
-      "${i18n_scope}.errors.models.${\$class->model_name->i18n_key}.${type}";      
+      "${i18n_scope}.errors.models.${\$class->i18n_key}.attributes.${attribute}.${$type}",
+      "${i18n_scope}.errors.models.${\$class->i18n_key}.${$type}";      
     } $self->object->ancestors;
     push @defaults, "${i18n_scope}.errors.messages.${$type}";
   }
@@ -292,7 +319,6 @@ sub generate_message {
     @defaults = ref($message) ? @$message : ($message);
   }
   $options{default} = \@defaults;
-
 
   return my $translated = $self->i18n->translate($key, %options);
 }

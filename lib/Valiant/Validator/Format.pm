@@ -5,7 +5,8 @@ use Valiant::I18N;
 
 with 'Valiant::Validator::Each';     
 
-# TODO allow for a number of predefined patterns like alphanum, etc  
+# TODO allow for a number of predefined patterns like alphanum,fuzzy email,  etc 
+# see https://github.com/dandean/express-form for some examples
 
 has match => (is=>'ro', predicate=>'has_match');
 has without => (is=>'ro', predicate=>'has_without');

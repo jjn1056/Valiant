@@ -37,6 +37,12 @@ Valiant::Class - Create a validation ruleset dynamically
                       isa => 'MyApp::User', # or does => \@list_of_roles
                       namespace => ['Local::MyApp::Validators', 'Local::Shared::Validators'],
                       validates => [
+                        sub {
+                          my $user = shift;
+                          unless($user->is_active) {
+                            $user->errors->add(_base=>'Cannot change inactive user');
+                          }
+                        },
                         username => {
                           length => [2,20],
                           format => qr/^[a-zA-Z0-9_]*$/,
@@ -59,7 +65,7 @@ Valiant::Class - Create a validation ruleset dynamically
                       ],
                     );
 
-    if(my $errors = $validator->validate($user)) {
+    if(my $result = $validator->validate($user)) {
       # Do something with the errors...
     }
 

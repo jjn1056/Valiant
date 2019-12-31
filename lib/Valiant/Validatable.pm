@@ -1,7 +1,10 @@
 package Valiant::Validatable;
 
+# TODO Need to make this not polute the namespace so much :(
+
 use Moo::Role;
 use Module::Runtime;
+use String::CamelCase 'decamelize';
 
 sub error_class { 'Valiant::Errors' }
 
@@ -39,21 +42,60 @@ sub errors {
   }
 }
 
-sub naming_class { 'Valiant::Validatable::Naming' }
+sub i18n_key {
+  my ($self_or_class) = @_;
+  my $class = ref($self_or_class) ? ref($self_or_class) : $self_or_class;
+  $class =~s/::/\//g;
+  return decamelize $class; # TODO cache this on init
+}
 
-has 'model_name' => (
+has model_name => (
   is => 'ro',
   required => 1,
   lazy => 1,
   init_arg => undef,
-  builder => '_build_naming',
+  default => sub {
+    my $self = shift;
+    my ($last) = reverse split '::', ref $self;
+    return lc $last;
+  },
 );
 
-  sub _build_naming {
+has _human => (
+  is => 'ro',
+  required => 1,
+  lazy => 1,
+  init_arg => undef,
+  default =>  sub {
     my $self = shift;
-    my $naming_class = $self->naming_class;
-    return Module::Runtime::use_module($naming_class)->new(object=>$self);
-  }
+    my $name = $self->model_name;
+    $name =~s/_/ /g;
+    return my $_human = ucfirst $name;
+  },
+);
+
+sub human {
+  my ($self, %options) = @_;
+  return $self->_human unless $self->can('i18n_scope');
+
+  my @defaults = map {
+    $_->i18n_key;
+  } $self->ancestors if $self->can('ancestors');
+
+  push @defaults, delete $options{default} if exists $options{default};
+  push @defaults, $self->_human;
+
+  my $tag = shift @defaults;
+
+  %options = (
+    scope => [$self->i18n_scope, 'models'],
+    count => 1,
+    default => \@defaults,
+    %options,
+  );
+
+  $self->i18n->translate($tag, %options);
+}
 
 sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
@@ -79,13 +121,13 @@ sub human_attribute_name {
     if($namespace) {
         @defaults = map {
           my $class = $_;
-          "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.${attribute}"     
-        } $self->object->ancestors;
+          "${attributes_scope}.${\$class->i18n_key}/${namespace}.${attribute}"     
+        } $self->ancestors;
     } else {
         @defaults = map {
           my $class = $_;
-          "${attributes_scope}.${\$class->model_name->i18n_key}.${attribute}"    
-        } $self->object->ancestors;
+          "${attributes_scope}.${\$class->i18n_key}.${attribute}"    
+        } $self->ancestors;
     }
   }
 
