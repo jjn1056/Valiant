@@ -7,14 +7,6 @@ with 'Valiant::Validator::Each';
 
 has validates => (is=>'ro', required=>1);
 
-has isa => (is=>'ro', predicate=>'has_isa');
-has does => (is=>'ro', predicate=>'has_does');
-has check => (is=>'ro', predicate=>'has_check');
-
-has not_isa => (is=>'ro', required=>1, default=>sub {_t 'not_isa'});
-has not_does => (is=>'ro', required=>1, default=>sub {_t 'not_does'});
-has not_check => (is=>'ro', required=>1, default=>sub {_t 'not_check'});
-
 sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
   my %opts = (%{$self->options}, %{$options||{}});
@@ -36,43 +28,44 @@ Valiant::Validator::Object - Verify a related object
 
 =head1 SYNOPSIS
 
-    package Local::Test::Address;
+    package Local::Test::Address {
 
-    use Moo;
-    use Valiant::Validations;
+      use Moo;
+      use Valiant::Validations;
 
-    has street => (is=>'ro');
-    has city => (is=>'ro');
-    has country => (is=>'ro');
+      has street => (is=>'ro');
+      has city => (is=>'ro');
+      has country => (is=>'ro');
 
-    validates ['street', 'city'],
-      presence => 1,
-      length => [3, 40];
+      validates ['street', 'city'],
+        presence => 1,
+        length => [3, 40];
 
-    validates 'country',
-      presence => 1,
-      inclusion => [qw/usa uk canada japan/];
+      validates 'country',
+        presence => 1,
+        inclusion => [qw/usa uk canada japan/];
+    }
 
-    package Local::Test::Person;
+    package Local::Test::Person {
 
-    use Moo;
-    use Valiant::Validations;
+      use Moo;
+      use Valiant::Validations;
 
-    has name => (is=>'ro');
-    has address => (is=>'ro');
+      has name => (is=>'ro');
+      has address => (is=>'ro');
 
-    validates name => (
-      length => [2,30],
-      format => qr/[AZaz]+/,
-    );
+      validates name => (
+        length => [2,30],
+        format => qr/[A-Za-z]+/, #yes no unicode names for this test...
+      );
 
-    validates address => (
-      presence => 1,
-      object => {
-        isa => 'Local::Test::Person', # does, check
-        validates => 1,
-      }
-    )
+      validates address => (
+        presence => 1,
+        object => {
+          validates => 1,
+        }
+      )
+    }
 
     my $address = Local::Test::Address->new(
       city => 'NY',
@@ -89,9 +82,33 @@ Valiant::Validator::Object - Verify a related object
     warn $person->errors->_dump;
 
     $VAR1 = {
+      'name' => [
+        'Name does not match the required pattern'
+      ],
+      'address' => {
+         'country' => [
+                        'Country is not in the list'
+                      ],
+         'street' => [
+                       'Street can\'t be blank',
+                       'Street is too short (minimum is 3 characters)'
+                     ],
+         'city' => [
+                     'City is too short (minimum is 3 characters)'
+                   ]
+      }
     };
 
 =head1 DESCRIPTION
+
+Runs validations on an object which is assigned as an attribute and
+aggregates those errors (if any) onto the parent object.
+
+Useful when you need to validate an object graph or nested forms.
+
+If your nested object has a nested object it will follow all the way
+down the rabbit hole  Just don't make self referential nested objects;
+that's not tested and likely to end poorly.  Patches welcomed.
 
 =head1 ATTRIBUTES
 
@@ -101,24 +118,15 @@ This validator supports the following attributes:
 
 This validator supports the follow shortcut forms:
 
-    validates attribute => ( boolean => 1, ... );
+    validates attribute => ( object => 1, ... );
 
 Which is the same as:
 
-    validates boolean => (
-      state => 1,
+    validates attribute => (
+      object => {
+        validate => 1,
+      }
     );
-
-The negation of this also works
-
-    validates attribute => ( boolean => 0, ... );
-
-Which is the same as:
-
-    validates boolean => (
-      state => 0,
-    );
-
 
 =head1 GLOBAL PARAMETERS
 

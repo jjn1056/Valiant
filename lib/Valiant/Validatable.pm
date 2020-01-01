@@ -165,6 +165,6 @@ sub validate {
   return $self->errors->size ? 0 : 1; # return False if there's errors
 }
 
-## TODO valid, invalid, i18n_key, docs for i18n_scope
+## TODO valid, invalid, docs for i18n_scope
 
 1;

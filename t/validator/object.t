@@ -36,7 +36,6 @@ use Test::Most;
   validates address => (
     presence => 1,
     object => {
-      isa => 'Local::Test::Person', # does, check
       validates => 1,
     }
   )
@@ -65,7 +64,6 @@ use Test::Most;
 
   my $person = Local::Test::Person->new(
     name => '12234',
-    street => '1',
     address => $address,
   );
 

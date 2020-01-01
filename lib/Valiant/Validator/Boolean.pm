@@ -96,8 +96,10 @@ This validator supports the follow shortcut forms:
 
 Which is the same as:
 
-    validates boolean => (
-      state => 1,
+    validates attribute => (
+      boolean => {
+        state => 1,
+      }
     );
 
 The negation of this also works
@@ -106,10 +108,11 @@ The negation of this also works
 
 Which is the same as:
 
-    validates boolean => (
-      state => 0,
+    validates attribute => (
+      boolean => {
+        state => 0,
+      }
     );
-
 
 =head1 GLOBAL PARAMETERS
 
