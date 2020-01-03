@@ -47,12 +47,40 @@ foreach my $attr (keys %INIT) {
 
 has only_integer => (is=>'ro', required=>1, default=>0);
 
+around BUILDARGS => sub {
+  my ( $orig, $class, @args ) = @_;
+  my $args = $class->$orig(@args);
+  if(my $integer = $args->{only_integer}) {
+    return $args if $integer eq '1';
+    $args->{greater_than_or_equal_to} = 0 if $integer eq 'positive_integer';
+    $args->{less_than} = 0 if $integer eq 'negative_integer';
+  }
+  return $args;
+};
+
 sub normalize_shortcut {
   my ($class, $arg) = @_;
-  return +{
-    greater_than_or_equal_to => $arg->[0],
-    less_than_or_equal_to => $arg->[1],
-  };
+
+  # TODO document this and add a few more (int16, int32, etc)
+  if((ref($arg)||'') eq 'ARRAY') {
+    return +{
+      greater_than_or_equal_to => $arg->[0],
+      less_than_or_equal_to => $arg->[1],
+    };
+  } else {
+    if($arg eq 'only_integer') {
+      return +{
+        only_integer => 1,
+      }
+    } elsif(
+        ($arg eq 'positive_integer')
+        || ($arg eq 'negative_integer')
+      ) {
+      return +{
+        only_integer => $arg,
+      }
+    }
+  }
 }
 
 sub validate_each {

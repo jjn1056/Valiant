@@ -156,6 +156,9 @@ sub human_attribute_name {
   return my $localized = $self->i18n->translate($key, %{$options||+{}}, count=>1);
 }
 
+sub valid { shift->errors->size ? 0:1 }
+sub invalid { shift->errors->size ? 1:0 }
+
 sub validate {
   my ($self, %args) = @_;
   foreach my $validation ($self->validations) {
@@ -165,6 +168,10 @@ sub validate {
   return $self->errors->size ? 0 : 1; # return False if there's errors
 }
 
-## TODO valid, invalid, docs for i18n_scope
+
+
+## TODO docs for i18n_scope
+## TODO probably use BUILD to call validation right awwy (unless { validate=>0 } or something).
+## TODO if we run BUILD then we probably need to pull context from args as well (possible message and strict???)
 
 1;

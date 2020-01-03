@@ -1,24 +1,35 @@
 package Valiant::Class;
 
 use Moo;
+use Module::Runtime 'use_module';
 
 with 'Valiant::Validatable';
 
-has data => (is=>'ro', required=>1);
+has _validates => (
+  is=>'ro',
+  required=>1,
+  init_arg=>'validates');
 
-sub read_attribute_for_validation {
-  my ($self, $attribute) = @_;
-  if(ref($self->data) eq 'HASH') {
-    if(defined($self->data->{$attribute})) {
-      return $self->data->{$attribute};
-    } else {
-      die "There is no matching attribute '$attribute' in the data";
-    }
-  } else {
-    die "Don't know what to do with ${\$self->data}";
+has meta_class => (is=>'ro', required=>1, default=>'Valiant::Meta');
+
+has _meta => (
+  is=>'ro',
+  require=>1,
+  lazy=>1,
+  builder=>'_build_meta'.
+);
+
+  sub _build_meta {
+    my $self = shift;
+    my $meta = use_module($self->meta_class)->new(target=>ref($self)); ## TODO this isn't right...
   }
-}
 
+sub validates {
+  my $self = shift;
+  $self->_meta->validates(@_);
+
+  return $self;
+}
 
 1;
 
@@ -27,6 +38,10 @@ sub read_attribute_for_validation {
 Valiant::Class - Create a validation ruleset dynamically
 
 =head1 SYNOPSIS
+
+    $validator->validate(
+      Valiant::Result->new($user)
+    );
 
     package Local::MyApp;
 
