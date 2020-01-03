@@ -50,6 +50,10 @@ has only_integer => (is=>'ro', required=>1, default=>0);
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
   my $args = $class->$orig(@args);
+
+  # TODO Am thinking we shoud allow 'gt' for greater_than', 'gte' for 'greater_than_or_equal_to'
+  # and so on.
+
   if(my $integer = $args->{only_integer}) {
     return $args if $integer eq '1';
     $args->{greater_than_or_equal_to} = 0 if $integer eq 'positive_integer';
@@ -68,7 +72,7 @@ sub normalize_shortcut {
       less_than_or_equal_to => $arg->[1],
     };
   } else {
-    if($arg eq 'only_integer') {
+    if( ($arg eq 'only_integer') || ($arg eq 'integer') ) {
       return +{
         only_integer => 1,
       }
@@ -176,6 +180,12 @@ validator supports the following constraints:
 
 =over
 
+=item only_integer
+
+When set to a true value will require the value to be some sort of integer.  Generally
+you set this to '1', but you can also use 'positive_integer' to require 0 or greater
+and 'negative_integer' to require under zero. 
+
 =item greater_than
 
 Accepts numeric value or coderef.  Returns error message tag V<greater_than> if
@@ -236,6 +246,13 @@ Which is the same as:
 If you merely wish to test for overall numericality you can use:
 
     validates attribute => ( numericality => +{}, ... );
+
+You can require various integer types as well:
+
+    validates attribute => ( numericality => 'integer', ... );
+    validates attribute => ( numericality => 'positive_integer', ... );
+    validates attribute => ( numericality => 'negative_integer' ... );
+
  
 =head1 GLOBAL PARAMETERS
 

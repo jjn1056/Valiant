@@ -3,32 +3,56 @@ package Valiant::Class;
 use Moo;
 use Module::Runtime 'use_module';
 
-with 'Valiant::Validatable';
-
-has _validates => (
+has for => (is=>'ro', required=>1);
+has result_class => (is=>'ro', required=>1, default=>'Valiant::Result::Object');
+has meta_class => (is=>'ro', required=>1, default=>'Valiant::Meta');
+has validations => (
   is=>'ro',
   required=>1,
-  init_arg=>'validates');
-
-has meta_class => (is=>'ro', required=>1, default=>'Valiant::Meta');
+  default=>sub { [] }); # Allow for using ->validates  
 
 has _meta => (
   is=>'ro',
   require=>1,
   lazy=>1,
-  builder=>'_build_meta'.
+  builder=>'_build_meta'
 );
 
   sub _build_meta {
     my $self = shift;
-    my $meta = use_module($self->meta_class)->new(target=>ref($self)); ## TODO this isn't right...
+    my $meta = use_module($self->meta_class)
+      ->new(target=>ref($self->for));
   }
 
-sub validates {
+sub BUILD {
   my $self = shift;
-  $self->_meta->validates(@_);
+  foreach my $rules(@{ $self->validations }) {
+    ## TODO this coould be more sophisticated to allow
+    ## less refs insides of refs (not sure if thats a good
+    ## or not.
+    $self->_meta->validates(@$rules);
+  }
+}
 
+sub validates {
+  my ($self, @rules) = @_;
+  $self->_meta->validates(@rules);
   return $self;
+}
+
+sub validates_with {
+  my ($self, @rules) = @_;
+  $self->_meta->validates_with(@rules);
+  return $self;
+}
+
+sub validate {
+  my ($self, $target, @validate_options) = @_;
+  my $result = use_module($self->result_class)
+    ->new(data=>$target, meta=>$self->_meta);
+
+  $result->validate(@validate_options);
+  return $result;
 }
 
 1;
@@ -39,54 +63,61 @@ Valiant::Class - Create a validation ruleset dynamically
 
 =head1 SYNOPSIS
 
-    $validator->validate(
-      Valiant::Result->new($user)
+    my $validator = Valiant::Class->new(
+      for => 'Local::User',
+      validations => [
+        [ sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } } ],
+        [ name => length => [2,15], format => qr/[a-zA-Z ]+/ ],
+        [ age => numericality => 'positive_integer' ],
+      ]
     );
 
-    package Local::MyApp;
+You can also call an API to add validation rules
 
-    use Valiant::Class;
-    use Types::Standard 'Int';
+    $validator
+      ->validates(name => length => [2,15], format => qr/[a-zA-Z ]+/)
+      ->validates(age => numericality => 'positive_integer')
+      ->validates_with('UserValidator'); # Calls Local::Test::User::UserValidator
 
-    my $validator = Valiant::Class->new(
-                      isa => 'MyApp::User', # or does => \@list_of_roles
-                      namespace => ['Local::MyApp::Validators', 'Local::Shared::Validators'],
-                      validates => [
-                        sub {
-                          my $user = shift;
-                          unless($user->is_active) {
-                            $user->errors->add(_base=>'Cannot change inactive user');
-                          }
-                        },
-                        username => {
-                          length => [2,20],
-                          format => qr/^[a-zA-Z0-9_]*$/,
-                          presense => 1,
-                        },
-                        password => [
-                          presence => 1,
-                          length => [8,24],
-                          confirmation => 1,
-                          with => {
-                            method => 'password_not_in_history',
-                            message_if_false => 'Cannot reuse an old password',
-                          },
-                        ],
-                        age => [
-                          Int->where('$_ >= 18'), +{
-                            message => 'You must be 18 years old to register',
-                          },
-                        ],
-                      ],
-                    );
+Then runs validation on it with an instance of a concrete class
+that has no validation rules of its own:
 
-    if(my $result = $validator->validate($user)) {
-      # Do something with the errors...
+    package Local::Test::User {
+
+      use Moo;
+
+      has ['name', 'age', 'is_active'],
+        is=>'ro',
+        required=>1;
     }
+
+    # A user with several validation issues
+    my $user = Local::Test::User->new(
+      name=>'01', 
+      age=>-15,
+      is_active=>0);
+
+    my $result = $validator->validate($user);
+
+    $result->invalid; # TRUE
+
+    warn $result->errors->_dump;
+
+    $VAR = {
+      '_base' => [
+                   'Cannot change inactive user'
+                 ],
+      'age' => [
+                 'Age must be greater than or equal to '
+               ],
+      'name' => [
+                  'Name does not match the required pattern'
+                ] 
+    };
 
 =head1 DESCRIPTION
 
-Create a validation object for a given class or role.  Useful when you need (or prefer)
+Create a validation runner for a given class or role.  Useful when you need (or prefer)
 to build up a validation ruleset in code rather than via the annotations-like approach
 given in L<Valiant::Validations>.  Can also be useful to add validations to a class that
 isn't Moo/se and can't use  L<Valiant::Validations> or is outside your control (such as
@@ -103,13 +134,43 @@ not ideal for 'fire and forget' scripts like cron jobs or CGI.
 
 This object has the followed attributes
 
-=head1 validators
+=head2 for
 
-=head1 isa
+The class this validator is for.  Used to load locale files and to look for custom
+validation objects.  Should something that ISA or DOES of the class that you are going
+to run validations on (this currently isnt enforced but please to rely on that).
 
-=head2 does
+=head2 result_class
 
-=head2 namespace
+Defaults to L<Valiant::Result::Object>.  Needs to be something that does L<Valiant::Result>.
+Write your own if you have an object with unusual attribute accessors.
+
+=head2 meta_class
+
+Defaults to L<Valiant::Meta>.  Should be something that is a subclass of that.  You
+probably won't overrride this unless you are doing extremely odd stuff.
+
+=head2 validations
+
+Should be an arrayref of validation rules, where each rule is an arrayref containing
+the rules (where the rules are anything you'd pass to C<validates> in L<Valiant::Validations>
+
+=head1 METHODS
+
+This class does the following methods
+
+=head2 validate
+
+Given an instance of the object to be validated, return a result objects that wraps it
+and provides any validation errors.
+
+=head2 validates
+
+Adds validation rules.
+
+=head2 validates_with
+
+Adds a validation object.
 
 =head1 SEE ALSO
  

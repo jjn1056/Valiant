@@ -16,6 +16,13 @@ has strict => (is=>'ro', required=>1, default=>0);
 has opts => (is=>'ro', required=>1, default=>sub { +{} });
 has attributes => (is=>'ro', required=>1);
 
+# TODO maybe have a 'where' attribute which allows a callback so you can
+# stick callback / coderefs all over without needed to invoke the 'with'
+# validator.
+#
+# TODO do we need some sort of loop control, like 'stop_on_first_error' or
+# something?  Is possible that notion belongs in Valiant::Validatable
+
 sub options { 
   my $self = shift;
   my %opts = (

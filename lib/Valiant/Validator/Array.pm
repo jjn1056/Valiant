@@ -2,8 +2,7 @@ package Valiant::Validator::Array;
 
 use Moo;
 use Valiant::I18N;
-use Valiant::Result;
-use Valiant::Meta;
+use Valiant::Class;
 
 with 'Valiant::Validator::Each';
 
