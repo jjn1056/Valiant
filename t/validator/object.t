@@ -5,7 +5,6 @@ use Test::Most;
 
   use Moo;
   use Valiant::Validations;
-  use Valiant::I18N;
 
   has street => (is=>'ro');
   has city => (is=>'ro');
@@ -19,14 +18,21 @@ use Test::Most;
     presence => 1,
     inclusion => [qw/usa uk canada japan/];
 
+  package Local::Test::Car;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has ['make', 'model', 'year'] => (is=>'ro');
+
   package Local::Test::Person;
 
   use Moo;
   use Valiant::Validations;
-  use Valiant::I18N;
 
   has name => (is=>'ro');
   has address => (is=>'ro');
+  has car => (is=>'ro');
 
   validates name => (
     length => [2,30],
@@ -36,9 +42,21 @@ use Test::Most;
   validates address => (
     presence => 1,
     object => {
-      validates => 1,
+      validations => 1,
     }
-  )
+  );
+
+  validates car => (
+    object => {
+      for => 'Local::Test::Car',
+      validations => [
+        [ make => inclusion => [qw/Toyota Tesla Ford/] ],
+        [ model => length => [2, 20] ],
+        [ year => numericality => { greater_than_or_equal_to => 1960 } ],
+      ],
+      allow_blank => 1,
+    },
+  );
 }
 
 {
@@ -85,6 +103,57 @@ use Test::Most;
                      'City is too short (minimum is 3 characters)'
                    ]
       }
+    };
+}
+
+{
+  my $address = Local::Test::Address->new(
+    city => 'NY',
+    country => 'Russia'
+  );
+
+  my $car = Local::Test::Car->new(
+    make => 'Chevy',
+    model => '1',
+    year => 1900
+  );
+
+  my $person = Local::Test::Person->new(
+    name => '12234',
+    address => $address,
+    car => $car,
+  );
+
+
+  ok !$person->validate;
+  is_deeply +{ $person->errors->to_hash(full_messages=>1) },
+    {
+      'car' => {
+           'model' => [
+                        'Model is too short (minimum is 2 characters)'
+                      ],
+           'year' => [
+                       'Year must be greater than or equal to 1960'
+                     ],
+           'make' => [
+                       'Make is not in the list'
+                     ]
+               },
+      'address' => {
+               'street' => [
+                             'Street can\'t be blank',
+                             'Street is too short (minimum is 3 characters)'
+                           ],
+               'city' => [
+                           'City is too short (minimum is 3 characters)'
+                         ],
+               'country' => [
+                              'Country is not in the list'
+                            ]
+                   },
+      'name' => [
+                  'Name does not match the required pattern'
+                ]
     };
 }
 
