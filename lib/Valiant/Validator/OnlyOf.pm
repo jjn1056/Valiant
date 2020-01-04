@@ -108,19 +108,16 @@ Which is the same as:
 This validator supports all the standard shared parameters: C<if>, C<unless>,
 C<message>, C<strict>, C<allow_undef>, C<allow_blank>.
 
-=head1 AUTHOR
- 
-John Napiorkowski L<email:jjnapiork@cpan.org>
-  
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
+
+=head1 AUTHOR
+ 
+See L<Valiant>  
     
 =head1 COPYRIGHT & LICENSE
  
-Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
- 
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
+See L<Valiant>
 
 =cut

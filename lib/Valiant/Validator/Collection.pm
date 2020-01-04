@@ -127,19 +127,16 @@ Used to properly construct a options hashref that you should pass to any
 calls to add an error.  You need this for passing special values to the translation
 method or for setting overrides such as C<strict> or C<message>.
 
-=head1 AUTHOR
- 
-John Napiorkowski L<email:jjnapiork@cpan.org>
-  
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
+
+=head1 AUTHOR
+ 
+See L<Valiant>  
     
 =head1 COPYRIGHT & LICENSE
  
-Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
- 
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
+See L<Valiant>
 
 =cut

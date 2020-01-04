@@ -209,19 +209,16 @@ Given a list of arguments will return true if at least once of them appears.
 Useful for when you are writing a validator with several optional approachs
 to validation and you want to make sure the user chose at least one of them.
 
-=head1 AUTHOR
- 
-John Napiorkowski L<email:jjnapiork@cpan.org>
-  
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
+
+=head1 AUTHOR
+ 
+See L<Valiant>  
     
 =head1 COPYRIGHT & LICENSE
  
-Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
- 
-This library is free software; you can redistribute it and/or modify it under
-the same terms as Perl itself.
+See L<Valiant>
 
 =cut
