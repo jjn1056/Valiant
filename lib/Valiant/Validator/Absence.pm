@@ -42,7 +42,7 @@ Valiant::Validator::Absence - Verify that a value is missing
     validates name => ( absence => 1 );
 
     my $object = Local::Test::Absence->new();
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

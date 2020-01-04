@@ -47,7 +47,7 @@ use Test::Most;
 
 ok my $dt = DateTime->new(year=>2364, month=>4, day=>30); # ST:TNG Encounter At Farpoint ;)
 ok my $object = Local::Test::With->new(date_of_birth=>$dt);
-ok !$object->validate; #
+ok $object->validate->invalid;
 is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   {
     'date_of_birth' => [

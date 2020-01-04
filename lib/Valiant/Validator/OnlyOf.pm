@@ -65,7 +65,7 @@ Valiant::Validator::OnlyOf - Limit the number of fields not blank in a group
     );
 
     my $object = Local::Test::OnlyOf->new();
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

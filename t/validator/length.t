@@ -22,7 +22,7 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Length->new(name=>'Li');
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'name' => [

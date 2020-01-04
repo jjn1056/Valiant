@@ -8,6 +8,8 @@ use String::CamelCase 'decamelize';
 
 sub error_class { 'Valiant::Errors' }
 
+has 'validated' => (is=>'rw', required=>1, init_args=>undef, default=>0);
+
 has '_errors' => (
   is => 'ro',
   required => 1,
@@ -97,6 +99,8 @@ sub human {
   $self->i18n->translate($tag, %options);
 }
 
+# sub BUILD { shift->validate }  ## TODO Not sure if we want this or not
+
 sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
   return my $value = $self->$attribute
@@ -156,16 +160,33 @@ sub human_attribute_name {
   return my $localized = $self->i18n->translate($key, %{$options||+{}}, count=>1);
 }
 
-sub valid { shift->errors->size ? 0:1 }
-sub invalid { shift->errors->size ? 1:0 }
+# Returns the current validation state if validations have been run
+# and no args are passed.  If args are passed then clear state and
+# re run validations with new args
+
+sub valid {
+  my $self = shift;
+  $self->validate(@_) if @_ || !$self->validated;
+  return $self->errors->size ? 0:1;
+}
+
+sub invalid { shift->valid(@_) ? 0:1 }
+
+sub clear_validated {
+  my $self = shift;
+  $self->errors->clear;
+  $self->validated(0);
+}
 
 sub validate {
   my ($self, %args) = @_;
+  $self->clear_validated if $self->validated;
   foreach my $validation ($self->validations) {
     my %validation_args = (%{$validation->[1]}, %args);
     $validation->[0]($self, \%validation_args);
   }
-  return $self->errors->size ? 0 : 1; # return False if there's errors
+  $self->validated(1);
+  return $self;
 }
 
 

@@ -18,7 +18,7 @@ use Test::Most;
     email_confirmation => 'AAA@example.com'
   );
 
-  ok $object->validate;
+  ok $object->validate->valid;
   is $object->errors->size, 0;
 }
 
@@ -28,7 +28,7 @@ use Test::Most;
     email_confirmation => 'ZZZ@example.com'
   );
 
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is $object->errors->size, 1;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {

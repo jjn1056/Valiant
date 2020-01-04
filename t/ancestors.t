@@ -7,7 +7,7 @@ ok my $retiree = Retiree->new(
   age=>4,
   retirement_date=>'2020');
 
-ok !$retiree->validate;
+ok $retiree->invalid;
 is_deeply +{ $retiree->errors->to_hash(full_messages=>1) },
   {
     _base => [

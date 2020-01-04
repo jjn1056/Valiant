@@ -34,12 +34,12 @@ use Test::Needs 'Types::Standard';
 
 {
   ok my $object = Local::Test::Check->new(drinking_age=>80);
-  ok $object->validate;
+  ok $object->validate->valid;
 }
 
 {
   ok my $object = Local::Test::Check->new(drinking_age=>18);
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'drinking_age' => [
@@ -50,12 +50,12 @@ use Test::Needs 'Types::Standard';
 
 {
   ok my $object = Local::Test::Check->new(retiree_age=>80);
-  ok $object->validate;
+  ok $object->validate->valid;
 }
 
 {
   ok my $object = Local::Test::Check->new(retiree_age=>40);
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'retiree_age' => [
@@ -66,12 +66,12 @@ use Test::Needs 'Types::Standard';
 
 {
   ok my $object = Local::Test::Check->new(voting_age=>80);
-  ok $object->validate;
+  ok $object->validate->valid;
 }
 
 {
   ok my $object = Local::Test::Check->new(voting_age=>10);
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'voting_age' => [

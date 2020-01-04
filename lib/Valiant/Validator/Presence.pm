@@ -42,7 +42,7 @@ Valiant::Validator::Presence - Verify that a value is present
     validates name => ( presence => 1 );
 
     my $object = Local::Test::Presence->new();
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

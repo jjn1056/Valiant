@@ -53,7 +53,7 @@ Valiant::Validator::Boolean - Verify that a value is either true or false
     );
 
     my $object = Local::Test::Boolean->new(active=>0);
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

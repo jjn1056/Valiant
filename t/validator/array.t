@@ -24,7 +24,7 @@ ok my $object = Local::Test::Array->new(
   status => [qw/active running retired retired aaa bbb ccc active/],
 );
 
-ok !$object->validate; # Returns false
+ok $object->validate->invalid; 
 
 # for now...
 is_deeply +{ $object->errors->to_hash(full_messages=>1) },

@@ -69,7 +69,7 @@ Valiant::Validator::Exclusion - Value cannot be in a list
       country => 'usa',
     );
 
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

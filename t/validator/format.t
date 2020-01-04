@@ -28,7 +28,7 @@ use Test::Most;
     phone => '212-387-1212',
     name => 'john',
   );
-  ok $object->validate;
+  ok $object->validate->valid;
 }
 
 {
@@ -37,7 +37,7 @@ use Test::Most;
     name => 'jjn1056',
   );
 
-  ok !$object->validate; # Returns false
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'phone' => [

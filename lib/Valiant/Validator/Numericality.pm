@@ -142,7 +142,7 @@ Valiant::Validator::Numericality - Validate numeric attributes
     validates equals => (numericality => [5, 100]);
 
     my $object = Local::Test::Numericality->new(age=>8, equal=>40);
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

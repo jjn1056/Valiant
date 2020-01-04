@@ -75,7 +75,7 @@ Valiant::Validator::Format - Validate a value based on a regular expression
       name => 'jjn1056',
     );
 
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

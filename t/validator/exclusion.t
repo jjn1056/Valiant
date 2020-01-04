@@ -32,7 +32,7 @@ ok my $object = Local::Test::Exclusion->new(
   country => 'usa',
 );
 
-ok !$object->validate; # Returns false
+ok $object->validate->invalid;
 
 is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   {

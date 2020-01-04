@@ -76,7 +76,7 @@ use Test::Most;
     minor_gpa => 6,
     overall_gpa=> 7);
 
-  ok !$object->validate();
+  ok $object->validate()->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
@@ -91,7 +91,7 @@ use Test::Most;
     };  
         
   $object->errors->clear;
-  ok !$object->validate(context=>'can_graduate');
+  ok $object->validate(context=>'can_graduate')->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
@@ -107,7 +107,7 @@ use Test::Most;
     };  
 
   $object->errors->clear;
-  ok !$object->validate(context=>'check_graduate');
+  ok $object->validate(context=>'check_graduate')->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
@@ -123,7 +123,7 @@ use Test::Most;
     };  
 
   $object->errors->clear;
-  ok !$object->validate(context=>['can_graduate','check_graduate']);
+  ok $object->validate(context=>['can_graduate','check_graduate'])->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
@@ -140,7 +140,7 @@ use Test::Most;
 
   $object->errors->clear;
   $object->scale(6);
-  ok !$object->validate();
+  ok $object->validate()->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'overall_gpa' => [

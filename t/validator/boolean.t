@@ -24,12 +24,12 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Boolean->new(active=>1, flag=>0);
-  ok $object->validate; 
+  ok $object->validate->valid; 
 }
 
 {
   ok my $object = Local::Test::Boolean->new(active=>0, flag=>1);
-  ok !$object->validate; 
+  ok $object->validate->invalid; 
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'active' => [

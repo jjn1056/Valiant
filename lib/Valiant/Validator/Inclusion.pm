@@ -69,7 +69,7 @@ Valiant::Validator::Inclusion - Value must be one of a list
       type => 'janitor',
     );
 
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

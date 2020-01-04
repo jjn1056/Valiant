@@ -27,7 +27,7 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Numericality->new(age=>1110);
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
@@ -40,7 +40,7 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Numericality->new(age=>8);
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
@@ -53,7 +53,7 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Numericality->new(age=>33.3);
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
@@ -64,7 +64,7 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Numericality->new(age=>"woow");
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [
@@ -75,7 +75,7 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::Numericality->new(age=>15, equals=>101 );
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       age => [

@@ -41,8 +41,7 @@ Valiant::Validator::Confirmation - Checks for a 'confirming' attributes equality
     use Moo;
     use Valiant::Validations;
 
-    has ['email',
-      'email_confirmation'] => (is=>'ro');
+    has ['email', 'email_confirmation'] => (is=>'ro');
 
     validates email => ( confirmation => 1 );
 
@@ -50,7 +49,7 @@ Valiant::Validator::Confirmation - Checks for a 'confirming' attributes equality
       email => 'AAA@example.com',
       email_confirmation => 'ZZZ@example.com'
     );
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

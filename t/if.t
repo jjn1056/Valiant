@@ -30,12 +30,12 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::If->new(name=>'CC');
-  ok $object->validate;
+  ok $object->validate->valid;
 }
 
 {
   ok my $object = Local::Test::If->new(name=>'BB');
-  ok !$object->validate;
+  ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       name => [

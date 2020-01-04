@@ -16,12 +16,12 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::OnlyOf->new(opt2=>'present');
-  ok $object->validate;
+  ok $object->validate->valid;
 }
 
 {
   ok my $object = Local::Test::OnlyOf->new(opt1=>'aaa', opt2=>'present');
-  ok !$object->validate;
+  ok $object->validate->invalid;
 
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   {

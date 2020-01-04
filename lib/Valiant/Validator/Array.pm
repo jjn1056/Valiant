@@ -81,7 +81,7 @@ Valiant::Validator::Array - Verify items in an arrayref.
     validates name => ( absence => 1 );
 
     my $object = Local::Test::Absence->new();
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

@@ -51,7 +51,7 @@ Valiant::Validator::Check - Validate using a 'check' method
     );
  
     my $object = Local::Test::Check->new(retiree_age=>40);
-    $object->validate; # Returns false
+    $object->validate;
 
     warn $object->errors->_dump;
 

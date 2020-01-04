@@ -44,7 +44,7 @@ use Test::Most;
     width => 6,
     length => 7);
 
-  ok !$object->validate();
+  ok $object->validate()->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       '_base' => [
@@ -52,8 +52,7 @@ use Test::Most;
            ]
     };
 
-  $object->errors->clear;
-  ok !$object->validate(context=>'big');
+  ok $object->invalid(context=>'big');
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       '_base' => [

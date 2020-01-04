@@ -114,7 +114,7 @@ Valiant::Validator::Object - Verify a related object
       address => $address,
     );
 
-    $person->validate; # Returns false
+    $person->validate;
 
     warn $person->errors->_dump;
 

@@ -71,7 +71,7 @@ use Test::Most;
     address => $address,
   );
 
-  ok $person->validate;
+  ok $person->validate->valid;
 }
 
 {
@@ -85,7 +85,7 @@ use Test::Most;
     address => $address,
   );
 
-  ok !$person->validate;
+  ok $person->validate->invalid;
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
       'name' => [
@@ -125,7 +125,7 @@ use Test::Most;
   );
 
 
-  ok !$person->validate;
+  ok $person->validate->invalid;
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
       'car' => {
