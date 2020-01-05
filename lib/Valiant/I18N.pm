@@ -64,6 +64,7 @@ sub _lookup_translation_by_count {
   # Ok, need to do any variable subsitutions again. Just stole this from
   # Data::Localize::Format::NamedArgs
 
+  # TODO this has an error when $args{$1} is 0
   $translated =~ s/\{\{([^}]+)\}\}/ $args{$1} || '' /gex;
 
   return $translated;
@@ -75,6 +76,10 @@ sub translate {
   my @defaults = @{ delete($args{default})||[] };
   my $scope = delete($args{scope})||'';
   my $count = $args{count};
+
+  # TODO work around 0 count bug in Data::Localize until I can get a fix in
+  $args{count} = 'zero' if defined($count) && $count == 0;
+
   $scope = join('.',@{$scope}) if (ref($scope)||'') eq 'ARRAY';
 
   # TODO deal with $count
@@ -86,7 +91,7 @@ sub translate {
 
   # If $translated is a hashref that means we need to apply the $count
   $translated = $self->_lookup_translation_by_count($count, $translated, %args)
-    if ref($translated) and $count;
+    if ref($translated) && defined($count);
 
   # Is this a bug in Data::Localize?  Seems like ->localize just returns
   # the $key if it fails to actually localize.  I would think it should
@@ -107,7 +112,7 @@ sub translate {
     my $translated = $dl->localize($tag, \%args);
 
     $translated = $self->_lookup_translation_by_count($count, $translated, %args)
-      if ref($translated) and $count;
+      if ref($translated) and defined($count);
 
     return $translated unless $translated eq $tag; # See note above
   }

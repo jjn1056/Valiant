@@ -194,5 +194,6 @@ sub validate {
 ## TODO docs for i18n_scope
 ## TODO probably use BUILD to call validation right awwy (unless { validate=>0 } or something).
 ## TODO if we run BUILD then we probably need to pull context from args as well (possible message and strict???)
-
+## TODO around has for compact validation declares (in the has statement
+## has user => (is=>'ro', validates=>[ length=>[2,25], presence=>1 ] );
 1;
