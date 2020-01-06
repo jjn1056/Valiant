@@ -160,14 +160,30 @@ sub add {
   my %options = ref($_[-1]) eq 'HASH' ? %{ pop @_ } : ();
   my $message = shift || $self->i18n->make_tag('invalid');
 
+  # TODO starting to look like a pile of hacks
+  # also not sure this goes all the way down the rabbit hole
   if(blessed($message) and $message->isa('Valiant::Errors')) {
-
     my %messages = %{ $self->messages ||+{} };
-    push @{$messages{$attribute}}, $message->messages;
+    if(ref($messages{$attribute}[0])||'' eq 'HASH') {
+      my %new = %{$message->messages};
+      foreach my $key(CORE::keys %new) {
+        push @{$messages{$attribute}[0]{$key}}, @{ $new{$key} }
+      }
+    } else {
+      push @{$messages{$attribute}}, $message->messages;
+    }
     $self->_set_messages(\%messages);
 
     my %details = %{ $self->details ||+{} };
-    push @{ $details{$attribute} }, $message->details;
+    if(ref($details{$attribute}[0])||'' eq 'HASH') {
+      my %new = %{$message->details};
+      foreach my $key(CORE::keys %new) {
+        push @{$details{$attribute}[0]{$key}}, @{ $new{$key} }
+      }
+    } else {
+      push @{ $details{$attribute} }, $message->details;
+    }
+
     $self->_set_details(\%details);
 
     return;
@@ -232,10 +248,12 @@ sub full_message { # should be 'format_message' :)
 
   if(ref $message) {
     if(ref $message eq 'HASH') {
+
       my %result = ();
       foreach my $key (CORE::keys %$message) {
         foreach my $m (@{ $message->{$key} }) {
-          push @{$result{$key}}, $self->full_message($key, $m); # TODO this probably doesn't localise the right model name
+          my $full_message = $self->full_message($key, $m); # TODO this probably doesn't localise the right model name
+          push @{$result{$key}}, $full_message;
         }
       }
       return \%result;

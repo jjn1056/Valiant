@@ -17,7 +17,7 @@ around BUILDARGS => sub {
     $args->{for} = $args->{namespace};
   }
 
-  if( (ref($args->{validations})||'') eq 'ARRAY') {
+  if( ((ref($args->{validations})||'') eq 'ARRAY') && !exists $args->{validator} ) {
     my $validator = use_module($args->{validator_class}||'Valiant::Class')
       ->new( %{ $args->{validator_class_args}||+{} },
         for => $args->{for}, 
