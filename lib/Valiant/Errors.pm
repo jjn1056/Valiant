@@ -120,8 +120,7 @@ sub to_hash {
       my @values = map {
           $self->full_message($key, $_) 
         } @{ $self->messages->{$key} };
-      my $values = ref($values[0]) ? $values[0] : \@values; # handle nested errors
-      $key => $values;
+      $key => \@values;
     } CORE::keys %{ $self->messages ||+{} };
   } else {
     %{ $self->messages ||+{} };

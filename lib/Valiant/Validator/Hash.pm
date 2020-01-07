@@ -52,7 +52,6 @@ sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
 
   my %opts = (%{$self->options}, %{$options||{}});
-  my $validates = $self->_cb_value($record, $self->validations);
   my $validator = $self->validator;
   my $result = $validator->validate($value, %opts);
 
@@ -116,17 +115,19 @@ Valiant::Validator::Hash - Verify a related object
   warn $person->errors->_dump;
 
   $VAR1 = {
-    'address' => {
-                 'zip' => [
-                            'Zip must be an integer',
-                            'Zip does not match the required pattern',
-                            'Zip is too short (minimum is 5 characters)'
-                          ],
-                 'street' => [
-                               'Street is too short (minimum is 2 characters)',
-                               'Street cannot have silly characters'
-                             ]
-               },
+        address => [
+          {
+            street => [
+              "Street is too short (minimum is 2 characters)",
+              "Street cannot have silly characters",
+            ],
+            zip => [
+              "Zip must be an integer",
+              "Zip does not match the required pattern",
+              "Zip is too short (minimum is 5 characters)",
+            ],
+          },
+        ],
     'name' => [
               'Name does not match the required pattern'
             ]

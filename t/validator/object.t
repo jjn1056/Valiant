@@ -91,7 +91,7 @@ use Test::Most;
       'name' => [
         'Name does not match the required pattern'
       ],
-      'address' => {
+      'address' => [{
          'country' => [
                         'Country is not in the list'
                       ],
@@ -102,7 +102,7 @@ use Test::Most;
          'city' => [
                      'City is too short (minimum is 3 characters)'
                    ]
-      }
+      }]
     };
 }
 
@@ -128,7 +128,7 @@ use Test::Most;
   ok $person->validate->invalid;
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
-      'car' => {
+      'car' => [{
            'model' => [
                         'Model is too short (minimum is 2 characters)'
                       ],
@@ -138,8 +138,8 @@ use Test::Most;
            'make' => [
                        'Make is not in the list'
                      ]
-               },
-      'address' => {
+               }],
+      'address' => [{
                'street' => [
                              'Street can\'t be blank',
                              'Street is too short (minimum is 3 characters)'
@@ -150,7 +150,7 @@ use Test::Most;
                'country' => [
                               'Country is not in the list'
                             ]
-                   },
+                   }],
       'name' => [
                   'Name does not match the required pattern'
                 ]

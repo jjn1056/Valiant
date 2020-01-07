@@ -7,11 +7,14 @@ use Test::Most;
   use Valiant::Validations;
 
   has status => (is=>'ro');
+  has name => (is=>'ro');
 
+  validates name => (length=>[2,5]);
   validates status => (
     array => {
-      max_length => 10,
-      validates => [
+      max_length => 3,
+      min_length => 1,
+      validations => [
         inclusion => +{
           in => [qw/active retired/],
         },
@@ -21,6 +24,7 @@ use Test::Most;
 }
 
 ok my $object = Local::Test::Array->new(
+  name => 'napiorkowski',
   status => [qw/active running retired retired aaa bbb ccc active/],
 );
 

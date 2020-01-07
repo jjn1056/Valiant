@@ -122,18 +122,20 @@ Valiant::Validator::Object - Verify a related object
       'name' => [
         'Name does not match the required pattern'
       ],
-      'address' => {
-         'country' => [
-                        'Country is not in the list'
-                      ],
-         'street' => [
-                       'Street can\'t be blank',
-                       'Street is too short (minimum is 3 characters)'
-                     ],
-         'city' => [
-                     'City is too short (minimum is 3 characters)'
-                   ]
-      }
+      'address' => [
+          {
+             'country' => [
+                            'Country is not in the list'
+                          ],
+             'street' => [
+                           'Street can\'t be blank',
+                           'Street is too short (minimum is 3 characters)'
+                         ],
+             'city' => [
+                         'City is too short (minimum is 3 characters)'
+                       ]
+          },
+      ],
     };
 
 =head1 DESCRIPTION

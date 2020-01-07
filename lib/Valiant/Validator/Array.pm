@@ -2,68 +2,58 @@ package Valiant::Validator::Array;
 
 use Moo;
 use Valiant::I18N;
-use Valiant::Class;
+use Module::Runtime 'use_module';
 
 with 'Valiant::Validator::Each';
 
 has max_length => (is=>'ro', predicate=>'has_max_length');
-has validates => (is=>'ro', requires=> 1);
-#has is_present => (is=>'ro', required=>1, default=>sub {_t 'is_present'});
+has min_length => (is=>'ro', predicate=>'has_in_length');
+has validations => (is=>'ro', required=>1);
+has validator => (is=>'ro', required=>1);
 
 our $meta;
 
-sub BUILD {
-  my ($self, $args) = @_;
-  $meta = Valiant::Meta->new(target=>ref($self)); # TODO this might need to be ref $record so it finds custom validators properly
-  $meta->validates($self->attributes, @{$self->validates});
-}
+around BUILDARGS => sub {
+  my ( $orig, $class, @args ) = @_;
+  my $args = $class->$orig(@args);
+
+  if($args->{namespace}) {
+    $args->{for} = $args->{namespace};
+  }
+
+  if( ((ref($args->{validations})||'') eq 'ARRAY') && !exists $args->{validator} ) {
+
+    my @validations = @{$args->{validations}};
+    my $validator = use_module($args->{validator_class}||'Valiant::Class')
+      ->new( result_class => 'Valiant::Result::HashRef', %{ $args->{validator_class_args}||+{} },
+        for => $args->{for}, 
+        validations => [[$args->{attributes} => @validations]]);
+    $args->{validator} = $validator;
+  }
+
+  return $args;
+};
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
-  my %opts = (%{$self->options});
+  my ($self, $record, $attribute, $value, $options) = @_;
+  my %opts = (%{$self->options}, %{$options||{}});
+  
   my @values = @$value;
-    use Devel::Dwarn;
-
   foreach my $i (0...$#values) {
-    my $result = Valiant::Result->new(data=>+{$attribute=>$values[$i]});
-    unless($meta->validate($result)) {
-      #Dwarn $result->errors->to_hash(full_messages=>1);
-      my @messages = ();
-      foreach my $err ($result->errors->full_messages_for($attribute)) {
-        # TODO maybe gather all the rrors into an index first... and then
-        # add the entire error object
-        use Devel::Dwarn;
-        Dwarn [$i, $err];
-        $messages[$i] = $err;
-      }
-      Dwarn \@messages;
-      $record->errors->add("${attribute}", \@messages, +{%opts});
+    my $validator = $self->validator;
+    my $result = $validator->validate(+{ $attribute => $values[$i] }, %opts);
 
+    if($result->invalid) {
+      #warn $result->errors->full_messages_for($attribute);
+      $record->errors->add("${attribute}", $result->errors, +{%opts});
     }
   }
 
-  # Dwarn $record;
-  #Dwarn $value;
+  $record->errors->add("${attribute}", 'generically invalid', +{%opts});
 
-  #$record->errors->add($attribute, $self->is_present, \%opts)
 }
 
 1;
-
-__END__
-
-around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-
-  use Devel::Dwarn;
-  Dwarn \@args;
-
-  if(@args == 2 && ref($args[1]) eq 'ARRAY') {
-    return +{  attributes => $args[1] }
-  }
-  return $class->$orig(@args);
-};
-
 
 =head1 TITLE
 
