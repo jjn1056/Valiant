@@ -34,11 +34,16 @@ sub options {
   return \%opts;
 }
 
+sub generate_attributes {
+  my ($self, $object, $options) = @_;
+  return @{ $self->attributes };
+}
+
 sub validate {
   my ($self, $object, $options) = @_;
 
   # Loop over each attribute and run the validators
-  ATTRIBUTE_LOOP: foreach my $attribute (@{ $self->attributes }) {
+  ATTRIBUTE_LOOP: foreach my $attribute ($self->generate_attributes(@_)) {
     my $value = $object->read_attribute_for_validation($attribute);
     next if $self->allow_undef && not(defined $value);
     next if $self->allow_blank && ( not(defined $value) || $value eq '' || $value =~m/^\s+$/ );

@@ -33,21 +33,28 @@ ok $object->validate->invalid;
 # for now...
 is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   {
-          'status.1' => [
-                          'Status.1 is not in the list'
-                        ],
-          'status.5' => [
-                          'Status.5 is not in the list'
-                        ],
-          'status.4' => [
-                          'Status.4 is not in the list'
-                        ],
-          'status.6' => [
-                          'Status.6 is not in the list'
-                        ] 
+    'status' => [
+                  {
+                    '6' => [
+                             '6 is not in the list'
+                           ],
+                    '5' => [
+                             '5 is not in the list'
+                           ],
+                    '4' => [
+                             '4 is not in the list'
+                           ],
+                    '1' => [
+                             '1 is not in the list'
+                           ]
+                  }
+                ],
+    'name' => [
+                'Name is too long (maximum is 5 characters)'
+              ]
     };
 
-warn $object->errors->_dump;
+    #warn $object->errors->_dump;
 
 
 done_testing;

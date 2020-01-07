@@ -13,8 +13,8 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
-  my %opts = (%{$self->options});
+  my ($self, $record, $attribute, $value, $options) = @_;
+  my %opts = (%{$self->options}, %{$options||+{}});
   unless(
       not(defined $value) ||
       $value eq '' || 

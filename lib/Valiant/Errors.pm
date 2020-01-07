@@ -195,8 +195,8 @@ sub add {
   $message = $self->_normalize_message($attribute, $message, \%options);
 
   if(my $exception = $options{strict}) {
-    Carp::croak $self->full_message($attribute, $message) if $exception == 1;
-    $exception->throw($self->full_message($attribute, $message));
+    Carp::croak $self->full_message($attribute, $message, \%options) if $exception == 1;
+    $exception->throw($self->full_message($attribute, $message, \%options));
   }
 
   my %messages = %{ $self->messages ||+{} };
@@ -298,6 +298,7 @@ sub full_message { # should be 'format_message' :)
 
 sub generate_message {
   my ($self, $attribute, $type, $options) = @_;
+
   $type ||= $self->i18n->make_tag('invalid');
   $options ||= +{};
   $type = delete $options->{message} if $self->i18n->is_i18n_tag($options->{message}||'');

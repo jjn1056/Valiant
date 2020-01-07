@@ -15,7 +15,7 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
+  my ($self, $record, $attribute, $value, $options) = @_;
 
   my @members = $self->_cb_value($record, $self->members);
   @members = @{$members[0]} if (ref($members[0])||'') eq 'ARRAY'; # lets the callback be an array or arrayref
@@ -36,7 +36,8 @@ sub validate_each {
   unless( $count_not_blank <= $max_allowed) {
     my %opts = (%{$self->options},
       count => $max_allowed,
-      count_not_blank => $count_not_blank
+      count_not_blank => $count_not_blank,
+      %{$options||+{}},
     );
     $record->errors->add($attribute, $self->only_of, \%opts);
   }

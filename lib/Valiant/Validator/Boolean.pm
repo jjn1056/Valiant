@@ -15,18 +15,19 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
+  my ($self, $record, $attribute, $value, $options) = @_;
   my $state = $self->_cb_value($record, $self->state);
+  my %opts = (%{$self->options}, %{$options||+{}});
 
   if($state) {
     # value must be true
     unless($value) {
-      $record->errors->add($attribute, $self->is_not_true, $self->options)
+      $record->errors->add($attribute, $self->is_not_true, \%opts);
     }
   } else {
     # value must be false
     if ($value) {
-      $record->errors->add($attribute, $self->is_not_false, $self->options)
+      $record->errors->add($attribute, $self->is_not_false, \%opts);
     }
   }
 }

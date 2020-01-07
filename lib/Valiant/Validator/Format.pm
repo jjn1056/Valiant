@@ -27,8 +27,8 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
-  my %opts = (%{$self->options});
+  my ($self, $record, $attribute, $value, $options) = @_;
+  my %opts = (%{$self->options}, %{$options||+{}});
 
   if($self->has_match) {
     my $with = $self->_cb_value($record, $self->match);

@@ -35,16 +35,16 @@ sub BUILD {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
+  my ($self, $record, $attribute, $value, $options) = @_;
   if($self->has_cb) {
-    my $return = $self->cb->($record, $attribute, $value, $self->options);
-    $record->errors->add($attribute, $self->message_if_false, $self->options)
+    my $return = $self->cb->($record, $attribute, $value, $self->options(%{$options||+{}}));
+    $record->errors->add($attribute, $self->message_if_false, $self->options(%{$options||+{}}))
       if !$return and $self->has_message_if_false;
   }
   if($self->has_method) {
     if(my $method_cb = $record->can($self->method)) {
-      my $return = $method_cb->($record, $attribute, $value, $self->options);
-      $record->errors->add($attribute, $self->message_if_false, $self->options)
+      my $return = $method_cb->($record, $attribute, $value, $self->options(%{$options||+{}}));
+      $record->errors->add($attribute, $self->message_if_false, $self->options(%{$options||+{}}))
         if !$return and $self->has_message_if_false;
     } else {
       die ref($record) ." has no method '${\$self->method}'";

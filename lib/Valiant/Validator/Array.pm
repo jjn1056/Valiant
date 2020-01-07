@@ -9,9 +9,10 @@ with 'Valiant::Validator::Each';
 has max_length => (is=>'ro', predicate=>'has_max_length');
 has min_length => (is=>'ro', predicate=>'has_in_length');
 has validations => (is=>'ro', required=>1);
-has validator => (is=>'ro', required=>1);
 
-our $meta;
+has validator_class => (is=>'ro', required=>1, default=>'Valiant::Class');
+has validator_class_args => (is=>'ro', required=>1, default=>sub { +{} });
+has for => (is=>'ro');
 
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
@@ -21,41 +22,45 @@ around BUILDARGS => sub {
     $args->{for} = $args->{namespace};
   }
 
-  if( ((ref($args->{validations})||'') eq 'ARRAY') && !exists $args->{validator} ) {
-
-    my @validations = @{$args->{validations}};
-    my $validator = use_module($args->{validator_class}||'Valiant::Class')
-      ->new( result_class => 'Valiant::Result::HashRef', %{ $args->{validator_class_args}||+{} },
-        for => $args->{for}, 
-        validations => [[$args->{attributes} => @validations]]);
-    $args->{validator} = $validator;
-  }
-
   return $args;
 };
 
 sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
   my %opts = (%{$self->options}, %{$options||{}});
-  
-  my @values = @$value;
-  foreach my $i (0...$#values) {
-    my $validator = $self->validator;
-    my $result = $validator->validate(+{ $attribute => $values[$i] }, %opts);
+  my @validations = @{$self->validations};
+  my $validator = use_module($self->validator_class)
+      ->new(
+        result_class => 'Valiant::Result::ArrayRef', 
+        for => $self->for, 
+        validations => [[ [keys @$value], @validations ]],
+        %{ $self->validator_class_args },
+      );
 
-    if($result->invalid) {
-      #warn $result->errors->full_messages_for($attribute);
-      $record->errors->add("${attribute}", $result->errors, +{%opts});
-    }
+  my $result = $validator->validate($value, %opts,  attribute=>'item');  
+
+  if($result->invalid) {
+    $record->errors->add($attribute, $result->errors, \%opts);
   }
-
-  $record->errors->add("${attribute}", 'generically invalid', +{%opts});
-
 }
 
 1;
 
 =head1 TITLE
+
+  my @values = @$value;
+  foreach my $i (0...$#values) {
+    my $validator = $self->validator;
+    my $result = $validator->validate(+{ "${attribute}" => $values[$i] }, %opts);
+
+    if($result->invalid) {
+      #warn $result->errors->full_messages_for($attribute);
+      $record->errors->add("${attribute}.${i}", $result->errors->messages_for($attribute), +{%opts});
+    }
+  }
+
+  $record->errors->add("${attribute}", 'generically invalid', +{%opts});
+
 
 Valiant::Validator::Array - Verify items in an arrayref.
 

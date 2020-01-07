@@ -18,8 +18,8 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
-  my %opts = (%{$self->options});
+  my ($self, $record, $attribute, $value, $options) = @_;
+  my %opts = (%{$self->options}, %{$options||+{}});
   my $confirmation_attribute = "${attribute}${\$self->suffix}";
   my $confirmation = $record->can($confirmation_attribute) ||
     die ref($record) . " have not have a method called '$confirmation_attribute'";

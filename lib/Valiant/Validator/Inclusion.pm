@@ -14,7 +14,7 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
+  my ($self, $record, $attribute, $value, $options) = @_;
 
   my $in = $self->in;
   my @in = ();
@@ -24,7 +24,7 @@ sub validate_each {
     @in = @$in;
   }
 
-  my %opts = (%{$self->options}, list=>\@in);
+  my %opts = (%{$self->options}, list=>\@in, %{$options||+{}});
 
   unless(grep { $_ eq $value } @in) {
     $record->errors->add($attribute, $self->inclusion, \%opts)
