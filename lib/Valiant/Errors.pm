@@ -170,7 +170,7 @@ sub add {
         push @{$messages{$attribute}[0]{$key}}, @{ $new{$key} }
       }
     } else {
-      push @{$messages{$attribute}}, $message->messages;
+      unshift @{$messages{$attribute}}, $message->messages;
     }
     $self->_set_messages(\%messages);
 
@@ -181,7 +181,7 @@ sub add {
         push @{$details{$attribute}[0]{$key}}, @{ $new{$key} }
       }
     } else {
-      push @{ $details{$attribute} }, $message->details;
+      unshift @{ $details{$attribute} }, $message->details;
     }
 
     $self->_set_details(\%details);
