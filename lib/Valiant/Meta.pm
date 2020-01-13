@@ -30,6 +30,9 @@ sub _is_reserved_option_key {
   return 0;
 }
 
+# TODO allow for $target::Validate::$name (MyApp::User::Validator::$name) So
+# that youi can have a special subclass just for a specific class.
+
 sub _prepare_validator_packages {
   my ($self, $key) = @_;
   return (
@@ -157,11 +160,13 @@ sub validates_each {
 sub _normalize_validator_package {
   my ($self, $with) = @_;
   my ($prefix, $package) = ($with =~m/^(\+?)(.+)$/);
-  unless($prefix eq '+') {
-    my @parts = split '::', $self->target; pop @parts;
-    $package = join '::', @parts, $self->default_validator_namepart, $package;
-  }
-  return $package;
+  return $package if $prefix eq '+';
+
+  my @parts = split '::', $self->target;
+  my @packages = (join '::', @parts, $self->default_validator_namepart, $package);
+  pop @parts;
+  push @packages, join '::', @parts, $self->default_validator_namepart, $package;
+  return @packages;
 }
 
 sub _strip_reserved_options {
@@ -181,13 +186,24 @@ sub validates_with {
   my @with = ref($validators_proto) eq 'ARRAY' ? 
     @{$validators_proto} : ($validators_proto);
   my @validators = ();
-  foreach my $with (@with) {
-    my $package = $self->_normalize_validator_package($with);
-    my $validator = eval {
-      use_module($package);
-      $package->new(%options);
-    } || do { die $@ };
-    push @validators, $validator; 
+  VALIDATOR_WITHS: foreach my $with (@with) {
+    my @possible_packages = $self->_normalize_validator_package($with);
+    foreach my $package(@possible_packages) {
+      my $found_package = eval {
+        use_module($package);
+      } || do {
+        if($@=~m/^Can't locate/) {
+          warn "Can't find $_ in \@INC\n" if $ENV{VALIANT_DEBUG};
+          0;
+        } else {
+          die $@; # Probably a syntax error in the code of $package
+        }
+      };
+      if($found_package) {
+        push @validators, $package->new(%options);
+        next VALIDATOR_WITHS; # Only load the first one found
+      }
+    }
   }
   my $collection = use_module($self->default_collection_class)
     ->new(validators=>\@validators, %reserved);

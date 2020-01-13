@@ -21,6 +21,44 @@ has 'validators' => (
 
 =head1 TITLE
 
+shortcuts
+
+String
+  eq
+  ne
+  alpha
+  alpha_numeric
+  email (naiave)
+  credit_card
+  domain_FQDN
+  IsISO8601
+  uppercase
+  lowercase
+  is_url
+
+Date
+  format 
+  past
+  future
+  today
+  min-date
+  max-date
+  12hourtime
+  24hourtime
+
+
+Numericality
+  positive
+  negative
+  one_of (@list)
+  divisible_by(num) 
+  decimal(numer of places)
+
+
+
+Object
+  Some sort of shortcuts for common objects such as DateTime
+
 Valiant - Validation Library
 
 =head1 SYNOPSIS
@@ -116,6 +154,60 @@ the same terms as Perl itself.
 =cut
 
 __END__
+
+<form method='post'>
+  <!-- Basic Info -->
+  <label>
+    First Name: <input type='text' name='first_name' />
+  </label>
+  <label>
+    Last Name:<input type='text' name='last_name' />
+  </label>
+
+  <!-- Simple Nested -->
+  <fieldset>
+    <legend>Address</legend>
+    <label>
+      Street: <input type='text' name='address.street' />
+    </label>
+    <label>
+      City: <input type='text' name='address.city' />
+    </label>
+    <label>
+      State: <select name='address.state'>
+        <option>NY
+        <option>TX
+        <option>CA
+      </select>
+    <label>
+      Zip: <input type='text' name='address.zip' />
+    </label>
+  </fieldset>
+
+  <!-- Simple Array -->
+  <fieldset>
+    <legend>Email Addresses</legend>
+    <label>
+      <input type='text' name='email[]' />
+    </label>
+  </fieldset>
+
+  <!-- Complex Array -->
+  <fieldset>
+    <legend>Credit Cards</legend>
+    <label>
+      Number:<input type='text' name='creditcard[].number' />
+    </label>
+    <label>
+      Expiration:<input type='text' name='creditcard[].expiration' />
+    </label>
+  </fieldset>
+
+</form>
+
+
+validates 'name',
+ openapi => s
 
 my $result = $user_object->validate({...});
 
