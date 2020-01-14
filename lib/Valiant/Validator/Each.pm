@@ -36,7 +36,11 @@ sub options {
 
 sub generate_attributes {
   my ($self, $object, $options) = @_;
-  return @{ $self->attributes };
+  if(ref($self->attributes) eq 'ARRAY') {
+    return @{ $self->attributes };
+  } elsif(ref($self->attributes) eq 'CODE') {
+    return $self->attributes->($object, $options);
+  }
 }
 
 sub validate {

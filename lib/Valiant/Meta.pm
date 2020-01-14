@@ -68,17 +68,10 @@ sub _create_validator {
 sub validates {
   my ($self, @validation_proto) = @_;
 
-  # If its a simple coderef validator just add it and return
-  if(ref($validation_proto[0]||'') eq 'CODE') {
-    $self->_validates_coderef(@validation_proto);
-    return;
-  }
-
   # handle a list of attributes with validations
   my $attributes = shift @validation_proto;
+  $attributes = [$attributes] unless ref $attributes;
   my @options = @validation_proto;
-  my @attributes = ref($attributes||'') eq 'ARRAY' 
-    ? @$attributes : ($attributes);
 
   # We want to preserve the order of validators while stripping out global_options
   my (@validator_info, %global_options) = ();
@@ -136,7 +129,7 @@ sub validates {
       $args->{$opt} = \@val;
     }
     
-    $args->{attributes} = \@attributes;
+    $args->{attributes} = $attributes;
 
     push @validators, $self->_create_validator($validator_package, $args);
   }
@@ -183,6 +176,13 @@ sub _strip_reserved_options {
 sub validates_with {
   my ($self, $validators_proto, %options) = @_;
   my %reserved = $self->_strip_reserved_options(%options);
+
+  # If its a simple coderef validator just add it and return
+  if(ref($validators_proto||'') eq 'CODE') {
+    $self->_validates_coderef($validators_proto, %options);
+    return;
+  }
+
   my @with = ref($validators_proto) eq 'ARRAY' ? 
     @{$validators_proto} : ($validators_proto);
   my @validators = ();

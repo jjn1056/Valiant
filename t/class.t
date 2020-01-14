@@ -14,7 +14,7 @@ use Valiant::Class;
 ok my $validator = Valiant::Class->new(
   for => 'Local::User',
   validations => [
-    [ sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } } ],
+    sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } },
     [ name => length => [2,15], format => qr/[a-zA-Z ]+/ ],
     [ age => numericality => 'positive_integer' ],
   ]

@@ -27,10 +27,11 @@ has _meta => (
 sub BUILD {
   my $self = shift;
   foreach my $rules(@{ $self->validations }) {
-    ## TODO this coould be more sophisticated to allow
-    ## less refs insides of refs (not sure if thats a good
-    ## or not.
-    $self->_meta->validates(@$rules);
+    if(ref($rules) eq 'CODE') {
+      $self->_meta->validates_with($rules);
+    } elsif(ref($rules) eq 'ARRAY') {
+      $self->_meta->validates(@$rules);
+    }
   }
 }
 

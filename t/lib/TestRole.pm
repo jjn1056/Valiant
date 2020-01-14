@@ -4,7 +4,7 @@ use Moo::Role;
 use Valiant::Validations;
 use Valiant::I18N;
 
-validates sub {
+validates_with sub {
   my ($self) = @_;
   $self->errors->add(_base => 'Failed TestRole');
   $self->errors->add('name');
