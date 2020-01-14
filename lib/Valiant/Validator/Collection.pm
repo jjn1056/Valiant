@@ -66,7 +66,11 @@ sub validate {
   }
 
   foreach my $validator (@{ $self->validators }) {
-    $validator->validate($object, $self->options(%$options));
+    if( (ref($validator)||'') eq 'ARRAY') {
+      $validator->[0]->($object, $validator->[1]);
+    } else {
+      $validator->validate($object, $self->options(%$options));
+    }
   }
 }
 

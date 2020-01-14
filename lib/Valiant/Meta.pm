@@ -176,18 +176,16 @@ sub _strip_reserved_options {
 sub validates_with {
   my ($self, $validators_proto, %options) = @_;
   my %reserved = $self->_strip_reserved_options(%options);
-
-  # If its a simple coderef validator just add it and return
-  if(ref($validators_proto||'') eq 'CODE') {
-    $self->_validates_coderef($validators_proto, %options);
-    return;
-  }
-
   my @with = ref($validators_proto) eq 'ARRAY' ? 
     @{$validators_proto} : ($validators_proto);
+
   my @validators = ();
   VALIDATOR_WITHS: foreach my $with (@with) {
     my @possible_packages = $self->_normalize_validator_package($with);
+    if( (ref($with)||'') eq 'CODE') {
+      push @validators, [$with, \%options];
+      next VALIDATOR_WITHS;
+    }
     foreach my $package(@possible_packages) {
       my $found_package = eval {
         use_module($package);
