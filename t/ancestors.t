@@ -19,7 +19,7 @@ is_deeply +{ $retiree->errors->to_hash(full_messages=>1) },
       "Age Logged a 4",
     ],
     name => [
-      "Name Too Short",
+      "Name Too Short 100",
       "Name Too Custom: 123",
       "Name Logged a B",
       "Name is too short (minimum is 3 characters)",

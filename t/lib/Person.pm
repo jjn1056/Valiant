@@ -13,7 +13,7 @@ validates_with \&is_nok;
 sub valid_person {
   my ($self, $options) = @_;
   $self->errors->add(name => 'Too Long', $options) if length($self->name) > 10;
-  $self->errors->add(name => 'Too Short', $options) if length($self->name) < 2; 
+  $self->errors->add(name => "Too Short $options->{test}", $options) if length($self->name) < 2; 
   $self->errors->add(age => 'Too Young', $options) if $self->age < 10; 
 }
 
