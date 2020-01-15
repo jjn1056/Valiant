@@ -48,20 +48,6 @@ sub validate_each {
 
 =head1 TITLE
 
-  my @values = @$value;
-  foreach my $i (0...$#values) {
-    my $validator = $self->validator;
-    my $result = $validator->validate(+{ "${attribute}" => $values[$i] }, %opts);
-
-    if($result->invalid) {
-      #warn $result->errors->full_messages_for($attribute);
-      $record->errors->add("${attribute}.${i}", $result->errors->messages_for($attribute), +{%opts});
-    }
-  }
-
-  $record->errors->add("${attribute}", 'generically invalid', +{%opts});
-
-
 Valiant::Validator::Array - Verify items in an arrayref.
 
 =head1 SYNOPSIS

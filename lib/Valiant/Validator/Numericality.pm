@@ -17,6 +17,8 @@ our %CHECKS = (
   other_than                => sub { $_[0] != $_[1] ? 1:0 },
   even                      => sub { $_[0] % 2 ? 0:1 },
   odd                       => sub { $_[0] % 2 ? 1:0 },
+  divisible_by              => sub { $_[0] % $_[1] ? 0:1 },
+  decimals                  => sub { length(($_[0] =~ /\.(\d*)/)[0]) == $_[1] ? 1:0  },
   is_integer                => sub { $_[0]=~/\A-?[0-9]+\z/ }, # Taken from Types::Standard
   is_number                 => sub {
                               my $val = shift;
@@ -56,9 +58,40 @@ around BUILDARGS => sub {
 
   if(my $integer = $args->{only_integer}) {
     return $args if $integer eq '1';
-    $args->{greater_than_or_equal_to} = 0 if $integer eq 'positive_integer';
-    $args->{less_than} = 0 if $integer eq 'negative_integer';
+
+    if($integer eq 'positive_integer') {
+      $args->{greater_than_or_equal_to} = 0;
+      $args->{message} = _t("positive_integer_err") unless defined $args->{message};
+    }
+    if($integer eq 'negative_integer') {
+      $args->{less_than} = 0;
+      $args->{message} = _t("negative_integer_err") unless defined $args->{message};
+    }
+
+    if($integer eq 'pg_serial') {
+      $args->{greater_than_or_equal_to} = 0;
+      $args->{less_than_or_equal_to} = 0;
+      $args->{message} = _t("pg_serial_err") unless defined $args->{message};
+    }
+    if($integer eq 'pg_bigserial') {
+      $args->{greater_than_or_equal_to} = 2147483647;
+      $args->{less_than_or_equal_to} = 9223372036854775807;
+      $args->{message} = _t("pg_bigserial_err") unless defined $args->{message};
+    }
   }
+
+  if($args->{positive}) {
+    delete $args->{positive};
+    $args->{greater_than_or_equal_to} = 0;
+    $args->{message} = _t("positive_err") unless defined $args->{message};
+  }
+
+  if($args->{negative}) {
+    delete $args->{negative};
+    $args->{less_than} = 0;
+    $args->{message} = _t("negative_err") unless defined $args->{message};
+  }
+
   return $args;
 };
 
@@ -79,10 +112,20 @@ sub normalize_shortcut {
     } elsif(
         ($arg eq 'positive_integer')
         || ($arg eq 'negative_integer')
+        || ($arg eq 'pg_serial')
+        || ($arg eq 'pg_bigserial')
       ) {
       return +{
         only_integer => $arg,
       }
+    } elsif( $arg eq 'positive') {
+      return + { positive => 1};
+    } elsif( $arg eq 'negative') {
+      return + { negative => 1};
+    } elsif( $arg eq 'even') {
+      return + { even => 1};
+    } elsif( $arg eq 'odd') {
+      return + { odd => 1};
     }
   }
 }
@@ -182,9 +225,16 @@ validator supports the following constraints:
 
 =item only_integer
 
-When set to a true value will require the value to be some sort of integer.  Generally
-you set this to '1', but you can also use 'positive_integer' to require 0 or greater
-and 'negative_integer' to require under zero. 
+When set to a true value will require the value to be some sort of integer.  If
+you set this to 1 then the value must be generally an integer.  However you can 
+also set it to the following to get more limited integer types:
+
+    validates attribute => ( numericality => { only_integer => 'positive_integer' }, ... );
+    validates attribute => ( numericality => { only_integer => 'negative_integer' }, ... );
+
+    # Lets you require the integer to conform to Postgresql Serial or Bigserial types
+    validates attribute => ( numericality => { only_integer => 'pg_serial' }, ... );
+    validates attribute => ( numericality => { only_integer => 'pg_bigserial' }, ... );
 
 =item greater_than
 
@@ -226,6 +276,27 @@ the attribute value isn't an even number.
 Accepts numeric value or coderef.  Returns error message tag V<odd_err> if
 the attribute value isn't an odd number.
 
+=item divisible_by
+
+Accepts numeric value or coderef. Returns error message C<divisible_by_err> if the
+attribute value is not evenly divisible by the value.  For example if the attribute
+value is 15 and the divisible value is 5 that is true (its divisible) but of the 
+divisible value was 4 that woule be false and generate an error message.
+
+=item decimals
+
+Accepts numeric value or coderef.  Returns error message tag V<decimals_err> if
+the attribute value doesn't contain exactly the requird number of places after
+the decimal point.
+
+=item positive
+
+A number greater or equal to zero
+
+=item negative
+
+A number less than zero
+
 =back
 
 =head1 SHORTCUT FORM
@@ -252,6 +323,15 @@ You can require various integer types as well:
     validates attribute => ( numericality => 'integer', ... );
     validates attribute => ( numericality => 'positive_integer', ... );
     validates attribute => ( numericality => 'negative_integer' ... );
+    validates attribute => ( numericality => 'pg_serial' ... ); # Postgresql Serial
+    validates attribute => ( numericality => 'pg_bigserial' ... ); # Postgresql Bigserial
+
+Misc shortcuts:
+
+    validates attribute => ( numericality => 'positive' ... ); # a positive number
+    validates attribute => ( numericality => 'negative' ... ); # a negative number
+    validates attribute => ( numericality => 'even' ... ); # an even number
+    validates attribute => ( numericality => 'odd' ... ); # an odd number
 
  
 =head1 GLOBAL PARAMETERS

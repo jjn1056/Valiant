@@ -21,21 +21,6 @@ has 'validators' => (
 
 =head1 TITLE
 
-shortcuts
-
-String
-  eq
-  ne
-  alpha
-  alpha_numeric
-  email (naiave)
-  credit_card
-  domain_FQDN
-  IsISO8601
-  uppercase
-  lowercase
-  is_url
-
 Date
   format 
   past
@@ -45,16 +30,6 @@ Date
   max-date
   12hourtime
   24hourtime
-
-
-Numericality
-  positive
-  negative
-  one_of (@list)
-  divisible_by(num) 
-  decimal(numer of places)
-
-
 
 Object
   Some sort of shortcuts for common objects such as DateTime

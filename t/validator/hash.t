@@ -75,7 +75,7 @@ use Test::Most;
               "Street cannot have silly characters",
             ],
             zip => [
-              "Zip must be an integer",
+              "Zip must be a positive integer",
               "Zip does not match the required pattern",
               "Zip is too short (minimum is 5 characters)",
             ],

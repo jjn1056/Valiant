@@ -15,7 +15,15 @@
         less_than_err => "must be less than {{count}}",
         other_than_err => "must be other than {{count}}",
         odd_err => "must be odd",
-        even_err => "must be even",     
+        even_err => "must be even",
+        divisible_by_err => "is not evenly divisible by {{count}}",
+        decimals_err => "must have exactly {{count}} decimal places",
+        positive_integer_err => 'must be a positive integer',
+        negative_integer_err => 'must be a negative integer',
+        positive_err => 'must be a positive number',
+        negative_err => 'must be a negative number',
+        pg_serial => 'is not in acceptable value range',
+        pg_bigserial => 'is not in acceptable value range',
         # length
         too_short => {
           one => 'is too short (minimum is 1 character)',
@@ -40,6 +48,12 @@
         # format
         invalid_format_match => 'does not match the required pattern',
         invalid_format_without => 'contains invalid characters',
+        not_alpha => 'must contain only alphabetic characters',
+        not_alpha_numeric => 'must contain only alphabetic and number characters',
+        not_email => 'is not an email address',
+        not_zip => 'is not a zip code',
+        not_zip5 => 'is not a zip code',
+        not_zip9 => 'is not a zip code',
         # confirmation
         confirmation => "doesn't match '{{attribute}}'",
         #only_of

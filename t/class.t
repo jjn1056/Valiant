@@ -36,7 +36,7 @@ ok my $validator = Valiant::Class->new(
                    'Cannot change inactive user'
                  ],
       'age' => [
-                 'Age must be greater than or equal to zero'
+                 'Age must be a positive integer'
                ],
       'name' => [
                   'Name does not match the required pattern'

@@ -8,6 +8,7 @@ use Test::Most;
 
   has phone => (is=>'ro');
   has name => (is=>'ro');
+  has email => (is=>'ro');
 
   validates phone => (
     format => +{
@@ -20,6 +21,10 @@ use Test::Most;
       without => qr/\d+/,
     },
   );
+
+  validates email =>
+    format => 'email', 
+    allow_blank => 1;
 
 }
 
@@ -35,6 +40,7 @@ use Test::Most;
   ok my $object = Local::Test::Format->new(
     phone => '387-1212',
     name => 'jjn1056',
+    email => 'jjn1056@',
   );
 
   ok $object->validate->invalid;
@@ -45,7 +51,8 @@ use Test::Most;
                ],
       'name' => [
                 'Name contains invalid characters'
-              ]
+              ],
+      email => [ 'Email is not an email address' ],
     };
 }
 
