@@ -1,0 +1,6 @@
+%% cascade 'base.tx' { title => 'Profile Page', body_attrs => '' }
+%% around body -> {
+  %% include 'navbar.tx'
+  <p>Welcome to the Profile</p>
+%% }
+

@@ -134,6 +134,7 @@ $RFC822PAT =~ s/\n//g;
 our %prebuilt_formats = (
   alpha           => [ qr/^[a-z]+$/i,                 _t('not_alpha') ],
   alpha_numeric   => [ qr/^\w+$/,                     _t('not_alpha_numeric') ],
+  alphanumeric    => [ qr/^\w+$/,                     _t('not_alpha_numeric') ], # likely common error
   email           => [ qr/^$RFC822PAT$/o,             _t('not_email') ],
   zip             => [ qr/^\d{5}(?:[- ]\d{4})?$/,     _t('not_zip') ],
   zip5            => [ qr/^\d\d\d\d\d$/,              _t('not_zip5') ],

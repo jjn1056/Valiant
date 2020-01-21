@@ -1,0 +1,4 @@
+%% cascade 'base.tx' { title => 'Not Found', body_attrs => '' }
+%% around body -> {
+  <p>Page Not Found [% $message %]</p>
+%% }

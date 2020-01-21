@@ -1,0 +1,6 @@
+%% cascade 'base.tx' { title => 'HomePage', body_attrs => '' }
+%% around body -> {
+  %% include 'navbar.tx'
+  <p>Welcome Home</p>
+%% }
+

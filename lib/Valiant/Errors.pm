@@ -12,7 +12,7 @@ use Carp;
 has 'object' => (
   is => 'ro',
   required => 1,
-  weak_ref => 1,
+  #weak_ref => 1,
 );
 
 has ['details', 'messages', 'nested'] => (
