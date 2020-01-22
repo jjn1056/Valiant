@@ -1,24 +1,17 @@
-package MyApp::Schema::ResultSet;
-
 use strict;
 use warnings;
-use base 'DBIx::Class::ResultSet';
+
+package MyApp::Schema::Result;
+
+use base 'DBIx::Class::Core';
 
 __PACKAGE__->load_components(qw/
-  Helper::ResultSet::Shortcut
-  Helper::ResultSet::Me
-  Helper::ResultSet::SetOperations
-  Helper::ResultSet::IgnoreWantarray
-  ResultSet::CallbackInflator
-/);
+  Helper::Row::RelationshipDWIM
+  Helper::Row::SelfResultSet
+  TimeStamp
+  InflateColumn::DateTime/);
 
-sub to_array {
-  my ($self) = @_;
-  return $self->search(
-    {},
-    {result_class => 'DBIx::Class::ResultClass::HashRefInflator'}
-  )->all;
-}
+sub default_result_namespace { 'MyApp::Schema::Result' }
 
 sub debug {
   my ($self) = @_;

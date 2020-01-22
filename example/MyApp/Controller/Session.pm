@@ -5,12 +5,10 @@ use MyApp::Controller;
 sub root : Via(../root) At(...) ($self, $c) {}
 
   sub login : Via(root) At(login) ($self, $c) {
-    return $c->redirect_to_action('home') if $c->user_exists;
+    return $c->redirect_to_action('../home') if $c->user_exists;
     return $c->html(200, 'login.tx') unless $c->req->method eq 'POST';
-
-    my ($user, $password) = @{$c->req->body_parameters}{qw/user password/};
     return $c->html(200, 'login.tx', +{errors=>'Invalid Credentials'})
-      unless $c->authenticate({id=>$user, password=>$password});
+      unless $c->authenticate(+{ %{$c->req->body_parameters}{qw/username password/} });
 
     return $c->action->equals($self->action_for('login')) ?
       $c->redirect_to_action('../home') :

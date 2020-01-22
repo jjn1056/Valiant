@@ -7,6 +7,7 @@ use Catalyst qw(
   Session::Store::Cookie
   Authentication
   RedirectTo
+  InjectionHelpers
 );
 
 sub html {
@@ -22,6 +23,12 @@ sub html {
 }
 
 __PACKAGE__->config(
+  'Model::PersonForm' => {
+    -inject => {
+      from_class => 'MyApp::PersonForm', 
+      adaptor => 'PerRequest', 
+    },
+  },
   'Plugin::Session' => { storage_secret_key => 'abc123' },
   'Plugin::Authentication' => {
     default_realm => 'members',

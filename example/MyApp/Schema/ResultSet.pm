@@ -1,17 +1,24 @@
+package MyApp::Schema::ResultSet;
+
 use strict;
 use warnings;
-
-package MyApp::Schema::Result;
-
-use base 'DBIx::Class::Core';
+use base 'DBIx::Class::ResultSet';
 
 __PACKAGE__->load_components(qw/
-  Helper::Row::RelationshipDWIM
-  Helper::Row::SelfResultSet
-  TimeStamp
-  InflateColumn::DateTime/);
+  Helper::ResultSet::Shortcut
+  Helper::ResultSet::Me
+  Helper::ResultSet::SetOperations
+  Helper::ResultSet::IgnoreWantarray
+  ResultSet::CallbackInflator
+/);
 
-sub default_result_namespace { 'TodoMVC::Schema::Result' }
+sub to_array {
+  my ($self) = @_;
+  return $self->search(
+    {},
+    {result_class => 'DBIx::Class::ResultClass::HashRefInflator'}
+  )->all;
+}
 
 sub debug {
   my ($self) = @_;
