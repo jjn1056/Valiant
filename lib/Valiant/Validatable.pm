@@ -5,6 +5,7 @@ package Valiant::Validatable;
 use Moo::Role;
 use Module::Runtime;
 use String::CamelCase 'decamelize';
+use Text::Autoformat 'autoformat';
 
 sub error_class { 'Valiant::Errors' }
 
@@ -59,7 +60,7 @@ has model_name => (
   default => sub {
     my $self = shift;
     my ($last) = reverse split '::', ref $self;
-    return lc $last;
+    return lc decamelize $last;
   },
 );
 
@@ -72,7 +73,7 @@ has _human => (
     my $self = shift;
     my $name = $self->model_name;
     $name =~s/_/ /g;
-    return my $_human = ucfirst $name;
+    return my $_human = autoformat $name, {case=>'title'};
   },
 );
 
@@ -150,14 +151,15 @@ sub human_attribute_name {
   push @defaults, do {
     my $human_attr = $attribute;
     $human_attr =~s/_/ /g;
-    $human_attr = ucfirst $human_attr;
+    $human_attr = autoformat $human_attr, {case=>'title'};
+    $human_attr =~s/[\n]//g; # Is this a bug in Text::Autoformat???
     $human_attr;
   };
 
   my $key = shift @defaults;
   $options->{default} = \@defaults;
 
-  return my $localized = $self->i18n->translate($key, %{$options||+{}}, count=>1);
+ return  my $localized = $self->i18n->translate($key, %{$options||+{}}, count=>1);
 }
 
 # Returns the current validation state if validations have been run

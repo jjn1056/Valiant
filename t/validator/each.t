@@ -80,13 +80,13 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
-        'Minor gpa G.P.A must be between 0 and 4',
+        'Minor Gpa G.P.A must be between 0 and 4',
       ],
       'overall_gpa' => [
-        'Overall gpa G.P.A must be between 0 and 4',
+        'Overall Gpa G.P.A must be between 0 and 4',
       ],
       'major_gpa' => [
-        'Major gpa G.P.A must be between 0 and 4'
+        'Major Gpa G.P.A must be between 0 and 4'
       ]
     };  
         
@@ -95,14 +95,14 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
-        'Minor gpa G.P.A must be between 0 and 4',
+        'Minor Gpa G.P.A must be between 0 and 4',
       ],
       'overall_gpa' => [
-        'Overall gpa G.P.A must be between 0 and 4',
+        'Overall Gpa G.P.A must be between 0 and 4',
       ],
       'major_gpa' => [
-        'Major gpa G.P.A must be between 0 and 4',
-        'Major gpa Needs 2.5 to graduate'
+        'Major Gpa G.P.A must be between 0 and 4',
+        'Major Gpa Needs 2.5 to graduate'
       ]
     };  
 
@@ -111,14 +111,14 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
-        'Minor gpa G.P.A must be between 0 and 4',
+        'Minor Gpa G.P.A must be between 0 and 4',
       ],
       'overall_gpa' => [
-        'Overall gpa G.P.A must be between 0 and 4',
+        'Overall Gpa G.P.A must be between 0 and 4',
       ],
       'major_gpa' => [
-        'Major gpa G.P.A must be between 0 and 4',
-        'Major gpa Needs 2.5 to graduate'
+        'Major Gpa G.P.A must be between 0 and 4',
+        'Major Gpa Needs 2.5 to graduate'
       ]
     };  
 
@@ -127,14 +127,14 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'minor_gpa' => [
-        'Minor gpa G.P.A must be between 0 and 4',
+        'Minor Gpa G.P.A must be between 0 and 4',
       ],
       'overall_gpa' => [
-        'Overall gpa G.P.A must be between 0 and 4',
+        'Overall Gpa G.P.A must be between 0 and 4',
       ],
       'major_gpa' => [
-        'Major gpa G.P.A must be between 0 and 4',
-        'Major gpa Needs 2.5 to graduate'
+        'Major Gpa G.P.A must be between 0 and 4',
+        'Major Gpa Needs 2.5 to graduate'
       ]
     };  
 
@@ -144,11 +144,11 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'overall_gpa' => [
-        'Overall gpa G.P.A must be between 0 and 6',
+        'Overall Gpa G.P.A must be between 0 and 6',
       ],
       'major_gpa' => [
-        'Major gpa G.P.A must be between 0 and 6',
-        'Major gpa no negatives',
+        'Major Gpa G.P.A must be between 0 and 6',
+        'Major Gpa no negatives',
       ]
     };  
     

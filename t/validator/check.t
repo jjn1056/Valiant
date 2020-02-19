@@ -43,7 +43,7 @@ use Test::Needs 'Types::Standard';
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'drinking_age' => [
-        'Drinking age is too young to drink!'
+        'Drinking Age is too young to drink!'
       ] 
     };
 }
@@ -59,7 +59,7 @@ use Test::Needs 'Types::Standard';
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'retiree_age' => [
-                 'Retiree age is invalid'
+                 'Retiree Age is invalid'
                ] 
     };
 }
@@ -75,7 +75,7 @@ use Test::Needs 'Types::Standard';
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'voting_age' => [
-                 'Voting age is invalid'
+                 'Voting Age is invalid'
                ] 
     };
 }

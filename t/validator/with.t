@@ -51,11 +51,11 @@ ok $object->validate->invalid;
 is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   {
     'date_of_birth' => [
-      'Date of birth Can\'t be born tomorrow',
-      'Date of birth Date 2364-04-30T00:00:00 is future',
-      'Date of birth Bad Date',
-      'Date of birth Bad Date',
-      'Date of birth not future!!',
+      'Date Of Birth Can\'t be born tomorrow',
+      'Date Of Birth Date 2364-04-30T00:00:00 is future',
+      'Date Of Birth Bad Date',
+      'Date Of Birth Bad Date',
+      'Date Of Birth not future!!',
     ]
   };
 

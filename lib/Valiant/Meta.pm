@@ -47,7 +47,8 @@ sub _validator_package {
   my @validator_packages = $self->_prepare_validator_packages($key);
   my ($validator_package, @rest) = grep {
     eval { use_module $_ } || do {
-      # This regexp matches too much...
+      # This regexp matches too much... We need to add the package
+      # path here just the path delim will vary from platform to platform
       if($@=~m/^Can't locate/) {
         warn "Can't find $_ in \@INC\n" if $ENV{VALIANT_DEBUG};
         0;
@@ -57,6 +58,7 @@ sub _validator_package {
     }
   }  @validator_packages;
   die "'$key' is not a validator" unless $validator_package;
+  warn "Found $validator_package in \@INC\n" if $ENV{VALIANT_DEBUG};
   return $validator_package;
 }
 

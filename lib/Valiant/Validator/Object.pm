@@ -8,10 +8,12 @@ with 'Valiant::Validator::Each';
 
 has validations => (is=>'ro', required=>1);
 has validator => (is=>'ro', required=>0);
+has for => (is=>'ro', required=>0, predicate=>'has_for');
 
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
   my $args = $class->$orig(@args);
+  my $for = delete $args->{for};
 
   if($args->{namespace}) {
     $args->{for} = $args->{namespace};
@@ -19,9 +21,11 @@ around BUILDARGS => sub {
 
   if( ((ref($args->{validations})||'') eq 'ARRAY') && !exists $args->{validator} ) {
     my $validator = use_module($args->{validator_class}||'Valiant::Class')
-      ->new( %{ $args->{validator_class_args}||+{} },
-        for => $args->{for}, 
-        validations => $args->{validations});
+      ->new(
+        %{ $args->{validator_class_args}||+{} },
+        for => $for, 
+        validations => $args->{validations}
+      );
     $args->{validator} = $validator;
   }
 
@@ -30,11 +34,14 @@ around BUILDARGS => sub {
 
 sub normalize_shortcut {
   my ($class, $arg) = @_;
-  if($arg eq '1') {
-    return {validations => 1};
+  if(($arg eq '1') || ($arg eq 'nested')) {
+    return { validations => 1 };
+  } elsif( (ref(\$arg)||'') eq 'SCALAR') {
+    return { for => $arg, validations => [] };
   } elsif( (ref($arg)||'') eq 'ARRAY') {
-    return {validations => $arg};
+    return { validations => $arg };
   }
+
 }
 
 sub validate_each {
@@ -194,6 +201,11 @@ Please keep in mind that for each inlined associated object validation we
 need to create a result class so that will add a bit of overhead to this
 call.
 
+B<NOTE> There's nothing to stop you from making crazy combos where the inlined
+validations contradict validations on the actual object.  Redundant validations
+between inlined and on class validations will result in multiple validation error
+messages.
+
 =head1 ATTRIBUTES
 
 This validator supports the following attributes:
@@ -202,6 +214,9 @@ This validator supports the following attributes:
 
 Either 1 or an arrayref of validation rules.  If this is an arrayref you must
 set C<for> (see below).  
+
+You can use the string C<nested> instead of 1 if you find that better documents
+the intent.
 
 =head2 for / namespace
 
@@ -240,9 +255,50 @@ Which is the same as:
 
     validates attribute => (
       object => {
-        validate => 1,
+        validations => 1,
       }
     );
+
+<B<Note>: you can use the 'nested' alias for '1' here if you want.
+
+You can also specify a validation namespace this way:
+
+    validates attribute => ( object => 'MyApp:User', ... );
+
+Which is the same as:
+
+    validates attribute => (
+      object => {
+        for => 'MyApp::User',
+        validations => 1,
+      }
+    );
+
+Lastly you can specify an array of validations
+
+    validates attribute => (
+      object => [
+        [ make => inclusion => [qw/Toyota Tesla Ford/] ],
+        [ model => length => [2, 20] ],
+        [ year => numericality => { greater_than_or_equal_to => 1960 } ],
+      ],
+      ...,
+    );
+
+Which is the same as:
+
+    validates attribute => (
+      object => {
+        validations => [
+          [ make => inclusion => [qw/Toyota Tesla Ford/] ],
+          [ model => length => [2, 20] ],
+          [ year => numericality => { greater_than_or_equal_to => 1960 } ],
+        ],
+      }
+    );
+
+Although this form doesn't let you specify the C<for> value so you can't find
+custom validations that way.
 
 =head1 GLOBAL PARAMETERS
 

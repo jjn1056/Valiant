@@ -17,11 +17,7 @@ has 'validators' => (
 #TODO improve default localizations
 #TODO add time/date/currency locations to i18n
 #TODO make sure options are properly passed
-#TODO Allow my $validations = Valiant::Class->new->validations()->validations()->validate(%params);i
-#TODO maybe a helper for nested objects to allpoe by hashref (has attr => (is=>'ro', coerce_from_hash('MyApp::User'), ...)u'
-#
-#TODO what in the 'Validatable role' can move to Valient as a global?  thinkibg stuff for dependency
-# injections and maybe internationalized?
+#TODO Allow my $validations = Valiant::Class->new->validations()->validations()->validate(%params);
 
 =head1 TITLE
 
