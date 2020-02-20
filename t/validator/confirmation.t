@@ -33,7 +33,7 @@ use Test::Most;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       'email_confirmation' => [
-        "Email Confirmation doesn't match 'email'",
+        "Email Confirmation doesn't match 'Email'",
       ]
     };
 }

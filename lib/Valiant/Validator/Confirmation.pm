@@ -24,7 +24,8 @@ sub validate_each {
   my $confirmation = $record->can($confirmation_attribute) ||
     die ref($record) . " have not have a method called '$confirmation_attribute'";
   unless($value eq $confirmation->($record)) {
-    $record->errors->add($confirmation_attribute, $self->confirmation, +{%opts, attribute=>$attribute})
+    my $human_attribute_name = $record->human_attribute_name($attribute);
+    $record->errors->add($confirmation_attribute, $self->confirmation, +{%opts, attribute=>$human_attribute_name})
   }
 }
 
