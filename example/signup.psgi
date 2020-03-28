@@ -12,7 +12,7 @@ my $pages = Pages->new;
 sub post {
   my $req = shift;
   my %params = %{$req->body_parameters}{qw/
-    username 
+    user_name 
     password 
     password_confirmation
   /};

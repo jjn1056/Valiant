@@ -21,6 +21,7 @@ has tt => (
       WRAPPER => 'wrapper.html',
       STRICT => 1,
       INCLUDE_PATH => $self->path,
+      OUTLINE_TAG => qr/.*%%/,
     )  || die $Template::ERROR, "\n";
   }
 
