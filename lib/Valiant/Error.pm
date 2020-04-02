@@ -2,6 +2,8 @@ package Valiant::Error;
 
 use Moo;
 use Text::Autoformat 'autoformat';
+use Module::Runtime;
+use FreezeThaw;
 
 # These groups are often present in the options hash and need to be removed 
 # before passing options onto other classes in some cases
@@ -15,47 +17,54 @@ my @MESSAGE_OPTIONS = (qw(message));
 has 'object' => (
   is => 'ro',
   required => 1,
-  #weak_ref => 1, # not sure about this...
+  weak_ref => 1, # not sure about this...
 );
 
 # The type of the error, a string
-has type => (
+has ['type', 'raw_type'] => (
   is => 'ro',
   required => 1,
-  lazy => 1, 
-  builder =>'_build_type'
 );
-
-  sub _build_type {
-    my $self = shift;
-    return $self->i18n->make_tag('invalid');
-  }
-
-has raw_type => (is=>'ro');
 
 # The attribute that has the error.  If undef that means its
 # a model error (an error on the model itself in general).
 has attribute => (is=>'ro', required=>0, predicate=>'has_attribute');
 
-# A hashref of extra meta info
+# A hashref of extra meta info (it is allowed to be an empty hash)
 has options => (is=>'ro', required=>1);
 
-sub i18n {
-  my $self = shift;
-  return $self->options->{i18n} || $self->object->i18n;
-}
+# holds a local reference to the i18n object
+has i18n => (is=>'ro', required=>1);
 
+# Easier to override for subclassers.  Do we want to check the options attribute
+# to make it easier to set without subclassing?  Something to think about.
+sub i18n_class { 'Valiant::I18N' } 
+sub default_format { '{{attribute}} {{message}}' }
 
 around BUILDARGS => sub {
-  my ( $orig, $class, @args ) = @_;
-  my $args = $class->$orig(@args);
-  my %args = delete %{$args}{qw/object attribute type/};
+  my ($orig, $class, @args) = @_;
+  my $options = $class->$orig(@args);
 
-  $args->{type} ||= ($args->{i18n} || )->make_tag('invalid');
+  # Pull the main attributes out of the options hashref
+  my ($object, $attribute, $type, $i18n) = delete @{$options}{qw/object attribute type i18n/};
 
-  $args{options} = $args;
-  $args{raw_type} = $args{type};
-  return \%args;
+  # Get the i18n from options if passed, otherwise from the model if the model so
+  # defines it, lastly just make one if we need it.
+  my $i18n ||= $object->can('i18n') ?
+    $object->i18n :
+    Module::Runtime::use_module(shift->i18n_class)->new;
+
+  # set a default error type
+  $type ||= $i18n->make_tag('invalid');
+
+  return +{
+    object => $object,
+    attribute => $attribute,
+    type => $type,
+    i18n => $i18n,
+    raw_type => $type,
+    options => $options,
+  }
 };
 
 # This takes an already translated error message part and creates a full message
@@ -63,9 +72,12 @@ around BUILDARGS => sub {
 # if translation info exists for it) using a template 'format'.  You can have a format
 # for each attribute or model/attribute combination or use a default format.
 
-sub full_message { 
-  my ($self, $attribute, $message) = @_;
-  return $message if $attribute eq '_base';
+sub full_message {
+  my $self = shift;
+  my $message = $self->message;
+
+  return $message unless $self->has_attribute;
+  my $attribute = $self->attribute;
 
   # Current hack for nested support
   if(ref $message) {
@@ -110,7 +122,7 @@ sub full_message {
   push @defaults, $self->i18n->make_tag("errors.${attribute}.format"); # This isn't in Rails but I find it useful
 
   # This last one 
-  push @defaults, "{{attribute}} {{message}}";
+  push @defaults, $self->default_format;
 
   # We do this dance to cope with nested attributes like 'user.name'.
   my $attr_name = do {
@@ -132,27 +144,35 @@ sub full_message {
   );
 }
 
+# Generates a message part which is a text message of the error
+# without the attribute or other bits. In rails this is a class
+# method; I preserved the given API for now but for the most
+# part you should just call ->message which does the right
+# thing for this error (or ->full_message).  
+
 sub generate_message {
-  my ($self, $attribute, $type, $options) = @_;
+  my ($self, $attribute, $type, $object, $options) = @_;
 
   $options ||= +{};
   $type = delete $options->{message} if $self->i18n->is_i18n_tag($options->{message}||'');
 
-  my $value = $attribute ne '_base' ? 
+  # There's only a value associated with this error if there is an attribute
+  # as well.  Otherwise its just an error on the model as a whole
+  my $value = defined($attribute) ? 
     $self->object->read_attribute_for_validation($attribute) :
     undef;
 
   my %options = (
-    model => $self->object->human,
-    attribute => $self->object->human_attribute_name($attribute, $options),
+    model => $object->human,
+    attribute => defined($attribute) ? $self->object->human_attribute_name($attribute, $options) : undef,
     value => $value,
-    object => $self->object,
+    object => $object,
     %{$options||+{}},
   );
 
   my @defaults = ();
-  if($self->object->can('i18n_scope') and ) {
-    my $i18n_scope = $self->object->i18n_scope;
+  if($object->can('i18n_scope')) {
+    my $i18n_scope = $object->i18n_scope;
     my $local_attribute = $attribute;
     $local_attribute =~s/\[\d+\]//g;
 
@@ -180,17 +200,84 @@ sub generate_message {
 }
 
 sub message {
-
+  my $self = shift;
+  my $type = $self->raw_type;
+  if($self->i18n->is_i18n_tag($type)) {
+    my %options = %{$self->options};
+    delete @options{@CALLBACKS_OPTIONS};
+    return $self->generate_message($self->attribute, $type, $self->object, \%options);
+  } else {
+    return $type;
+  }
 }
-    def message
-      case raw_type
-      when Symbol
-        self.class.generate_message(attribute, raw_type, @base, options.except(*CALLBACKS_OPTIONS))
-      else
-        raw_type
-      end
-    end
 
+sub detail {
+  my $self = shift;
+  my %options = %{$self->options};
+  delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
+  return +{
+    error => $self->raw_type,
+    %options,
+  };
+}
+
+# This match returns true if at least some bits match
+sub match {
+  my ($self, $attribute, $type, $options) = @_;
+  if(
+    $attribute ne ($self->attribute||'')
+    ||
+    ($type && ($self->type ne $type))
+  ) {
+    return 0;
+  }
+
+  # only the passed options need to match.  So if there's options
+  # in the error object that are not in the passed options its
+  # still ok to match.
+  foreach my $key (%{$options||+{}}) {
+    if( ($self->options->{$key}||'') ne ($options->{$key}||'')) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+sub strict_match {
+  my ($self, $attribute, $type, $options) = @_;
+  return 0 unless $self->match?($attribute, $type);
+
+  # This is different from match because ALL the keys/values in options need to match
+  # exactly.  Its possible my approach here is suspect around object comparisons.
+  my %options = %{$self->options};
+  delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
+  return FreezeThaw::cmpStr(\%options, $options) == 0 ? 1:0;
+}
+
+# Are two errors the same?
+sub equals {
+  my ($self, $target) = @_;
+  return (ref($self) eq ref($target)) &&
+    FreezeThaw::cmpStr([$self->attributes_for_hash], [$target->attributes_for_hash]) ? 1:0;
+}
+
+sub hash {
+  my $self = shift;
+  return +{ $self->attributes_for_hash };
+}
+
+sub attributes_for_hash {
+  my $self = shift;
+  my %options = %{$self->options};
+  delete @options{@CALLBACKS_OPTIONS};
+
+  return (
+    object => $self->object,
+    attribute => $self->attribute,
+    raw_type => $self->raw_type,
+    %options,
+  );
+}
 
 =head1 TITLE
 
@@ -198,7 +285,9 @@ Valiant::Error - A single error encountered during validation.
 
 =head1 SYNOPSIS
 
-  
+    This won't be used standalone.  Its always a collection of Error objects
+    inside the Valiant::Errors module.
+
 =head1 DESCRIPTION
 
 A Single Error.

@@ -141,4 +141,30 @@ sub make_tag($) {
   return bless \$tag, 'Valiant::I18N::Tag';
 }
 
+package Valiant::I18N::Tag;
+
+use overload (
+  ne    => \&not_equals,
+  eq    => \&equals,
+  bool  => \&is_true,
+  '""'  => \&stringify,
+);
+
+sub stringify {
+    my ($self) = @_;
+    return $$self;
+}
+
+sub is_true { return ${$_[0]} }
+
+sub equals {
+  my ($self, $target) = @_;
+  return $$self eq $$target;
+}
+
+sub not_equals {
+  my ($self, $target) = @_;
+  return $$self ne $$target;
+}
+
 1;
