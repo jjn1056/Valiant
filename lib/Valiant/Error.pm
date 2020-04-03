@@ -4,6 +4,8 @@ use Moo;
 use Text::Autoformat 'autoformat';
 use Module::Runtime;
 use FreezeThaw;
+use Clone;
+use Scalar::Util ();
 
 # These groups are often present in the options hash and need to be removed 
 # before passing options onto other classes in some cases
@@ -74,12 +76,22 @@ around BUILDARGS => sub {
 
 sub full_message {
   my $self = shift;
-  my $message = $self->message;
 
-  return $message unless $self->has_attribute;
-  my $attribute = $self->attribute;
+  # We need to do this dance since full_message needs to be called with two
+  # different signatures.  In some places we even call it as a class method
+  # (that's why we do the i18n dance below as well)
+  my ($attribute, $message, $object, $i18n) = @_;
+  $attribute ||= $self->attribute if $self->has_attribute;
+  $message ||= $self->message;
+  $object ||= $self->object;
+  $i18n ||= Scalar::Util::blessed($self) ?
+    $self->i18n :
+    Module::Runtime::use_module(shift->i18n_class)->new;
 
-  # Current hack for nested support
+  return $message unless defined($attribute);
+
+
+  # Current hack for nested support. This needs WORK
   if(ref $message) {
     if(ref $message eq 'HASH') {
       my %result = ();
@@ -95,8 +107,8 @@ sub full_message {
   # End nested hack
   
   my @defaults = ();
-  if($self->object->can('i18n_scope')) {
-    my $i18n_scope = $self->object->i18n_scope;
+  if($object->can('i18n_scope')) {
+    my $i18n_scope = $object->i18n_scope;
     my @parts = split '.', $attribute; # For nested attributes
     my $attribute_name = pop @parts;
     my $namespace = join '/', @parts if @parts;
@@ -106,20 +118,20 @@ sub full_message {
         my $class = $_;
         "${attributes_scope}.${\$class->i18n_key}/${namespace}.attributes.${attribute_name}.format",
         "${attributes_scope}.${\$class->i18n_key}/${namespace}.format";      
-      } $self->object->ancestors;
+      } $object->ancestors;
     } else {
       @defaults = map {
         my $class = $_;
         "${attributes_scope}.${\$class->i18n_key}.attributes.${attribute_name}.format",
         "${attributes_scope}.${\$class->i18n_key}.format";    
-      } $self->object->ancestors;
+      } $object->ancestors;
     }
   }
 
-  @defaults = map { $self->i18n->make_tag($_) } @defaults;
+  @defaults = map { $i18n->make_tag($_) } @defaults;
 
-  push @defaults, $self->i18n->make_tag("errors.format");
-  push @defaults, $self->i18n->make_tag("errors.${attribute}.format"); # This isn't in Rails but I find it useful
+  push @defaults, $i18n->make_tag("errors.format");
+  push @defaults, $i18n->make_tag("errors.${attribute}.format"); # This isn't in Rails but I find it useful
 
   # This last one 
   push @defaults, $self->default_format;
@@ -134,9 +146,9 @@ sub full_message {
     $human_attr;
   };
   
-  $attr_name = $self->object->human_attribute_name($attribute, +{default=>$attr_name});
+  $attr_name = $object->human_attribute_name($attribute, +{default=>$attr_name});
   
-  return my $translated = $self->i18n->translate(
+  return my $translated = $i18n->translate(
     shift @defaults,
     default => \@defaults,
     attribute => $attr_name,
@@ -151,20 +163,24 @@ sub full_message {
 # thing for this error (or ->full_message).  
 
 sub generate_message {
-  my ($self, $attribute, $type, $object, $options) = @_;
+  my ($self, $attribute, $type, $object, $options, $i18n) = @_;
+  $i18n ||= Scalar::Util::blessed($self) ?
+    $self->i18n :
+    Module::Runtime::use_module(shift->i18n_class)->new;
 
   $options ||= +{};
-  $type = delete $options->{message} if $self->i18n->is_i18n_tag($options->{message}||'');
+  $type = delete $options->{message} if $i18n->is_i18n_tag($options->{message}||'');
 
   # There's only a value associated with this error if there is an attribute
   # as well.  Otherwise its just an error on the model as a whole
   my $value = defined($attribute) ? 
-    $self->object->read_attribute_for_validation($attribute) :
+    $object->read_attribute_for_validation($attribute) :
     undef;
+
 
   my %options = (
     model => $object->human,
-    attribute => defined($attribute) ? $self->object->human_attribute_name($attribute, $options) : undef,
+    attribute => defined($attribute) ? $object->human_attribute_name($attribute, $options) : undef,
     value => $value,
     object => $object,
     %{$options||+{}},
@@ -180,14 +196,14 @@ sub generate_message {
       my $class = $_;
       "${i18n_scope}.errors.models.${\$class->i18n_key}.attributes.${local_attribute}.${$type}",
       "${i18n_scope}.errors.models.${\$class->i18n_key}.${$type}";      
-    } $self->object->ancestors;
+    } $object->ancestors;
     push @defaults, "${i18n_scope}.errors.messages.${$type}";
   }
 
   push @defaults, "errors.attributes.${attribute}.${$type}";
   push @defaults, "errors.messages.${$type}";
 
-  @defaults = map { $self->i18n->make_tag($_) } @defaults;
+  @defaults = map { $i18n->make_tag($_) } @defaults;
 
   my $key = shift(@defaults);
   if($options->{message}) {
@@ -196,7 +212,7 @@ sub generate_message {
   }
   $options{default} = \@defaults;
 
-  return my $translated = $self->i18n->translate($key, %options);
+  return my $translated = $i18n->translate($key, %options);
 }
 
 sub message {
@@ -241,6 +257,11 @@ sub match {
     }
   }
   return 1;
+}
+
+sub clone {
+  my $self = shift;
+  return Clone::clone($self);
 }
 
 sub strict_match {
