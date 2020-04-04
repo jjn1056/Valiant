@@ -1,9 +1,9 @@
 package Valiant::Errors;
 
 use Moo;
-use MooX::HandlesVia;
-use Valiant::NestedError;
 use Carp;
+use Data::Perl::Collection::Array;
+use Valiant::NestedError;
 
 has 'object' => (
   is => 'ro',
@@ -12,8 +12,11 @@ has 'object' => (
 );
 
 has errors => (
-  is => 'rw',
-  handles_via => 'Array',
+  is => 'ro',
+  init_arg => undef,
+  lazy => 1,
+  required => 1,
+  default => sub { Data::Perl::Collection::Array->new() },
   handles => {
     size => 'count',
     count => 'count',
@@ -64,7 +67,8 @@ sub import_error {
       object => $self->object,
       inner_error => $error,
       %{ $options||+{} },
-    );
+    )
+  );
 }
 
 sub merge {
@@ -180,11 +184,15 @@ sub add {
       %$options,
     );
 
-  if(my $exception = $options{strict}) {
+  if(my $exception = $options->{strict}) {
     my $message = $error->full_message;
     Carp::croak $message if $exception == 1;
     $exception->throw($message);
   }
+ 
+  use Devel::Dwarn;
+  Dwarn $self->errors;
+
   
   $self->errors->push($error);
   return $error;

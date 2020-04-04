@@ -10,7 +10,7 @@ use Scalar::Util ();
 # These groups are often present in the options hash and need to be removed 
 # before passing options onto other classes in some cases
 
-my @CALLBACKS_OPTIONS = (qw(if unless on allow_undef, allow_blank, strict));
+my @CALLBACKS_OPTIONS = (qw(if unless on allow_undef allow_blank strict));
 my @MESSAGE_OPTIONS = (qw(message));
 
 # object is the underlying object that has an error.  This object
@@ -52,7 +52,7 @@ around BUILDARGS => sub {
 
   # Get the i18n from options if passed, otherwise from the model if the model so
   # defines it, lastly just make one if we need it.
-  my $i18n ||= $object->can('i18n') ?
+  $i18n ||= $object->can('i18n') ?
     $object->i18n :
     Module::Runtime::use_module(shift->i18n_class)->new;
 
@@ -266,7 +266,7 @@ sub clone {
 
 sub strict_match {
   my ($self, $attribute, $type, $options) = @_;
-  return 0 unless $self->match?($attribute, $type);
+  return 0 unless $self->match($attribute, $type);
 
   # This is different from match because ALL the keys/values in options need to match
   # exactly.  Its possible my approach here is suspect around object comparisons.

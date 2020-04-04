@@ -3,7 +3,7 @@ package Valiant::Name;
 use Moo;
 use String::CamelCase 'decamelize';
 use Text::Autoformat 'autoformat';
-use Lingua::EN::Inflexion qw< noun inflect wordlist >;
+use Lingua::EN::Inflexion 'noun';
 
 # These first few are permitted arguments
 
