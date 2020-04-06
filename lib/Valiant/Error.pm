@@ -48,7 +48,7 @@ around BUILDARGS => sub {
   my $options = $class->$orig(@args);
 
   # Pull the main attributes out of the options hashref
-  my ($object, $attribute, $type, $i18n) = delete @{$options}{qw/object attribute type i18n/};
+  my ($object, $attribute, $type, $i18n, $set_options) = delete @{$options}{qw/object attribute type i18n options/};
 
   # Get the i18n from options if passed, otherwise from the model if the model so
   # defines it, lastly just make one if we need it.
@@ -65,7 +65,10 @@ around BUILDARGS => sub {
     type => $type,
     i18n => $i18n,
     raw_type => $type,
-    options => $options,
+    options => +{
+      %{$options||{}}, 
+      %{$set_options||{}}
+    },
   }
 };
 
@@ -188,18 +191,21 @@ sub generate_message {
   my @defaults = ();
   if($object->can('i18n_scope')) {
     my $i18n_scope = $object->i18n_scope;
-    my $local_attribute = $attribute;
-    $local_attribute =~s/\[\d+\]//g;
+    my $local_attribute;
+    if(defined $attribute) {
+      $local_attribute = $attribute if defined $attribute;
+      $local_attribute =~s/\[\d+\]//g;
+    }
 
     @defaults = map {
       my $class = $_;
-      "${i18n_scope}.errors.models.${\$class->i18n_key}.attributes.${local_attribute}.${$type}",
+      (defined($local_attribute) ? "${i18n_scope}.errors.models.${\$class->i18n_key}.attributes.${local_attribute}.${$type}" : ()),
       "${i18n_scope}.errors.models.${\$class->i18n_key}.${$type}";      
     } grep { $_->can('i18n_key') } $object->ancestors;
     push @defaults, "${i18n_scope}.errors.messages.${$type}";
   }
 
-  push @defaults, "errors.attributes.${attribute}.${$type}";
+  push @defaults, "errors.attributes.${attribute}.${$type}" if defined($attribute);
   push @defaults, "errors.messages.${$type}";
 
   @defaults = map { $i18n->make_tag($_) } @defaults;
@@ -216,7 +222,8 @@ sub generate_message {
 
 sub message {
   my $self = shift;
-  my $type = $self->raw_type;
+  my $type = exists($self->options->{message}) ? $self->options->{message} : $self->raw_type;
+  
   if($self->i18n->is_i18n_tag($type)) {
     my %options = %{$self->options};
     delete @options{@CALLBACKS_OPTIONS};

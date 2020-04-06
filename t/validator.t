@@ -13,7 +13,7 @@ use Test::Most;
     my ($self, $record, $opts) = @_;
     my $size = $record->height + $record->width + $record->length;
     if($size > $self->max_size) {
-      $record->errors->add(_base=>"Total of all size cannot exceed ${\$self->max_size}", $opts),
+      $record->errors->add(undef, "Total of all size cannot exceed ${\$self->max_size}", $opts),
     }
   }
 
@@ -47,7 +47,7 @@ use Test::Most;
   ok $object->validate()->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
-      '_base' => [
+      '*' => [
              'Total of all size cannot exceed 25'
            ]
     };
@@ -55,7 +55,7 @@ use Test::Most;
   ok $object->invalid(context=>'big');
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
-      '_base' => [
+      '*' => [
              'Total of all size cannot exceed 25',
              'Big for Big!!',
              'Total of all size cannot exceed 30',

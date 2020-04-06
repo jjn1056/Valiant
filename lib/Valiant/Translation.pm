@@ -95,7 +95,12 @@ sub ancestors {
   $class->$inject_role_if_needed;
 
   no strict "refs";
-  my @ancestors = @{"${class}::ISA"};
+  my @ancestors = ();
+
+  push @ancestors, grep {
+    Role::Tiny::does_role($_, __PACKAGE__);
+  } @{"${class}::ISA"};
+
   push @ancestors, $class->does_roles
     if $class->can('does_roles');
 

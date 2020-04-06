@@ -19,7 +19,7 @@ sub valid_person {
 
 sub is_nok {
   my ($self) = @_;
-  $self->errors->add(_base => _t('bad'), +{ details=>'This always fails'});
+  $self->errors->add(undef, _t('bad'), +{ details=>'This always fails'});
 }
 
 1;

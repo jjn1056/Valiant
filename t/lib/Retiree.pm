@@ -27,7 +27,7 @@ validates 'name' => (
   with => {
     cb => sub {
       my ($self, $attr, $value, $opts) = @_;
-      $self->add_error($attr, 'just weird name', $opts);
+      $self->errors->add($attr, 'just weird name', $opts);
     },
   },
   if => sub { 1 },

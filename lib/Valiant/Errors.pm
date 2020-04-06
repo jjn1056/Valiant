@@ -193,13 +193,15 @@ sub add {
   $options ||= +{};
   ($attribute, $type, $options) = $self->_normalize_arguments($attribute, $type, $options);
 
+  use Devel::Dwarn;
+  
   my $error = $self->error_class
     ->new(
       object => $self->object,
       attribute => $attribute,
       type => $type,
       i18n => $self->i18n,
-      %$options,
+      options => $options,
     );
 
   if(my $exception = $options->{strict}) {

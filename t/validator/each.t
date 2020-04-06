@@ -141,7 +141,7 @@ use Test::Most;
   $object->errors->clear;
   $object->scale(6);
   ok $object->validate()->invalid;
-  is_deeply +{ $object->errors->to_hash(full_messages=>1) },
+  is_deeply +{ $object->errors->to_hash(1) },
     {
       'overall_gpa' => [
         'Overall Gpa G.P.A must be between 0 and 6',
