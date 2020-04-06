@@ -21,6 +21,11 @@ sub import {
   *{"${target}::_t"} = sub { $class->make_tag(@_) };
 }
 
+sub debug {
+  return unless $ENV{VALIANT_DEBUG};
+  warn shift;
+}
+
 sub dl { $dl };
 
 sub init {
@@ -34,10 +39,16 @@ sub init {
 sub add_locale_path {
   my ($class, $path) = @_;
   return if $locale_paths{$path};
-  # TODO need to skip if there's no locale directory
-  warn "Adding locale_path at $path" if $ENV{VALIANT_DEBUG};
-  $dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
-  $locale_paths{$path} = 1;
+  my @found = glob($path);
+  my $flag = @found ? 1 : -1;
+  if($flag == 1) {
+    debug("Adding locale_path at $path");
+    $dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
+  } else {
+    debug("No translation files found at $path");
+  }
+  $locale_paths{$path} = $flag;
+  return $flag == 1 ? 1:0;
 }
 
 sub _module_path {
@@ -116,9 +127,14 @@ sub translate {
 
     return $translated unless $translated eq $tag; # See note above
   }
-
+  
   my $list = join (', ', $key, map { $$_ if $self->is_i18n_tag($_) } @defaults);
-  Carp::croak "Can't find a translation in ($list)";
+  my $path = join ',', $self->valid_paths;
+  Carp::croak "Can't find a translation for key in ($list) at paths ($path)";
+}
+
+sub valid_paths {
+  return grep { $locale_paths{$_} > 0 } keys %locale_paths;
 }
 
 sub detect_languages_from_header {
@@ -159,12 +175,12 @@ sub is_true { return ${$_[0]} }
 
 sub equals {
   my ($self, $target) = @_;
-  return $$self eq $$target;
+  return $$self eq "$target";
 }
 
 sub not_equals {
   my ($self, $target) = @_;
-  return $$self ne $$target;
+  return $$self ne "$target";
 }
 
 1;

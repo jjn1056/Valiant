@@ -16,12 +16,12 @@ around BUILDARGS => sub {
 
   return +{
     object => $options->{object},
-    inner_error => $options->{inner_error},
-    attribute => $options->{inner_error}->attribute,
-    type => $options->{inner_error}->type,
-    i18n => $options->{inner_error}->i18n,
-    raw_type => $options->{inner_error}->raw_type,
-    options => $options->{inner_error}->options,
+    inner_error => $options->{options}{inner_error},
+    attribute => $options->{options}{inner_error}->attribute,
+    type => $options->{options}{inner_error}->type,
+    i18n => $options->{options}{inner_error}->i18n,
+    raw_type => $options->{options}{inner_error}->raw_type,
+    options => $options->{options}{inner_error}->options,
   }
 };
 

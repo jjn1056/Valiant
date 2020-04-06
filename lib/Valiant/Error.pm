@@ -54,7 +54,7 @@ around BUILDARGS => sub {
   # defines it, lastly just make one if we need it.
   $i18n ||= $object->can('i18n') ?
     $object->i18n :
-    Module::Runtime::use_module(shift->i18n_class)->new;
+    Module::Runtime::use_module($class->i18n_class);
 
   # set a default error type
   $type ||= $i18n->make_tag('invalid');
@@ -86,7 +86,7 @@ sub full_message {
   $object ||= $self->object;
   $i18n ||= Scalar::Util::blessed($self) ?
     $self->i18n :
-    Module::Runtime::use_module(shift->i18n_class)->new;
+    Module::Runtime::use_module($self->i18n_class);
 
   return $message unless defined($attribute);
 
@@ -118,13 +118,13 @@ sub full_message {
         my $class = $_;
         "${attributes_scope}.${\$class->i18n_key}/${namespace}.attributes.${attribute_name}.format",
         "${attributes_scope}.${\$class->i18n_key}/${namespace}.format";      
-      } $object->ancestors;
+      } grep { $_->can('i18n_key') } $object->ancestors;
     } else {
       @defaults = map {
         my $class = $_;
         "${attributes_scope}.${\$class->i18n_key}.attributes.${attribute_name}.format",
         "${attributes_scope}.${\$class->i18n_key}.format";    
-      } $object->ancestors;
+      } grep { $_->can('i18n_key') } $object->ancestors;
     }
   }
 
@@ -147,7 +147,7 @@ sub full_message {
   };
   
   $attr_name = $object->human_attribute_name($attribute, +{default=>$attr_name});
-  
+
   return my $translated = $i18n->translate(
     shift @defaults,
     default => \@defaults,
@@ -166,7 +166,7 @@ sub generate_message {
   my ($self, $attribute, $type, $object, $options, $i18n) = @_;
   $i18n ||= Scalar::Util::blessed($self) ?
     $self->i18n :
-    Module::Runtime::use_module(shift->i18n_class)->new;
+    Module::Runtime::use_module($self->i18n_class);
 
   $options ||= +{};
   $type = delete $options->{message} if $i18n->is_i18n_tag($options->{message}||'');
@@ -177,9 +177,8 @@ sub generate_message {
     $object->read_attribute_for_validation($attribute) :
     undef;
 
-
   my %options = (
-    model => $object->human,
+    model => $object->model_name->human,
     attribute => defined($attribute) ? $object->human_attribute_name($attribute, $options) : undef,
     value => $value,
     object => $object,
@@ -196,7 +195,7 @@ sub generate_message {
       my $class = $_;
       "${i18n_scope}.errors.models.${\$class->i18n_key}.attributes.${local_attribute}.${$type}",
       "${i18n_scope}.errors.models.${\$class->i18n_key}.${$type}";      
-    } $object->ancestors;
+    } grep { $_->can('i18n_key') } $object->ancestors;
     push @defaults, "${i18n_scope}.errors.messages.${$type}";
   }
 

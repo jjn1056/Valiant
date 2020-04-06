@@ -8,7 +8,7 @@ use Lingua::EN::Inflexion 'noun';
 # These first few are permitted arguments
 
 has class => (is=>'ro', required=>1);
-has namespace => (is=>'ro', required=>1, predicate=>'has_namespace');
+has namespace => (is=>'ro', required=>0, predicate=>'has_namespace');
 
 # All these are generated at runtime
 
@@ -72,7 +72,7 @@ has 'element' => (
   default => sub {
     my $self = shift;
     my $class = $self->class;
-    $class =  ~s/^.+:://;
+    $class =~ s/^.+:://;
     $class = decamelize($class);
   },
 );
@@ -113,25 +113,27 @@ has 'i18n' => (
 
 sub human {
   my ($self, %options) = @_;
-  return $self->_human unless $self->can('i18n_scope');
+  return $self->_human unless $self->class->can('i18n_scope');
 
   my @defaults = map {
     $_->i18n_key;
   } $self->ancestors if $self->can('ancestors');
 
+  use Devel::Dwarn;
+
+
   push @defaults, delete $options{default} if exists $options{default};
+
   push @defaults, $self->_human;
 
-  my $tag = shift @defaults;
-
   %options = (
-    scope => [$self->i18n_scope, 'models'],
+    scope => [$self->class->i18n_scope, 'models'],
     count => 1,
     default => \@defaults,
     %options,
   );
 
-  $self->i18n->translate($tag, %options);
+  $self->i18n->translate($defaults[0], %options);
 }
 
 package Valiant::Naming;
@@ -148,7 +150,7 @@ has model_name => (
   default =>  sub {
     my $self = shift;
     my $class = ref($self);
-    my %args = (class => ref($class));
+    my %args = (class => $class);
     if($self->can('use_relative_model_naming') && $self->use_relative_model_naming) {
       $args{namespace} = ($class=~m/^(.+)::/)[0];
     }

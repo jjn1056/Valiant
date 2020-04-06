@@ -5,6 +5,7 @@ use Carp;
 use Data::Perl::Collection::Array;
 use Valiant::NestedError;
 
+
 has 'object' => (
   is => 'ro',
   required => 1,
@@ -37,14 +38,15 @@ has 'i18n' => (
 
 sub error_class { 'Valiant::Error' }
 
+
 sub any {
   my ($self, $code) = @_;
   $code ||= sub { $_ };
   foreach my $error ($self->errors->all) {
     local $_ = $error;
-    return 0 unless $code->($error);
+    return 1 if $code->($error);
   }
-  return 1;
+  return 0;
 }
 
 sub copy {
@@ -83,7 +85,7 @@ sub where {
   my ($attribute, $type, $options) = $self->_normalize_arguments(@_);
   return $self->errors->grep(sub {
     $_->match($attribute, $type, $options);
-  });
+  })->all;
 }
 
 sub _normalize_arguments {
@@ -130,8 +132,24 @@ sub delete {
 sub each {
   my ($self, $block) = @_;
   foreach my $error($self->errors->all) {
-    $block->($error->attribute, $error->message);
+    $block->(($error->attribute||'*'), $error->message);
   }
+}
+
+sub model_errors {
+  my $self = shift;
+  my @errors;
+  foreach my $error($self->errors->all) {
+    push @errors, $error if !$error->has_attribute || !defined($error->attribute);
+  }
+  return @errors;
+}
+
+sub model_errors_array {
+  my ($self, $full_messages_flag) = @_;
+  return map {
+    $full_messages_flag ? $_->full_message : $_->message
+  } $self->model_errors;
 }
 
 sub group_by_attribute {
@@ -139,7 +157,7 @@ sub group_by_attribute {
   my %attributes;
   foreach my $error($self->errors->all) {
     next unless $error->has_attribute;
-    push @{$attributes{$error->attribute}}, $error;
+    push @{$attributes{$error->attribute||'*'}}, $error;
   }
   return %attributes;
 }
@@ -190,10 +208,6 @@ sub add {
     $exception->throw($message);
   }
  
-  use Devel::Dwarn;
-  Dwarn $self->errors;
-
-  
   $self->errors->push($error);
   return $error;
 }
@@ -210,7 +224,7 @@ sub added {
     });
   } else {
     return scalar(grep {
-      $_->type eq $type;
+      $_ eq $type;
     } $self->messages_for($attribute)) ? 1:0
   }
 }
@@ -226,7 +240,7 @@ sub of_kind {
     });
   } else {
     return scalar(grep {
-      $_->type eq $type;
+      $_ eq $type;
     } $self->messages_for($attribute)) ? 1:0
   }
 }
@@ -234,8 +248,14 @@ sub of_kind {
 # Returns all the full error messages in an array.
 sub full_messages {
   my $self = shift;
+  $self->full_messages_collection->all;
+}
+
+sub full_messages_collection {
+  my $self = shift;
   return $self->errors->map(sub { $_->full_message });
 }
+
 
 # Returns all the full error messages for a given attribute in an array.
 sub full_messages_for {
@@ -252,7 +272,7 @@ sub messages_for {
   } $self->where($attribute)
 }
 
-# Returns a full message for a given attribute
+# Returns a full message for a given attribute.  Class method
 sub full_message {
   my ($self, $attribute, $message) = @_;
   $self->error_class->full_message(
