@@ -10,7 +10,7 @@ has max_length => (is=>'ro', predicate=>'has_max_length');
 has min_length => (is=>'ro', predicate=>'has_in_length');
 has validations => (is=>'ro', required=>1);
 
-has validator_class => (is=>'ro', required=>1, default=>'Valiant::Class');
+has validator_class => (is=>'ro', required=>1, default=>'Valiant::Proxy::Array');
 has validator_class_args => (is=>'ro', required=>1, default=>sub { +{} });
 has for => (is=>'ro');
 
@@ -40,7 +40,9 @@ sub validate_each {
   my $result = $validator->validate($value, %opts,  attribute=>'item');  
 
   if($result->invalid) {
-    $record->errors->add($attribute, $result->errors, \%opts);
+    my $errors = $result->errors;
+    $errors->{__result} = $result; # hack to keep this in scope
+    $record->errors->add($attribute, $errors, \%opts);
   }
 }
 

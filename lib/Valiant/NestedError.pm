@@ -14,9 +14,6 @@ around BUILDARGS => sub {
   my ($orig, $class, @args) = @_;
   my $options = $class->$orig(@args);
 
-  use Devel::Dwarn;
-  #Dwarn $options;
-
   return +{
     object => $options->{object},
     inner_error => $options->{options}{inner_error},
