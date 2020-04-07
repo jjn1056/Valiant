@@ -1,27 +1,22 @@
-package Valiant::Result::Object;
+package Valiant::Proxy::Object;
 
 use Moo;
-use Scalar::Util 'blessed';
-
-with 'Valiant::Result';
-
-has '+data' => (isa=>sub { blessed $_ });
+with 'Valiant::Proxy';
 
 sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
-  if($self->data->can($attribute)) {
-    return $self->data->$attribute;
+  if($self->for->can($attribute)) {
+    return $self->for->$attribute;
   } else {
-    die "${\$self->data} cannot provide '$attribute'";
+    die "${\$self->for} cannot provide '$attribute'";
   }
 }
 
 sub AUTOLOAD {
   my $self = shift;
   ( my $method = our $AUTOLOAD ) =~ s{.*::}{};
-
-  if(blessed($self->data) && $self->data->can($method)) {
-    return $self->data->$method(@_);
+  if(blessed($self->for) && $self->for->can($method)) {
+    return $self->for->$method(@_);
   } else {
     # warn "cannot find $method in ${\$self->data}";
   }
@@ -64,11 +59,4 @@ This does the interface defined by L<Valiant::Result> so see the docs on that.
 Also: L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
 
 =head1 AUTHOR
- 
-See L<Valiant>
 
-=head1 COPYRIGHT & LICENSE
- 
-See L<Valiant>
-
-=cut

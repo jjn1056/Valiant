@@ -87,41 +87,10 @@ use Test::Most;
                 'Name does not match the required pattern'
               ]
       };
+
+      #use Devel::Dwarn;
+      #Dwarn +{ $person->errors->to_hash(full_messages=>1) };
 }
 
 done_testing;
-
-__END__
-
-    {
-      'address' => [
-                      {
-                        'zip' => [
-                              'Zip must be an integer',
-                              'Zip does not match the required pattern',
-                              'Zip is too short (minimum is 5 characters)'
-                            ],
-                         'street' => [
-                                 'Street is too short (minimum is 2 characters)',
-                                 'Street cannot have silly characters'
-                               ]
-                      },
-                      'Address contains errors',
-                  ],
-      'email' => [
-                    [
-                      undef,
-                      'Does not look like an email',
-                      undef,
-                      undef,
-                      'Already in use!',
-                    ],
-                    'Some email addresses are bad'.
-
-      ],
-      'name' => [
-                'Name does not match the required pattern'
-              ]
-      };
-
 

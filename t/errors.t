@@ -43,7 +43,6 @@ ok my $user2 = Local::Object::User->new;
 $user1->validate;
 $user2->validate;
 
-use Devel::Dwarn;
 is_deeply +{ $user1->errors->to_hash }, +{
     "*" => [
       "test model error",

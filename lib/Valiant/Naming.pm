@@ -119,11 +119,7 @@ sub human {
     $_->i18n_key;
   } $self->ancestors if $self->can('ancestors');
 
-  use Devel::Dwarn;
-
-
   push @defaults, delete $options{default} if exists $options{default};
-
   push @defaults, $self->_human;
 
   %options = (

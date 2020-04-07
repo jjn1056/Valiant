@@ -15,18 +15,21 @@ around BUILDARGS => sub {
   my $args = $class->$orig(@args);
   my $for = delete $args->{for};
 
+
   if($args->{namespace}) {
     $args->{for} = $args->{namespace};
   }
 
   if( ((ref($args->{validations})||'') eq 'ARRAY') && !exists $args->{validator} ) {
-    my $validator = use_module($args->{validator_class}||'Valiant::Class')
+    my $validator = use_module($args->{validator_class}||'Valiant::Proxy::Object')
       ->new(
         %{ $args->{validator_class_args}||+{} },
         for => $for, 
         validations => $args->{validations}
       );
     $args->{validator} = $validator;
+
+
   }
 
   return $args;
@@ -53,7 +56,7 @@ sub validate_each {
     if(my $validator = $self->validator) {
       my $result = $validator->validate($value, %opts);
       if($result->invalid) {
-        $record->errors->add($attribute, $result->errors, \%opts);
+        $record->errors->add($attribute, $result->errors, +{%opts, result=>$result});
       }
     } else {
       $value->validate(%opts);

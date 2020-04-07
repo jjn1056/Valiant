@@ -93,19 +93,9 @@ sub full_message {
 
   return $message unless defined($attribute);
 
-
   # Current hack for nested support. This needs WORK
-  if(ref $message) {
-    if(ref $message eq 'HASH') {
-      my %result = ();
-      foreach my $key (CORE::keys %$message) {
-        foreach my $m (@{ $message->{$key} }) {
-          my $full_message = $self->full_message($key, $m); # TODO this probably doesn't localise the right model name
-          push @{$result{$key}}, $full_message;
-        }
-      }
-      return \%result;
-    }
+  if(Scalar::Util::blessed($message)) {
+      return +{ $message->to_hash(1) };
   }
   # End nested hack
   

@@ -1,71 +1,57 @@
-package Valiant::Class;
+package Valiant::Proxy;
 
-use Moo;
-use Module::Runtime 'use_module';
+use Moo::Role;
+with 'Valiant::Validates';
 
-has for => (is=>'ro', required=>1);
-has result_class => (is=>'ro', required=>1, default=>'Valiant::Result::Object');
-has meta_class => (is=>'ro', required=>1, default=>'Valiant::Meta');
-has validations => (
-  is=>'ro',
-  required=>1,
-  default=>sub { [] }); # Allow for using ->validates  
+requires 'read_attribute_for_validation';
 
-has _meta => (
-  is=>'ro',
-  require=>1,
-  lazy=>1,
-  builder=>'_build_meta'
-);
+has 'for' => (is=>'ro', init_arg=>undef, weak_ref=>1);
 
-  sub _build_meta {
-    my $self = shift;
-    my $meta = use_module($self->meta_class)
-      ->new(target=>ref($self->for));
-  }
+has '_validations' => (
+  is => 'rw',
+  init_arg => 'validations',
+  required => 1,
+  default => sub { [] });
 
 sub BUILD {
   my $self = shift;
-  foreach my $rules(@{ $self->validations }) {
+  my @rules = @{$self->_validations};
+  $self->_validations([]);
+  foreach my $rules(@rules) {
     if(ref($rules) eq 'CODE') {
-      $self->_meta->validates_with($rules);
+      $self->validates_with($rules);
     } elsif(ref($rules) eq 'ARRAY') {
-      $self->_meta->validates(@$rules);
+      $self->validates(@$rules);
     }
   }
 }
 
-sub validates {
-  my ($self, @rules) = @_;
-  $self->_meta->validates(@rules);
-  return $self;
+sub validations { 
+  my ($self, $arg) = @_;
+  if($arg) {
+    $self->_validations([
+      @{$self->_validations},
+      $arg,
+    ]);
+  }
+  return @{$self->_validations};
 }
 
-sub validates_with {
-  my ($self, @rules) = @_;
-  $self->_meta->validates_with(@rules);
-  return $self;
-}
-
-sub validate {
-  my ($self, $target, @validate_options) = @_;
-  my $result = use_module($self->result_class)
-    ->new(data=>$target, meta=>$self->_meta);
-
-  $result->validate(@validate_options);
-  return $result;
-}
+around 'validate', sub {
+  my ($orig, $self, $target, %args) = @_;
+  my $new_self = bless +{%$self, for=>$target}, ref($self);
+  return $new_self->$orig(%args);
+};
 
 1;
 
 =head1 TITLE
 
-Valiant::Class - Create a validation ruleset dynamically
+Valiant::Proxy - Create a validation ruleset dynamically
 
 =head1 SYNOPSIS
 
     my $validator = Valiant::Class->new(
-      for => 'Local::User',
       validations => [
         [ sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } } ],
         [ name => length => [2,15], format => qr/[a-zA-Z ]+/ ],

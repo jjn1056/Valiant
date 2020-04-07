@@ -75,6 +75,8 @@ sub import_error {
 
 sub merge {
   my ($self, $other) = @_;
+  use Devel::Dwarn;
+  #Dwarn $other;
   foreach my $error ($other->errors->all) {
     $self->import_error($error);
   }
@@ -193,8 +195,18 @@ sub add {
   $options ||= +{};
   ($attribute, $type, $options) = $self->_normalize_arguments($attribute, $type, $options);
 
-  use Devel::Dwarn;
-  
+  # hack for nested..
+  if(Scalar::Util::blessed($type) and $type->isa('Valiant::Errors')) {
+    my @existing = $self->where($attribute);
+    ## Todo this needs to be first if it doesn't exist
+    foreach my $existing(@existing) {
+      next unless Scalar::Util::blessed($existing->type) and $existing->type->isa('Valiant::Errors');
+      $existing->type->merge($type);
+      return;
+    }
+  }
+  # end hack
+
   my $error = $self->error_class
     ->new(
       object => $self->object,

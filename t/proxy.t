@@ -1,5 +1,5 @@
 use Test::Most;
-use Valiant::Class;
+use Valiant::Proxy::Object;
 
 {
   package Local::Test::User;
@@ -11,10 +11,28 @@ use Valiant::Class;
     required=>1;
 }
 
-ok my $validator = Valiant::Class->new(
-  for => 'Local::User',
+{
+  ok my $validator = Valiant::Proxy::Object->new();
+  ok my $user = Local::Test::User->new(name=>'xxxxxxxxxxxxxsJohn', age=>15, is_active=>1);
+
+  $validator
+    ->validates_with(sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } })
+    ->validates(name => length => [2,15], format => qr/[a-zA-Z ]+/ );
+
+  my $result = $validator->validate($user);
+
+  is_deeply +{ $result->errors->to_hash(1) },
+    {
+      "name" =>
+        [
+          "Name is too long (maximum is 15 characters)",
+        ]
+    };
+}
+
+ok my $validator = Valiant::Proxy::Object->new(
   validations => [
-    sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } },
+    sub { unless($_[0]->is_active) { $_[0]->errors->add(undef, 'Cannot change inactive user') } },
     [ name => length => [2,15], format => qr/[a-zA-Z ]+/ ],
     [ age => numericality => 'positive_integer' ],
   ]
@@ -32,7 +50,7 @@ ok my $validator = Valiant::Class->new(
   ok $result->invalid;
   is_deeply +{ $result->errors->to_hash(full_messages=>1) },
     {
-      '_base' => [
+      '*' => [
                    'Cannot change inactive user'
                  ],
       'age' => [
@@ -45,3 +63,4 @@ ok my $validator = Valiant::Class->new(
 }
 
 done_testing;
+

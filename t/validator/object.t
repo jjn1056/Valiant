@@ -124,9 +124,9 @@ use Test::Most;
     car => $car,
   );
 
-
   ok $person->validate->invalid;
-  is_deeply +{ $person->errors->to_hash(full_messages=>1) },
+
+  is_deeply +{ $person->errors->to_hash(1) },
     {
       'car' => [{
            'model' => [
@@ -155,6 +155,8 @@ use Test::Most;
                   'Name does not match the required pattern'
                 ]
     };
+
+
 }
 
 done_testing;

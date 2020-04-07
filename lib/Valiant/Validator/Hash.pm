@@ -31,7 +31,7 @@ around BUILDARGS => sub {
       die 'validations argument in unsupported format';
     }
 
-    my $validator = use_module($args->{validator_class}||'Valiant::Class')
+    my $validator = use_module($args->{validator_class}||'Valiant::Proxy::Hash')
       ->new( result_class => 'Valiant::Result::HashRef', %{ $args->{validator_class_args}||+{} },
         for => $args->{for}, 
         validations => \@validations);
@@ -56,7 +56,9 @@ sub validate_each {
   my $result = $validator->validate($value, %opts);
 
   if($result->invalid) {
-    $record->errors->add($attribute, $result->errors, \%opts);
+    my $errors = $result->errors;
+    $errors->{__result} = $result; # hack to keep this in scope
+    $record->errors->add($attribute, $errors, \%opts);
   }
 }
 

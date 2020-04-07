@@ -49,6 +49,7 @@ sub read_attribute_for_validation {
 sub _validates_coderef {
   my ($self, $coderef, %options) = @_;
   $self->validations([$coderef, \%options]);
+  return $self;
 }
 
 sub _is_reserved_option_key {
