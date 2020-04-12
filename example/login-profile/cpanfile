@@ -1,0 +1,37 @@
+requires 'Catalyst', '5.90114';
+requires 'Catalyst::Model::DBIC::Schema', '0.65';
+requires 'Catalyst::Plugin::ConfigLoader', '0.34';
+requires 'Catalyst::Plugin::RedirectTo', '0.003';
+requires 'Catalyst::ControllerRole::At', '0.006';
+requires 'Catalyst::Plugin::URI';
+requires 'DBIx::Class', '0.082840';
+requires 'DBIx::Class::Helpers', '2.033003';
+requires 'DBIx::Class::Schema::Loader', '0.07046';
+requires 'DBIx::Class::TimeStamp', '0.14';
+requires 'DBIx::Class::ResultClass::CallbackInflator', '0.003';
+requires 'Gazelle', '0.46';
+requires 'Module::Runtime';
+requires 'experimental', '0.020';
+requires 'App::DH';
+requires 'DBIx::Class::EncodedColumn';
+requires 'Catalyst::Plugin::InjectionHelpers';
+requires 'Catalyst::Plugin::Authentication';
+requires 'Catalyst::Plugin::Session::Store::Cookie';
+requires 'Catalyst::Plugin::Session::State::Cookie';
+requires 'Catalyst::View::Xslate';
+requires 'Text::Xslate';
+requires 'DBD::Pg';
+
+on test => sub {
+  requires 'Catalyst::Test';
+  requires 'HTTP::Request::Common', '6.11';
+  requires 'Test::DBIx::Class', '0.52';
+  requires 'Test::Most', '0.35';
+};
+
+on develop => sub {
+  requires 'App::Ack', '2.14';
+  requires 'Devel::Confess', '0.009004';
+  requires 'Devel::Dwarn';
+  requires 'App::cpanoutdated';
+};

@@ -51,8 +51,8 @@ sub h1 {
   $self->_add_node('h1', $attrs);
   if($content) {
     $self->_add_text($content);
-    $self->_add_end;
   }
+  $self->_add_end;
   return $self;
 }
 
@@ -62,8 +62,8 @@ sub p {
   $self->_add_node('p', $attrs);
   if($content) {
     $self->_add_text($content);
-    $self->_add_end;
   }
+  $self->_add_end;
   return $self;
 }
 
@@ -109,11 +109,13 @@ sub input {
 
 sub password {
   my ($self, $attrs) = @_;
-  my $confirmation = delete $attrs->{confirmation};
+  my $confirmation = delete $attrs->{confirmation} if exists $attrs->{confirmation};
   $self->input({ type=>'password', %$attrs});
   if($confirmation) {
-    delete $attrs->{label};
-    $self->input({ type=>'password', %$attrs, name=> $attrs->{name} .'_confirmation'});
+    delete $attrs->{label} if exists $attrs->{label};
+    return $self->input({ type=>'password', %$attrs, name=> $attrs->{name} .'_confirmation'});
+  } else {
+    return $self;
   }
 }
 
@@ -128,6 +130,18 @@ sub button {
   return $self;
 }
 
+sub model_errors {
+  my ($self) = @_;
+  if(my @errors = $self->{model}->errors->model_errors_array(1)) {
+    my $error = join ', ', @errors;
+    warn "eeeee $error";
+    $self->_add_node('div',{class=>'is-invalid'} );
+    $self->_add_text($error);
+    $self->_add_end;
+  }
+  return $self;
+}
+
 sub submit {
   my ($self, $attrs) = @_;
   $self->button({type=>'submit', %$attrs});
@@ -135,7 +149,7 @@ sub submit {
 
 sub end {
   my ($self) = @_;
-  $self->_add_end;
+  $self->_add_end;  
   if(@{$self->{current_node}}) {
     return $self;
   } else {
