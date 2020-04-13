@@ -11,6 +11,7 @@ __PACKAGE__->load_components(qw/EncodedColumn /);
 __PACKAGE__->add_columns(
   id => { data_type => 'bigint', is_nullable => 0, is_auto_increment => 1 },
   username => { data_type => 'varchar', is_nullable => 0, size => 48 },
+  #email => { data_type => 'varchar', is_nullable => 1, size => 96 },
   password => {
     data_type => 'varchar',
     is_nullable => 0,

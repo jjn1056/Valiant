@@ -26,7 +26,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
     sub home :Chained(authenticate) PathPart('') Args(0) {
       my ($self, $c) = @_;
-      $c->model('Schema')->schema->diff;
+      $c->model('Schema')->schema->diff($c->path_to('sql/schemas'));
     }
 
 sub end : ActionClass('RenderView') {}
