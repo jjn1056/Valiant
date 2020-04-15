@@ -11,7 +11,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
   sub authenticate :Chained(root) PathPart('') CaptureArgs() {
     my ($self, $c) = @_;
-    $c->forward('/session/authenticate');
+    $c->visit('/session/authenticate');
   }
 
     sub home :Chained(authenticate) PathPart('') Args(0) {
