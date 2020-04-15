@@ -101,6 +101,7 @@ sub translate {
   my $translated = $dl->localize($key, \%args);
 
   # If $translated is a hashref that means we need to apply the $count
+  debug("Translating '$translated'");
   $translated = $self->_lookup_translation_by_count($count, $translated, %args)
     if ref($translated) && defined($count);
 
@@ -122,6 +123,7 @@ sub translate {
     my $tag = $$default;
     my $translated = $dl->localize($tag, \%args);
 
+    debug("Translating '$translated'");
     $translated = $self->_lookup_translation_by_count($count, $translated, %args)
       if ref($translated) and defined($count);
 

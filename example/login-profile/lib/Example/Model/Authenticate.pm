@@ -11,8 +11,7 @@ validates password => (presence=>1, length=>[6,24]);
 
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
-  my %args = %{$c->req->body_parameters}{qw/username password/};
-  my $model = $class->new(%args);
+  my $model = $class->new($c->req->body_parameters);
   if($c->req->method eq 'POST') {
     if($model->valid) {
       $model->errors->add(undef, "Incorrect Credentials") 

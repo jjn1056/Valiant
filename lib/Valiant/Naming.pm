@@ -86,7 +86,9 @@ has _human => (
     my $self = shift;
     my $name = $self->element;
     $name =~s/_/ /g;
-    return autoformat $name, {case=>'title'};
+    my $formated = autoformat $name, {case=>'title'};
+    $formated=~s/\n//g; # some sort of bug in autoformat?
+    return $formated;
   },
 );
 
