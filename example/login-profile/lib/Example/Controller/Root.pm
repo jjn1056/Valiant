@@ -11,7 +11,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
   sub authenticate :Chained(root) PathPart('') CaptureArgs() {
     my ($self, $c) = @_;
-    $c->forward('/session/authenticate');
+    return if $c->user_exists
+              || (my $model = $c->model('Authenticate'))->user_authenticated;
+    $c->stash(model => $model);
+    $c->go('/session/authenticate');
   }
 
     sub home :Chained(authenticate) PathPart('') Args(0) {
