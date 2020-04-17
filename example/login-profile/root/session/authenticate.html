@@ -41,7 +41,7 @@
     z-index: 2;
   }
   .form-signin input[type="text"], input[type="password"]  {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
   }
@@ -53,7 +53,6 @@
   USE signup = Valiant::Form(model);
   signup
   .form(method = 'POST', class = 'form-signin')
-    .h1(class = 'h3 mb-3 font-weight-normal', content = model.model_name.human)
     .model_errors
     .input(
       name = 'username',
@@ -68,7 +67,8 @@
       required = 1)
     .submit(
       class = 'btn btn-lg btn-primary btn-block',
-      content = 'Register')
+      content = model.model_name.human )
+      .p(class = 'test', content = 'Not a user? <a href="/register">Register</a> a new account')
     .p(class = 'mt-5 mb-3 text-muted', content = '&copy; 2020')
   .end
 %]

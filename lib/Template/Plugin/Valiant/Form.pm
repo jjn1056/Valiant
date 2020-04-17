@@ -51,8 +51,8 @@ sub h1 {
   $self->_add_node('h1', $attrs);
   if($content) {
     $self->_add_text($content);
+    $self->_add_end;
   }
-  $self->_add_end;
   return $self;
 }
 
@@ -62,8 +62,19 @@ sub p {
   $self->_add_node('p', $attrs);
   if($content) {
     $self->_add_text($content);
+    $self->_add_end;
   }
-  $self->_add_end;
+  return $self;
+}
+
+sub dtag {
+  my ($self, $attrs) = @_;
+  my $content = delete $attrs->{content};
+  $self->_add_node('div', $attrs);
+  if($content) {
+    $self->_add_text($content);
+    $self->_add_end;
+  }
   return $self;
 }
 
@@ -82,13 +93,33 @@ sub label {
   return $self;
 }
 
+sub fieldset {
+  my ($self, $attrs) = @_;
+  my $legend = delete $attrs->{legend};
+  $self->_add_node('fieldset', $attrs);
+  if($legend) {
+  $self->_add_node('legend');
+    $self->_add_text($legend);
+    $self->_add_end;
+  }
+  return $self;
+}
+
 sub input {
   my ($self, $attrs) = @_;
   $attrs->{type} ||= 'text';
   $attrs->{id} ||= $attrs->{name};
-  $attrs->{placeholder} ||= $self->{model}->human_attribute_name($attrs->{name});
+  $attrs->{value} ||= $self->{model}->read_attribute_for_validation($attrs->{name});
 
-  if($self->{model}->errors->size) {
+  delete $attrs->{value} unless defined($attrs->{value});
+
+  if($attrs->{placeholder} eq '1') {
+    $attrs->{placeholder} = $self->{model}->human_attribute_name($attrs->{name});
+  }
+
+  my @errors = $self->{model}->errors->full_messages_for($attrs->{name});
+
+  if(@errors) {
     $attrs->{class} .= ' is-invalid';
   }
 
@@ -98,9 +129,9 @@ sub input {
   }
 
   $self->_add_tag('input', $attrs);
-  if($self->{model}->errors->size) {
+  if(@errors) {
     $self->_add_node('div', +{class=>'invalid-feedback'});
-    $self->_add_text( [$self->{model}->errors->full_messages_for($attrs->{name})]->[0] );
+    $self->_add_text( $errors[0] );
     $self->_add_end;
   }
 
@@ -134,8 +165,7 @@ sub model_errors {
   my ($self) = @_;
   if(my @errors = $self->{model}->errors->model_errors_array(1)) {
     my $error = join ', ', @errors;
-    warn "eeeee $error";
-    $self->_add_node('div',{class=>'is-invalid'} );
+    $self->_add_node('div',{class=>'alert alert-danger', role=>'alert'} );
     $self->_add_text($error);
     $self->_add_end;
   }
