@@ -6,8 +6,7 @@ use Test::Most;
   use Moo;
   use Valiant::Validations;
 
-  has ['email',
-    'email_confirmation'] => (is=>'ro');
+  has 'email' => (is=>'ro');
 
   validates email => ( confirmation => 1 );
 }

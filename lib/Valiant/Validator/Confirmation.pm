@@ -8,6 +8,21 @@ with 'Valiant::Validator::Each';
 has confirmation => (is=>'ro', required=>1, default=>sub {_t 'confirmation'});
 has suffix => (is=>'ro', required=>1, default=>'_confirmation');
 
+sub BUILD {
+  my ($self, $args) = @_;
+  my $model_class = $self->model_class;
+  foreach my $attribute (@{$self->attributes||[]}) {
+    my $confirmation_attribute = "${attribute}${\$self->suffix}";
+    next if $model_class->can($confirmation_attribute);
+    $self->_inject_confirmation_attribute($model_class, $confirmation_attribute);
+  }
+}
+
+sub _inject_confirmation_attribute {
+  my ($self, $model_class, $confirmation_attribute) = @_;
+  eval "package $model_class; has $confirmation_attribute => (is=>'ro');";
+}
+
 sub normalize_shortcut {
   my ($class, $arg) = @_;
   if($arg eq '1') {
@@ -42,7 +57,7 @@ Valiant::Validator::Confirmation - Checks for a 'confirming' attributes equality
     use Moo;
     use Valiant::Validations;
 
-    has ['email', 'email_confirmation'] => (is=>'ro');
+    has email=> (is=>'ro');
 
     validates email => ( confirmation => 1 );
 
@@ -70,6 +85,9 @@ The error message (if any) will appear associated with the confirmation attribut
 Error message uses tag C<confirmation> and you can override that with an init arg
 of the same name.  You can also change the prefix used to identify the confirming
 attribute with the C<prefix> init arg (default value is '_confirmation').
+
+B<NOTE:> You don't need to add the confirmation attribute, we inject it for you during 
+validation setup.
 
 =head1 SHORTCUT FORM
 

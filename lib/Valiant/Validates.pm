@@ -159,6 +159,7 @@ sub validates {
     }
     
     $args->{attributes} = $attributes;
+    $args->{model_class} = $self;
 
     push @validators, $self->_create_validator($validator_package, $args);
   }

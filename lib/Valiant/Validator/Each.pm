@@ -15,6 +15,7 @@ has message => (is=>'ro', predicate=>'has_message');
 has strict => (is=>'ro', required=>1, default=>0);
 has opts => (is=>'ro', required=>1, default=>sub { +{} });
 has attributes => (is=>'ro', required=>1);
+has model_class => (is=>'ro', required=>1);
 
 # TODO maybe have a 'where' attribute which allows a callback so you can
 # stick callback / coderefs all over without needed to invoke the 'with'
