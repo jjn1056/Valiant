@@ -10,6 +10,7 @@ sub i18n_class { 'Valiant::I18N' }
 has 'i18n' => (
   is => 'ro',
   required => 1,
+  lazy => 1,
   default => sub { Module::Runtime::use_module(shift->i18n_class) },
 );
 

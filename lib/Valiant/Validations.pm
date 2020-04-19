@@ -1,6 +1,8 @@
 package Valiant::Validations;
 
 use Sub::Exporter 'build_exporter';
+use Class::Method::Modifiers qw(install_modifier);
+
 require Moo::Role;
 
 sub default_roles { 'Valiant::Validates' }
@@ -29,6 +31,19 @@ sub import {
   });
 
   $class->$exporter($class->default_exports);
+
+  install_modifier $target, 'around', 'has', sub {
+    my $orig = shift;
+    my ($attr, %opts) = @_;
+
+    my $method = \&{"${target}::validates"};
+ 
+    if(my $validates = delete $opts{validates}) {
+      $method->($attr, @$validates);
+    }
+      
+    return $orig->($attr, %opts);
+  } if $target->can('has');
 } 
 
 1;

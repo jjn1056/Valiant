@@ -14,14 +14,10 @@ sub BUILD {
   foreach my $attribute (@{$self->attributes||[]}) {
     my $confirmation_attribute = "${attribute}${\$self->suffix}";
     next if $model_class->can($confirmation_attribute);
-    $self->_inject_confirmation_attribute($model_class, $confirmation_attribute);
+    $model_class->inject_attribute($confirmation_attribute);
   }
 }
 
-sub _inject_confirmation_attribute {
-  my ($self, $model_class, $confirmation_attribute) = @_;
-  eval "package $model_class; has $confirmation_attribute => (is=>'ro');";
-}
 
 sub normalize_shortcut {
   my ($class, $arg) = @_;
