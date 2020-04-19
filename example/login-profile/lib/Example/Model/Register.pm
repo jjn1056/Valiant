@@ -5,7 +5,7 @@ use Valiant::Validations;
 
 has 'username' => (
   is => 'ro',
-  validates => [presence=>1, length=>[3,24], format=>'alpha'],
+  validates => [presence=>1, length=>[3,24], format=>'alpha_numeric'],
 );
 
 has 'password' => (
@@ -29,27 +29,27 @@ validates zip => (presence=>1, format=>'zip');
 
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
-  my $model = $class->new($c->req->body_parameters);
   if($c->req->method eq 'POST') {
-    if($model->invalid) {
-      use Devel::Dwarn;
-      Dwarn +{ $model->errors->to_hash };
-    } else {
-      $c->model('Schema::Person')
-        ->create({
-          username => $model->username,
-          password => $model->password,
-          first_name => $model->first_name,
-          last_name => $model->last_name,
-          address => $model->address,
-          city => $model->city,
-          state => { name => $model->state },
-          zip => $model->zip,
-        });
-    }
-  }
-  return $model;
-}
+    my %params = %{$c->req->body_data}{qw/
+      username
+      password
+      first_name
+      last_name
+      address
+      city
+      state
+      zip
+    /};
 
+    use Devel::Dwarn;
+    Dwarn \%params;
+    
+    my $model = $c->model('Schema::Person')->create(\%params);
+    $model->validate;
+    return $model;
+  } else {
+    return $c->model('Schema::Person')->new_result(+{});
+  }
+}
 
 1;
