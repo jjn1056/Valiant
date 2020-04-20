@@ -23,7 +23,8 @@ __PACKAGE__->config(
         credential => {
           class => 'Password',
           password_field => 'password',
-          password_type => 'self_check'
+          # password_type => 'self_check'
+          password_type => 'clear',
         },
         store => {
           class => 'DBIx::Class',

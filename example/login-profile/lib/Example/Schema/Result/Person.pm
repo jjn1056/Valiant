@@ -18,10 +18,10 @@ __PACKAGE__->add_columns(
     data_type => 'varchar',
     is_nullable => 0,
     size => 64,
-    encode_column => 1,
-    encode_class  => 'Digest',
-    encode_args   => { algorithm => 'MD5', format => 'base64' },
-    encode_check_method => 'check_password',
+    #    encode_column => 1,
+    #    encode_class  => 'Digest',
+    #    encode_args   => { algorithm => 'MD5', format => 'base64' },
+    #    encode_check_method => 'check_password',
   },
 );
 
@@ -31,9 +31,8 @@ __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
-__PACKAGE__->validates(state => (presence=>1, length=>[2,18]));
+#__PACKAGE__->validates(state => (presence=>1, length=>[2,18]));
 __PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
-
 
 __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['username']);
