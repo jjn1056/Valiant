@@ -55,6 +55,7 @@ sub validate_each {
   if($validates) {
     if(my $validator = $self->validator) {
       my $result = $validator->validate($value, %opts);
+      # TODO $result needs to import errors into $value
       if($result->invalid) {
         $record->errors->add($attribute, $result->errors, +{%opts, result=>$result});
       }

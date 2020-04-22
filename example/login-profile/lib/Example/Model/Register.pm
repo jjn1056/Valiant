@@ -4,6 +4,7 @@ use Moo;
 
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
+  my $model = $c->model('Schema::Person')->new_result(+{});
   if($c->req->method eq 'POST') {
     my %params = %{$c->req->body_data}{qw/
       username
@@ -19,16 +20,26 @@ sub ACCEPT_CONTEXT {
 
     use Devel::Dwarn;
     Dwarn \%params;
-    
-    my $model = $c->model('Schema::Person')->create(\%params);
-    $model->validate;
 
-    Dwarn +{ $model->errors->to_hash };
+    foreach my $key(keys %params) {
+      if($model->has_column($key)) {
+        $model->set_column($key => $params{$key});
+      } elsif($model->has_relationship($key)) {
+        my $new = $model->find_or_new_related($key, $params{$key});
+        $model->$key($new);
+      } elsif($model->can($key)) {
+        $model->$key($params{$key});
+      } else {
+        die "Not sure what to do with '$key'";
+      }
+    }
 
-    return $model;
-  } else {
-    return $c->model('Schema::Person')->new_result(+{});
+    $model->insert if $model->valid;
+
+    Dwarn +{ $model->errors->to_hash(1) };
   }
+
+  return $model;
 }
 
 1;

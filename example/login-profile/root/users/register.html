@@ -31,7 +31,9 @@
       .end
       .dtag(class = 'form-row')
         .dtag(class='col form-group')
-          .input(name = 'state.name', class = 'form-control', placeholder=1, required = 1, label=1)
+          .fields_for(model.state)  # creates fieldset with legend 'state'
+            .input(name = 'name', class = 'form-control', placeholder=1, required = 1, label=1)
+          .end_fields_for
         .end
         .dtag(class='col form-group')
           .input(name = 'zip', class = 'form-control', placeholder=1, required = 1, label=1)

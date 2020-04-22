@@ -3,7 +3,7 @@ package Example::Schema::Result::Person;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("person");
-__PACKAGE__->load_components(qw/EncodedColumn Result::Valiant/);
+__PACKAGE__->load_components(qw/EncodedColumn Valiant::Result/);
 
 __PACKAGE__->add_columns(
   id => { data_type => 'bigint', is_nullable => 0, is_auto_increment => 1 },
@@ -31,7 +31,7 @@ __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
-#__PACKAGE__->validates(state => (presence=>1, length=>[2,18]));
+__PACKAGE__->validates(state => (presence=>1, object=>1));
 __PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
 
 __PACKAGE__->set_primary_key("id");

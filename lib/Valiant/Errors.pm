@@ -230,6 +230,13 @@ sub add {
 # present, or +false+ otherwise. +message+ is treated the same as for +add+.  ~
 sub added {
   my ($self, $attribute, $type, $options) = @_;
+
+  ## TODO ok so if the $attribute refers to an object which can->errors maybe we
+  ## need to call $self->$attribute->errors->add(undef, $type, $options) instead
+  ## so that any global errors to a nested object end in in the right place?
+  ## Afterwards we need to associate the nested object errors to $self so that
+  ## we know errors exist (for stuff like to_hash and all_errors, etc.
+
   $type ||= $self->i18n->make_tag('invalid');
   ($attribute, $type, $options) = $self->_normalize_arguments($attribute, $type, $options);
   if($self->i18n->is_i18n_tag($type)) {

@@ -57,6 +57,15 @@ use Test::Most;
       allow_blank => 1,
     },
   );
+
+  validates car => (
+    with => sub {
+      my ($self, $attribute_name, $value, $opts) = @_;
+      $self->errors->add($attribute_name, 'ALWAYS FAIL');
+    },
+    allow_blank => 1,
+  );
+
 }
 
 {
@@ -126,9 +135,14 @@ use Test::Most;
 
   ok $person->validate->invalid;
 
+  use Devel::Dwarn;
+  # Dwarn +{ $person->errors->to_hash(1) };
+    Dwarn $person->address->errors;
+
   is_deeply +{ $person->errors->to_hash(1) },
     {
-      'car' => [{
+      'car' => [
+        {
            'model' => [
                         'Model is too short (minimum is 2 characters)'
                       ],
@@ -138,7 +152,9 @@ use Test::Most;
            'make' => [
                        'Make is not in the list'
                      ]
-               }],
+        },
+        "Car ALWAYS FAIL",
+      ],
       'address' => [{
                'street' => [
                              'Street can\'t be blank',
