@@ -19,7 +19,7 @@ sub ACCEPT_CONTEXT {
     /};
 
     use Devel::Dwarn;
-    #   Dwarn \%params;
+    Dwarn \%params;
 
     foreach my $key(keys %params) {
       if($model->has_column($key)) {
@@ -36,7 +36,10 @@ sub ACCEPT_CONTEXT {
 
     $model->insert if $model->valid;
 
+    use Devel::Dwarn; 
     Dwarn +{ $model->errors->to_hash(1) };
+    Dwarn +{ $model->state->errors->to_hash(1) };
+
   }
 
   return $model;

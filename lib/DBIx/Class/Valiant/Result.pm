@@ -11,7 +11,7 @@ sub register_column {
   $self->next::method(@_);
 
   use Devel::Dwarn;
-  Dwarn \@_;
+  #Dwarn \@_;
 }
 
 # Trouble here is you can only inject one attribute per model.  Will be an
@@ -34,8 +34,7 @@ sub inject_attribute {
   ";
 
   eval $injection;
-  warn $injection;
-  warn $@;
+  die $@ if $@;
 }
 
 1;

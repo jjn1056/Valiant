@@ -87,7 +87,7 @@ sub password {
   my @content = $self->input($c, $name, type=>'password', %attrs);
   if($confirmation) {
     delete $attrs{label} if exists $attrs{label};
-    push @content, $self->input($c, $attrs{name} .'_confirmation', type=>'password', %attrs);
+    push @content, $self->input($c, $name .'_confirmation', type=>'password', %attrs);
   }
   return b(@content);
 }

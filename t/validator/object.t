@@ -135,10 +135,6 @@ use Test::Most;
 
   ok $person->validate->invalid;
 
-  use Devel::Dwarn;
-  # Dwarn +{ $person->errors->to_hash(1) };
-    Dwarn $person->address->errors;
-
   is_deeply +{ $person->errors->to_hash(1) },
     {
       'car' => [
