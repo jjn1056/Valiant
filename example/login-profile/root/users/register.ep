@@ -30,13 +30,15 @@
     </div>
     <div class='form-row'>
       <div class='col form-group'>
-        %= input 'state.name', class=>'form-control', required=>1, label=>1;
+        %= sub_form 'state', begin
+          %= input 'name', class=>'form-control', required=>1, label=>1;
+        % end
       </div>
       <div class='col form-group'>
         %= input 'zip', class=>'form-control', required=>1, label=>1;
       </div>
     </div>
-    %= submit 'register', class=>'btn btn-lg btn-primary btn-block', value=>$model->model_name->human;
+    %= submit 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
   </fieldset>
   %= model_errors class=>'alert alert-danger', style=>'margin: 16px 0 0 0', role=>'alert';
 % end

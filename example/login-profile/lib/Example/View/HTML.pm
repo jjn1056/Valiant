@@ -35,8 +35,24 @@ __PACKAGE__->config(
     input => \&input,
     password => \&password,
     submit => \&submit,
+    sub_form => \&sub_form,
   },
 );
+
+sub sub_form {
+  my ($self, $c, $related, @proto) = @_;
+  my ($block, %attrs) = (pop(@proto), @proto);
+  my $model = $c->stash->{'view.form.model'};
+
+  if($model->has_relationship($related)) {
+    local $c->stash->{'view.form.model'} = $model->$related;
+    local $c->stash->{'view.form.namespace'} = $related, 
+    my $content = b($block->());
+    return $content;
+  } else {
+    die "No relation '$related' for model";
+  }
+}
 
 sub tag {
   my ($self, $name, $attrs, $content) = @_;
@@ -58,8 +74,10 @@ sub label {
 
 sub input {
   my ($self, $c, $name, %attrs) = @_;
-  my $model = $c->stash->{'view.form.model'};
+  my $model = $c->stash->{'view.form.model'} || die "Can't find model for '$name'";
   my @errors = $model->errors->full_messages_for($name);
+
+  $name = $c->stash->{'view.form.namespace'} . ".${name}" if exists $c->stash->{'view.form.namespace'};
 
   $attrs{type} ||= 'text';
   $attrs{id} ||= $name;

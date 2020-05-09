@@ -5,6 +5,8 @@ use Moo;
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
   my $model = $c->model('Schema::Person')->new_result(+{});
+  $model->state($c->model('Schema::State')->new_result(+{}));
+
   if($c->req->method eq 'POST') {
     my %params = %{$c->req->body_data}{qw/
       username
