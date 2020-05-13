@@ -35,7 +35,7 @@ has 'unnamespaced' => (
     my $class = $self->class;
     my $ns = $self->namespace;
     $class =~s/^${ns}:://;
-    return $class;
+    return lc $class;
   },
 );
 
@@ -48,8 +48,8 @@ has 'singular' => (
     my $self = shift;
     my $class = $self->class;
     $class = decamelize($class);
-    $class =  ~s/::/_/g;
-    return noun($class)->singular; 
+    $class =~ s/::/_/g;
+    return lc noun($class)->singular; 
   },
 );
 
@@ -113,6 +113,16 @@ has 'i18n' => (
   default => sub { Module::Runtime::use_module(shift->i18n_class) },
 );
 
+has param_key => (
+  is => 'ro',
+  required => 1,
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    $self->has_namespace ? $self->unnamespaced : $self->singular;
+  },
+);
+
 sub human {
   my ($self, %options) = @_;
   return $self->_human unless $self->class->can('i18n_scope');
@@ -147,13 +157,19 @@ has model_name => (
   required => 1,
   default =>  sub {
     my $self = shift;
-    my $class = ref($self);
-    my %args = (class => $class);
-    if($self->can('use_relative_model_naming') && $self->use_relative_model_naming) {
-      $args{namespace} = ($class=~m/^(.+)::/)[0];
-    }
+    my %args = $self->prepare_model_name_args;
     return Module::Runtime::use_module($self->name_class)->new(%args);
   },
 );
+
+sub prepare_model_name_args {
+  my ($self) = @_;
+  my $class = ref($self);
+  my %args = (class => $class);
+  $args{namespace} = $self->namespace if $self->can('namespace');
+
+  return %args;
+}
+
 
 1;

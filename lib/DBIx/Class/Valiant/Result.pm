@@ -11,8 +11,20 @@ sub register_column {
   $self->next::method(@_);
 
   use Devel::Dwarn;
-  #Dwarn \@_;
+  Dwarn \@_;
 }
+
+# Gotta jump thru these hoops because of the way the Catalyst
+# DBIC model messes with the result namespace but not the schema
+# namespace
+
+sub namespace {
+  my $self = shift;
+  my $source_name = $self->result_source->source_name;
+  my $class = ref $self;
+  $class =~s/::${source_name}$//;
+  return $class;
+} 
 
 # Trouble here is you can only inject one attribute per model.  Will be an
 # issue if you have more than one confirmation validation.
