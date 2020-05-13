@@ -5,13 +5,14 @@ use Data::Perl::Collection::Array;
 
 has parent => (is=>'ro', required=>0, predicate=>'has_parent');
 has model => (is => 'ro', required => 1 );
+has namespace => (is=>'ro', required=>1, lazy=>1, builder=>'_build_namespace');
 
-has namespace => (
-  is => 'ro',
-  lazy => 1,
-  required => 1,
-  default => sub { shift->model->model_name->param_key },
-);
+  sub _build_namespace {
+    my ($self, @current) = @_;
+    push @current, $self->model->model_name->param_key;
+    return $self->parent->namespace(@current) if $self->has_parent;
+    return \@current;
+  }
 
 package Example::View::HTML;
 
@@ -22,6 +23,8 @@ extends 'Catalyst::View::MojoTemplate';
 __PACKAGE__->config(
   helpers => {
     form_for => \&form_for,
+    input2 => \&input2,
+
     form => sub {
       my ($self, $c, $model, @proto) = @_;
       my ($inner, %attrs) = (pop(@proto), @proto);
@@ -60,6 +63,8 @@ sub form_for {
   my ($content, %attrs) = (pop(@proto), @proto);
   my $form = Valiant::Form->new(model=>$model);
 
+  warn $form->namespace;
+
   $attrs{name} ||= $model->model_name->param_key;
   $attrs{id} ||= $model->model_name->param_key;
   $attrs{method} ||= 'POST';
@@ -71,6 +76,35 @@ sub form_for {
   my $rendered = b("<form $attrs>@{[$content->()]}</form>");
   return $rendered;
 }
+
+sub input2 {
+  my ($self, $c, $name, %attrs) = @_;
+  my $form = $c->stash->{'valiant.form'} || die "Can't find model for '$name'";
+  my $model = $form->model;
+  my @errors = $form->model->errors->full_messages_for($name);
+
+  $attrs{type} ||= 'text';
+  $attrs{id} ||= join '_', (@{$form->namespace}, $name);
+  $attrs{name} ||= join '.', (@{$form->namespace}, $name);
+  $attrs{value} ||= $model->read_attribute_for_validation($name) || '';
+  $attrs{placeholder} = $model->human_attribute_name($name) if( ($attrs{placeholder}||'') eq '1');
+  $attrs{class} .= ' is-invalid' if @errors;
+
+  my @content;
+
+  if(my $label = delete $attrs{label}) {
+    my %label_params = %$label if ref($label);
+    push @content, $self->label($c, for=>$attrs{id}, %label_params);
+
+    # $self->label($c, $name, %attrs, ?\&block)
+  }
+
+  push @content, $self->tag('input', \%attrs);
+  push @content, $self->tag('div', +{class=>'invalid-feedback'}, $errors[0]) if @errors;
+
+  return b(@content);
+}
+
 
 sub sub_form {
   my ($self, $c, $related, @proto) = @_;

@@ -43,7 +43,13 @@
   %= model_errors class=>'alert alert-danger', style=>'margin: 16px 0 0 0', role=>'alert';
 % end
 
-%= form_for $model,  style=>'width:20em; margin:auto', begin
+<br>
 <hr>
+<br>
+
+%= form_for $model,  style=>'width:20em; margin:auto', begin
+    <div class='form-group'>
+      %= input2 'first_name', class=>'form-control', required=>1, label=>1;
+    </div>
 % end
 
