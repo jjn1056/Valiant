@@ -42,3 +42,8 @@
   </fieldset>
   %= model_errors class=>'alert alert-danger', style=>'margin: 16px 0 0 0', role=>'alert';
 % end
+
+%= form_for $model,  style=>'width:20em; margin:auto', begin
+<hr>
+% end
+

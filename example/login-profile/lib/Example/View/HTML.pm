@@ -1,3 +1,18 @@
+package Valiant::Form;
+
+use Moo;
+use Data::Perl::Collection::Array;
+
+has parent => (is=>'ro', required=>0, predicate=>'has_parent');
+has model => (is => 'ro', required => 1 );
+
+has namespace => (
+  is => 'ro',
+  lazy => 1,
+  required => 1,
+  default => sub { shift->model->model_name->param_key },
+);
+
 package Example::View::HTML;
 
 use Moose;
@@ -6,6 +21,7 @@ extends 'Catalyst::View::MojoTemplate';
 
 __PACKAGE__->config(
   helpers => {
+    form_for => \&form_for,
     form => sub {
       my ($self, $c, $model, @proto) = @_;
       my ($inner, %attrs) = (pop(@proto), @proto);
@@ -38,6 +54,23 @@ __PACKAGE__->config(
     sub_form => \&sub_form,
   },
 );
+
+sub form_for {
+  my ($self, $c, $model, @proto) = @_;
+  my ($content, %attrs) = (pop(@proto), @proto);
+  my $form = Valiant::Form->new(model=>$model);
+
+  $attrs{name} ||= $model->model_name->param_key;
+  $attrs{id} ||= $model->model_name->param_key;
+  $attrs{method} ||= 'POST';
+
+  my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
+  
+  local $c->stash->{'valiant.form'} = Valiant::Form->new(model=>$model);
+
+  my $rendered = b("<form $attrs>@{[$content->()]}</form>");
+  return $rendered;
+}
 
 sub sub_form {
   my ($self, $c, $related, @proto) = @_;
