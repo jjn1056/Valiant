@@ -22,8 +22,10 @@ extends 'Catalyst::View::MojoTemplate';
 
 __PACKAGE__->config(
   helpers => {
-    form_for => \&form_for,
+    form2 => \&form2,
     input2 => \&input2,
+    password2 => \&password2,
+    submit2 => \&submit2,
 
     form => sub {
       my ($self, $c, $model, @proto) = @_;
@@ -58,14 +60,19 @@ __PACKAGE__->config(
   },
 );
 
-sub form_for {
+sub _parse_proto {
+  my @proto = @_;
+  my $content = (ref($proto[-1])||'') eq 'CODE' ? pop @proto : sub { undef };
+  my %attrs = @proto;
+  return ($content, %attrs);
+
+}
+
+sub form2 {
   my ($self, $c, $model, @proto) = @_;
-  my ($content, %attrs) = (pop(@proto), @proto);
+  my ($content, %attrs) = _parse_proto(@proto);
   my $form = Valiant::Form->new(model=>$model);
 
-  warn $form->namespace;
-
-  $attrs{name} ||= $model->model_name->param_key;
   $attrs{id} ||= $model->model_name->param_key;
   $attrs{method} ||= 'POST';
 
@@ -79,9 +86,11 @@ sub form_for {
 
 sub input2 {
   my ($self, $c, $name, %attrs) = @_;
-  my $form = $c->stash->{'valiant.form'} || die "Can't find model for '$name'";
+  my $form = $c->stash->{'valiant.form'};
   my $model = $form->model;
   my @errors = $form->model->errors->full_messages_for($name);
+
+  warn $model->model_name->element;
 
   $attrs{type} ||= 'text';
   $attrs{id} ||= join '_', (@{$form->namespace}, $name);
@@ -94,9 +103,8 @@ sub input2 {
 
   if(my $label = delete $attrs{label}) {
     my %label_params = %$label if ref($label);
-    push @content, $self->label($c, for=>$attrs{id}, %label_params);
-
-    # $self->label($c, $name, %attrs, ?\&block)
+    push @content, $self->label2($c, for=>$attrs{id}, %label_params, sub {  $model->human_attribute_name($name) });
+    $self->label2($c, %attrs)
   }
 
   push @content, $self->tag('input', \%attrs);
@@ -104,6 +112,29 @@ sub input2 {
 
   return b(@content);
 }
+
+sub password2 {
+  my ($self, $c, $name, %attrs) = @_;
+  my @content = $self->input2($c, $name, type=>'password', %attrs);
+  return b(@content);
+}
+
+sub submit2 {
+  my ($self, $c, $name, %attrs) = @_;
+  $self->input2($c, $name, type=>'submit', %attrs);
+}
+
+sub label2 {
+  my ($self, $c, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $form = $c->stash->{'valiant.form'};
+  my $text = $content->() || $form->model->human_attribute_name($attrs{for});
+
+  return $self->tag('label', \%attrs, $text);
+}
+
+
+
 
 
 sub sub_form {
