@@ -20,11 +20,22 @@ sub register_column {
 
 sub namespace {
   my $self = shift;
+  my $source_name = $self->new->result_source->source_name;
+  my $class = ref $self;
+  $class =~s/::${source_name}$//;
+  return $class;
+}
+
+sub namespaceX {
+  my $self = shift;
+  return $self->default_result_namespace;
+  warn "...  $self ....";
   my $source_name = $self->result_source->source_name;
   my $class = ref $self;
   $class =~s/::${source_name}$//;
   return $class;
 } 
+
 
 # Trouble here is you can only inject one attribute per model.  Will be an
 # issue if you have more than one confirmation validation.

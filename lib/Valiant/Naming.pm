@@ -4,6 +4,7 @@ use Moo;
 use String::CamelCase 'decamelize';
 use Text::Autoformat 'autoformat';
 use Lingua::EN::Inflexion 'noun';
+use Valiant::I18N ();
 
 # These first few are permitted arguments
 
@@ -101,7 +102,7 @@ has i18n_key => (
     my $self = shift;
     my $class = $self->class;
     $class =~s/::/\//g;
-    return decamelize($class);
+    return Valiant::I18N->make_tag(decamelize($class));
   },
 );
 
@@ -128,8 +129,8 @@ sub human {
   return $self->_human unless $self->class->can('i18n_scope');
 
   my @defaults = map {
-    $_->i18n_key;
-  } $self->ancestors if $self->can('ancestors');
+    $_->model_name->i18n_key;
+  } $self->class->ancestors if $self->class->can('ancestors');
 
   push @defaults, delete $options{default} if exists $options{default};
   push @defaults, $self->_human;
@@ -150,21 +151,20 @@ use Moo::Role;
 
 sub name_class { 'Valiant::Name' }
 
-has model_name => (
-  is => 'ro',
-  init_arg => undef,
-  lazy => 1,
-  required => 1,
-  default =>  sub {
-    my $self = shift;
+my %_model_name = ();
+sub model_name {
+  my ($self) = @_;
+  my $class = ref($self) || $self;
+
+  return $_model_name{$class} ||= do {
     my %args = $self->prepare_model_name_args;
-    return Module::Runtime::use_module($self->name_class)->new(%args);
-  },
-);
+    Module::Runtime::use_module($self->name_class)->new(%args);
+  };
+}
 
 sub prepare_model_name_args {
   my ($self) = @_;
-  my $class = ref($self);
+  my $class = ref($self) || $self;
   my %args = (class => $class);
   $args{namespace} = $self->namespace if $self->can('namespace');
 

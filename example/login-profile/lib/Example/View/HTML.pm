@@ -9,10 +9,15 @@ has namespace => (is=>'ro', required=>1, lazy=>1, builder=>'_build_namespace');
 
   sub _build_namespace {
     my ($self, @current) = @_;
-    push @current, $self->model->model_name->param_key;
-    return $self->parent->namespace(@current) if $self->has_parent;
+    unshift @current, $self->model->model_name->param_key;
+    return $self->parent->_build_namespace(@current) if $self->has_parent;
     return \@current;
   }
+
+sub create_subform {
+  my ($self, $sub_model) = @_;
+  return ref($self)->new(parent=>$self, model=>$sub_model);
+}
 
 package Example::View::HTML;
 
@@ -26,6 +31,8 @@ __PACKAGE__->config(
     input2 => \&input2,
     password2 => \&password2,
     submit2 => \&submit2,
+    related_fields => \&related_fields,
+    select_from_resultset => \&select_from_resultset,
 
     form => sub {
       my ($self, $c, $model, @proto) = @_;
@@ -90,8 +97,6 @@ sub input2 {
   my $model = $form->model;
   my @errors = $form->model->errors->full_messages_for($name);
 
-  warn $model->model_name->element;
-
   $attrs{type} ||= 'text';
   $attrs{id} ||= join '_', (@{$form->namespace}, $name);
   $attrs{name} ||= join '.', (@{$form->namespace}, $name);
@@ -104,7 +109,6 @@ sub input2 {
   if(my $label = delete $attrs{label}) {
     my %label_params = %$label if ref($label);
     push @content, $self->label2($c, for=>$attrs{id}, %label_params, sub {  $model->human_attribute_name($name) });
-    $self->label2($c, %attrs)
   }
 
   push @content, $self->tag('input', \%attrs);
@@ -133,7 +137,52 @@ sub label2 {
   return $self->tag('label', \%attrs, $text);
 }
 
+# select_related 'State', 
+sub select_from_resultset {
+  my ($self, $c, $attribute, $resultset, $id, $name, %attrs) = @_;
+  my $form = $c->stash->{'valiant.form'};
+  my $model = $form->model;
+  my @errors = $form->model->errors->full_messages_for($name);
+  
+  $attrs{id} ||= join '_', (@{$form->namespace}, $attribute);
+  $attrs{name} ||= join '.', (@{$form->namespace}, $attribute);
 
+  # Needs cache option
+  my $options = '';
+  my $label_text;
+  foreach my $row ($resultset->all) {
+    unless($label_text) {
+      $label_text = $row->model_name->human;
+    }
+    my $selected = $row->$name eq ($model->read_attribute_for_validation($attribute)||'') ? 'selected':'';
+    $options .= "<option value='@{[ $row->$id ]}' $selected >@{[ $row->$name ]}</option>"
+  }
+
+  my $label = '';
+  if(my $label_attrs = delete $attrs{label}) {
+    my %label_params = %$label_attrs if ref($label_attrs);
+    $label = $self->label2($c, for=>$attrs{id}, %label_params, sub {  $label_text });
+  }
+
+  my $select = $self->tag('select', \%attrs, $options);
+
+  return b($label, $select);
+}
+
+sub related_fields {
+  my ($self, $c, $related, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $form = $c->stash->{'valiant.form'};
+  if($form->model->has_relationship($related)) {
+    my $related_model = $form->model->$related;
+    #todo cope with one to many
+    local $c->stash->{'valiant.form'} = $form->create_subform($related_model);
+    $content = b($content->());
+    return $content;
+  } else {
+    die "No relation '$related' for model";
+  }
+}
 
 
 

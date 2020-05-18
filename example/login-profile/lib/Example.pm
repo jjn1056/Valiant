@@ -9,7 +9,6 @@ __PACKAGE__->setup_plugins([qw/
   Session::State::Cookie
   Session::Store::Cookie
   RedirectTo
-  InjectionHelpers
   URI
 /]);
 
