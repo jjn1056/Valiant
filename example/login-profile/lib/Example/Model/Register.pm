@@ -8,7 +8,7 @@ sub ACCEPT_CONTEXT {
   $model->state($c->model('Schema::State')->new_result(+{}));
 
   if($c->req->method eq 'POST') {
-    my %params = %{$c->req->body_data}{qw/
+    my %params = %{$c->req->body_data->{person}}{qw/
       username
       password
       password_confirmation
@@ -16,7 +16,7 @@ sub ACCEPT_CONTEXT {
       last_name
       address
       city
-      state
+      state_id
       zip
     /};
 
@@ -40,7 +40,6 @@ sub ACCEPT_CONTEXT {
 
     use Devel::Dwarn; 
     Dwarn +{ $model->errors->to_hash(1) };
-    Dwarn +{ $model->state->errors->to_hash(1) };
 
   }
 
