@@ -4,47 +4,46 @@
   <style></style>
 % end
 
-%= form2 $model, style=>'width:20em; margin:auto', begin
+%= form_for $model, style=>'width:20em; margin:auto', begin
   <fieldset>
     <legend><%= $model->model_name->human %></legend>
     <div class='form-group'>
-      %= input2 'first_name', class=>'form-control', required=>1, label=>1;
+      %= input 'first_name', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= input2 'last_name', class=>'form-control', required=>1, label=>1;
+      %= input 'last_name', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= input2 'username', class=>'form-control', required=>1, label=>1;
+      %= input 'username', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= password2 'password', class=>'form-control', required=>1, label=>1;
+      %= password 'password', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= password2 'password_confirmation', class=>'form-control', required=>1, label=>1;
+      %= password 'password_confirmation', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= input2 'address', class=>'form-control', required=>1, label=>1;
+      %= input 'address', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= input2 'city', class=>'form-control', required=>1, label=>1;
+      %= input 'city', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-row'>
       <div class='col form-group'>
         %= select_from_resultset 'state_id', $c->model('Schema::State'), 'id', 'name', label=>1, class=>'form-control';
       </div>
       <div class='col form-group'>
-        %= input2 'zip', class=>'form-control', required=>1, label=>1;
+        %= input 'zip', class=>'form-control', required=>1, label=>1;
       </div>
     </div>
 
-    %= related_resultset 'credit_card_rs', begin
+    %= fields_for_related 'credit_cards', add_result_if_none=>1, begin
       <div class='form-group'>
-        %= input2 'card_number', class=>'form-control', required=>1, label=>1;
+        %= input 'card_number', class=>'form-control', required=>1, label=>1;
       </div>
-
     % end
 
-    %= submit2 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
+    %= submit 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
   </fieldset>
 % end
 

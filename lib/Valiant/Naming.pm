@@ -36,7 +36,8 @@ has 'unnamespaced' => (
     my $class = $self->class;
     my $ns = $self->namespace;
     $class =~s/^${ns}:://;
-    return lc $class;
+    return $class;
+    return lc decamelize($class);
   },
 );
 
@@ -120,7 +121,7 @@ has param_key => (
   lazy => 1,
   default => sub {
     my $self = shift;
-    $self->has_namespace ? $self->unnamespaced : $self->singular;
+    $self->has_namespace ? decamelize($self->unnamespaced) : $self->singular;
   },
 );
 
