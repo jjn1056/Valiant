@@ -32,6 +32,8 @@ __PACKAGE__->config(
     password2 => \&password2,
     submit2 => \&submit2,
     related_fields => \&related_fields,
+    related_resultset => \&related_resultset,
+
     select_from_resultset => \&select_from_resultset,
 
     form => sub {
@@ -184,6 +186,23 @@ sub related_fields {
   }
 }
 
+sub related_resultset {
+  my ($self, $c, $related, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $form = $c->stash->{'valiant.form'};
+  if($form->model->has_relationship($related)) {
+    my @content;
+    my $resultset = $form->model->$related;
+    foreach my $result ($resultset->all) {
+      warn "..................... $result " x 5;
+      local $c->stash->{'valiant.form'} = $form->create_subform($result);
+      push @content, $content->();
+    }
+    return b(@content);
+  } else {
+    die "No relation '$related' for model";
+  }
+}
 
 
 sub sub_form {

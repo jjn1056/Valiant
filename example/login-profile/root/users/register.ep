@@ -36,6 +36,14 @@
         %= input2 'zip', class=>'form-control', required=>1, label=>1;
       </div>
     </div>
+
+    %= related_resultset 'credit_card_rs', begin
+      <div class='form-group'>
+        %= input2 'card_number', class=>'form-control', required=>1, label=>1;
+      </div>
+
+    % end
+
     %= submit2 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
   </fieldset>
 % end

@@ -5,7 +5,14 @@ use Moo;
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
   my $model = $c->model('Schema::Person')->new_result(+{});
-  $model->state($c->model('Schema::State')->new_result(+{}));
+  my $cc = $c->model('Schema::CreditCard')->new_result(+{});
+  
+  #  $model->credit_card_rs($cc, $cc, $cc);
+  $model->add_to_credit_card_rs($cc);
+
+  warn $model->credit_card_rs->first->card_number;
+
+  #$model->state($c->model('Schema::State')->new_result(+{}));
 
   if($c->req->method eq 'POST') {
     my %params = %{$c->req->body_data->{person}}{qw/

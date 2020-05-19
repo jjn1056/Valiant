@@ -31,7 +31,6 @@ __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
-#__PACKAGE__->validates(state => (presence=>1, object=>1));
 __PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
 
 __PACKAGE__->set_primary_key("id");
@@ -41,6 +40,12 @@ __PACKAGE__->belongs_to(
   state =>
   'Example::Schema::Result::State',
   { 'foreign.id' => 'self.state_id' }
+);
+
+__PACKAGE__->has_many(
+  credit_card_rs =>
+  'Example::Schema::Result::CreditCard',
+  { 'foreign.person_id' => 'self.id' }
 );
 
 sub registered {
