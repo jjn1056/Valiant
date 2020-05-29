@@ -25,6 +25,18 @@ around BUILDARGS => sub {
   return $args;
 };
 
+sub normalize_shortcut {
+  my ($class, $arg) = @_;
+  if(($arg eq '1') || ($arg eq 'nested')) {
+    return { validations => 1 };
+  } elsif( (ref(\$arg)||'') eq 'SCALAR') {
+    return { for => $arg, validations => [] };
+  } elsif( (ref($arg)||'') eq 'ARRAY') {
+    return { validations => $arg };
+  }
+
+}
+
 sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
   my %opts = (%{$self->options}, %{$options||{}});
@@ -61,7 +73,7 @@ Valiant::Validator::Array - Verify items in an arrayref.
 
     has name => (is=>'ro');
 
-    validates name => ( absence => 1 );
+    validates name => ( array => 1 );
 
     my $object = Local::Test::Absence->new();
     $object->validate;

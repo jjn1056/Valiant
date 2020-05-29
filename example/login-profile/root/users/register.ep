@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    %= fields_for_related 'credit_cards', add_result_if_none=>1, begin
+    %= fields_for_related 'credit_cards', begin
       <div class='form-group'>
         %= input 'card_number', class=>'form-control', required=>1, label=>1;
       </div>

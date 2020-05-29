@@ -62,11 +62,6 @@ sub form_for {
 
 sub input {
   my ($self, $c, $name, %attrs) = @_;
-
-  use Devel::Dwarn;
-  Dwarn $name;
-  Dwarn $c->stash->{'valiant.view.form.namespace'};
-
   my $model = $c->stash->{'valiant.view.form.model'};
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
   my @errors = $model->errors->full_messages_for($name);
@@ -111,8 +106,8 @@ sub select_from_resultset {
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
   my @errors = $model->errors->full_messages_for($name);
   
-  $attrs{id} ||= join '_', (@namespace, $name);
-  $attrs{name} ||= join '.', (@namespace, $name);
+  $attrs{id} ||= join '_', (@namespace, $attribute);
+  $attrs{name} ||= join '.', (@namespace, $attribute);
 
   my ($options, $label_text);
   foreach my $row ($resultset->all) {
@@ -143,6 +138,8 @@ sub fields_for_related {
   die "No relation '$related' for model" unless $model->has_relationship($related);
 
   my @results = $model->$related->all;
+
+  # I think we can drop this feature
   push @results, $model->result_source->related_source($related)->resultset->new_result({})
     if $attrs{add_result_if_none};
 

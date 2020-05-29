@@ -18,11 +18,11 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->validates(card_number => (presence=>1, length=>[13,20], with=>'looks_like_a_cc' ));
-__PACKAGE__->validates(expiration => (presence=>1, with=>'is_future' ));
+#__PACKAGE__->validates(expiration => (presence=>1, with=>'is_future' ));
 
 __PACKAGE__->belongs_to(
   person =>
-  'Example::Schema::Result::State',
+  'Example::Schema::Result::Person',
   { 'foreign.id' => 'self.person_id' }
 );
 

@@ -25,6 +25,11 @@ has 'validators' => (
 
 =head1 TITLE
 
+
+bind / create_or_update_for_validation (default is to just call new)
+associated_for_validation   (default is call the accessor)
+create_associated   (default is send the hash and assume there's a coercion or similar)
+
 Date
   format 
   past

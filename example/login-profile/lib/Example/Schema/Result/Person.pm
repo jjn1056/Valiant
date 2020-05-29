@@ -32,7 +32,7 @@ __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
 __PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
-__PACKAGE__->validates(credit_card_rs => (presence=>1, object=>1));
+__PACKAGE__->validates(credit_cards => (presence=>1, result_set=>1 ));
 
 __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['username']);
