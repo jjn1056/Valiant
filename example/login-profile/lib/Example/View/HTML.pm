@@ -151,6 +151,16 @@ sub fields_for_related {
     $content .= $inner->();
   }
 
+  if(1) {
+    local $c->stash->{'valiant.view.form.model'} = $model->result_source->related_source($related)->resultset->new_result({});
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}[]"];
+    
+    $content .= qq|
+      <script id='@{[ join '_', (@namespace, $related, "template") ]}' type='text/template'>@{[ $inner->() ]}</script>
+    |;
+
+  }
+
   return b($content);
 }
 

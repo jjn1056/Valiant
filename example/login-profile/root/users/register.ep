@@ -37,13 +37,31 @@
       </div>
     </div>
 
-    %= fields_for_related 'credit_cards', begin
-      <div class='form-group'>
-        %= input 'card_number', class=>'form-control', required=>1, label=>1;
-      </div>
-    % end
+    <div class='form-row' id='person_credit_cards'>
+      %= fields_for_related 'credit_cards', begin
+        <div class='col form-group'>
+          %= input 'card_number', class=>'form-control', required=>1, label=>1;
+        </div>
+        <div class='col form-group col-4'>
+          %= input 'expiration', class=>'form-control', required=>1, label=>1;
+        </div>
+      % end
+    </div>
+    <button class='btn btn-lg btn-primary btn-block' 
+        onclick="addNewCreditCard('person_credit_cards_template', 'person_credit_cards'); return false"
+      >Add Credit Card</button>
 
     %= submit 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
   </fieldset>
 % end
+
+
+<script type='application/javascript'>
+  function addNewCreditCard(sourceId, targetId) {
+    var creditCardsTmpl = document.getElementById(sourceId).innerHTML;
+    var div = document.createElement('span');
+    div.innerHTML = creditCardsTmpl;
+    document.getElementById(targetId).appendChild(div);
+  }
+</script>
 
