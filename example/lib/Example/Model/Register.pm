@@ -1,6 +1,7 @@
 package Example::Model::Register;
 
 use Moo;
+use Devel::Dwarn;
 
 sub find_or_new_model_recursively {
   my ($class, $model, %params) = @_;
@@ -11,7 +12,8 @@ sub find_or_new_model_recursively {
       my $rel_data = $model->relationship_info($param);
       my $rel_type = $rel_data->{attrs}{accessor};
       if($rel_type eq 'multi') {
-        my @param_rows = @{$params{$param} || die "missing $param key in params"};
+        # TODO allow array here as well for the picky
+        my @param_rows = map { $params{$param}{$_} } sort { $a <=> $b} keys %{$params{$param} || die "missing $param key in params"};
         my @related_models = ();
         foreach my $param_row (@param_rows) {
           my $related_model = $model->find_or_new_related($param, $param_row);  # +{key=>'primary'}
@@ -53,13 +55,23 @@ sub update_or_insert_model_recursively {
   }
 }
 
+sub build_related {
+  my ($class, $model, $related) = @_;
+  my $related_obj = $model->new_related($related, +{});
+  my @current_cache = @{ $model->related_resultset($related)->get_cache ||[] };
+  $model->related_resultset($related)->set_cache([@current_cache, $related_obj]);
+  return $related_obj;
+}
+
+sub build {
+  my ($class, $resultset, %attrs) = @_;
+  return $resultset->new_result(\%attrs);
+}
+
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
+  my $model = $class->build($c->model('Schema::Person'));
 
-  my $model = $c->model('Schema::Person')->new_result(+{});
-  my $cc = $model->new_related('credit_cards', +{});
-  $model->related_resultset('credit_cards')->set_cache([$cc]);
-  
   if($c->req->method eq 'POST') {
     my %params = %{$c->req->body_data->{person}}{qw/
       username
@@ -74,7 +86,6 @@ sub ACCEPT_CONTEXT {
       credit_cards
     /};
 
-    use Devel::Dwarn;
     Dwarn \%params;
 
     $class->find_or_new_model_recursively($model, %params);
@@ -82,38 +93,12 @@ sub ACCEPT_CONTEXT {
 
     Dwarn +{ $model->errors->to_hash(1) };
     #Dwarn +{ $model->credit_cards->first->errors->to_hash(1) };
+
+  } else {
+    $class->build_related($model, 'credit_cards');
   }
 
   return $model;
 }
 
 1;
-
-__END__
-
-    # TODO this should be reversed (iterate over the model keys)
-    foreach my $key(keys %params) {
-      if($model->has_column($key)) {
-        $model->set_column($key => $params{$key});
-      } elsif($model->has_relationship($key)) {
-        if(ref $params{$key} eq "ARRAY") {
-          foreach my $record (@{$params{$key}}) {
-            ## TODO this will need some sort of proxy or change
-            #to store new resultsets...
-            my $new = $model->find_or_new_related($key, $record);
-            warn "new $new";
-            use Devel::Dwarn;
-            Dwarn { $new->get_columns };
-            $model->related_resultset($key)->set_cache([$new]);
-          }
-        } else {
-          my $new = $model->find_or_new_related($key, $params{$key});
-          $model->$key($new);
-        }
-      } elsif($model->can($key)) {
-        $model->$key($params{$key});
-      } else {
-        die "Not sure what to do with '$key'";
-      }
-    }
-

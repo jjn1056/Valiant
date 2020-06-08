@@ -147,13 +147,14 @@ sub fields_for_related {
   my $idx = 0;
   foreach my $result (@results) {
     local $c->stash->{'valiant.view.form.model'} = $result;
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}[@{[ $idx++ ]}]"];
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}", "@{[ $idx++ ]}"];
+
     $content .= $inner->();
   }
 
   if(1) {
     local $c->stash->{'valiant.view.form.model'} = $model->result_source->related_source($related)->resultset->new_result({});
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}[]"];
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}", "{{epoch}}"];
     
     $content .= qq|
       <script id='@{[ join '_', (@namespace, $related, "template") ]}' type='text/template'>@{[ $inner->() ]}</script>
@@ -163,8 +164,6 @@ sub fields_for_related {
 
   return b($content);
 }
-
-
 
 
 

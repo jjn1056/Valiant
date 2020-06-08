@@ -37,31 +37,29 @@
       </div>
     </div>
 
-    <div class='form-row' id='person_credit_cards'>
-      %= fields_for_related 'credit_cards', begin
+    %= fields_for_related 'credit_cards', begin
+      <div class='form-row'>
         <div class='col form-group'>
           %= input 'card_number', class=>'form-control', required=>1, label=>1;
         </div>
-        <div class='col form-group col-4'>
+        <div class='col form-group col-5'>
           %= input 'expiration', class=>'form-control', required=>1, label=>1;
         </div>
-      % end
-    </div>
-    <button class='btn btn-lg btn-primary btn-block' 
-        onclick="addNewCreditCard('person_credit_cards_template', 'person_credit_cards'); return false"
+      </div>
+    % end
+
+    <button class='btn btn-lg btn-primary btn-block'
+        onclick="addNewRelatedFields('person_credit_cards_template'); return false"
       >Add Credit Card</button>
 
     %= submit 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
   </fieldset>
 % end
 
-
 <script type='application/javascript'>
-  function addNewCreditCard(sourceId, targetId) {
-    var creditCardsTmpl = document.getElementById(sourceId).innerHTML;
-    var div = document.createElement('span');
-    div.innerHTML = creditCardsTmpl;
-    document.getElementById(targetId).appendChild(div);
+  function addNewRelatedFields(sourceId) {
+    var html = document.getElementById(sourceId).innerHTML.replace(/{{epoch}}/g, Date.now());
+    document.getElementById(sourceId).insertAdjacentHTML('afterend', html);
   }
 </script>
 
