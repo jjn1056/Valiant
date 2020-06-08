@@ -26,17 +26,6 @@ sub namespace {
   return $class;
 }
 
-sub namespaceX {
-  my $self = shift;
-  return $self->default_result_namespace;
-  warn "...  $self ....";
-  my $source_name = $self->result_source->source_name;
-  my $class = ref $self;
-  $class =~s/::${source_name}$//;
-  return $class;
-} 
-
-
 # Trouble here is you can only inject one attribute per model.  Will be an
 # issue if you have more than one confirmation validation.
 
@@ -58,6 +47,17 @@ sub inject_attribute {
 
   eval $injection;
   die $@ if $@;
+}
+
+# We override here because we really want the uninflated values for the columns.
+# Otherwise if we try to inflate first we can get an error since the value has not
+# been validated and may not inflate.
+
+sub read_attribute_for_validation {
+  my ($self, $attribute) = @_;
+  return unless defined $attribute;
+  return $self->get_column($attribute) if $self->result_source->has_column($attribute);
+  return $self->$attribute if $self->can($attribute); 
 }
 
 1;

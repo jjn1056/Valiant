@@ -43,7 +43,7 @@
           %= input 'card_number', class=>'form-control', required=>1, label=>1;
         </div>
         <div class='col form-group col-5'>
-          %= input 'expiration', class=>'form-control', required=>1, label=>1;
+          %= date_input 'expiration', class=>'form-control', strftime=>'%Y-%m-%d', required=>1, label=>1;
         </div>
       </div>
     % end

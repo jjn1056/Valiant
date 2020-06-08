@@ -2,6 +2,7 @@ package Example::Schema::Result::CreditCard;
 
 use strict;
 use warnings;
+use DateTime::Format::Strptime;
 
 use base 'Example::Schema::Result';
 
@@ -18,7 +19,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->validates(card_number => (presence=>1, length=>[13,20], with=>'looks_like_a_cc' ));
-#__PACKAGE__->validates(expiration => (presence=>1, with=>'is_future' ));
+__PACKAGE__->validates(expiration => (presence=>1, with=>'looks_like_a_datetime' ));
 
 __PACKAGE__->belongs_to(
   person =>
@@ -32,11 +33,12 @@ sub looks_like_a_cc {
   $self->errors->add($attribute_name, 'does not look like a credit card'); 
 }
 
-sub is_future {
+my $strp = DateTime::Format::Strptime->new(pattern => '%Y-%m-%d');
+
+sub looks_like_a_datetime {
   my ($self, $attribute_name, $value) = @_;
-  warn $value;
-  return;
-  $self->errors->add($attribute_name, 'must be a future date'); 
+  my $dt = $strp->parse_datetime($value);
+  $self->errors->add($attribute_name, 'does not look like a datetime value') unless $dt;
 }
 
 1;

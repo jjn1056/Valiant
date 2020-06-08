@@ -16,7 +16,24 @@ sub find_or_new_model_recursively {
         my @param_rows = map { $params{$param}{$_} } sort { $a <=> $b} keys %{$params{$param} || die "missing $param key in params"};
         my @related_models = ();
         foreach my $param_row (@param_rows) {
-          my $related_model = $model->find_or_new_related($param, $param_row);  # +{key=>'primary'}
+
+          my $related_model = eval {
+            my $new_related = $model->new_related($param, +{});
+            my @primary_columns = $new_related->result_source->primary_columns;
+
+            my %found_primary_columns = map {
+              exists($param_row->{$_}) ? ($param_row->{$_}) : ();
+            } @primary_columns;
+
+            if(%found_primary_columns) {
+              my $found_related = $model->find_related($param, \%found_primary_columns, +{key=>'primary'});
+              die "result not found" unless $found_related;
+              $found_related;
+            } else {
+              $new_related;
+            }
+          } || die $@; # TODO do something useful here...
+          
           $class->find_or_new_model_recursively($related_model, %$param_row);
           push @related_models, $related_model;
         }

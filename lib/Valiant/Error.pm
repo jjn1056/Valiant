@@ -227,6 +227,7 @@ sub message {
     delete @options{@CALLBACKS_OPTIONS};
     return $self->generate_message($self->attribute, $type, $self->object, \%options);
   } else {
+    # TODO this is where I think we could support sub { 'message' }
     return $type;
   }
 }

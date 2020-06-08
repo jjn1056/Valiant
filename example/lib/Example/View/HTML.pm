@@ -8,6 +8,7 @@ __PACKAGE__->config(
   helpers => {
     tag         => \&tag,
     input       => \&input,
+    date_input  => \&date_input,
     password    => \&password,
     submit      => \&submit,
     label       => \&label,
@@ -91,6 +92,22 @@ sub password {
   return $self->input($c, $name, type=>'password', %attrs);
 }
 
+sub date_input {
+  my ($self, $c, $name, %attrs) = @_;
+  my $model = $c->stash->{'valiant.view.form.model'};
+
+  # Don't attempt to inflate if there's found errors
+  unless($model->errors->messages_for($name)) {
+    if(my $strftime = delete $attrs{strftime}) {
+      my $value = $model->$name || '';
+      ## TODO need to make sure $value is a blessed DateTime...
+      $attrs{value} = $value->strftime($strftime) if $value;
+    }
+  }
+
+  return $self->input($c, $name, type=>'text', %attrs);
+}
+
 sub submit {
   my ($self, $c, $name, %attrs) = @_;
   return $self->input($c, $name, type=>'submit', %attrs);
@@ -147,19 +164,19 @@ sub fields_for_related {
   my $idx = 0;
   foreach my $result (@results) {
     local $c->stash->{'valiant.view.form.model'} = $result;
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}", "@{[ $idx++ ]}"];
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
 
-    $content .= $inner->();
+    $content .= $inner->($c, $result, $idx);
   }
 
   if(1) {
-    local $c->stash->{'valiant.view.form.model'} = $model->result_source->related_source($related)->resultset->new_result({});
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${related}", "{{epoch}}"];
+    my $result = $model->result_source->related_source($related)->resultset->new_result({});
+    local $c->stash->{'valiant.view.form.model'} = $result;
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, "{{epoch}}"];
     
     $content .= qq|
-      <script id='@{[ join '_', (@namespace, $related, "template") ]}' type='text/template'>@{[ $inner->() ]}</script>
+      <script id='@{[ join '_', (@namespace, $related, "template") ]}' type='text/template'>@{[ $inner->($c, $result, '{{epoch}}') ]}</script>
     |;
-
   }
 
   return b($content);
