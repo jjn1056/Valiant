@@ -10,11 +10,23 @@ __PACKAGE__->config(
     input       => \&input,
     date_input  => \&date_input,
     password    => \&password,
+    hidden      => \&hidden,
     submit      => \&submit,
     label       => \&label,
     form_for    => \&form_for,
     select_from_resultset => \&select_from_resultset,
     fields_for_related    => \&fields_for_related,
+    model_errors => sub {
+     my ($self, $c, %attrs) = @_;
+     if(my @errors = $c->stash->{'valiant.view.form.model'}->errors->model_errors_array(1)) {
+       my $errors = join ', ', @errors;
+       my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
+       return b("<div $attrs/>$errors</div>");
+     } else {
+       return '';
+     }
+   },
+   
   },
 );
 
@@ -92,6 +104,11 @@ sub password {
   return $self->input($c, $name, type=>'password', %attrs);
 }
 
+sub hidden {
+  my ($self, $c, $name, %attrs) = @_;
+  return $self->input($c, $name, type=>'hidden', %attrs);
+}
+
 sub date_input {
   my ($self, $c, $name, %attrs) = @_;
   my $model = $c->stash->{'valiant.view.form.model'};
@@ -165,6 +182,12 @@ sub fields_for_related {
   foreach my $result (@results) {
     local $c->stash->{'valiant.view.form.model'} = $result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
+
+    my @primary_columns = $result->result_source->primary_columns;
+    foreach my $primary_column (@primary_columns) {
+      next unless my $value = $result->get_column($primary_column);
+      $content .= $self->hidden($c, $primary_column, type=>'hidden', %attrs);
+    }
 
     $content .= $inner->($c, $result, $idx);
   }

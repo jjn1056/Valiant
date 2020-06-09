@@ -20,7 +20,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
     sub login : Chained(authenticate) PathPart(login) Args(0) {
       my ($self, $c) = @_;
-      return $c->redirect_to_action('home');
+      return $c->redirect_to_action('profile');
     }
 
     sub home :Chained(authenticate) PathPart('') Args(0) {
@@ -29,6 +29,8 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
     sub profile :Chained(authenticate) PathPart(profile) Args(0) {
       my ($self, $c) = @_;
+      my $model = $c->model('Profile');
+      $c->stash(model=>$model);
     }
 
   sub logout : Chained(root) PathPart(logout) Args(0) {

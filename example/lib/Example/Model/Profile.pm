@@ -1,4 +1,4 @@
-package Example::Model::Register;
+package Example::Model::Profile;
 
 use Moo;
 use Devel::Dwarn;
@@ -15,6 +15,9 @@ sub find_or_new_model_recursively {
         # TODO allow array here as well for the picky
         my @param_rows = map { $params{$param}{$_} } sort { $a <=> $b} keys %{$params{$param} || die "missing $param key in params"};
         my @related_models = ();
+
+        # TODO this could be batched so we can get it all in one select
+        # rather than separate ones.
         foreach my $param_row (@param_rows) {
 
           my $related_model = eval {
@@ -22,7 +25,7 @@ sub find_or_new_model_recursively {
             my @primary_columns = $new_related->result_source->primary_columns;
 
             my %found_primary_columns = map {
-              exists($param_row->{$_}) ? ($param_row->{$_}) : ();
+              exists($param_row->{$_}) ? ($_ => $param_row->{$_}) : ();
             } @primary_columns;
 
             if(%found_primary_columns) {
@@ -61,7 +64,8 @@ sub update_or_insert_model_recursively {
       my @related_results = @{ $model->{__valiant_related_resultset}{$relationship} ||[] };
       my ($reverse_related) = keys %$rev_data;
       foreach my $related_result (@related_results) {
-        next if $related_result->in_storage;
+        #next if $related_result->in_storage;
+        next unless $related_result->is_changed;
         $related_result->set_from_related($reverse_related, $model);
         $class->update_or_insert_model_recursively($related_result);
       }
@@ -85,14 +89,10 @@ sub build {
   return $resultset->new_result(\%attrs);
 }
 
-# TODO to make these models less tightly bound we should
-# pass in parameters from the controller rather than try to
-# call ->body_data here. 
-
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
-  my $model = $class->build($c->model('Schema::Person'));
-  $class->build_related($model, 'credit_cards');
+  my $model = $c->model('Schema::Person')
+    ->find({id=>$c->user->id},{prefetch=>'credit_cards'});
 
   if($c->req->method eq 'POST') {
     my %params = %{$c->req->body_data->{$model->model_name->param_key}}{qw/

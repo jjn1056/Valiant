@@ -1,5 +1,5 @@
 % layout 'layout.ep';
-% content title => 'Register';
+% content title => 'Profile';
 % content css => begin
   <style></style>
 % end

@@ -45,7 +45,7 @@ sub diff2 {
   };
 
   use Devel::Dwarn;
-  Dwarn $target_schema;
+  #Dwarn $target_schema;
 
   my $diff = SQL::Translator::Diff->new({
     output_db => 'PostgreSQL',

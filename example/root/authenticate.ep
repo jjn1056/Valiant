@@ -4,7 +4,7 @@
   <style></style>
 % end
 
-%= form $model, method=>'POST', style=>'width:20em; margin:auto', begin
+%= form_for $model, method=>'POST', style=>'width:20em; margin:auto', begin
   <fieldset>
     <legend><%= $model->model_name->human %></legend>
     <div class='form-group'>

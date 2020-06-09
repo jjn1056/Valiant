@@ -12,7 +12,14 @@ validates password => (presence=>1, length=>[6,24]);
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
   if($c->req->method eq 'POST') {
-    my $model = $class->new($c->req->body_parameters);
+
+    my %params = %{$c->req->body_data->{$class->model_name->param_key}}{qw/
+      username
+      password
+    /};
+        
+    my $model = $class->new(%params);
+
     if($model->valid) {
       $model->errors->add(undef, "Incorrect Credentials") 
         unless $c->authenticate(+{
@@ -20,6 +27,7 @@ sub ACCEPT_CONTEXT {
           password=>$model->password
         });
     }
+    return $model;
   }
   return $class->new;
 }
