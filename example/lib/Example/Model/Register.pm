@@ -111,7 +111,8 @@ sub ACCEPT_CONTEXT {
     Dwarn \%params;
 
     $class->find_or_new_model_recursively($model, %params);
-    $class->update_or_insert_model_recursively($model) if $model->valid;
+    $class->update_or_insert_model_recursively($model)
+      if $model->valid(context=>'registration');
 
     Dwarn +{ $model->errors->to_hash(1) } if $model->errors->size;
   }

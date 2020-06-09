@@ -47,15 +47,28 @@ sub find_or_new_model_recursively {
       }    
     } elsif($model->can($param)) {
       $model->$param($params{$param});
+    } elsif($param eq '_destroy') {
+      if($params{$param}) {
+        # kiss of death
+        $model->{__valiant_kiss_of_death} = 1;
+        warn "marking a delete for $model";
+      }
     } else {
       die "Not sure what to do with '$param'";
     }
   }
 }
 
-sub update_or_insert_model_recursively {
+sub mutate_model_recursively {
   my ($class, $model) = @_;
-  $model->update_or_insert;
+  warn "...... $model ......";
+  if($model->{__valiant_kiss_of_death}) {
+    warn "doing a delete";
+    $model->delete;  #TODO some sort of relationship handling...
+    # TODO need to remove from the __valiant_related_resultset 
+  } else {
+    $model->update_or_insert;
+  }
   foreach my $relationship ($model->relationships) {
     my $rel_data = $model->relationship_info($relationship);
     my $rev_data = $model->result_source->reverse_relationship_info($relationship);
@@ -65,9 +78,9 @@ sub update_or_insert_model_recursively {
       my ($reverse_related) = keys %$rev_data;
       foreach my $related_result (@related_results) {
         #next if $related_result->in_storage;
-        next unless $related_result->is_changed;
+        next unless $related_result->is_changed || $related_result->{__valiant_kiss_of_death};
         $related_result->set_from_related($reverse_related, $model);
-        $class->update_or_insert_model_recursively($related_result);
+        $class->mutate_model_recursively($related_result);
       }
     } else {
       next if $model->$relationship->in_storage;
@@ -97,8 +110,6 @@ sub ACCEPT_CONTEXT {
   if($c->req->method eq 'POST') {
     my %params = %{$c->req->body_data->{$model->model_name->param_key}}{qw/
       username
-      password
-      password_confirmation
       first_name
       last_name
       address
@@ -111,7 +122,7 @@ sub ACCEPT_CONTEXT {
     Dwarn \%params;
 
     $class->find_or_new_model_recursively($model, %params);
-    $class->update_or_insert_model_recursively($model) if $model->valid;
+    $class->mutate_model_recursively($model) if $model->valid;
 
     Dwarn +{ $model->errors->to_hash(1) } if $model->errors->size;
   }

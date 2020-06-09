@@ -16,17 +16,8 @@ __PACKAGE__->config(
     form_for    => \&form_for,
     select_from_resultset => \&select_from_resultset,
     fields_for_related    => \&fields_for_related,
-    model_errors => sub {
-     my ($self, $c, %attrs) = @_;
-     if(my @errors = $c->stash->{'valiant.view.form.model'}->errors->model_errors_array(1)) {
-       my $errors = join ', ', @errors;
-       my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
-       return b("<div $attrs/>$errors</div>");
-     } else {
-       return '';
-     }
-   },
-   
+    model_errors => \&model_errors,
+    current_namespace_id => sub { join '_', @{$_[1]->stash->{'valiant.view.form.namespace'}||[]} },
   },
 );
 
@@ -41,6 +32,17 @@ sub _stringify_attrs {
   my %attrs = @_;
   my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
   return $attrs;
+}
+
+sub model_errors {
+   my ($self, $c, %attrs) = @_;
+   if(my @errors = $c->stash->{'valiant.view.form.model'}->errors->model_errors_array(1)) {
+     my $errors = join ', ', @errors;
+     my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
+     return b("<div $attrs/>$errors</div>");
+   } else {
+     return '';
+   }
 }
 
 sub tag {
@@ -82,7 +84,7 @@ sub input {
   $attrs{type} ||= 'text';
   $attrs{id} ||= join '_', (@namespace, $name);
   $attrs{name} ||= join '.', (@namespace, $name);
-  $attrs{value} ||= $model->read_attribute_for_validation($name) || '';
+  $attrs{value} = ($model->read_attribute_for_validation($name) || '') unless defined($attrs{value});
   $attrs{placeholder} = $model->human_attribute_name($name) if( ($attrs{placeholder}||'') eq '1');
   $attrs{class} .= ' is-invalid' if @errors;
 
@@ -146,7 +148,7 @@ sub select_from_resultset {
   my ($options, $label_text);
   foreach my $row ($resultset->all) {
     $label_text ||= $row->model_name->human;
-    my $selected = $row->$name eq ($model->read_attribute_for_validation($attribute)||'') ? 'selected':'';
+    my $selected = $row->$id eq ($model->read_attribute_for_validation($attribute)||'') ? 'selected':'';
     $options .= "<option value='@{[ $row->$id ]}' $selected >@{[ $row->$name ]}</option>"
   }
 
@@ -187,6 +189,9 @@ sub fields_for_related {
     foreach my $primary_column (@primary_columns) {
       next unless my $value = $result->get_column($primary_column);
       $content .= $self->hidden($c, $primary_column, type=>'hidden', %attrs);
+    }
+    if(@primary_columns) {
+      $content .= $self->hidden($c, '_destroy', type=>'hidden', %attrs, value=>0);
     }
 
     $content .= $inner->($c, $result, $idx);

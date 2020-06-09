@@ -17,12 +17,6 @@
       %= input 'username', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
-      %= password 'password', class=>'form-control', required=>1, label=>1;
-    </div>
-    <div class='form-group'>
-      %= password 'password_confirmation', class=>'form-control', required=>1, label=>1;
-    </div>
-    <div class='form-group'>
       %= input 'address', class=>'form-control', required=>1, label=>1;
     </div>
     <div class='form-group'>
@@ -38,12 +32,22 @@
     </div>
 
     %= fields_for_related 'credit_cards', begin
-      <div class='form-row'>
+      <div class='form-row' id="<%= current_namespace_id %>">
         <div class='col form-group'>
           %= input 'card_number', class=>'form-control', required=>1, label=>1;
         </div>
-        <div class='col form-group col-5'>
+        <div class='col form-group col-4'>
           %= date_input 'expiration', class=>'form-control', strftime=>'%Y-%m-%d', required=>1, label=>1;
+        </div>
+        <div class='col form-group col-1 align-self-center m-0'>
+
+        <button type="button" 
+            class="close" 
+            aria-label="Close"
+            onclick="deleteRelatedFields(document.getElementById('<%= current_namespace_id %>'))">
+          <span aria-hidden="true">&times;</span>
+        </button>
+
         </div>
       </div>
     % end
@@ -52,7 +56,7 @@
         onclick="addNewRelatedFields('person_credit_cards_template'); return false"
       >Add Credit Card</button>
 
-    %= submit 'register', class=>'btn btn-lg btn-primary btn-block', value=>'Register';
+    %= submit 'update', class=>'btn btn-lg btn-primary btn-block', value=>'Update';
   </fieldset>
 % end
 
@@ -60,6 +64,13 @@
   function addNewRelatedFields(sourceId) {
     var html = document.getElementById(sourceId).innerHTML.replace(/{{epoch}}/g, Date.now());
     document.getElementById(sourceId).insertAdjacentHTML('afterend', html);
+    return false;
   }
+  function deleteRelatedFields(target) {
+    console.log(target);
+    target.remove();
+    return false;
+  }
+
 </script>
 

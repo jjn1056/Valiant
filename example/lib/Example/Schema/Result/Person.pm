@@ -26,7 +26,7 @@ __PACKAGE__->add_columns(
 );
 
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric');
-__PACKAGE__->validates(password => presence=>1, length=>[6,24], confirmation=>1);
+__PACKAGE__->validates(password => presence=>1, length=>[6,24], confirmation=>1, on=>'registration'); 
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
