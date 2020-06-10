@@ -17,6 +17,7 @@ __PACKAGE__->config(
     select_from_resultset => \&select_from_resultset,
     fields_for_related    => \&fields_for_related,
     model_errors => \&model_errors,
+    model_errors_for => \&model_errors_for,
     current_namespace_id => sub { join '_', @{$_[1]->stash->{'valiant.view.form.namespace'}||[]} },
   },
 );
@@ -37,7 +38,22 @@ sub _stringify_attrs {
 sub model_errors {
    my ($self, $c, %attrs) = @_;
    if(my @errors = $c->stash->{'valiant.view.form.model'}->errors->model_errors_array(1)) {
-     my $errors = join ', ', @errors;
+     my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
+     my $errors = join ', ', @errors[0..($max_errors-1)];
+     my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
+     return b("<div $attrs/>$errors</div>");
+   } else {
+     return '';
+   }
+}
+
+sub model_errors_for {
+   my ($self, $c, $attribute, %attrs) = @_;
+   my $model = $c->stash->{'valiant.view.form.model'};
+
+   if(my @errors = $model->errors->full_messages_for($attribute)) {
+     my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
+     my $errors = join ', ', @errors[0..($max_errors-1)];
      my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
      return b("<div $attrs/>$errors</div>");
    } else {

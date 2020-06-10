@@ -31,6 +31,10 @@
       </div>
     </div>
 
+    <div class='form-group'>
+      %= model_errors_for 'credit_cards', max_errors=>1, class=>'alert alert-danger', style=>'margin: 16px 0 0 0', role=>'alert';
+    </div>
+
     %= fields_for_related 'credit_cards', begin
       <div class='form-row' id="<%= current_namespace_id %>">
         <div class='col form-group'>
@@ -56,7 +60,7 @@
         onclick="addNewRelatedFields('person_credit_cards_template'); return false"
       >Add Credit Card</button>
 
-    %= submit 'update', class=>'btn btn-lg btn-primary btn-block', value=>'Update';
+    %= submit 'update', class=>'btn btn-lg btn-primary btn-block', value=>'Save Changes';
   </fieldset>
 % end
 
@@ -67,7 +71,10 @@
     return false;
   }
   function deleteRelatedFields(target) {
-    console.log(target);
+    var destroy;
+    if(destroy = document.getElementById( target.id + '__destroy')) {
+      destroy.value = 1;
+    }
     target.remove();
     return false;
   }

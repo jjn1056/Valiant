@@ -66,6 +66,9 @@
         #boolean
         is_not_true => 'must be a true value',
         is_not_false => 'must be a false value',
+        #result_set
+        too_few => 'has two few rows (minimum is {{min}})',
+        too_many => 'has too many rows (maximum is {{max}})',
       },
     }
   },
