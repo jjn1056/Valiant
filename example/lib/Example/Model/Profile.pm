@@ -121,11 +121,17 @@ sub ACCEPT_CONTEXT {
 
     Dwarn \%params;
 
-    $class->find_or_new_model_recursively($model, %params);
-    $class->mutate_model_recursively($model) if $model->valid;
+    eval {
+      $model->result_source->schema->txn_do(sub {
+        $class->find_or_new_model_recursively($model, %params);
+        $class->mutate_model_recursively($model) if $model->valid;
+      }); 1;
+    } || do {
+      $c->log->error("Error trying to update the form: $@");
+      $model->errors->add(undef, 'There was a database error trying to save your form.');
+    };
 
     Dwarn +{ $model->errors->to_hash(1) } if $model->errors->size;
-
   }
 
   return $model;

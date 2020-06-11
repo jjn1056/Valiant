@@ -66,7 +66,8 @@ sub validate_each {
       }
     } else {
       my @rows = $value->all;
-      my $count = scalar(@rows);
+      # Don't count the rows that are marked for death.
+      my $count = scalar( grep { not $_->{__valiant_kiss_of_death} } @rows);
       $record->errors->add($attribute, $self->too_few_msg, +{%opts, count=>$count, min=>$self->min})
         if $self->has_min and $count < $self->min;
       $record->errors->add($attribute, $self->too_many_msg, +{%opts, count=>$count, max=>$self->max})

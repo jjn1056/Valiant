@@ -60,5 +60,18 @@ sub read_attribute_for_validation {
   return $self->$attribute if $self->can($attribute); 
 }
 
+# Provide basic uniqueness checking for columns.  This is basically a dumb DB lookup.  
+# Its probably fine for light work but you'll need something more performant when your
+# table gets big.
+
+sub is_unique {
+  my ($self, $attribute_name, $value) = @_;
+  # Don't do this check unless the user is actually trying to change the
+  # value (otherwise it will fail all the time
+  return 1 unless $self->is_column_changed($attribute_name);
+  my $found = $self->result_source->resultset->find({$attribute_name=>$value});
+  return $found ? 0:1;
+}
+
 1;
 
