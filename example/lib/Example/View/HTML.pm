@@ -19,6 +19,7 @@ __PACKAGE__->config(
     model_errors => \&model_errors,
     model_errors_for => \&model_errors_for,
     current_namespace_id => sub { join '_', @{$_[1]->stash->{'valiant.view.form.namespace'}||[]} },
+    namespace_id_for => sub { join '_', (@{$_[1]->stash->{'valiant.view.form.namespace'}||[]}, @_[2...$#_]) },
   },
 );
 
@@ -133,7 +134,7 @@ sub date_input {
 
   # Don't attempt to inflate if there's found errors
   unless($model->errors->messages_for($name)) {
-    if(my $strftime = delete $attrs{strftime}) {
+    if(my $strftime = delete $attrs{datetime_strftime}) {
       my $value = $model->$name || '';
       ## TODO need to make sure $value is a blessed DateTime...
       $attrs{value} = $value->strftime($strftime) if $value;
