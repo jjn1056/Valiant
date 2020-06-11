@@ -49,6 +49,13 @@ __PACKAGE__->has_many(
   { 'foreign.person_id' => 'self.id' }
 );
 
+__PACKAGE__->has_many(
+  person_roles =>
+  'Example::Schema::Result::PersonRole',
+  { 'foreign.person_id' => 'self.id' }
+);
+
+__PACKAGE__->many_to_many('roles' => 'person_roles', 'role');
 
 sub registered {
   my $self = shift;

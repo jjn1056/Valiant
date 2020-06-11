@@ -58,8 +58,12 @@ sub diff2 {
 
 }
 
+# cd to example
+# perl -Ilib -I ../lib/ -MExample -e 'Example->model("Schema")->diff(Example->path_to())' 
+#
 sub diff {
-  my ($schema, $dir) = @_;
+  my ($schema, $dir, $change) = @_;
+  $change = 'test' unless defined $change;
 
   my $current_ddl = SQL::Translator->new(
    no_comments => 1, # comment has timestamp so that breaks the md5 checksum
@@ -68,22 +72,21 @@ sub diff {
    parser_args => { dbic_schema => $schema },
   )->translate;
 
-  warn $current_ddl;;
-
   my $current_checksum = md5_hex($current_ddl);
 
-  my ($last_created_schema) =  map { $_ } sort { $b cmp $a } $dir->children;
+  my ($last_created_schema) =  map { $_ } sort { $b cmp $a } $dir->subdir('sql','schemas')->children;
   if($last_created_schema) {
     my ($last_checksum) = ("$last_created_schema"=~m/\.(.+?)\.sql$/);
     if($current_checksum eq $last_checksum) {
       warn "No Change!";
-      #return;
+      return;
     }
   }
 
   # Save the DDL since there's a change or its the first one.
   my @d = localtime;
-  my $file = $dir->file(sprintf "%02d-%02d-%02d@%02d:%02d:%02d.%s.sql", $d[5]+1900,$d[4]+1,@d[3,2,1,0], $current_checksum);
+  my $file = $dir->subdir('sql','schemas')
+    ->file(sprintf "%02d-%02d-%02d@%02d:%02d:%02d.%s.sql", $d[5]+1900,$d[4]+1,@d[3,2,1,0], $current_checksum);
   $file->spew($current_ddl);
 
   # Generate a Diff
@@ -116,8 +119,8 @@ sub diff {
   use App::Sqitch::Config;
   use App::Sqitch::Command::add;
 
-  my $change_name = 'test'.time;
-  my $path = $dir->parent->file('sqitch.conf');
+  my $change_name = $change.'_'.time;
+  my $path = $dir->file('sqitch.conf');
   local $ENV{SQITCH_CONFIG} = $path;
 
   my $cmd = App::Sqitch::Command::add->new(
@@ -131,13 +134,13 @@ sub diff {
 
   $cmd->execute;
 
-  my $deploy_script = $dir->parent->subdir('deploy')->file("${change_name}.sql")->slurp;
+  my $deploy_script = $dir->subdir('sql','deploy')->file("${change_name}.sql")->slurp;
   $deploy_script=~s/^\-\- XXX Add DDLs here\.$/$deploy_diff/smg;
-  $dir->parent->subdir('deploy')->file("${change_name}.sql")->spew($deploy_script);
+  $dir->subdir('sql','deploy')->file("${change_name}.sql")->spew($deploy_script);
 
-  my $revert_script = $dir->parent->subdir('revert')->file("${change_name}.sql")->slurp;
+  my $revert_script = $dir->subdir('sql','revert')->file("${change_name}.sql")->slurp;
   $revert_script=~s/^\-\- XXX Add DDLs here\.$/$revert_diff/smg;
-  $dir->parent->subdir('revert')->file("${change_name}.sql")->spew($revert_script);
+  $dir->subdir('sql','revert')->file("${change_name}.sql")->spew($revert_script);
 
 }
 
