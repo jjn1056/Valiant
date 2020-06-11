@@ -76,8 +76,8 @@ sub mutate_model_recursively {
       my @undeleted = ();
       foreach my $related_result (@related_results) {
         #next if $related_result->in_storage;
-        next unless $related_result->is_changed || $related_result->{__valiant_kiss_of_death};
         push @undeleted, $related_result unless $related_result->{__valiant_kiss_of_death};
+        next unless $related_result->is_changed || $related_result->{__valiant_kiss_of_death};
         $related_result->set_from_related($reverse_related, $model);
         $class->mutate_model_recursively($related_result);
       }
@@ -102,6 +102,19 @@ sub build {
   return $resultset->new_result(\%attrs);
 }
 
+sub set_model_from_params_if_valid {
+  my ($class, $model, %params) = @_;
+  eval {
+    $model->result_source->schema->txn_do(sub {
+      $class->find_or_new_model_recursively($model, %params);
+      $class->mutate_model_recursively($model) if $model->valid;
+    }); 1;
+  } || do {
+    #$c->log->error("Error trying to update the form: $@");
+    $model->errors->add(undef, 'There was a database error trying to save your form.');
+  };
+}
+
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
   my $model = $c->model('Schema::Person')
@@ -121,15 +134,7 @@ sub ACCEPT_CONTEXT {
 
     Dwarn \%params;
 
-    eval {
-      $model->result_source->schema->txn_do(sub {
-        $class->find_or_new_model_recursively($model, %params);
-        $class->mutate_model_recursively($model) if $model->valid;
-      }); 1;
-    } || do {
-      $c->log->error("Error trying to update the form: $@");
-      $model->errors->add(undef, 'There was a database error trying to save your form.');
-    };
+    $class->set_model_from_params_if_valid($model, %params);
 
     Dwarn +{ $model->errors->to_hash(1) } if $model->errors->size;
   }
