@@ -15,6 +15,7 @@ __PACKAGE__->config(
     label       => \&label,
     form_for    => \&form_for,
     select_from_resultset => \&select_from_resultset,
+    select_from_related => \&select_from_related,
     fields_for_related    => \&fields_for_related,
     model_errors => \&model_errors,
     model_errors_for => \&model_errors_for,
@@ -150,23 +151,29 @@ sub submit {
 }
 
 sub select_from_related {
- # TODO
-}
-
-sub select_from_resultset {
-  my ($self, $c, $attribute, $resultset, $id, $name, %attrs) = @_;
+  my ($self, $c, $relationship, %attrs) = @_;
   my $model = $c->stash->{'valiant.view.form.model'};
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-  my @errors = $model->errors->full_messages_for($name);
-  
-  $attrs{id} ||= join '_', (@namespace, $attribute);
-  $attrs{name} ||= join '.', (@namespace, $attribute);
+  my $rel_data = $model->relationship_info($relationship);
+
+  # TODO all this DBIC meta needs to be encapsulated in the DBIC Result component
+  my ($attribute) = keys %{$rel_data->{attrs}{fk_columns}}; # Doesn't do multifield FK.  Send me a broken test case and I'll fix it
+  my $current_value = $model->read_attribute_for_validation($attribute)||'';
+
+  my $search_cond = delete ($attrs{search_cond}) || +{};
+  my $search_attrs = delete ($attrs{search_attrs}) || +{};
+  my $search_method = delete ($attrs{search_method}) || '';
+  my $options_resultset = $search_method ?
+    $model->related_resultset($relationship)->result_source->resultset->$search_method :
+    $model->related_resultset($relationship)->result_source->resultset->search($search_cond, $search_attrs);
 
   my ($options, $label_text);
-  foreach my $row ($resultset->all) {
+  my $options_label = delete($attrs{options_label_field}) || 'label';
+  my $options_value = delete($attrs{options_value_field}) || 'id';
+  foreach my $row ($options_resultset->all) {
     $label_text ||= $row->model_name->human;
-    my $selected = $row->$id eq ($model->read_attribute_for_validation($attribute)||'') ? 'selected':'';
-    $options .= "<option value='@{[ $row->$id ]}' $selected >@{[ $row->$name ]}</option>"
+    my $selected = $row->$options_value eq $current_value ? 'selected':'';
+    $options .= "<option value='@{[ $row->$options_value ]}' $selected >@{[ $row->$options_label ]}</option>"
   }
 
   my $content;
@@ -175,6 +182,9 @@ sub select_from_resultset {
     $content .= $self->label($c, for=>$attrs{id}, %label_params, sub {  $label_text });
   }
 
+  my @errors = $model->errors->full_messages_for($attribute);
+  $attrs{id} ||= join '_', (@namespace, $attribute);
+  $attrs{name} ||= join '.', (@namespace, $attribute);
   $content .= $self->tag('select', \%attrs, $options);
   $content .= $self->tag('div', +{class=>'invalid-feedback'}, $errors[0]) if @errors;
 
@@ -228,6 +238,34 @@ sub fields_for_related {
 }
 
 
+# Stuff here is probably semi deprecated
+sub select_from_resultset {
+  my ($self, $c, $attribute, $resultset, $id, $name, %attrs) = @_;
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+  my @errors = $model->errors->full_messages_for($name);
+  
+  $attrs{id} ||= join '_', (@namespace, $attribute);
+  $attrs{name} ||= join '.', (@namespace, $attribute);
+
+  my ($options, $label_text);
+  foreach my $row ($resultset->all) {
+    $label_text ||= $row->model_name->human;
+    my $selected = $row->$id eq ($model->read_attribute_for_validation($attribute)||'') ? 'selected':'';
+    $options .= "<option value='@{[ $row->$id ]}' $selected >@{[ $row->$name ]}</option>"
+  }
+
+  my $content;
+  if(my $label_attrs = delete $attrs{label}) {
+    my %label_params = %$label_attrs if ref($label_attrs);
+    $content .= $self->label($c, for=>$attrs{id}, %label_params, sub {  $label_text });
+  }
+
+  $content .= $self->tag('select', \%attrs, $options);
+  $content .= $self->tag('div', +{class=>'invalid-feedback'}, $errors[0]) if @errors;
+
+  return b($content);
+}
 
 sub related_fields {
   my ($self, $c, $related, @proto) = @_;
