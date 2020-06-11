@@ -73,5 +73,26 @@ sub is_unique {
   return $found ? 0:1;
 }
 
+# 
+sub mark_for_deletion {
+  my ($self) = @_;
+  $self->{__valiant_kiss_of_death} = 1;
+}
+
+sub unmark_for_deletion {
+  my ($self) = @_;
+  $self->{__valiant_kiss_of_death} = 0;
+}
+
+sub is_marked_for_deletion {
+  my ($self) = @_;
+  return $self->{__valiant_kiss_of_death} ? 1:0;
+}
+
+sub delete_if_in_storage {
+  my ($self) = @_;
+  $self->delete if $self->in_storage;  #TODO some sort of relationship handling...
+}
+
 1;
 

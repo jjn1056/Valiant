@@ -6,6 +6,7 @@ use Devel::Dwarn;
 sub find_or_new_model_recursively {
   my ($class, $model, %params) = @_;
   foreach my $param (keys %params) {
+    # Spot to normalize serialized params (like for dates, etc).
     if($model->has_column($param)) {
       $model->set_column($param => $params{$param});
     } elsif($model->has_relationship($param)) {
@@ -13,7 +14,14 @@ sub find_or_new_model_recursively {
       my $rel_type = $rel_data->{attrs}{accessor};
       if($rel_type eq 'multi') {
         # TODO allow array here as well for the picky
-        my @param_rows = map { $params{$param}{$_} } sort { $a <=> $b} keys %{$params{$param} || +{}};
+        my @param_rows = ();
+        if(ref($params{$param}) eq 'HASH') {
+          @param_rows = map { $params{$param}{$_} } sort { $a <=> $b} keys %{$params{$param} || +{}};
+        } elsif(ref($params{$param}) eq 'ARRAY') { # It will come this way with JSON I think
+          @param_rows = @{$params{$param} || +[]};
+        } else {
+          die "We expect $param to be some sort of reference but its not!";
+        }
         my @related_models = ();
 
         # TODO this could be batched so we can get it all in one select
@@ -51,7 +59,7 @@ sub find_or_new_model_recursively {
       $model->$param($params{$param});
     } elsif($param eq '_destroy') {
       if($params{$param}) {
-        $model->{__valiant_kiss_of_death} = 1;
+        $model->mark_for_deletion;
       }
     } else {
       die "Not sure what to do with '$param'";
@@ -59,13 +67,18 @@ sub find_or_new_model_recursively {
   }
 }
 
-sub mutate_model_recursively {
+sub mutate_model {
   my ($class, $model) = @_;
-  if($model->{__valiant_kiss_of_death}) {
-    $model->delete;  #TODO some sort of relationship handling...
+  if($model->is_marked_for_deletion) {
+    $model->delete_if_in_storage;
   } else {
     $model->update_or_insert;
   }
+}
+
+sub mutate_model_recursively {
+  my ($class, $model) = @_;
+  $class->mutate_model($model);
   foreach my $relationship ($model->relationships) {
     my $rel_data = $model->relationship_info($relationship);
     my $rev_data = $model->result_source->reverse_relationship_info($relationship);
@@ -75,9 +88,8 @@ sub mutate_model_recursively {
       my ($reverse_related) = keys %$rev_data;
       my @undeleted = ();
       foreach my $related_result (@related_results) {
-        #next if $related_result->in_storage;
-        push @undeleted, $related_result unless $related_result->{__valiant_kiss_of_death};
-        next unless $related_result->is_changed || $related_result->{__valiant_kiss_of_death};
+        push @undeleted, $related_result unless $related_result->is_marked_for_deletion;
+        next unless $related_result->is_changed || $related_result->is_marked_for_deletion;
         $related_result->set_from_related($reverse_related, $model);
         $class->mutate_model_recursively($related_result);
       }
@@ -110,7 +122,8 @@ sub set_model_from_params_if_valid {
       $class->mutate_model_recursively($model) if $model->valid;
     }); 1;
   } || do {
-    #$c->log->error("Error trying to update the form: $@");
+    #$c->log->error("Error trying to update the form: $@")
+    warn $@;
     $model->errors->add(undef, 'There was a database error trying to save your form.');
   };
 }
@@ -120,8 +133,12 @@ sub ACCEPT_CONTEXT {
   my $model = $c->model('Schema::Person')
     ->find({id=>$c->user->id},{prefetch=>'credit_cards'});
 
-  if($c->req->method eq 'POST') {
-    my %params = %{$c->req->body_data->{$model->model_name->param_key}}{qw/
+  if(
+    ($c->req->method eq 'POST')
+      and
+    (my %posted = %{$c->req->body_data->{$model->model_name->param_key} ||+{}})
+  ) {
+    my %params = %posted{qw/
       username
       first_name
       last_name
