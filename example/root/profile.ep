@@ -35,6 +35,33 @@
       </div>
     </div>
 
+    <hr>
+      % use Devel::Dwarn;
+      % my $role_rs = $model->roles;
+      %= warn " should be a resultset $role_rs  ";
+      % my @roles = warn $model->roles;
+      % my $roles = $model->related_resultset('person_roles')->related_resultset('role')->result_source->resultset->search;
+      % foreach my $role ($roles->all) {
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" value="1" name="person.person_roles.0.role_id" id="person_person_roles_0">
+          <label class="form-check-label" for="person_person_roles_0">Administrator</label>
+        </div>
+      %}
+
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="1" name="person.person_roles.0.role_id" id="person_person_roles_0">
+        <label class="form-check-label" for="person_person_roles_0">Administrator</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="2" name="person.person_roles.1.role_id" id="person_person_roles_1">
+        <label class="form-check-label" for="person_person_roles_1">User</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="3" name="person.person_roles.2.role_id" id="person_person_roles_2">
+        <label class="form-check-label" for="person_person_roles_2">Super User</label>
+      </div>
+    <hr>
+
     <div class='form-group'>
       %= model_errors_for 'credit_cards', max_errors=>1, class=>'alert alert-danger', style=>'margin: 16px 0 0 0', role=>'alert';
     </div>

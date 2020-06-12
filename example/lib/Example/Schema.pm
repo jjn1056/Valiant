@@ -19,49 +19,10 @@ __PACKAGE__->load_components(qw/
 __PACKAGE__->load_namespaces(
   default_resultset_class => "DefaultRS");
 
-sub diff2 {
-  my ($schema) = @_;
-
-  my $source_schema = do {
-    my $t = SQL::Translator->new(
-     no_comments => 1, # comment has timestamp so that breaks the md5 checksum
-     parser => 'SQL::Translator::Parser::DBIx::Class',
-     parser_args => { dbic_schema => $schema },
-    );
-    $t->translate;
-    $t->schema;
-  };
-
-  my $target_schema = do {
-    my $t = SQL::Translator->new(
-      no_comments => 1, # comment has timestamp so that breaks the md5 checksum
-      parser => 'DBI',
-      parser_args => {
-          dbh => $schema->storage->dbh,
-      },
-    );
-    $t->translate;
-    $t->schema;
-  };
-
-  use Devel::Dwarn;
-  #Dwarn $target_schema;
-
-  my $diff = SQL::Translator::Diff->new({
-    output_db => 'PostgreSQL',
-    ignore_constraint_names => 1,
-    source_schema => $source_schema,
-    target_schema => $target_schema,
-  })->compute_differences->produce_diff_sql;
-
-  warn $diff;
-
-}
-
 # cd to example
-# perl -Ilib -I ../lib/ -MExample -e 'Example->model("Schema")->diff(Example->path_to())' 
+# perl -Ilib -I ../lib/ -MExample -e 'Example->model("Schema")->create_migration(Example->path_to(), "test_migration")' 
 #
-sub diff {
+sub create_migration {
   my ($schema, $dir, $change) = @_;
   $change = 'test' unless defined $change;
 

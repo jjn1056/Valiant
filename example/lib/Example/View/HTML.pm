@@ -159,6 +159,9 @@ sub select_from_related {
   # TODO all this DBIC meta needs to be encapsulated in the DBIC Result component
   my ($attribute) = keys %{$rel_data->{attrs}{fk_columns}}; # Doesn't do multifield FK.  Send me a broken test case and I'll fix it
   my $current_value = $model->read_attribute_for_validation($attribute)||'';
+  
+  $attrs{id} ||= join '_', (@namespace, $attribute);
+  $attrs{name} ||= join '.', (@namespace, $attribute);
 
   my $search_cond = delete ($attrs{search_cond}) || +{};
   my $search_attrs = delete ($attrs{search_attrs}) || +{};
@@ -183,8 +186,6 @@ sub select_from_related {
   }
 
   my @errors = $model->errors->full_messages_for($attribute);
-  $attrs{id} ||= join '_', (@namespace, $attribute);
-  $attrs{name} ||= join '.', (@namespace, $attribute);
   $content .= $self->tag('select', \%attrs, $options);
   $content .= $self->tag('div', +{class=>'invalid-feedback'}, $errors[0]) if @errors;
 

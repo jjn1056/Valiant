@@ -20,6 +20,9 @@ sub find_or_new_model_recursively {
         } elsif(ref($params{$param}) eq 'ARRAY') { # It will come this way with JSON I think
           @param_rows = @{$params{$param} || +[]};
         } else {
+          # I think if we are here its because the nests set is
+          # empty and we can ignore it for now but... not 100% sure :)
+          next;
           die "We expect $param to be some sort of reference but its not!";
         }
         my @related_models = ();
@@ -36,7 +39,7 @@ sub find_or_new_model_recursively {
               exists($param_row->{$_}) ? ($_ => $param_row->{$_}) : ();
             } @primary_columns;
 
-            if(%found_primary_columns) {
+            if(scalar(%found_primary_columns) == scalar(@primary_columns)) {
               # TODO I don't think this is looking in the resultset cache and as a result is
               # running additional SQL queries that already have been run.
               my $found_related = $model->find_related($param, \%found_primary_columns, +{key=>'primary'});
@@ -131,7 +134,7 @@ sub set_model_from_params_if_valid {
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
   my $model = $c->model('Schema::Person')
-    ->find({id=>$c->user->id},{prefetch=>'credit_cards'});
+    ->find({id=>$c->user->id},{prefetch=>['credit_cards', 'person_roles']});
 
   if(
     ($c->req->method eq 'POST')
@@ -147,6 +150,7 @@ sub ACCEPT_CONTEXT {
       state_id
       zip
       credit_cards
+      person_roles
     /};
 
     Dwarn \%params;
