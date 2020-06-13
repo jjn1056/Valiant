@@ -43,7 +43,7 @@ sub find_or_new_model_recursively {
               # TODO I don't think this is looking in the resultset cache and as a result is
               # running additional SQL queries that already have been run.
               my $found_related = $model->find_related($param, \%found_primary_columns, +{key=>'primary'});
-              die "result not found" unless $found_related;
+              die "Result not found for relation $param on @{[ $model->model_name->human ]}" unless $found_related;
               $found_related;
             } else {
               $new_related;
@@ -56,14 +56,17 @@ sub find_or_new_model_recursively {
         $model->related_resultset($param)->set_cache(\@related_models);
         $model->{__valiant_related_resultset}{$param} = \@related_models; # we have a private copy
       } else {
-        die "you did not write the code for relation type $rel_type for relation $param and model @{[ ref $model]}";
+        die "you did not write the code for relation type $rel_type for relation $param and model @{[ $model->model_name->human ]}";
       }    
     } elsif($model->can($param)) {
+      # Right now this is only used by confirmation stuff
       $model->$param($params{$param});
     } elsif($param eq '_destroy') {
       if($params{$param}) {
         $model->mark_for_deletion;
       }
+    } elsif($param eq '_checked') {
+      # I don't think there's anything to do right now
     } else {
       die "Not sure what to do with '$param'";
     }
@@ -157,7 +160,7 @@ sub ACCEPT_CONTEXT {
 
     $class->set_model_from_params_if_valid($model, %params);
 
-    Dwarn +{ $model->errors->to_hash(1) } if $model->errors->size;
+    Dwarn +{ $model->errors->to_hash(1) };
   }
 
   return $model;

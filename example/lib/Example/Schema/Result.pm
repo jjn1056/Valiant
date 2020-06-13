@@ -3,15 +3,12 @@ use warnings;
 
 package Example::Schema::Result;
 
-use base 'DBIx::Class::Core';
+use base 'DBIx::Class';
 
 __PACKAGE__->load_components(qw/
-  Helper::Row::RelationshipDWIM
-  Helper::Row::SelfResultSet
-  TimeStamp
+  IntrospectableM2M
+  Core
   InflateColumn::DateTime/);
-
-sub default_result_namespace { 'Liminal::Schema::Result' }
 
 sub debug {
   my ($self) = @_;

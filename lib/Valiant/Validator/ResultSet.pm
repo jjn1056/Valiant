@@ -33,8 +33,6 @@ around BUILDARGS => sub {
         validations => $args->{validations}
       );
     $args->{validator} = $validator;
-
-
   }
 
   return $args;
@@ -68,6 +66,8 @@ sub validate_each {
       # If a row is marked to be deleted then don't bother to validate it.
       my @rows = grep { not $_->is_marked_for_deletion } $value->all;
       my $count = scalar(@rows);
+      warn "total rows $record $count";
+
       $record->errors->add($attribute, $self->too_few_msg, +{%opts, count=>$count, min=>$self->min})
         if $self->has_min and $count < $self->min;
       $record->errors->add($attribute, $self->too_many_msg, +{%opts, count=>$count, max=>$self->max})
