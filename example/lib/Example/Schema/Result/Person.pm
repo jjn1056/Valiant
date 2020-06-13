@@ -14,6 +14,9 @@ __PACKAGE__->add_columns(
   city => { data_type => 'varchar', is_nullable => 0, size => 32 },
   zip => { data_type => 'varchar', is_nullable => 0, size => 5 },
   state_id => { data_type => 'integer', is_nullable => 0, is_foreign_key => 1 },
+  birthday => { data_type => 'date', is_nullable => 1 },
+  phone_number => { data_type => 'varchar', is_nullable => 1, size => 32 },
+
   password => {
     data_type => 'varchar',
     is_nullable => 0,
