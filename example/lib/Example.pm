@@ -43,12 +43,14 @@ __PACKAGE__->config(
   },
 );
 
-# cd $approot (example)
+# CATALYST_DEBUG=1 DBIC_TRACE=1 perl -Ilib -I ../lib/ ./lib/Example/Server.pm
+
+# cd $approot (cd example)
 # perl -Ilib -I ../lib/ -MExample -e 'Example->create_migration("my_new_migration")'
 
 # TODO deal with the nested transactions and improve the naming so that things
 # sort better in standard directory listings (and less ugly).
-q
+
 use App::Sqitch;
 use App::Sqitch::Config;
 use App::Sqitch::Command::add;

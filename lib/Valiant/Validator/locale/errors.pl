@@ -71,6 +71,10 @@
         too_many => 'has too many rows (maximum is {{max}})',
         #unique
         is_not_unique => 'chosen is not unique',
+        #date
+        above_max => "chosen date can't be above {{max}}",
+        below_min => "chosen date can't be earlier than {{min}}",
+        invalid_date => "doesn't look like a date",
       },
     }
   },

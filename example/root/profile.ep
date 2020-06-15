@@ -35,6 +35,23 @@
       </div>
     </div>
 
+    <div class='form-row'>
+      <div class='col form-group'>
+        <%= input 'phone', 
+            class => 'form-control',
+            required => 1, label => 1,
+            type => 'tel',
+            placeholder => '123-456-7890',
+            pattern => "[0-9]{3}-[0-9]{3}-[0-9]{4}" %>
+      </div>
+      <div class='col form-group'>
+        <%= input 'birthday', 
+            class => 'form-control',
+            required => 1, label => 1,
+            type => 'date' %>
+      </div>
+    </div>
+
     <div class='form-group'>
       %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
       <fieldset class="border p-2">
@@ -58,8 +75,7 @@
                 id="person_person_roles_<%= $idx %>_<%=  !$found ? 'role_id' : '_checked' %>"
                 name="person.person_roles.<%= $idx %>.<%=  !$found ? 'role_id' : '_checked' %>" 
                 <%= $checked %>
-                onclick="document.getElementById('person.person_roles.<%= $idx %>._destroy').value = this.checked ? 0:1"
-            >
+                onclick="document.getElementById('person.person_roles.<%= $idx %>._destroy').value = this.checked ? 0:1" >
             <label for="person_person_roles_<%= $idx %>_<%=  !$found ? 'role_id' : '_checked' %>"><%= $role->label %></label>
           </div>
           % $idx++;

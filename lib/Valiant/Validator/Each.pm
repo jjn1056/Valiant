@@ -116,7 +116,7 @@ sub _requires_one_of {
 sub _cb_value {
   my ($self, $object, $value) = @_;
   if((ref($value)||'') eq 'CODE') {
-    return $value->($object) || die "no value";
+    return $value->($object, $self);
   } else {
     return $value;
   } 
@@ -212,6 +212,30 @@ object.  That way you can avoid always hardcoding your requirements or make
 them subject to certain conditions.  For example you may allow users added
 before a certain date to continue to use a username with few characters than
 newer ones, etc.
+
+In order to do this you can run C<_cb_value> on the actual attribute value and if
+that value is a coderef it will get invoked with the object you are validating and
+the instance of the validator (in case the validator instance has some useful helper
+methods). In any case you should use this method to get attribute
+values that are used for doing validations:
+
+    sub validate_each {
+      my ($self, $record, $attribute, $value, $options) = @_;
+      my $state = $self->_cb_value($record, $self->state);
+      my %opts = (%{$self->options}, %{$options||+{}});
+
+      if($state) {
+        # value must be true
+        unless($value) {
+          $record->errors->add($attribute, $self->is_not_true, \%opts);
+        }
+      } else {
+        # value must be false
+        if ($value) {
+          $record->errors->add($attribute, $self->is_not_false, \%opts);
+        }
+      }
+    }
 
 =head2 _requires_one_of
 

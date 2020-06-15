@@ -22,6 +22,31 @@ sub validations {
       $class->ancestors;
 }
 
+my $named_validators = {a=>1};
+
+sub named_validators {
+  my $class = shift;
+  $class = ref($class) if ref($class);
+  my $varname = "${class}::named_validators";
+
+  no strict "refs";
+  return %$varname,
+    map { $_->named_validators } 
+    grep { $_->can('named_validators') }
+      $class->ancestors;
+}
+
+sub _push_named_validators {
+  my ($class, $name, $validator) = @_;
+  $class = ref($class) if ref($class);
+  my $varname = "${class}::named_validators";
+
+  no strict "refs";
+  push @{$varname->{$name}}, $validator if defined($validator);
+  return $class->named_validators;
+}
+
+
 sub errors_class { 'Valiant::Errors' }
 
 has 'errors' => (
@@ -91,7 +116,8 @@ sub _validator_package {
 
 sub _create_validator {
   my ($self, $validator_package, $args) = @_;
-  return $validator_package->new($args);
+  my $validator = $validator_package->new($args);
+  return $validator;
 }
 
 sub validates {
@@ -161,7 +187,9 @@ sub validates {
     $args->{attributes} = $attributes;
     $args->{model_class} = $self;
 
-    push @validators, $self->_create_validator($validator_package, $args);
+    my $new_validator = $self->_create_validator($validator_package, $args);
+    push @validators, $new_validator;
+    $self->_push_named_validators($package_part, $new_validator);
   }
   my $coderef = sub { $_->validate(@_) foreach @validators };
   $self->_validates_coderef($coderef, %global_options); 
