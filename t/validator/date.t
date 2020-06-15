@@ -3,6 +3,8 @@ use DateTime;
 use DateTime::Format::Strptime;
 use Valiant::Validator::Date;
 
+ok my %bad_date_args = (month=>2, year=>1969, day=>13);
+
 {
   package Local::Test::Date;
 
@@ -21,7 +23,7 @@ use Valiant::Validator::Date;
 
   sub my_special_method {
     my ($self, $name, $dt, $type, $opts) = @_;
-    my $bad_date = $type->datetime(month=>2, year=>1969, day=>13);
+    my $bad_date = $type->datetime(%bad_date_args);
     $self->errors->add($name, "Never John's Birthday!", $opts) if $dt eq $bad_date;
   }
 }
@@ -68,7 +70,7 @@ ok my $max = DateTime->now->strftime($Valiant::Validator::Date::_pattern);
 }
 
 {
-  ok my $object = Local::Test::Date->new(birthday=>DateTime->new(month=>2, year=>1969, day=>13));
+  ok my $object = Local::Test::Date->new(birthday=>DateTime->new(%bad_date_args));
   ok $object->validate->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
