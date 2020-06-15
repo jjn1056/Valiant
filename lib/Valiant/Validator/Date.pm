@@ -51,7 +51,7 @@ sub validate_each {
   }
 
   if($self->has_cb) {
-    $self->cb->($record, $dt, $self);
+    $self->cb->($record, $attribute, $dt, $self, \%opts);
   }
 }
 

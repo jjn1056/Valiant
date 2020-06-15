@@ -22,7 +22,8 @@ sub validations {
       $class->ancestors;
 }
 
-my $named_validators = {a=>1};
+my $named_validators;
+my $attribute_valiators;
 
 sub named_validators {
   my $class = shift;
@@ -36,14 +37,43 @@ sub named_validators {
       $class->ancestors;
 }
 
+sub attribute_valiators {
+  my $class = shift;
+  $class = ref($class) if ref($class);
+  my $varname = "${class}::attribute_valiators";
+
+  no strict "refs";
+  return %$varname,
+    map { $_->attribute_valiators } 
+    grep { $_->can('attribute_valiators') }
+      $class->ancestors;
+}
+
+sub attribute_valiators_for {
+  my ($class, $attr) = @_;
+  my %validators = $class->attribute_valiators;
+  return $validators{$attr} ||+{};
+}
+
+sub has_validator_for_attribute {
+  my ($class, $validator_name, $attr) = @_;
+  my %validators = $class->attribute_valiators;
+  return @{ $validators{$attr}{$validator_name}||[] };
+}
+
 sub _push_named_validators {
   my ($class, $name, $validator) = @_;
   $class = ref($class) if ref($class);
-  my $varname = "${class}::named_validators";
+  my $named_validators = "${class}::named_validators";
+  my $attribute_valiators = "${class}::attribute_valiators";
 
-  no strict "refs";
-  push @{$varname->{$name}}, $validator if defined($validator);
-  return $class->named_validators;
+  if(defined $validator) {
+    no strict "refs";
+    push @{$named_validators->{$name}}, $validator;
+    foreach my $attr ( @{ $validator->attributes||[] }) {
+      push @{$attribute_valiators->{$attr}{$name}}, $validator;
+    }
+  }
 }
 
 

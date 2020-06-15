@@ -5,6 +5,7 @@ use Valiant::I18N;
 
 with 'Valiant::Validator::Each';
 
+has required => (is=>'ro', init_arg=>undef, required=>1, default=>1 );
 has is_blank => (is=>'ro', required=>1, default=>sub {_t 'is_blank'});
 
 sub normalize_shortcut {

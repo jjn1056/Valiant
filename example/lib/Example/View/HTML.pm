@@ -99,6 +99,21 @@ sub input {
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
   my @errors = $model->errors->full_messages_for($name);
 
+  # Experimental introspection.  This is probably expensive and needs some sort
+  # of caching strategy (for non dynamic bits).  Also not sure this is the right
+  # API for this (do we want to isolate the HTML generation logic in its own code...?
+  #
+  # I think if we have some sort of meta description framework for Moo so that a
+  # Validator can mark attributes as 'for input html' we can write some code that
+  # gathers those via introspection and run the _cb_value method.  Once that actually
+  # works its nor a big step to have some sort of RPC for doing AJAXy field by field
+  # validation.
+  unless($ENV{VALIANT_FORM_NO_INTROSPECTION} || delete($attrs{no_instrospection})) {
+    $attrs{required} ||= 1 if $model->has_validator_for_attribute(presence=>$name);
+    
+  }
+  # End.  Lots to do here possibly
+
   $attrs{type} ||= 'text';
   $attrs{id} ||= join '_', (@namespace, $name);
   $attrs{name} ||= join '.', (@namespace, $name);
