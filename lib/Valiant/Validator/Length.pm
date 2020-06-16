@@ -75,11 +75,11 @@ Valiant::Validator::Length - Validate the length of an attributes string value
       length => {
         maximum => 10,
         minimum => 3,
-        is => \&equals,
+        is => sub { shift->equals }, 
       }
     );
 
-    my $object = Local::Test::Length->new(name=>'Li');;
+    my $object = Local::Test::Length->new(name=>'Li');
     $object->validate; # Returns false
 
     warn $object->errors->_dump;

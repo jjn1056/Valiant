@@ -40,7 +40,7 @@ use Test::Most;
 
   validates [qw(major_gpa minor_gpa overall_gpa)] => (
     gpa => {
-      gpa_scale=>\&scale,
+      gpa_scale=> sub { shift->scale },
     },
   );
 

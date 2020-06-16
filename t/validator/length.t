@@ -13,7 +13,7 @@ use Test::Most;
     length => {
       maximum => 10,
       minimum => 3,
-      is => \&equals,
+      is => sub { shift->equals }, 
     }
   );
 

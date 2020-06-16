@@ -115,7 +115,7 @@ sub _requires_one_of {
 
 sub _cb_value {
   my ($self, $object, $value) = @_;
-  if((ref($value)||'') eq 'CODE') {
+  if((ref($value)||'') eq 'CODE') {    
     return $value->($object, $self);
   } else {
     return $value;
