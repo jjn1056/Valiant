@@ -55,30 +55,13 @@
       %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
       <fieldset class="border p-2">
         <legend  class="w-auto"><%= $model->human_attribute_name('person_roles')  %></legend>
-        % my $person_roles = $model->related_resultset('person_roles');
-        % my $all_roles = $model->related_resultset('person_roles')->related_resultset('role')->result_source->resultset->search;
-        % my $idx = 0;
-        % foreach my $role ($all_roles->all) {
-          % my $found = $person_roles->find({role_id=>$role->id});
-          % my $checked = $found ? 'checked':'';
-          <div class="form-check">
-            % if($found) {
-              <input type="hidden" value="<%= $found->person_id %>" name="person.person_roles.<%= $idx %>.person_id" > 
-              <input type="hidden" value="<%= $role->id %>" name="person.person_roles.<%= $idx %>.role_id" > 
-              <input type="hidden" value="0" id="person.person_roles.<%= $idx %>._destroy" name="person.person_roles.<%= $idx %>._destroy" > 
-            % }
-            <input
-                class="form-check-input" 
-                type="checkbox"
-                value="<%= !$found ? $role->id : '1' %>"
-                id="person_person_roles_<%= $idx %>_<%=  !$found ? 'role_id' : '_checked' %>"
-                name="person.person_roles.<%= $idx %>.<%=  !$found ? 'role_id' : '_checked' %>" 
-                <%= $checked %>
-                onclick="document.getElementById('person.person_roles.<%= $idx %>._destroy').value = this.checked ? 0:1" >
-            <label for="person_person_roles_<%= $idx %>_<%=  !$found ? 'role_id' : '_checked' %>"><%= $role->label %></label>
-          </div>
-          % $idx++;
-        % }
+        %= checkbox_from_related 'person_roles', 'role', label => 1, checkbox_attrs => +{class=>'form-check-input'}, begin
+        <div class="form-check">
+          % my ($checkbox, $label) = @_;
+          %= $checkbox;
+          %= $label;
+        </div>
+        % end
       </fieldset>
     </div>
 

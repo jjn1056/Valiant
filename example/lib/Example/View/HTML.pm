@@ -2,6 +2,7 @@ package Example::View::HTML;
 
 use Moose;
 use Mojo::ByteStream qw(b);
+use Scalar::Util 'blessed';
 extends 'Catalyst::View::MojoTemplate';
 
 __PACKAGE__->config(
@@ -19,10 +20,15 @@ __PACKAGE__->config(
     fields_for_related    => \&fields_for_related,
     model_errors => \&model_errors,
     model_errors_for => \&model_errors_for,
+    checkbox_from_related => \&checkbox_from_related,
     current_namespace_id => sub { join '_', @{$_[1]->stash->{'valiant.view.form.namespace'}||[]} },
-    namespace_id_for => sub { join '_', (@{$_[1]->stash->{'valiant.view.form.namespace'}||[]}, @_[2...$#_]) },
+    namespace_id_for => \&namespace_id_for,
   },
 );
+
+sub namespace_id_for {
+  return join '_', (@{$_[1]->stash->{'valiant.view.form.namespace'}||[]}, @_[2...$#_])
+}
 
 sub _parse_proto {
   my @proto = @_;
@@ -111,9 +117,12 @@ sub input {
   #
   # Really this is ugly proof of concept.  Sometimes you need to be ugly to get the
   # functionality you want to see then you can refactor :)
+  # One thing that might be fun with the valiation introspection API is to have a simple
+  # RPC endpoint for doing individual field validations, so you can do faster validation
+  # as a user to doing the form.
   unless($ENV{VALIANT_FORM_NO_INTROSPECTION} || delete($attrs{no_instrospection})) {
     $attrs{required} ||= 1 if $model->has_validator_for_attribute(presence=>$name);
-    if($model->has_column($name)) {
+    if($model->can('has_column') && $model->has_column($name)) {
       my $info = $model->result_source->column_info($name);
       $attrs{type} ||= 'date' if $info->{data_type} eq 'date';
     }
@@ -122,7 +131,8 @@ sub input {
       $attrs{max} ||= $date_validator->to_pattern($date_validator->_cb_value($model, $date_validator->max)) if $date_validator->has_max;
     }
   }
-  # End.  Lots to do here possibly
+  # End.  Lots to do here possibly.  Would be cool maybe if some sort of meta desc thing
+  # Could be used for OpenAPI and GraphQL as well.
 
   $attrs{type} ||= 'text';
   $attrs{id} ||= join '_', (@namespace, $name);
@@ -217,6 +227,66 @@ sub select_from_related {
   return b($content);
 }
 
+# %= checkbox_from_related $related_attribute_str, \@array|$object, \%mapping, %html_attrs;
+# %= checkbox_from_related \&callback, %html_attrs;
+
+sub checkbox_from_related {
+  my ($self, $c, $related, $all_proto, @proto) = @_;
+  my ($inner, %attrs) = _parse_proto(@proto);
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  die "No relation '$related' for model" unless $model->has_relationship($related);
+  my $related_model = $model->related_resultset($related);
+  my $all_model = $related_model
+    ->related_resultset($all_proto)
+    ->result_source
+    ->resultset;
+
+  # This currently only works with single field relationships.  Give me a broken
+  # test case and I'll fix it (jjnapiork).
+  my $rel_data = $related_model->new_result(+{})->relationship_info($all_proto);
+  my @primary_columns = $related_model->new_result(+{})->result_source->primary_columns;
+  my ($related_key) = keys %{$rel_data->{attrs}{fk_columns} || die "No related fk_columns for $related"};
+
+  my ($idx, $content) = (0, '');
+  foreach my $all_result ($all_model->all) {
+    my %local_attrs = %attrs;
+    my %checkbox_attrs = %{ delete($local_attrs{checkbox_attrs})||+{} };
+    my $found = $related_model->find({$related_key=>$all_result->id});
+
+    local $c->stash->{'valiant.view.form.model'} = $all_result;
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
+
+    my $label_html = '';
+    if(my $label_attrs = delete $local_attrs{label}) {
+      my %label_params = %$label_attrs if ref($label_attrs);
+      $label_params{for} = $self->namespace_id_for($c, (!$found ? $related_key : '_checked'));
+      $label_html .= $self->label($c,  %label_params, sub { $all_result->label });
+    }
+
+    $checkbox_attrs{checked} = 1 if $found;
+    $checkbox_attrs{value} = $all_result->id;
+    $checkbox_attrs{onclick} = 
+      qq[document.getElementById("] .
+      $self->namespace_id_for($c, '_destroy') .
+      qq[").value = this.checked ? 0:1] if $found;
+
+    my $checkbox_html .= $self->input($c, (!$found ? $related_key : '_checked'), type=>'checkbox', %checkbox_attrs, %local_attrs);
+
+    if($found) {
+      foreach my $primary_column (@primary_columns) {
+        $checkbox_html .= $self->hidden($c, $primary_column, value=>$found->$primary_column);
+      }
+      $checkbox_html .= $self->hidden($c, '_destroy', value=>0);
+    }
+
+    $content .= $inner ? $inner->(b($checkbox_html), b($label_html)) : b($checkbox_html, $label_html);
+  }
+
+  return b($content);
+}
+
 ## TODO this should handle has_one, belongs_to
 sub fields_for_related {
   my ($self, $c, $related, @proto) = @_;
@@ -241,10 +311,10 @@ sub fields_for_related {
     my @primary_columns = $result->result_source->primary_columns;
     foreach my $primary_column (@primary_columns) {
       next unless my $value = $result->get_column($primary_column);
-      $content .= $self->hidden($c, $primary_column, type=>'hidden', %attrs);
+      $content .= $self->hidden($c, $primary_column, %attrs);
     }
     if(@primary_columns) {
-      $content .= $self->hidden($c, '_destroy', type=>'hidden', %attrs, value=>0);
+      $content .= $self->hidden($c, '_destroy', %attrs, value=>0);
     }
 
     $content .= $inner->($c, $result, $idx);
