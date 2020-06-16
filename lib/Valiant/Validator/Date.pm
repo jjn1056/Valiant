@@ -19,7 +19,6 @@ has below_min_msg => (is=>'ro', required=>1, default=>sub {_t 'below_min'});
 has above_max_msg => (is=>'ro', required=>1, default=>sub {_t 'above_max'});
 has invalid_date_msg => (is=>'ro', required=>1, default=>sub {_t 'invalid_date'});
 
-
 sub normalize_shortcut {
   my ($class, $arg) = @_;
   return +{ } if $arg eq '1';
@@ -53,6 +52,11 @@ sub validate_each {
   if($self->has_cb) {
     $self->cb->($record, $attribute, $dt, $self, \%opts);
   }
+}
+
+sub to_pattern {
+  my ($self, $dt) = @_;
+  return $dt->strftime($_pattern);
 }
 
 sub parse_if_needed {
