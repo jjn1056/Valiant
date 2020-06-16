@@ -23,10 +23,6 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
       return $c->redirect_to_action('profile');
     }
 
-    sub home :Chained(authenticate) PathPart('') Args(0) {
-      my ($self, $c) = @_;
-    }
-
     sub profile :Chained(authenticate) PathPart(profile) Args(0) {
       my ($self, $c) = @_;
       my $model = $c->model('Profile');
