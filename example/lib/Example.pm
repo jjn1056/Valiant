@@ -43,6 +43,7 @@ __PACKAGE__->config(
   },
 );
 
+# ack '^use ' -h --nobreak | perl -nle'++$lines{$_}; END { print for sort grep $lines{$_}==1, keys %lines; }'
 # CATALYST_DEBUG=1 DBIC_TRACE=1 perl -Ilib -I ../lib/ ./lib/Example/Server.pm
 
 # cd $approot (cd example)
