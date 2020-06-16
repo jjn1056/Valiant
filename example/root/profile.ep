@@ -37,9 +37,9 @@
 
     <div class='form-row'>
       <div class='col form-group'>
-        <%= input 'phone', 
+        <%= input 'phone_number', 
             class => 'form-control',
-            required => 1, label => 1,
+            label => 1,
             type => 'tel',
             placeholder => '123-456-7890',
             pattern => "[0-9]{3}-[0-9]{3}-[0-9]{4}" %>
@@ -47,8 +47,7 @@
       <div class='col form-group'>
         <%= input 'birthday', 
             class => 'form-control',
-            required => 1, label => 1,
-            type => 'date' %>
+             label => 1 %>
       </div>
     </div>
 

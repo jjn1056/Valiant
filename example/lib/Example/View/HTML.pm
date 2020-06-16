@@ -108,9 +108,19 @@ sub input {
   # gathers those via introspection and run the _cb_value method.  Once that actually
   # works its nor a big step to have some sort of RPC for doing AJAXy field by field
   # validation.
+  #
+  # Really this is ugly proof of concept.  Sometimes you need to be ugly to get the
+  # functionality you want to see then you can refactor :)
   unless($ENV{VALIANT_FORM_NO_INTROSPECTION} || delete($attrs{no_instrospection})) {
     $attrs{required} ||= 1 if $model->has_validator_for_attribute(presence=>$name);
-    
+    if($model->has_column($name)) {
+      my $info = $model->result_source->column_info($name);
+      $attrs{type} ||= 'date' if $info->{data_type} eq 'date';
+    }
+    if(my ($date_validator) = $model->has_validator_for_attribute(date=>$name)) {
+      $attrs{min} ||= $date_validator->to_pattern($date_validator->_cb_value($model, $date_validator->min)) if $date_validator->has_min;
+      $attrs{max} ||= $date_validator->to_pattern($date_validator->_cb_value($model, $date_validator->max)) if $date_validator->has_max;
+    }
   }
   # End.  Lots to do here possibly
 

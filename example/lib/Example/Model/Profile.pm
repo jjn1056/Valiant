@@ -154,6 +154,8 @@ sub ACCEPT_CONTEXT {
       zip
       credit_cards
       person_roles
+      phone_number
+      birthday
     /};
 
     Dwarn \%params;

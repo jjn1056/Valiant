@@ -35,6 +35,13 @@ __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
 __PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
+__PACKAGE__->validates(birthday => (
+    date => {
+      max => sub { pop->now->subtract(days=>2) }, 
+      min => sub { pop->years_ago(30) }, 
+    }
+  )
+);
 __PACKAGE__->validates(credit_cards => (presence=>1, result_set=>+{validations=>1, min=>2, max=>4} ));
 __PACKAGE__->validates(person_roles => (presence=>1, result_set=>+{validations=>1, min=>1} ));
 
