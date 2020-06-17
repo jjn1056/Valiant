@@ -12,7 +12,7 @@ sub find_or_new_model_recursively {
     } elsif($model->has_relationship($param)) {
       my $rel_data = $model->relationship_info($param);
       my $rel_type = $rel_data->{attrs}{accessor};
-      if($rel_type eq 'multi') {
+      if($rel_type eq 'multi' || $rel_type eq 'single') {
         # TODO allow array here as well for the picky
         my @param_rows = ();
         if(ref($params{$param}) eq 'HASH') {
@@ -86,10 +86,11 @@ sub mutate_model_recursively {
   my ($class, $model) = @_;
   $class->mutate_model($model);
   foreach my $relationship ($model->relationships) {
+    next unless $model->$relationship; # Skip unless found or built (security)
     my $rel_data = $model->relationship_info($relationship);
     my $rev_data = $model->result_source->reverse_relationship_info($relationship);
     my $rel_type = $rel_data->{attrs}{accessor};
-    if($rel_type eq 'multi') {
+    if($rel_type eq 'multi' || $rel_type eq 'single') {
       my @related_results = @{ $model->{__valiant_related_resultset}{$relationship} ||[] };
       my ($reverse_related) = keys %$rev_data;
       my @undeleted = ();
@@ -107,10 +108,11 @@ sub mutate_model_recursively {
   }
 }
 
-sub build_related {
+sub build_related_if_empty {
   my ($class, $model, $related) = @_;
-  my $related_obj = $model->new_related($related, +{});
   my @current_cache = @{ $model->related_resultset($related)->get_cache ||[] };
+  return if @current_cache;
+  my $related_obj = $model->new_related($related, +{});
   $model->related_resultset($related)->set_cache([@current_cache, $related_obj]);
   return $related_obj;
 }
@@ -125,7 +127,7 @@ sub set_model_from_params_if_valid {
   eval {
     $model->result_source->schema->txn_do(sub {
       $class->find_or_new_model_recursively($model, %params);
-      $class->mutate_model_recursively($model) if $model->valid;
+      $class->mutate_model_recursively($model) if $model->valid(context=>'profile'); # ugly
     }); 1;
   } || do {
     #$c->log->error("Error trying to update the form: $@")
@@ -137,7 +139,15 @@ sub set_model_from_params_if_valid {
 sub ACCEPT_CONTEXT {
   my ($class, $c) = @_;
   my $model = $c->model('Schema::Person')
-    ->find({id=>$c->user->id},{prefetch=>['credit_cards', 'person_roles']});
+    ->find(
+      { id => $c->user->id },
+      { prefetch => ['credit_cards', 'person_roles', 'profile'] }
+    );
+
+    warn  $c->user->id ;
+
+  $class->build_related_if_empty($model, $_)
+    for qw(credit_cards person_roles profile);
 
   if(
     ($c->req->method eq 'POST')
@@ -148,14 +158,9 @@ sub ACCEPT_CONTEXT {
       username
       first_name
       last_name
-      address
-      city
-      state_id
-      zip
       credit_cards
       person_roles
-      phone_number
-      birthday
+      profile
     /};
 
     Dwarn \%params;

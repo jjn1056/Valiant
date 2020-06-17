@@ -10,13 +10,6 @@ __PACKAGE__->add_columns(
   username => { data_type => 'varchar', is_nullable => 0, size => 48 },
   first_name => { data_type => 'varchar', is_nullable => 0, size => 24 },
   last_name => { data_type => 'varchar', is_nullable => 0, size => 48 },
-  address => { data_type => 'varchar', is_nullable => 0, size => 48 },
-  city => { data_type => 'varchar', is_nullable => 0, size => 32 },
-  zip => { data_type => 'varchar', is_nullable => 0, size => 5 },
-  state_id => { data_type => 'integer', is_nullable => 0, is_foreign_key => 1 },
-  birthday => { data_type => 'date', is_nullable => 1 },
-  phone_number => { data_type => 'varchar', is_nullable => 1, size => 32 },
-
   password => {
     data_type => 'varchar',
     is_nullable => 0,
@@ -32,26 +25,18 @@ __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_n
 __PACKAGE__->validates(password => presence=>1, length=>[6,24], confirmation=>1, on=>'registration'); 
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
-__PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
-__PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
-__PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
-__PACKAGE__->validates(birthday => (
-    date => {
-      max => sub { pop->now->subtract(days=>2) }, 
-      min => sub { pop->years_ago(30) }, 
-    }
-  )
-);
-__PACKAGE__->validates(credit_cards => (presence=>1, result_set=>+{validations=>1, min=>2, max=>4} ));
-__PACKAGE__->validates(person_roles => (presence=>1, result_set=>+{validations=>1, min=>1} ));
+
+__PACKAGE__->validates(credit_cards => (presence=>1, result_set=>+{validations=>1, min=>2, max=>4}, on=>'profile' ));
+__PACKAGE__->validates(person_roles => (presence=>1, result_set=>+{validations=>1, min=>1}, on=>'profile' ));
+__PACKAGE__->validates(profile => (result_set=>+{validations=>1}, on=>'profile'  ));
 
 __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['username']);
 
-__PACKAGE__->belongs_to(
-  state =>
-  'Example::Schema::Result::State',
-  { 'foreign.id' => 'self.state_id' }
+__PACKAGE__->might_have(
+  profile =>
+  'Example::Schema::Result::Profile',
+  { 'foreign.person_id' => 'self.id' }
 );
 
 __PACKAGE__->has_many(

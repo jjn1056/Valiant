@@ -21,8 +21,8 @@ __PACKAGE__->add_unique_constraint(['abbreviation']);
 __PACKAGE__->validates(name => (presence=>1, length=>[2,18], with=>'isa_state_name'));
 
 __PACKAGE__->has_many(
-  people =>
-  'Example::Schema::Result::Person',
+   profiles =>
+  'Example::Schema::Result::Profile',
   { 'foreign.state_id' => 'self.id' }
 );
 

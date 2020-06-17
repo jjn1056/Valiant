@@ -1,5 +1,5 @@
 #
-# makefile for Automating Build and Deplouy
+# makefile to help find your way around
 #
 
 help:
@@ -10,6 +10,8 @@ help:
 	@echo "update				(both above)"
 	@echo "server				Start demo application"
 	@echo "create_migration name=???	Create a new migration"
+	@echo "dependencies			list (most) CPAN dependencies"
+	@echo ""
 
 
 update_cpanlib:
@@ -23,6 +25,8 @@ update: update_cpanlib update_db
 server:
 	@CATALYST_DEBUG=1 DBIC_TRACE=1 perl -Ilib -I ../lib/ ./lib/Example/Server.pm
 
+dependencies:
+	@ack '^use ' -h --nobreak | perl -nle'++$lines{$_}; END { print for sort grep $lines{$_}==1, keys %lines; }
 
 create_migration:
 	perl -Ilib -I ../lib/ -MExample -e 'Example->create_migration("$(name)")'

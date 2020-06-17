@@ -19,36 +19,45 @@
     <div class='form-group'>
       %= input 'username', class=>'form-control', label=>1;
     </div>
-    <div class='form-group'>
-      %= input 'address', class=>'form-control', label=>1;
-    </div>
-    <div class='form-group'>
-      %= input 'city', class=>'form-control', label=>1;
-    </div>
 
-    <div class='form-row'>
-      <div class='col form-group'>
-        %= select_from_related 'state', options_label_field=>'name', class=>'form-control', label=>1;
-      </div>
-      <div class='col form-group'>
-        %= input 'zip', class=>'form-control', label=>1;
-      </div>
-    </div>
+    <div class='form-group'>
+      %= model_errors_for 'profile', max_errors=>1, class=>'alert alert-danger', role=>'alert';
+      <fieldset class="border p-2">
+        <legend  class="w-auto"><%= $model->human_attribute_name('profile') %></legend>
+        %= fields_for_related 'profile', begin
+        <div class='form-group'>
+          %= input 'address', class=>'form-control', label=>1;
+        </div>
+        <div class='form-group'>
+          %= input 'city', class=>'form-control', label=>1;
+        </div>
 
-    <div class='form-row'>
-      <div class='col form-group'>
-        <%= input 'phone_number', 
-            class => 'form-control',
-            label => 1,
-            type => 'tel',
-            placeholder => '123-456-7890',
-            pattern => "[0-9]{3}-[0-9]{3}-[0-9]{4}" %>
-      </div>
-      <div class='col form-group'>
-        <%= input 'birthday', 
-            class => 'form-control',
-             label => 1 %>
-      </div>
+        <div class='form-row'>
+          <div class='col form-group'>
+            %= select_from_related 'state', options_label_field=>'name', class=>'form-control', label=>1;
+          </div>
+          <div class='col form-group'>
+            %= input 'zip', class=>'form-control', label=>1;
+          </div>
+        </div>
+
+        <div class='form-row'>
+          <div class='col form-group'>
+            <%= input 'phone_number', 
+                class => 'form-control',
+                label => 1,
+                type => 'tel',
+                placeholder => '123-456-7890',
+                pattern => "[0-9]{3}-[0-9]{3}-[0-9]{4}" %>
+          </div>
+          <div class='col form-group'>
+            <%= input 'birthday', 
+                class => 'form-control',
+                 label => 1 %>
+          </div>
+        </div>
+        % end
+      </fieldset>
     </div>
 
     <div class='form-group'>

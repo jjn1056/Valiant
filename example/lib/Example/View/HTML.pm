@@ -208,7 +208,8 @@ sub select_from_related {
   my ($options, $label_text);
   my $options_label = delete($attrs{options_label_field}) || 'label';
   my $options_value = delete($attrs{options_value_field}) || 'id';
-  foreach my $row ($options_resultset->all) {
+  my @option_rows = $options_resultset->all;
+  foreach my $row (@option_rows) {
     $label_text ||= $row->model_name->human;
     my $selected = $row->$options_value eq $current_value ? 'selected':'';
     $options .= "<option value='@{[ $row->$options_value ]}' $selected >@{[ $row->$options_label ]}</option>"
@@ -253,7 +254,10 @@ sub checkbox_from_related {
   foreach my $all_result ($all_model->all) {
     my %local_attrs = %attrs;
     my %checkbox_attrs = %{ delete($local_attrs{checkbox_attrs})||+{} };
-    my $found = $related_model->find({$related_key=>$all_result->id});
+
+    my ($found) = grep {
+      $_->$related_key eq $all_result->id
+    } $related_model->all; 
 
     local $c->stash->{'valiant.view.form.model'} = $all_result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
@@ -274,7 +278,7 @@ sub checkbox_from_related {
 
     my $checkbox_html .= $self->input($c, (!$found ? $related_key : '_checked'), type=>'checkbox', %checkbox_attrs, %local_attrs);
 
-    if($found) {
+    if($found  && $found->in_storage) {
       foreach my $primary_column (@primary_columns) {
         $checkbox_html .= $self->hidden($c, $primary_column, value=>$found->$primary_column);
       }
@@ -294,9 +298,9 @@ sub fields_for_related {
   my $model = $c->stash->{'valiant.view.form.model'};
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
 
-  die "No relation '$related' for model" unless $model->has_relationship($related);
-
-  my @results = $model->$related->all;
+  die "No relation '$related' for model $model" unless $model->has_relationship($related);
+  # die "Empty relation '$related' for model $model" unless $model->$related;
+  my @results = $model->related_resultset($related)->all;
 
   # I think we can drop this feature
   push @results, $model->result_source->related_source($related)->resultset->new_result({})

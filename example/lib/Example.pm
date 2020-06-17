@@ -43,12 +43,6 @@ __PACKAGE__->config(
   },
 );
 
-# ack '^use ' -h --nobreak | perl -nle'++$lines{$_}; END { print for sort grep $lines{$_}==1, keys %lines; }'
-# CATALYST_DEBUG=1 DBIC_TRACE=1 perl -Ilib -I ../lib/ ./lib/Example/Server.pm
-
-# cd $approot (cd example)
-# perl -Ilib -I ../lib/ -MExample -e 'Example->create_migration("my_new_migration")'
-
 # TODO deal with the nested transactions and improve the naming so that things
 # sort better in standard directory listings (and less ugly).
 
@@ -117,7 +111,7 @@ sub create_migration {
     source_schema => $schema_current,
   })->compute_differences->produce_diff_sql;
 
-  my $change_name = $change.'_'.time;
+  my $change_name = time.'-'.$change;
   my $path = $dir->file('sqitch.conf');
   warn "sqith $path";
   local $ENV{SQITCH_CONFIG} = $path; #ugly, I wonder if there's a better way

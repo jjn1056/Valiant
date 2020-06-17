@@ -9,6 +9,13 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
   sub not_found :Chained(root) PathPart('') Args { }
 
+  sub register :Chained(root) Args(0) {
+    my ($self, $c) = @_;
+    my $model = $c->model('Register');
+    $c->redirect_to_action('/login') if $model->registered;
+    $c->stash(model=>$model);
+  }
+
   sub authenticate :Chained(root) PathPart('') CaptureArgs() {
     my ($self, $c) = @_;
     return  if $c->user_exists
@@ -23,7 +30,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
       return $c->redirect_to_action('profile');
     }
 
-    sub profile :Chained(authenticate) PathPart(profile) Args(0) {
+    sub profile :Chained(authenticate) PathPart('') Args(0) {
       my ($self, $c) = @_;
       my $model = $c->model('Profile');
       $c->stash(model=>$model);
