@@ -256,8 +256,10 @@ sub checkbox_from_related {
     my %checkbox_attrs = %{ delete($local_attrs{checkbox_attrs})||+{} };
 
     my ($found) = grep {
-      $_->$related_key eq $all_result->id
+      ($_->$related_key||'') eq $all_result->id
     } $related_model->all; 
+
+    my $found_and_stored = $found && $found->in_storage ? 1:0;
 
     local $c->stash->{'valiant.view.form.model'} = $all_result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
@@ -276,9 +278,9 @@ sub checkbox_from_related {
       $self->namespace_id_for($c, '_destroy') .
       qq[").value = this.checked ? 0:1] if $found;
 
-    my $checkbox_html .= $self->input($c, (!$found ? $related_key : '_checked'), type=>'checkbox', %checkbox_attrs, %local_attrs);
+    my $checkbox_html .= $self->input($c, (!$found_and_stored ? $related_key : '_checked'), type=>'checkbox', %checkbox_attrs, %local_attrs);
 
-    if($found  && $found->in_storage) {
+    if($found_and_stored) {
       foreach my $primary_column (@primary_columns) {
         $checkbox_html .= $self->hidden($c, $primary_column, value=>$found->$primary_column);
       }

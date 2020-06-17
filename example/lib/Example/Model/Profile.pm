@@ -144,10 +144,8 @@ sub ACCEPT_CONTEXT {
       { prefetch => ['credit_cards', 'person_roles', 'profile'] }
     );
 
-    warn  $c->user->id ;
-
   $class->build_related_if_empty($model, $_)
-    for qw(credit_cards person_roles profile);
+    for qw(credit_cards profile);
 
   if(
     ($c->req->method eq 'POST')
