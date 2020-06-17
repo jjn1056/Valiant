@@ -57,6 +57,9 @@ sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
   return unless defined $attribute;
   return $self->get_column($attribute) if $self->result_source->has_column($attribute);
+
+  #TODO If the relationship is a single we might want to return the result
+  return $self->related_resultset($attribute) if $self->has_relationship($attribute);
   return $self->$attribute if $self->can($attribute); 
 }
 

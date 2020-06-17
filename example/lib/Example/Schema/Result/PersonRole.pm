@@ -27,4 +27,9 @@ __PACKAGE__->belongs_to(
   { 'foreign.id' => 'self.role_id' }
 );
 
+sub is_user {
+  my $self = shift;
+  return $self->role->label eq 'user' ? 1:0;
+}
+
 1;

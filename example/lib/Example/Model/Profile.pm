@@ -86,7 +86,7 @@ sub mutate_model_recursively {
   my ($class, $model) = @_;
   $class->mutate_model($model);
   foreach my $relationship ($model->relationships) {
-    next unless $model->$relationship; # Skip unless found or built (security)
+    next unless scalar($model->related_resultset($relationship)->all); #TODO maybe expensive, is there a cheaper option?
     my $rel_data = $model->relationship_info($relationship);
     my $rev_data = $model->result_source->reverse_relationship_info($relationship);
     my $rel_type = $rel_data->{attrs}{accessor};
@@ -97,7 +97,7 @@ sub mutate_model_recursively {
       foreach my $related_result (@related_results) {
         push @undeleted, $related_result unless $related_result->is_marked_for_deletion;
         next unless $related_result->is_changed || $related_result->is_marked_for_deletion;
-        $related_result->set_from_related($reverse_related, $model);
+        $related_result->set_from_related($reverse_related, $model) if $reverse_related; # Don't have this for might_have
         $class->mutate_model_recursively($related_result);
       }
       $model->related_resultset($relationship)->set_cache(\@undeleted);
@@ -109,10 +109,10 @@ sub mutate_model_recursively {
 }
 
 sub build_related_if_empty {
-  my ($class, $model, $related) = @_;
+  my ($class, $model, $related, $attrs) = @_;
   my @current_cache = @{ $model->related_resultset($related)->get_cache ||[] };
   return if @current_cache;
-  my $related_obj = $model->new_related($related, +{});
+  my $related_obj = $model->new_related($related, ($attrs||+{}));
   $model->related_resultset($related)->set_cache([@current_cache, $related_obj]);
   return $related_obj;
 }
@@ -130,7 +130,6 @@ sub set_model_from_params_if_valid {
       $class->mutate_model_recursively($model) if $model->valid(context=>'profile'); # ugly
     }); 1;
   } || do {
-    #$c->log->error("Error trying to update the form: $@")
     warn $@;
     $model->errors->add(undef, 'There was a database error trying to save your form.');
   };
@@ -144,14 +143,15 @@ sub ACCEPT_CONTEXT {
       { prefetch => ['credit_cards', 'person_roles', 'profile'] }
     );
 
-  $class->build_related_if_empty($model, $_)
-    for qw(credit_cards profile);
+  $class->build_related_if_empty($model, $_) for qw(credit_cards profile);
+  $class->build_related_if_empty($model, 'person_roles', +{role_id=>2}); # User by default
 
   if(
     ($c->req->method eq 'POST')
       and
     (my %posted = %{$c->req->body_data->{$model->model_name->param_key} ||+{}})
   ) {
+
     my %params = %posted{qw/
       username
       first_name
@@ -161,11 +161,10 @@ sub ACCEPT_CONTEXT {
       profile
     /};
 
-    Dwarn \%params;
-
     $class->set_model_from_params_if_valid($model, %params);
 
-    Dwarn +{ $model->errors->to_hash(1) };
+    Dwarn \%params;
+    Dwarn +{ $model->errors->to_hash(1) } if $model->invalid;
   }
 
   return $model;
