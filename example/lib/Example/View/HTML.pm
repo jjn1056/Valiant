@@ -257,9 +257,11 @@ sub checkbox_from_related {
 
     my ($found) = grep {
       ($_->$related_key||'') eq $all_result->id
+    } grep {
+      not $_->is_marked_for_deletion
     } $related_model->all; 
 
-    my $found_and_stored = $found && $found->in_storage ? 1:0;
+    my $found_and_stored = $found && ($found->in_storage || $found->is_marked_for_deletion) ? 1:0;
 
     local $c->stash->{'valiant.view.form.model'} = $all_result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
@@ -284,7 +286,7 @@ sub checkbox_from_related {
       foreach my $primary_column (@primary_columns) {
         $checkbox_html .= $self->hidden($c, $primary_column, value=>$found->$primary_column);
       }
-      $checkbox_html .= $self->hidden($c, '_destroy', value=>0);
+      $checkbox_html .= $self->hidden($c, '_destroy', value => $found ? 0:1);
     }
 
     $content .= $inner ? $inner->(b($checkbox_html), b($label_html)) : b($checkbox_html, $label_html);
@@ -320,10 +322,10 @@ sub fields_for_related {
       $content .= $self->hidden($c, $primary_column, %attrs);
     }
     if(@primary_columns) {
-      $content .= $self->hidden($c, '_destroy', %attrs, value=>0);
+      $content .= $self->hidden($c, '_destroy', %attrs, value=>$result->is_marked_for_deletion);
     }
 
-    $content .= $inner->($c, $result, $idx);
+    $content .= $inner->($c, $result, $idx) unless $result->is_marked_for_deletion;
   }
 
   if(1) {

@@ -8,6 +8,8 @@ sub is_user {
   my $self = shift;
   # TODO: We need some logic or conventions around 'if we have a resultset cache
   # use that, otherwise make one.
-  return my $found = grep { $_->is_user } $self->all; }
+  warn "user check";
+  return my $found = grep { $_->is_user } $self->all;
+}
 
 1;

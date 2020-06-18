@@ -113,6 +113,17 @@ sub build_related_if_empty {
   my @current_cache = @{ $model->related_resultset($related)->get_cache ||[] };
   return if @current_cache;
   my $related_obj = $model->new_related($related, ($attrs||+{}));
+
+  # TODO do this dance need to go into other places???
+  # TODO do I need some set_from_related or something here to get everthing into _relationship_data ???
+  my $relinfo = $model->relationship_info($related);
+  if ($relinfo->{attrs}{accessor} eq 'single') {
+    $model->{_relationship_data}{$related} = $related_obj;
+  }
+  elsif ($relinfo->{attrs}{accessor} eq 'filter') {
+    $model->{_inflated_column}{$related} = $related_obj;
+  }
+
   $model->related_resultset($related)->set_cache([@current_cache, $related_obj]);
   return $related_obj;
 }
@@ -144,7 +155,7 @@ sub ACCEPT_CONTEXT {
     );
 
   $class->build_related_if_empty($model, $_) for qw(credit_cards profile);
-  $class->build_related_if_empty($model, 'person_roles', +{role_id=>2}); # User by default
+  $class->build_related_if_empty($model, 'person_roles'); # +{role_id=>2} User by default
 
   if(
     ($c->req->method eq 'POST')
