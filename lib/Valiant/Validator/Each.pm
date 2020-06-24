@@ -61,10 +61,10 @@ sub validate {
       my @if = (ref($self->if)||'') eq 'ARRAY' ? @{$self->if} : ($self->if);
       foreach my $if (@if) {
         if((ref($if)||'') eq 'CODE') {
-          next ATTRIBUTE_LOOP unless $if->($object, $attribute, $value);
+          next ATTRIBUTE_LOOP unless $if->($object, $attribute, $value, $options);
         } else {
           if(my $method_cb = $object->can($if)) {
-            next ATTRIBUTE_LOOP unless $method_cb->($object, $attribute, $value);
+            next ATTRIBUTE_LOOP unless $method_cb->($object, $attribute, $value, $options);
           } else {
             die ref($object) ." has no method '$if'";
           }
@@ -75,10 +75,10 @@ sub validate {
       my @unless = (ref($self->unless)||'') eq 'ARRAY' ? @{$self->unless} : ($self->unless);
       foreach my $unless (@unless) {
         if((ref($unless)||'') eq 'CODE') {
-          next ATTRIBUTE_LOOP if $unless->($object, $attribute, $value);
+          next ATTRIBUTE_LOOP if $unless->($object, $attribute, $value, $options);
         } else {
           if(my $method_cb = $object->can($unless)) {
-            next ATTRIBUTE_LOOP if $method_cb->($object, $attribute, $value);
+            next ATTRIBUTE_LOOP if $method_cb->($object, $attribute, $value, $options);
           } else {
             die ref($object) ." has no method '$unless'";
           }

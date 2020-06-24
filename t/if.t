@@ -14,13 +14,15 @@ use Test::Most;
     length => {
       in => [2,11],
       if => sub {
-        my ($self) = @_;
+        my ($self, $attr, $value, $opts) = @_;
+        Test::Most::ok $opts->{opt} if $value eq 'CC';
         return $self->name eq 'AA';
       },
     },
     with => {
       cb => sub {
-        my ($self, $attr) = @_;
+        my ($self, $attr, $value, $opts) = @_;
+        Test::Most::ok $opts->{special} if $value eq 'BB';
         $self->errors->add($attr, 'failed');
       },
     },
@@ -30,12 +32,12 @@ use Test::Most;
 
 {
   ok my $object = Local::Test::If->new(name=>'CC');
-  ok $object->validate->valid;
+  ok $object->validate(opt=>1)->valid;
 }
 
 {
   ok my $object = Local::Test::If->new(name=>'BB');
-  ok $object->validate->invalid;
+  ok $object->validate(special=>1)->invalid;
   is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     {
       name => [
@@ -44,5 +46,7 @@ use Test::Most;
     };
 }
 
+# Need to specify the number of tests to make sure we are hitting
+# and passing tests inside the test class.
 
-done_testing;
+done_testing(7);

@@ -28,7 +28,7 @@ sub validate {
       return unless $if->($object);
     } else {
       if(my $method_cb = $object->can($if)) {
-        return unless $method_cb->($object);
+        return unless $method_cb->($object, $options);
       } else {
         die ref($object) ." has no method '$if'";
       }
@@ -41,7 +41,7 @@ sub validate {
       return if $unless->($object);
     } else {
       if(my $method_cb = $object->can($unless)) {
-        return if $method_cb->($object);
+        return if $method_cb->($object, $options);
       } else {
         die ref($object) ." has no method '$unless'";
       }
