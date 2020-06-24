@@ -21,11 +21,15 @@ sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
   my $is_unique = $self->unique_method;
   
-  if($record->can($is_unique)) {
+  if($record->can("${attribute}_${is_unique}")) {
+    my $attribute_is_unique = "${attribute}_${is_unique}";
     $record->errors->add($attribute, $self->is_not_unique_msg, $opts) 
-      unless $record->$is_unique($attribute, $value);
+      unless $record->$attribute_is_unique($attribute, $value, $opts);
+  } elsif($record->can($is_unique)) {
+    $record->errors->add($attribute, $self->is_not_unique_msg, $opts) 
+      unless $record->$is_unique($attribute, $value, $opts);
   } else {
-    die "Request to test uniqueness of '$attribute' for model '@{[ $record->model_name->human ]}' failed because it doesn't support the '$is_unique' method."
+    die "Request to test uniqueness of '$attribute' for model '@{[ $record->model_name->human ]}' failed because it doesn't provide a uniqueness method"
   }
 }
 
@@ -47,7 +51,7 @@ Valiant::Validator::Unique - Verify that a value is unique to the record domain
     validates username => (unique => 1);
 
     sub is_unique {
-      my ($self, $attribute_name, $value);
+      my ($self, $attribute_name, $value, $opts) = @_;
       # Some custom logic that determines if the $attribute_name (in this case the value
       # will be 'username') has a unique value (determined by $value) in a given logical
       # domain (for example a Users table in a database).
@@ -68,13 +72,14 @@ Valiant::Validator::Unique - Verify that a value is unique to the record domain
 =head1 DESCRIPTION
 
 Checks a value to see if it is unique by some custom logic that your class
-must provide.  By default this must be a method on your class called 'is_unique'
-(althought you can change that via the 'unique_method' attribute) which will accept
+must provide.  By default this must be a method on your class called "${attribute}_is_unique"
+or 'is_unique' (we check the attribute specific method first and you can change
+the method name via the 'unique_method' parameter) which will accept
 the name of the attribute and its current value.  You must then provide some custom
 logic which determines if that pair is unique in a given domain (such as usernames in
 a User table in a database).  Method must return true for unique and false otherwise.
 
-This validator will raise and error if you fail to provide the methods.
+This validator will raise an error if you fail to provide the methods required.
 
 =head1 ATTRIBUTES
 
@@ -83,7 +88,7 @@ This validator supports the following attributes:
 =head2 unique_method
 
 Name of the method on your validating class which resolves the question of uniqueness.
-Default is 'is_unique'.  Example:
+Default is to check first for "${attribute}_is_unique" and then "is_unique".  Example:
 
     sub is_unique {
       my ($self, $attribute_name, $value) = @_;
@@ -93,6 +98,11 @@ Default is 'is_unique'.  Example:
     }
 
 If your class does not provide this method an exception will be thrown at runtime.
+
+B<NOTE> You shouldn't add an error to the errors list directly in this method, the error
+message will be added automatically for you.  This is to make the unique test method
+uncoupled from L<Valiant> (For example you can use this method as a general uniqueness
+test in your business logic).
 
 =head2 is_not_unique_msg
 

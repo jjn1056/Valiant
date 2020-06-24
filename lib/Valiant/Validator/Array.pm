@@ -34,7 +34,6 @@ sub normalize_shortcut {
   } elsif( (ref($arg)||'') eq 'ARRAY') {
     return { validations => $arg };
   }
-
 }
 
 sub validate_each {
