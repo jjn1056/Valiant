@@ -23,7 +23,7 @@ sub import {
 
 sub debug {
   return unless $ENV{VALIANT_DEBUG};
-  warn shift;
+  warn shift ."\n";
 }
 
 sub dl { $dl };

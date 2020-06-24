@@ -26,7 +26,14 @@ use Test::Most;
         $self->errors->add($attr, 'failed');
       },
     },
-    if => sub { return shift->name eq 'BB' },
+    if => sub {
+      # An 'if' or 'unless' that is a global option does not
+      # get $attribute or $value since its scoped to the collection
+      # of validations and the collection could refer to one or more
+      # attributes.
+      my ($self, $object, $opts) = @_;
+      return $self->name eq 'BB';
+    },
   );
 }
 

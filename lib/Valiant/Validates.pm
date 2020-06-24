@@ -4,6 +4,7 @@ use Moo::Role;
 use Module::Runtime 'use_module';
 use String::CamelCase 'camelize';
 use Scalar::Util 'blessed';
+use Valiant::Debug;
 
 with 'Valiant::Translation';
 
@@ -76,7 +77,6 @@ sub _push_named_validators {
   }
 }
 
-
 sub errors_class { 'Valiant::Errors' }
 
 has 'errors' => (
@@ -132,7 +132,7 @@ sub _validator_package {
       # This regexp matches too much... We need to add the package
       # path here just the path delim will vary from platform to platform
       if($@=~m/^Can't locate/) {
-        warn "Can't find $_ in \@INC\n" if $ENV{VALIANT_DEBUG};
+        $self->$DEBUG(1, "Can't find $_ in \@INC");
         0;
       } else {
         die $@;
@@ -140,12 +140,13 @@ sub _validator_package {
     }
   }  @validator_packages;
   die "'$key' is not a validator" unless $validator_package;
-  warn "Found $validator_package in \@INC\n" if $ENV{VALIANT_DEBUG};
+  $self->$DEBUG(1, "Found $validator_package in \@INC");
   return $validator_package;
 }
 
 sub _create_validator {
   my ($self, $validator_package, $args) = @_;
+  $self->$DEBUG(1, "Trying to create validator from $validator_package");
   my $validator = $validator_package->new($args);
   return $validator;
 }
@@ -243,11 +244,15 @@ sub _normalize_validator_package {
   my ($prefix, $package) = ($with =~m/^(\+?)(.+)$/);
   return $package if $prefix eq '+';
 
-  my @parts = split '::',( ref($self) || $self);
-  my @packages = (join '::', @parts, $self->default_validator_namepart, $package);
-  pop @parts;
-  push @packages, join '::', @parts, $self->default_validator_namepart, $package;
-  return @packages;
+  my $class =  ref($self) || $self;
+  my @parts = ((split '::', $class), $package);
+  my @project_inc = ();
+  while(@parts) {
+    push @project_inc, join '::', (@parts, $class->default_validator_namepart, $package);
+    pop @parts;
+  }
+  push @project_inc, join '::', $class->default_validator_namepart, $package; # Not sure we should allow (add flag?)
+  return @project_inc;
 }
 
 sub _strip_reserved_options {
@@ -269,25 +274,29 @@ sub validates_with {
 
   my @validators = ();
   VALIDATOR_WITHS: foreach my $with (@with) {
-    my @possible_packages = $self->_normalize_validator_package($with);
     if( (ref($with)||'') eq 'CODE') {
       push @validators, [$with, \%options];
       next VALIDATOR_WITHS;
     }
+    $self->$DEBUG(1, "Trying to find a validator for '$with'");
+    my @possible_packages = $self->_normalize_validator_package($with);
     foreach my $package(@possible_packages) {
       my $found_package = eval {
         use_module($package);
       } || do {
         if($@=~m/^Can't locate/) {
-          warn "Can't find $_ in \@INC\n" if $ENV{VALIANT_DEBUG};
+          $self->$DEBUG(1, "Can't find '$package' in \@INC");
           0;
         } else {
           die $@; # Probably a syntax error in the code of $package
         }
       };
       if($found_package) {
+        $self->$DEBUG(1, "Found '$found_package' in \@INC");
         push @validators, $package->new(%options);
         next VALIDATOR_WITHS; # Only load the first one found
+      } else {
+        $self->$DEBUG(1, "Failed to find '$with' in \@INC");
       }
     }
   }
