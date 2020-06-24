@@ -74,6 +74,7 @@ sub _lookup_translation_by_count {
   # TODO this has an error when $args{$1} is 0
   $translated =~ s/\{\{([^}]+)\}\}/ $args{$1} || '' /gex;
 
+  $self->$DEBUG(1, "Resolved count translation; $translated");
   return $translated;
 }
 
@@ -94,16 +95,23 @@ sub translate {
   # $key can be either a string or a tag.
   $key = $$key if $self->is_i18n_tag($key);
   $key = "${scope}.${key}" if $scope;
+
+  $self->$DEBUG(1, "Trying to translate: '$key'");
   my $translated = $dl->localize($key, \%args);
 
   # If $translated is a hashref that means we need to apply the $count
-  $self->$DEBUG(1, "Translating '$translated'");
   $translated = $self->_lookup_translation_by_count($count, $translated, %args)
     if ref($translated) && defined($count);
 
   # Is this a bug in Data::Localize?  Seems like ->localize just returns
   # the $key if it fails to actually localize.  I would think it should
   # return undef;
+
+  $self->$DEBUG(1, "Proposed translation: '$translated'");
+  unless($translated eq $key) {
+    $self->$DEBUG(1, "Translated '$key' to '$translated'");
+    return $translated;
+  }
 
   return $translated unless $translated eq $key;
 
@@ -115,15 +123,19 @@ sub translate {
   # of the defaults list.
 
   foreach my $default(@defaults) {
+    $self->$DEBUG(1, "Trying to translate defaults: '$default'");
+
     return $default unless $self->is_i18n_tag($default);
     my $tag = $$default;
     my $translated = $dl->localize($tag, \%args);
-
-    $self->$DEBUG(1, "Translating '$translated'");
     $translated = $self->_lookup_translation_by_count($count, $translated, %args)
       if ref($translated) and defined($count);
 
-    return $translated unless $translated eq $tag; # See note above
+    $self->$DEBUG(1, "Proposed translation: '$translated'");
+    unless($translated eq $tag) {
+      $self->$DEBUG(1, "Translated '$default' to '$translated'");
+      return $translated;
+    }
   }
   
   my $list = join (', ', $key, map { $$_ if $self->is_i18n_tag($_) } @defaults);
