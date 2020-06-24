@@ -2,8 +2,9 @@ package Valiant::Validations;
 
 use Sub::Exporter 'build_exporter';
 use Class::Method::Modifiers qw(install_modifier);
+use Valiant::Debug;
 
-require Moo::Role;
+require Role::Tiny;
 
 sub default_roles { 'Valiant::Validates' }
 sub default_exports { qw(validates validates_with validates_each) }
@@ -12,7 +13,11 @@ sub import {
   my $class = shift;
   my $target = caller;
 
-  Moo::Role->apply_roles_to_package($target, $class->default_roles);
+  foreach my $default_role ($class->default_roles) {
+    next if Role::Tiny::does_role($target, $default_role);
+    $class->$DEBUG(1, "Applying role '$default_role' to '$target'");
+    Role::Tiny->apply_roles_to_package($target, $default_role);
+  }
 
   my %cb = map {
     $_ => $target->can($_);

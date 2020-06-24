@@ -6,6 +6,7 @@ use Data::Localize;
 use Data::Localize::MultiLevel;
 use Scalar::Util;
 use Carp;
+use Valiant::Debug;
 
 our $dl;
 our %locale_paths;
@@ -19,11 +20,6 @@ sub import {
 
   no strict 'refs';
   *{"${target}::_t"} = sub { $class->make_tag(@_) };
-}
-
-sub debug {
-  return unless $ENV{VALIANT_DEBUG};
-  warn shift ."\n";
 }
 
 sub dl { $dl };
@@ -42,10 +38,10 @@ sub add_locale_path {
   my @found = glob($path);
   my $flag = @found ? 1 : -1;
   if($flag == 1) {
-    debug("Adding locale_path at $path");
+    $class->$DEBUG(1, "Adding locale_path at $path");
     $dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
   } else {
-    debug("No translation files found at $path");
+    $class->$DEBUG(1, "No translation files found at $path");
   }
   $locale_paths{$path} = $flag;
   return $flag == 1 ? 1:0;
@@ -101,7 +97,7 @@ sub translate {
   my $translated = $dl->localize($key, \%args);
 
   # If $translated is a hashref that means we need to apply the $count
-  debug("Translating '$translated'");
+  $self->$DEBUG(1, "Translating '$translated'");
   $translated = $self->_lookup_translation_by_count($count, $translated, %args)
     if ref($translated) && defined($count);
 
@@ -123,7 +119,7 @@ sub translate {
     my $tag = $$default;
     my $translated = $dl->localize($tag, \%args);
 
-    debug("Translating '$translated'");
+    $self->$DEBUG(1, "Translating '$translated'");
     $translated = $self->_lookup_translation_by_count($count, $translated, %args)
       if ref($translated) and defined($count);
 
