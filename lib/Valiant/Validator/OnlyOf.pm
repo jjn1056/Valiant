@@ -34,10 +34,10 @@ sub validate_each {
 
   my $max_allowed = $self->_cb_value($record, $self->max_allowed);
   unless( $count_not_blank <= $max_allowed) {
-    my %opts = (%{$self->options},
+    my %opts = (
+      %$options,
       count => $max_allowed,
       count_not_blank => $count_not_blank,
-      %{$options||+{}},
     );
     $record->errors->add($attribute, $self->only_of, \%opts);
   }

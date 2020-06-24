@@ -14,13 +14,12 @@ sub normalize_shortcut {
 
 sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||+{}});
   unless(
       not(defined $value) ||
       $value eq '' || 
       $value =~m/^\s+$/
   ) {
-    $record->errors->add($attribute, $self->is_present, \%opts)
+    $record->errors->add($attribute, $self->is_present, $options)
   }
 }
 

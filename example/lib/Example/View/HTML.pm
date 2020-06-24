@@ -261,7 +261,7 @@ sub checkbox_from_related {
       not $_->is_marked_for_deletion
     } $related_model->all; 
 
-    my $found_and_stored = $found && ($found->in_storage || $found->is_marked_for_deletion) ? 1:0;
+    my $found_and_stored = $found && $found->in_storage ? 1:0;
 
     local $c->stash->{'valiant.view.form.model'} = $all_result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
@@ -303,15 +303,10 @@ sub fields_for_related {
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
 
   die "No relation '$related' for model $model" unless $model->has_relationship($related);
-  # die "Empty relation '$related' for model $model" unless $model->$related;
+
+  my ($idx, $content) = (0, '');
   my @results = $model->related_resultset($related)->all;
-
-  # I think we can drop this feature
-  push @results, $model->result_source->related_source($related)->resultset->new_result({})
-    if $attrs{add_result_if_none};
-
-  my $content;
-  my $idx = 0;
+  
   foreach my $result (@results) {
     local $c->stash->{'valiant.view.form.model'} = $result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx++];
@@ -324,8 +319,7 @@ sub fields_for_related {
     if(@primary_columns) {
       $content .= $self->hidden($c, '_destroy', %attrs, value=>$result->is_marked_for_deletion);
     }
-
-    $content .= $inner->($c, $result, $idx) unless $result->is_marked_for_deletion;
+    $content .= $inner->() unless $result->is_marked_for_deletion;
   }
 
   if(1) {
@@ -334,7 +328,7 @@ sub fields_for_related {
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, "{{epoch}}"];
     
     $content .= qq|
-      <script id='@{[ join '_', (@namespace, $related, "template") ]}' type='text/template'>@{[ $inner->($c, $result, '{{epoch}}') ]}</script>
+      <script id='@{[ join '_', (@namespace, $related, "template") ]}' type='text/template'>@{[ $inner->() ]}</script>
     |;
   }
 

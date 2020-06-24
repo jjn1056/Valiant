@@ -31,6 +31,8 @@ sub find_or_new_model_recursively {
         # rather than separate ones.
         foreach my $param_row (@param_rows) {
 
+          #Todo need to recurse for deeply nested relationships
+
           my $related_model = eval {
             my $new_related = $model->new_related($param, +{});
             my @primary_columns = $new_related->result_source->primary_columns;
@@ -58,12 +60,16 @@ sub find_or_new_model_recursively {
       } else {
         die "you did not write the code for relation type $rel_type for relation $param and model @{[ $model->model_name->human ]}";
       }    
+    } elsif($param eq 'roles') {
+      warn "ROLE " x10;
+      my @param_rows = map { $params{$param}{$_} } sort { $a <=> $b} keys %{$params{$param} || +{}};
+
     } elsif($model->can($param)) {
       # Right now this is only used by confirmation stuff
       $model->$param($params{$param});
     } elsif($param eq '_destroy') {
       if($params{$param}) {
-        $model->mark_for_deletion;
+        $model->mark_for_deletion if $model->in_storage;
       }
     } elsif($param eq '_checked') {
       # I don't think there's anything to do right now
@@ -151,11 +157,12 @@ sub ACCEPT_CONTEXT {
   my $model = $c->model('Schema::Person')
     ->find(
       { id => $c->user->id },
-      { prefetch => ['credit_cards', 'person_roles', 'profile'] }
+      { prefetch => ['credit_cards', {'person_roles', 'role'}, 'profile' ] }
     );
 
   $class->build_related_if_empty($model, $_) for qw(credit_cards profile);
-  $class->build_related_if_empty($model, 'person_roles'); # +{role_id=>2} User by default
+  $class->build_related_if_empty($model, 'person_roles'); # +{role_id=>2} User by default 
+
 
   if(
     ($c->req->method eq 'POST')
@@ -168,8 +175,8 @@ sub ACCEPT_CONTEXT {
       first_name
       last_name
       credit_cards
-      person_roles
       profile
+      person_roles
     /};
 
     $class->set_model_from_params_if_valid($model, %params);

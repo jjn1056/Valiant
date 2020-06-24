@@ -18,12 +18,11 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||+{}});
+  my ($self, $record, $attribute, $value, $opts) = @_;
   my $is_unique = $self->unique_method;
   
   if($record->can($is_unique)) {
-    $record->errors->add($attribute, $self->is_not_unique_msg, \%opts) 
+    $record->errors->add($attribute, $self->is_not_unique_msg, $opts) 
       unless $record->$is_unique($attribute, $value);
   } else {
     die "Request to test uniqueness of '$attribute' for model '@{[ $record->model_name->human ]}' failed because it doesn't support the '$is_unique' method."

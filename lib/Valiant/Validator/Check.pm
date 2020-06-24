@@ -14,7 +14,7 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value, $options) = @_; 
+  my ($self, $record, $attribute, $value, $opts) = @_; 
   my $check_constraint_proto = $self->_cb_value($record, $self->constraint);
   my @check_constraints = (ref($check_constraint_proto)||'') eq 'ARRAY' ?
     @$check_constraint_proto : 
@@ -22,8 +22,7 @@ sub validate_each {
 
   foreach my $check_constraint (@check_constraints) {
     unless($check_constraint->check($value)) {
-      my %opts = (%{$self->options}, %{$options||+{}});
-      $record->errors->add($attribute, $self->check, \%opts)
+      $record->errors->add($attribute, $self->check, $opts)
     }
   }
 }

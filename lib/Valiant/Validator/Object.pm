@@ -48,21 +48,20 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||{}});
+  my ($self, $record, $attribute, $value, $opts) = @_;
   my $validates = $self->_cb_value($record, $self->validations);
 
   if($validates) {
     if(my $validator = $self->validator) {
-      my $result = $validator->validate($value, %opts);
+      my $result = $validator->validate($value, %$opts);
       # TODO $result needs to import errors into $value
       if($result->invalid) {
-        $record->errors->add($attribute, $result->errors, +{%opts, result=>$result});
+        $record->errors->add($attribute, $result->errors, +{%$opts, result=>$result});
       }
     } else {
-      $value->validate(%opts);
+      $value->validate(%$opts);
       if($value->errors->size) {
-        $record->errors->add($attribute, $value->errors, \%opts);
+        $record->errors->add($attribute, $value->errors, $opts);
       }
     }
   }

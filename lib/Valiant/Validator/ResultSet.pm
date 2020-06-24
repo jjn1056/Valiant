@@ -50,8 +50,7 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||{}});
+  my ($self, $record, $attribute, $value, $opts) = @_;
   my $validates = $self->_cb_value($record, $self->validations);
 
   if($validates) {
@@ -67,9 +66,9 @@ sub validate_each {
       my @rows = grep { not $_->is_marked_for_deletion } $value->all;
       my $count = scalar(@rows);
 
-      $record->errors->add($attribute, $self->too_few_msg, +{%opts, count=>$count, min=>$self->min})
+      $record->errors->add($attribute, $self->too_few_msg, +{%$opts, count=>$count, min=>$self->min})
         if $self->has_min and $count < $self->min;
-      $record->errors->add($attribute, $self->too_many_msg, +{%opts, count=>$count, max=>$self->max})
+      $record->errors->add($attribute, $self->too_many_msg, +{%$opts, count=>$count, max=>$self->max})
         if $self->has_max and $count > $self->max;
       my $found_errors = 0;
       foreach my $row (@rows) {

@@ -1,6 +1,6 @@
 package DBIx::Class::Valiant::Result;
 
-use base qw/DBIx::Class/;
+use base 'DBIx::Class';
 
 use Role::Tiny::With;
 with 'Valiant::Validates';
@@ -27,7 +27,9 @@ sub namespace {
 }
 
 # Trouble here is you can only inject one attribute per model.  Will be an
-# issue if you have more than one confirmation validation.
+# issue if you have more than one confirmation validation. Should be an easy
+# fix, we just need to track incoming attributes so 'new' knows how to init
+# all of them
 
 sub inject_attribute {
   my ($class, $attribute_to_inject) = @_;
@@ -97,5 +99,102 @@ sub delete_if_in_storage {
   $self->delete if $self->in_storage;  #TODO some sort of relationship handling...
 }
 
+####
+
+sub build_related_if_empty {
+  my ($class, $model, $related, $attrs) = @_;
+  my @current_cache = @{ $model->related_resultset($related)->get_cache ||[] };
+  return if @current_cache;
+  my $related_obj = $model->new_related($related, ($attrs||+{}));
+
+  # TODO do this dance need to go into other places???
+  # TODO do I need some set_from_related or something here to get everthing into _relationship_data ???
+  my $relinfo = $model->relationship_info($related);
+  if ($relinfo->{attrs}{accessor} eq 'single') {
+    $model->{_relationship_data}{$related} = $related_obj;
+  }
+  elsif ($relinfo->{attrs}{accessor} eq 'filter') {
+    $model->{_inflated_column}{$related} = $related_obj;
+  }
+
+  $model->related_resultset($related)->set_cache([@current_cache, $related_obj]);
+  return $related_obj;
+}
+
+sub build {
+  my ($self, %attrs) = @_;
+  return $resultset->new_result(\%attrs);
+}
+
+sub build_related {
+  my ($self, $related, $attrs) = @_;
+  my $related_obj = $self->new_related($related, ($attrs||+{}));
+
+  # TODO do this dance need to go into other places???
+  # TODO do I need some set_from_related or something here to get everthing into _relationship_data ???
+  my $relinfo = $self->relationship_info($related);
+  if ($relinfo->{attrs}{accessor} eq 'single') {
+    $self->{_relationship_data}{$related} = $related_obj;
+  }
+  elsif ($relinfo->{attrs}{accessor} eq 'filter') {
+    $self->{_inflated_column}{$related} = $related_obj;
+  }
+
+  my @current_cache = @{ $self->related_resultset($related)->get_cache ||[] };
+  $self->related_resultset($related)->set_cache([@current_cache, $related_obj]);
+
+  return $related_obj;
+}
+
+
 1;
+
+=head1 TITLE
+
+DBIx::Class::Valiant::Result - Base component to add Valiant functionality
+
+=head1 SYNOPSIS
+
+    package Example::Schema::Result::Person;
+
+    use base 'DBIx::Class::Core';
+
+    __PACKAGE__->load_components('Valiant::Result');
+
+Or just add to your base Result class
+
+
+    package Example::Schema::Result;
+
+    use strict;
+    use warnings;
+    use base 'DBIx::Class::Core';
+
+    __PACKAGE__->load_components('Valiant::Result');
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+This component adds the following methods to your result classes.
+
+=head2 
+
+=head1 AUTHOR
+ 
+John Napiorkowski L<email:jjnapiork@cpan.org>
+  
+=head1 SEE ALSO
+ 
+L<Valiant>, L<DBIx::Class>
+
+=head1 COPYRIGHT & LICENSE
+ 
+Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
+ 
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut
+
 

@@ -61,6 +61,26 @@
     </div>
 
     <div class='form-group'>
+      %= model_errors_for 'roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
+      <fieldset class="border p-2">
+        <legend  class="w-auto"><%= $model->human_attribute_name('roles')  %></legend>
+          <div class="form-check">
+            <input checked="1" name="person.person_roles.0.pks" type="checkbox" class="form-check-input" value="1" id="a0">
+            <label for="a0">administrator</label>
+            <input name="person.person_roles.0.pks.person_id" type="hidden"  value="1">
+            <input name="person.person_roles.0.pks.role_id" type="hidden" cvalue="1">
+          </div>
+          <div class="form-check">
+            <input checked="1" name="person.person_roles.1.pks" type="checkbox" class="form-check-input" value="1" id="a1">
+            <label for="a1">user</label>
+            <input name="person.person_roles.1.pks.person_id" type="hidden"  value="1">
+            <input name="person.person_roles.1.pks.role_id" type="hidden" cvalue="1">
+          </div>
+      </fieldset>
+    </div>
+    
+
+    <div class='form-group'>
       %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
       <fieldset class="border p-2">
         <legend  class="w-auto"><%= $model->human_attribute_name('person_roles')  %></legend>
@@ -73,6 +93,7 @@
         % end
       </fieldset>
     </div>
+
 
     <div class='form-group'>
       %= model_errors_for 'credit_cards', max_errors=>1, class=>'alert alert-danger', role=>'alert';

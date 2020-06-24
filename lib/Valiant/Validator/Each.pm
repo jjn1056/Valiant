@@ -44,6 +44,10 @@ sub generate_attributes {
   }
 }
 
+# TODO A lot of this code is redundent with ::Collection. I think we could just
+# wrap a ::Collection over the Validators list somewhere (probably in ::Validation
+# where we gather the Validators).  
+
 sub validate {
   my ($self, $object, $options) = @_;
 
@@ -100,7 +104,7 @@ sub validate {
       next unless $matches;
     }
 
-    $self->validate_each($object, $attribute, $value, $options);
+    $self->validate_each($object, $attribute, $value, $self->options(%{$options||+{}}) );
   }
 }
 

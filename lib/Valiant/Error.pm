@@ -226,8 +226,37 @@ sub message {
     my %options = %{$self->options};
     delete @options{@CALLBACKS_OPTIONS};
     return $self->generate_message($self->attribute, $type, $self->object, \%options);
+  } elsif((ref($type)||'') eq 'CODE') {
+    my $attribute = $self->attribute;
+    my $value = defined($attribute) ? $self->object->read_attribute_for_validation($attribute) : undef;
+    my %options = (
+      model => $self->object->model_name->human,
+      attribute => defined($attribute) ? $self->object->human_attribute_name($attribute, $self->options) : undef,
+      value => $value,
+      object => $self->object,
+      %{$self->options||+{}},
+    );
+    delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
+    return $type->($self->object, $attribute, $value, \%options);
+  } elsif((ref($type)||'') eq 'SCALAR') {
+    my $attribute = $self->attribute;
+    my $value = defined($attribute) ? $self->object->read_attribute_for_validation($attribute) : undef;
+    my %options = (
+      model => $self->object->model_name->human,
+      attribute => defined($attribute) ? $self->object->human_attribute_name($attribute, $self->options) : undef,
+      value => $value,
+      object => $self->object,
+      %{$self->options||+{}},
+    );
+    delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
+
+    # TODO this has an error when $args{$1} is 0 Change to TT::String I guess
+    my $translated = $$type;
+    $translated =~ s/\{\{([^}]+)\}\}/ $options{$1} || '' /gex;
+    return $translated;
   } else {
-    # TODO this is where I think we could support sub { 'message' }
+    # Its just a plain string
+    # #TODO we might wish to support basic {{var}} I guess
     return $type;
   }
 }

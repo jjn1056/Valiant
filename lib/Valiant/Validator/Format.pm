@@ -166,18 +166,17 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||+{}});
+  my ($self, $record, $attribute, $value, $opts) = @_;
 
   if($self->has_match) {
     my $with = $self->_cb_value($record, $self->match);
-    $record->errors->add($attribute, $self->invalid_format_match, \%opts)
+    $record->errors->add($attribute, $self->invalid_format_match, $opts)
       unless $value =~m/$with/;
   }
   if($self->has_without) {
     my $with = $self->_cb_value($record, $self->without);
     if($value =~m/$with/) {
-      $record->errors->add($attribute, $self->invalid_format_without, \%opts);
+      $record->errors->add($attribute, $self->invalid_format_without, $opts);
     }
   }
 }

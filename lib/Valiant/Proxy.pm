@@ -38,9 +38,9 @@ sub validations {
 }
 
 around 'validate', sub {
-  my ($orig, $self, $target, %args) = @_;
+  my ($orig, $self, $target, @args) = @_;
   my $new_self = bless +{%$self, for=>$target}, ref($self);
-  return $new_self->$orig(%args);
+  return $new_self->$orig(@args);
 };
 
 1;

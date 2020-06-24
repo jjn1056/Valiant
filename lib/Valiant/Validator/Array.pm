@@ -39,7 +39,6 @@ sub normalize_shortcut {
 
 sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||{}});
   my @validations = @{$self->validations};
   my $validator = use_module($self->validator_class)
       ->new(
@@ -49,12 +48,12 @@ sub validate_each {
         %{ $self->validator_class_args },
       );
 
-  my $result = $validator->validate($value, %opts,  attribute=>'item');  
+  my $result = $validator->validate($value, %$options, attribute=>'item');  
 
   if($result->invalid) {
     my $errors = $result->errors;
     $errors->{__result} = $result; # hack to keep this in scope
-    $record->errors->add($attribute, $errors, \%opts);
+    $record->errors->add($attribute, $errors, $options);
   }
 }
 

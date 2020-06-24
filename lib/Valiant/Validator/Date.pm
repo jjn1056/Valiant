@@ -26,31 +26,30 @@ sub normalize_shortcut {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value, $options) = @_;
-  my %opts = (%{$self->options}, %{$options||+{}});
+  my ($self, $record, $attribute, $value, $opts) = @_;
   my $dt = $_strp->parse_datetime($value);
 
   unless($dt) {
-    $record->errors->add($attribute, $self->invalid_date_msg, \%opts);
+    $record->errors->add($attribute, $self->invalid_date_msg, $opts);
     return;
   }
 
   if($self->has_min) {
     my $min = $self->_cb_value($record, $self->min);
     my $min_dt_obj = $self->parse_if_needed($min);
-    $record->errors->add($attribute, $self->below_min_msg, +{%opts, min=>$min_dt_obj->strftime($_pattern)})
+    $record->errors->add($attribute, $self->below_min_msg, +{%$opts, min=>$min_dt_obj->strftime($_pattern)})
       unless $dt > $min_dt_obj;
   }
 
   if($self->has_max) {
     my $max = $self->_cb_value($record, $self->max);
     my $max_dt_obj = $self->parse_if_needed($max);
-    $record->errors->add($attribute, $self->above_max_msg, +{%opts, max=>$max_dt_obj->strftime($_pattern)})
+    $record->errors->add($attribute, $self->above_max_msg, +{%$opts, max=>$max_dt_obj->strftime($_pattern)})
       unless $dt < $max_dt_obj;
   }
 
   if($self->has_cb) {
-    $self->cb->($record, $attribute, $dt, $self, \%opts);
+    $self->cb->($record, $attribute, $dt, $self, $opts);
   }
 }
 

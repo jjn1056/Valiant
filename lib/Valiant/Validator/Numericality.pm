@@ -132,15 +132,14 @@ sub normalize_shortcut {
 
 sub validate_each {
   my ($self, $record, $attr, $value, $options) = @_;
-
   if($self->only_integer) {
     unless($INIT{is_integer}->($value)) {
-      $record->errors->add($attr, $self->is_integer_err, $self->options); 
+      $record->errors->add($attr, $self->is_integer_err, $options); 
       return;
     }
   } else {
     unless($INIT{is_number}->($value)) {
-      $record->errors->add($attr, $self->is_number_err, $self->options); 
+      $record->errors->add($attr, $self->is_number_err, $options); 
       return;
     }
   }
@@ -150,7 +149,7 @@ sub validate_each {
     my $constraint_value = $self->$key;
     $constraint_value = $constraint_value->($record)
       if((ref($constraint_value)||'') eq 'CODE');
-    $record->errors->add($attr, $self->${\"${key}_err"}, $self->options(count=>$constraint_value, %{$options||+{}}))
+    $record->errors->add($attr, $self->${\"${key}_err"}, +{%$options, count=>$constraint_value})
       unless $CHECKS{$key}->($value, $constraint_value);
   }
 }
