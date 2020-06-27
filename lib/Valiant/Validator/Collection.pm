@@ -19,6 +19,8 @@ sub options {
   return \%opts;
 }
 
+# would be great if we could rationalize this with Each
+
 sub validate {
   my ($self, $object, $options) = @_;
 
@@ -58,7 +60,7 @@ sub validate {
       foreach my $o (@on) {
         if($c eq $o) {
           $matches = 1;
-          last OUTER;
+          last OUTER; # We only need to match one context
         }
       }
     }
@@ -90,6 +92,10 @@ This is used internally by L<Valiant> and I can't imagine a good use for it else
 so the documentation here is light.  There's no reason to NOT use it if for some
 reason a good use comes to mind (I don't plan to change this so you can consider it
 public API but just perhaps tricky bits for very advanced use cases).
+
+I guess it could be used to make very complicated nested validations.  I'm not going
+to show you how to do that since I think only people that can figure it out should
+be allowed.  If you think I'm wrong ping me on IRC and submit a doc patch.
 
 =head1 ATTRIBUTES
 
