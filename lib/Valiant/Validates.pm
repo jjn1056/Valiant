@@ -132,7 +132,8 @@ sub _validator_package {
     eval { use_module $package_to_test } || do {
       # This regexp matches too much... We need to add the package
       # path here just the path delim will vary from platform to platform
-      if($@=~m/^Can't locate/) {
+      my $notional_filename = Module::Runtime::module_notional_filename($package_to_test);
+      if($@=~m/^Can't locate $notional_filename/) {
         debug 1, "Can't find '$package_to_test' in \@INC";
         0;
       } else {
@@ -286,7 +287,8 @@ sub validates_with {
       my $found_package = eval {
         use_module($package);
       } || do {
-        if($@=~m/^Can't locate/) {
+        my $notional_filename = Module::Runtime::module_notional_filename($package);
+        if($@=~m/^Can't locate $notional_filename/) {
           debug 1, "Can't find '$package' in \@INC";
           0;
         } else {
