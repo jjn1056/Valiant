@@ -6,7 +6,7 @@ use Data::Localize;
 use Data::Localize::MultiLevel;
 use Scalar::Util;
 use Carp;
-use Valiant::Debug;
+use Valiant::Util 'throw_exception', 'debug';
 
 our $dl;
 our %locale_paths;
@@ -38,10 +38,10 @@ sub add_locale_path {
   my @found = glob($path);
   my $flag = @found ? 1 : -1;
   if($flag == 1) {
-    $class->$DEBUG(1, "Adding locale_path at $path");
+    debug 1, "Adding locale_path at $path";
     $dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
   } else {
-    $class->$DEBUG(1, "No translation files found at $path");
+    debug 1, "No translation files found at $path";
   }
   $locale_paths{$path} = $flag;
   return $flag == 1 ? 1:0;
@@ -61,12 +61,12 @@ sub _locale_path_from_module {
 }
 
 sub _lookup_translation_by_count {
-  my ($self, $count, $translated, %args) = @_;
+  my ($self, $count, $original, $translated, %args) = @_;
   $translated = $translated->{zero} if $count == 0 and $translated->{zero};
   $translated = $translated->{one} if $count == 1 and $translated->{one};
   $translated = $translated->{other} if $count > 1 and $translated->{other};
 
-  die "Can't find a 'count' option for '$count'" if ref $translated; 
+  throw_exception('MissingCountKey', tag=>$original, count=>$count) if ref $translated;
 
   # Ok, need to do any variable subsitutions again. Just stole this from
   # Data::Localize::Format::NamedArgs
@@ -74,7 +74,7 @@ sub _lookup_translation_by_count {
   # TODO this has an error when $args{$1} is 0
   $translated =~ s/\{\{([^}]+)\}\}/ $args{$1} || '' /gex;
 
-  $self->$DEBUG(1, "Resolved count translation; $translated");
+  debug 1, "Resolved count translation; $translated";
   return $translated;
 }
 
@@ -96,20 +96,20 @@ sub translate {
   $key = $$key if $self->is_i18n_tag($key);
   $key = "${scope}.${key}" if $scope;
 
-  $self->$DEBUG(1, "Trying to translate: '$key'");
+  debug 1, "Trying to translate: '$key'";
   my $translated = $dl->localize($key, \%args);
 
   # If $translated is a hashref that means we need to apply the $count
-  $translated = $self->_lookup_translation_by_count($count, $translated, %args)
+  $translated = $self->_lookup_translation_by_count($count, $key, $translated, %args)
     if ref($translated) && defined($count);
 
   # Is this a bug in Data::Localize?  Seems like ->localize just returns
   # the $key if it fails to actually localize.  I would think it should
   # return undef;
 
-  $self->$DEBUG(1, "Proposed translation: '$translated'");
+  debug 1, "Proposed translation: '$translated'";
   unless($translated eq $key) {
-    $self->$DEBUG(1, "Translated '$key' to '$translated'");
+    debug 1, "Translated '$key' to '$translated'";
     return $translated;
   }
 
@@ -123,17 +123,17 @@ sub translate {
   # of the defaults list.
 
   foreach my $default(@defaults) {
-    $self->$DEBUG(1, "Trying to translate defaults: '$default'");
+    debug 1, "Trying to translate defaults: '$default'";
 
     return $default unless $self->is_i18n_tag($default);
     my $tag = $$default;
     my $translated = $dl->localize($tag, \%args);
-    $translated = $self->_lookup_translation_by_count($count, $translated, %args)
+    $translated = $self->_lookup_translation_by_count($count, $tag, $translated, %args)
       if ref($translated) and defined($count);
 
-    $self->$DEBUG(1, "Proposed translation: '$translated'");
+    debug 1, "Proposed translation: '$translated'";
     unless($translated eq $tag) {
-      $self->$DEBUG(1, "Translated '$default' to '$translated'");
+      debug 1, "Translated '$default' to '$translated'";
       return $translated;
     }
   }

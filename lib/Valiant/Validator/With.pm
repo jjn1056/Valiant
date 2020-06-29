@@ -1,6 +1,7 @@
 package Valiant::Validator::With;
 
 use Moo;
+use Valiant::Util 'throw_exception';
 
 with 'Valiant::Validator::Each';
 
@@ -47,7 +48,7 @@ sub validate_each {
       $record->errors->add($attribute, $self->message_if_false, $options)
         if !$return and $self->has_message_if_false;
     } else {
-      die ref($record) ." has no method '${\$self->method}'";
+      throw_exception MissingMethod => (object=>$record, method=>$self->method); 
     }
   }
 }

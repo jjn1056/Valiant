@@ -8,7 +8,12 @@ has method => (is=>'ro', required=>1);
 
 sub _build_message {
   my ($self) = @_;
-  return "Object '@{[ ref $self->object ]}' has no method '@{[ $self->method ]}'.";
+  if(ref $self->method) {
+    my $methods = join ', ', @{$self->method};
+    return "Object '@{[ ref $self->object ]}' must provide one of the following methods: $methods";
+  } else {
+    return "Object '@{[ ref $self->object ]}' has no method '@{[ $self->method ]}'.";
+  }
 }
 
 1;
@@ -32,7 +37,8 @@ to have that method.
 
 =head2 method
 
-The string name of the missing method and a reference to the object that was missing it.
+The string name of the missing method and a reference to the object that was missing it.  If the
+method attribute is an arrayref than means 'one of these methods' must be provided.
 
 =head2 message
 

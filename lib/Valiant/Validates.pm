@@ -4,7 +4,7 @@ use Moo::Role;
 use Module::Runtime 'use_module';
 use String::CamelCase 'camelize';
 use Scalar::Util 'blessed';
-use Valiant::Debug;
+use Valiant::Util 'throw_exception', 'debug';
 
 with 'Valiant::Translation';
 
@@ -128,25 +128,27 @@ sub _validator_package {
   my ($self, $key) = @_;
   my @validator_packages = $self->_prepare_validator_packages($key);
   my ($validator_package, @rest) = grep {
-    eval { use_module $_ } || do {
+    my $package_to_test = $_;
+    eval { use_module $package_to_test } || do {
       # This regexp matches too much... We need to add the package
       # path here just the path delim will vary from platform to platform
       if($@=~m/^Can't locate/) {
-        $self->$DEBUG(1, "Can't find $_ in \@INC");
+        debug 1, "Can't find '$package_to_test' in \@INC";
         0;
       } else {
-        die $@;
+        throw_exception UnexpectedUseModuleError => (package => $package_to_test, err => $@);
       }
     }
   }  @validator_packages;
-  die "'$key' is not a validator" unless $validator_package;
-  $self->$DEBUG(1, "Found $validator_package in \@INC");
+  throw_exception('NameNotValidator', name => $key, packages => \@validator_packages)
+    unless $validator_package;
+  debug 1, "Found $validator_package in \@INC";
   return $validator_package;
 }
 
 sub _create_validator {
   my ($self, $validator_package, $args) = @_;
-  $self->$DEBUG(1, "Trying to create validator from $validator_package");
+  debug 1, "Trying to create validator from $validator_package";
   my $validator = $validator_package->new($args);
   return $validator;
 }
@@ -278,25 +280,26 @@ sub validates_with {
       push @validators, [$with, \%options];
       next VALIDATOR_WITHS;
     }
-    $self->$DEBUG(1, "Trying to find a validator for '$with'");
+    debug 1, "Trying to find a validator for '$with'";
     my @possible_packages = $self->_normalize_validator_package($with);
     foreach my $package(@possible_packages) {
       my $found_package = eval {
         use_module($package);
       } || do {
         if($@=~m/^Can't locate/) {
-          $self->$DEBUG(1, "Can't find '$package' in \@INC");
+          debug 1, "Can't find '$package' in \@INC";
           0;
         } else {
-          die $@; # Probably a syntax error in the code of $package
+          # Probably a syntax error in the code of $package
+          throw_exception UnexpectedUseModuleError => (package => $package, err => $@);
         }
       };
       if($found_package) {
-        $self->$DEBUG(1, "Found '$found_package' in \@INC");
+        debug 1, "Found '$found_package' in \@INC";
         push @validators, $package->new(%options);
         next VALIDATOR_WITHS; # Only load the first one found
       } else {
-        $self->$DEBUG(1, "Failed to find '$with' in \@INC");
+        debug 1, "Failed to find '$with' in \@INC";
       }
     }
   }

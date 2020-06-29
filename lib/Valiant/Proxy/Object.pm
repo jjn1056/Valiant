@@ -1,6 +1,8 @@
 package Valiant::Proxy::Object;
 
 use Moo;
+use Valiant::Util 'throw_exception';
+
 with 'Valiant::Proxy';
 
 sub read_attribute_for_validation {
@@ -8,7 +10,7 @@ sub read_attribute_for_validation {
   if($self->for->can($attribute)) {
     return $self->for->$attribute;
   } else {
-    die "${\$self->for} cannot provide '$attribute'";
+    throw_exception MissingMethod => (object=>$self->for, method=>$attribute);
   }
 }
 

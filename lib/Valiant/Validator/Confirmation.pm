@@ -2,6 +2,7 @@ package Valiant::Validator::Confirmation;
 
 use Moo;
 use Valiant::I18N;
+use Valiant::Util 'throw_exception';
 
 with 'Valiant::Validator::Each';
 
@@ -32,7 +33,8 @@ sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
   my $confirmation_attribute = "${attribute}${\$self->suffix}";
   my $confirmation = $record->can($confirmation_attribute) ||
-    die ref($record) . " have not have a method called '$confirmation_attribute'";
+    throw_exception MissingMethod => (object=>$record, method=>$confirmation_attribute); 
+
   unless($value eq $confirmation->($record)) {
     my $human_attribute_name = $record->human_attribute_name($attribute);
     $record->errors->add($confirmation_attribute, $self->confirmation, +{%$opts, attribute=>"$human_attribute_name"})

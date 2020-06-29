@@ -2,6 +2,7 @@ package Valiant::Validator::Unique;
 
 use Moo;
 use Valiant::I18N;
+use Valiant::Util 'throw_exception';
 
 with 'Valiant::Validator::Each';
 
@@ -29,7 +30,7 @@ sub validate_each {
     $record->errors->add($attribute, $self->is_not_unique_msg, $opts) 
       unless $record->$is_unique($attribute, $value, $opts);
   } else {
-    die "Request to test uniqueness of '$attribute' for model '@{[ $record->model_name->human ]}' failed because it doesn't provide a uniqueness method"
+    throw_exception MissingMethod => (object=>$record, method=>["${attribute}_${is_unique}", $is_unique]);
   }
 }
 

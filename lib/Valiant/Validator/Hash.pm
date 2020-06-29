@@ -3,6 +3,7 @@ package Valiant::Validator::Hash;
 use Moo;
 use Valiant::I18N;
 use Module::Runtime 'use_module';
+use Valiant::Util 'throw_exception';
 
 with 'Valiant::Validator::Each';
 
@@ -28,7 +29,7 @@ around BUILDARGS => sub {
         [ $_, @{$args->{validations}{$_}} ];
       } keys %{$args->{validations}}; 
     } else {
-      die 'validations argument in unsupported format';
+      throw_exception General => (msg=>'validations argument in unsupported format');
     }
 
     my $validator = use_module($args->{validator_class}||'Valiant::Proxy::Hash')

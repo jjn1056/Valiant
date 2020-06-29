@@ -1,6 +1,7 @@
 package Valiant::Validator::Collection;
 
 use Moo;
+use Valiant::Util 'throw_exception';
 
 with 'Valiant::Validator';
 
@@ -32,7 +33,7 @@ sub validate {
       if(my $method_cb = $object->can($if)) {
         return unless $method_cb->($object, $options);
       } else {
-        die ref($object) ." has no method '$if'";
+        throw_exception MissingMethod => (object=>$object, method=>$if); 
       }
     }
   }
@@ -45,7 +46,7 @@ sub validate {
       if(my $method_cb = $object->can($unless)) {
         return if $method_cb->($object, $options);
       } else {
-        die ref($object) ." has no method '$unless'";
+        throw_exception MissingMethod => (object=>$object, method=>$unless); 
       }
     }
   }
@@ -117,7 +118,7 @@ is the easiest but probably not always your best option.
 
 =head2 strict
 
-When true instead of adding a message to the errors list, will die with the
+When true instead of adding a message to the errors list, will throw exception with the
 error instead.  If the true value is the name of a class that provides a C<throw>
 message, will use that instead.
 

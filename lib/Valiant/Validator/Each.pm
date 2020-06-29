@@ -2,6 +2,7 @@ package Valiant::Validator::Each;
 
 use Moo::Role;
 use Valiant::I18N; # So that _t is available in subclasses
+use Valiant::Util 'throw_exception';
 
 with 'Valiant::Validator';
 requires 'validate_each';
@@ -66,7 +67,7 @@ sub validate {
           if(my $method_cb = $object->can($if)) {
             next ATTRIBUTE_LOOP unless $method_cb->($object, $attribute, $value, $options);
           } else {
-            die ref($object) ." has no method '$if'";
+            throw_exception MissingMethod => (object=>$object, method=>$if); 
           }
         }
       }
@@ -80,7 +81,7 @@ sub validate {
           if(my $method_cb = $object->can($unless)) {
             next ATTRIBUTE_LOOP if $method_cb->($object, $attribute, $value, $options);
           } else {
-            die ref($object) ." has no method '$unless'";
+            throw_exception MissingMethod => (object=>$object, method=>$unless); 
           }
         }
       }
@@ -114,7 +115,7 @@ sub _requires_one_of {
     return if defined($args->{$arg});
   }
   my $list = join ', ', @list;
-  die "Missing at least one of the following args ($list)";
+  throw_exception General => (msg => "Missing at least one of the following args: $list");
 }
 
 sub _cb_value {
@@ -184,7 +185,7 @@ is the easiest but probably not always your best option.
 
 =head2 strict
 
-When true instead of adding a message to the errors list, will die with the
+When true instead of adding a message to the errors list, will throw exception with the
 error instead.  If the true value is the name of a class that provides a C<throw>
 message, will use that instead.
 

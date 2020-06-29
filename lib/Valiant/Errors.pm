@@ -1,10 +1,9 @@
 package Valiant::Errors;
 
 use Moo;
-use Carp;
 use Data::Perl::Collection::Array;
 use Valiant::NestedError;
-
+use Valiant::Util 'throw_exception';
 
 has 'object' => (
   is => 'ro',
@@ -218,8 +217,8 @@ sub add {
 
   if(my $exception = $options->{strict}) {
     my $message = $error->full_message;
-    Carp::croak $message if $exception == 1;
-    $exception->throw($message);
+    throw_exception('Strict' => (msg=>$message)) if $exception == 1;
+    $exception->throw($message); # If not 1 then assume its a package name.
   }
  
   $self->errors->push($error);
