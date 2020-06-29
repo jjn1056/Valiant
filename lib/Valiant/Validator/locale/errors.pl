@@ -75,6 +75,11 @@
         above_max => "chosen date can't be later than {{max}}",
         below_min => "chosen date can't be earlier than {{min}}",
         invalid_date => "doesn't look like a date",
+        #object
+        not_blessed => 'is not an object',
+        type_constraint_violation => 'violates type constraint "{{display_name}}"',
+        wrong_inheritance => 'does not inherit from "{{parent}}"',
+        not_role => 'does not provide the role "{{role}}"',
       },
     }
   },
