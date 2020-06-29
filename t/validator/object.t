@@ -1,10 +1,16 @@
 use Test::Most;
 
 {
+  package Local::Test::TestRole;
+
+  use Moo::Role;
+
   package Local::Test::Address;
 
   use Moo;
   use Valiant::Validations;
+
+  with 'Local::Test::TestRole';
 
   has street => (is=>'ro');
   has city => (is=>'ro');
@@ -25,6 +31,10 @@ use Test::Most;
 
   has ['make', 'model', 'year'] => (is=>'ro');
 
+  validates make => ( allow_blank => 1, inclusion => [qw/Toyota Tesla Ford/] );
+  validates model => ( allow_blank => 1, length => [2, 20] );
+  validates year => ( allow_blank => 1, numericality => { greater_than_or_equal_to => 1960 });
+
   package Local::Test::Person;
 
   use Moo;
@@ -42,20 +52,24 @@ use Test::Most;
   validates address => (
     presence => 1,
     object => {
-      validations => 1,
+      nested => 1,
+      isa => 'Local::Test::Address',
+      role => 'Local::Test::TestRole',
+    }
+  );
+
+  validates address => (
+    presence => 1,
+    object => {
+      isa => 'ISA',
+      role => 'ROLE',
+      on => 'check_isa_role',
     }
   );
 
   validates car => (
-    object => {
-      for => 'Local::Test::Car',
-      validations => [
-        [ make => inclusion => [qw/Toyota Tesla Ford/] ],
-        [ model => length => [2, 20] ],
-        [ year => numericality => { greater_than_or_equal_to => 1960 } ],
-      ],
-      allow_blank => 1,
-    },
+    object => 'nested',
+    allow_blank => 1,
   );
 
   validates car => (
@@ -65,10 +79,34 @@ use Test::Most;
     },
     allow_blank => 1,
   );
-
 }
 
 {
+  my $address = Local::Test::Address->new(
+    city => 'NYC',
+    street => '15604 HL Drive',
+    country => 'usa'
+  );
+
+  my $person = Local::Test::Person->new(
+    name => 'john',
+    address => $address,
+  );
+
+  ok $person->validate(context=>'check_isa_role')->invalid;
+
+  is_deeply +{ $person->errors->to_hash(full_messages=>1) },
+    {
+      'address' => [
+        "Address does not inherit from \"ISA\"",
+        "Address does not provide the role \"ROLE\"",
+      ],
+    };
+}
+
+{
+  # This is also testing 'allow_blank' for better or worse...
+
   my $address = Local::Test::Address->new(
     city => 'NYC',
     street => '15604 HL Drive',
@@ -95,24 +133,33 @@ use Test::Most;
   );
 
   ok $person->validate->invalid;
+
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
       'name' => [
-        'Name does not match the required pattern'
+        'Name does not match the required pattern',
       ],
-      'address' => [{
-         'country' => [
-                        'Country is not in the list'
-                      ],
-         'street' => [
-                       'Street can\'t be blank',
-                       'Street is too short (minimum is 3 characters)'
-                     ],
-         'city' => [
-                     'City is too short (minimum is 3 characters)'
-                   ]
-      }]
+      'address' => [
+        'Address Is Invalid',
+      ],
     };
+
+  is_deeply +{ $person->address->errors->to_hash(full_messages=>1) },
+    {
+       'country' => [
+                      'Country is not in the list'
+                    ],
+       'street' => [
+                     'Street can\'t be blank',
+                     'Street is too short (minimum is 3 characters)'
+                   ],
+       'city' => [
+                   'City is too short (minimum is 3 characters)'
+                 ]
+    };
+
+  ok $person->invalid;
+  ok $person->address->invalid;
 }
 
 {
@@ -135,40 +182,53 @@ use Test::Most;
 
   ok $person->validate->invalid;
 
-  is_deeply +{ $person->errors->to_hash(1) },
+  ok $person->invalid;
+  ok $person->address->invalid;
+  ok $person->car->invalid;
+
+  is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
+      'name' => [
+        'Name does not match the required pattern',
+      ],
+      'address' => [
+        'Address Is Invalid',
+      ],
       'car' => [
-        {
-           'model' => [
-                        'Model is too short (minimum is 2 characters)'
-                      ],
-           'year' => [
-                       'Year must be greater than or equal to 1960'
-                     ],
-           'make' => [
-                       'Make is not in the list'
-                     ]
-        },
+        'Car Is Invalid',
         "Car ALWAYS FAIL",
       ],
-      'address' => [{
-               'street' => [
-                             'Street can\'t be blank',
-                             'Street is too short (minimum is 3 characters)'
-                           ],
-               'city' => [
-                           'City is too short (minimum is 3 characters)'
-                         ],
-               'country' => [
-                              'Country is not in the list'
-                            ]
-                   }],
-      'name' => [
-                  'Name does not match the required pattern'
-                ]
+
     };
 
+  is_deeply +{ $person->address->errors->to_hash(full_messages=>1) },
+    {
+       'street' => [
+                     'Street can\'t be blank',
+                     'Street is too short (minimum is 3 characters)'
+                   ],
+       'city' => [
+                   'City is too short (minimum is 3 characters)'
+                 ],
+       'country' => [
+                      'Country is not in the list'
+                    ]
+      };
 
+
+  is_deeply +{ $person->car->errors->to_hash(1) },
+    {
+       'model' => [
+                    'Model is too short (minimum is 2 characters)'
+                  ],
+       'year' => [
+                   'Year must be greater than or equal to 1960'
+                 ],
+       'make' => [
+                   'Make is not in the list'
+                 ]
+    };
 }
+
 
 done_testing;
