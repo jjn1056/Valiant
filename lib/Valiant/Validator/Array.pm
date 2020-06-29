@@ -41,8 +41,6 @@ sub validate_each {
   my @validations = @{$self->validations};
   my $validator = use_module($self->validator_class)
       ->new(
-        result_class => 'Valiant::Result::ArrayRef', 
-        for => $self->for, 
         validations => [[ [keys @$value], @validations ]],
         %{ $self->validator_class_args },
       );
