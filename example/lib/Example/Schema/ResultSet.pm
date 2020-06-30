@@ -10,6 +10,7 @@ __PACKAGE__->load_components(qw/
   Helper::ResultSet::SetOperations
   Helper::ResultSet::IgnoreWantarray
   ResultSet::CallbackInflator
+  Valiant::ResultSet
 /);
 
 sub to_array {

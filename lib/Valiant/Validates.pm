@@ -116,12 +116,19 @@ sub _is_reserved_option_key {
 }
 
 sub _prepare_validator_packages {
-  my ($self, $key) = @_;
+  my ($class, $key) = @_;
+  my $camel = camelize($key);
   return (
-    $self->_normalize_validator_package(camelize($key)),
-    'Valiant::ValidatorX::'.camelize($key), # Look here first in case someday we have XS versions of the built-ins
-    'Valiant::Validator::'.camelize($key),
+    $class->_normalize_validator_package($camel),
+    map {
+      "${_}::${camel}";
+    } $class->default_validator_namespaces
   );
+}
+
+sub default_validator_namespaces {
+  my ($self) = @_;
+  return ('Valiant::ValidatorX', 'Valiant::Validator');
 }
 
 sub _validator_package {

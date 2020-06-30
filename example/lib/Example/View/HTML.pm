@@ -1,9 +1,82 @@
+{
+  package Valiant::Formbuilder;
+
+  use Moo;
+  use Mojo::Template;
+  use Mojo::ByteStream qw(b);
+
+  use Devel::Dwarn;
+
+  has mojo_template => (
+    is => 'ro', 
+    required => 1,
+    builder => '_build_mojo_template',
+    lazy => 1,
+  );
+
+  sub _build_mojo_template {
+    my $self = shift;
+    my %args = (vars => 1);
+    return Mojo::Template->new(%args);
+  }
+
+  has _form_template => (
+    is => 'ro',
+    required => 1,
+    lazy => 1,
+    default => sub {
+      shift->mojo_template->parse('<form <%= $attrs %> ><%= $content %></form>');
+    }
+  );
+  
+  sub form {
+    my ($self, $content, %attrs) = (shift, _parse_proto(@_));
+    return $self->_process(
+      _form_template =>
+        attrs => _join_attrs(%attrs),
+        content => $content->($self),
+    );
+  }
+
+  sub _process {
+    my ($self, $template, %args) = @_;
+    return b($self->$template(%args));
+  }
+
+  sub _join_attrs {
+    my %attrs = @_;
+    my $attrs = join ' ', map { "$_='$attrs{$_}'" } keys %attrs;
+    return $attrs;
+  }
+
+  sub _parse_proto {
+    my @proto = @_;
+    my $content = (ref($proto[-1])||'') eq 'CODE' ? pop @proto : sub { undef };
+    my %attrs = @proto;
+    return ($content, %attrs);
+  }
+
+  #% use experimental 'signatures';
+  #%= formbuilder->form(method => 'POST', begin
+  #  % my $fb = shift;
+  #  <fieldset>
+  #    <legend>My Test Form</legend>
+  #  </fieldset>
+  #% end );
+
+}
+
 package Example::View::HTML;
 
 use Moose;
 use Mojo::ByteStream qw(b);
 use Scalar::Util 'blessed';
+use Valiant::Formbuilder;
+
 extends 'Catalyst::View::MojoTemplate';
+
+has _formbuilder => (is=>'ro', required=>1, default=>sub { Valiant::Formbuilder->new });
+
 
 __PACKAGE__->config(
   helpers => {
@@ -23,8 +96,15 @@ __PACKAGE__->config(
     checkbox_from_related => \&checkbox_from_related,
     current_namespace_id => sub { join '_', @{$_[1]->stash->{'valiant.view.form.namespace'}||[]} },
     namespace_id_for => \&namespace_id_for,
+    formbuilder => \&formbuilder,
   },
 );
+
+sub formbuilder {
+  my ($self, $c) = @_;
+  return $self->_formbuilder;
+}
+
 
 sub namespace_id_for {
   return join '_', (@{$_[1]->stash->{'valiant.view.form.namespace'}||[]}, @_[2...$#_])
@@ -206,6 +286,7 @@ sub select_from_related {
     $model->related_resultset($relationship)->result_source->resultset->search($search_cond, $search_attrs);
 
   my ($options, $label_text);
+  $options .= "<option value='' disabled @{[ $current_value ? '':'selected']}></option>" if delete $attrs{include_blank};
   my $options_label = delete($attrs{options_label_field}) || 'label';
   my $options_value = delete($attrs{options_value_field}) || 'id';
   my @option_rows = $options_resultset->all;
@@ -222,6 +303,7 @@ sub select_from_related {
   }
 
   my @errors = $model->errors->full_messages_for($attribute);
+  $attrs{class} .= ' is-invalid' if @errors;
   $content .= $self->tag('select', \%attrs, $options);
   $content .= $self->tag('div', +{class=>'invalid-feedback'}, $errors[0]) if @errors;
 
@@ -304,6 +386,23 @@ sub fields_for_related {
 
   die "No relation '$related' for model $model" unless $model->has_relationship($related);
 
+  my $rel_data = $model->relationship_info($related);
+  my $rel_type = $rel_data->{attrs}{accessor};
+
+  if( $rel_type eq 'single') {
+    my $content = '';
+    my $result = $model->related_resultset($related)->first;
+    local $c->stash->{'valiant.view.form.model'} = $result;
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related];
+    my @primary_columns = $result->result_source->primary_columns;
+    foreach my $primary_column (@primary_columns) {
+      next unless my $value = $result->get_column($primary_column);
+      $content .= $self->hidden($c, $primary_column);
+    }
+    $content .= $inner->();
+    return b $content;
+  }
+
   my ($idx, $content) = (0, '');
   my @results = $model->related_resultset($related)->all;
   
@@ -317,12 +416,12 @@ sub fields_for_related {
       $content .= $self->hidden($c, $primary_column, %attrs);
     }
     if(@primary_columns) {
-      $content .= $self->hidden($c, '_destroy', %attrs, value=>$result->is_marked_for_deletion);
+      #$content .= $self->hidden($c, '_destroy', %attrs, value=>$result->is_marked_for_deletion);
     }
     $content .= $inner->() unless $result->is_marked_for_deletion;
   }
 
-  if(1) {
+  if(0) {
     my $result = $model->result_source->related_source($related)->resultset->new_result({});
     local $c->stash->{'valiant.view.form.model'} = $result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, "{{epoch}}"];

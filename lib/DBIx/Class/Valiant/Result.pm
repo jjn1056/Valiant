@@ -2,7 +2,11 @@ package DBIx::Class::Valiant::Result;
 
 use base 'DBIx::Class';
 
-use Role::Tiny::With;
+use warnings;
+use strict;
+use Role::Tiny;
+use Valiant::Util 'debug';
+
 with 'Valiant::Validates';
 
 sub register_column {
@@ -11,8 +15,14 @@ sub register_column {
   $self->next::method(@_);
 
   use Devel::Dwarn;
-  Dwarn \@_;
+  #Dwarn \@_;
+  # TODO future home of validations declares inside the register column call
 }
+
+around 'default_validator_namespaces' => sub  {
+  my ($orig, $self, @args) = @_;
+  return('DBIx::Class::Valiant::Validator', $self->$orig(@args));
+};
 
 # Gotta jump thru these hoops because of the way the Catalyst
 # DBIC model messes with the result namespace but not the schema
@@ -20,8 +30,10 @@ sub register_column {
 
 sub namespace {
   my $self = shift;
-  my $source_name = $self->new->result_source->source_name;
-  my $class = ref $self;
+  my $class = ref($self) ? ref($self) : $self; 
+  my $source_name = $class->new->result_source->source_name;
+  return unless $source_name;
+
   $class =~s/::${source_name}$//;
   return $class;
 }
@@ -60,8 +72,19 @@ sub read_attribute_for_validation {
   return unless defined $attribute;
   return $self->get_column($attribute) if $self->result_source->has_column($attribute);
 
-  #TODO If the relationship is a single we might want to return the result
-  return $self->related_resultset($attribute) if $self->has_relationship($attribute);
+  if($self->has_relationship($attribute)) {
+    my $rel_data = $self->relationship_info($attribute);
+    my $rel_type = $rel_data->{attrs}{accessor};
+    if($rel_type eq 'single') {
+      return $self->related_resultset($attribute)->first;
+    } elsif($rel_type eq 'multi') {
+      return $self->related_resultset($attribute);
+    } else {
+      die "Can't read_attribute_for_validation for '$attribute' of rel_type '$rel_type' in @{[ref $self]}";
+    }
+
+  }
+
   return $self->$attribute if $self->can($attribute); 
 }
 
@@ -78,7 +101,7 @@ sub is_unique {
   return $found ? 0:1;
 }
 
-# 
+#### these next few might go away
 sub mark_for_deletion {
   my ($self) = @_;
   $self->{__valiant_kiss_of_death} = 1;
@@ -101,33 +124,15 @@ sub delete_if_in_storage {
 
 ####
 
-sub build_related_if_empty {
-  my ($class, $model, $related, $attrs) = @_;
-  my @current_cache = @{ $model->related_resultset($related)->get_cache ||[] };
-  return if @current_cache;
-  my $related_obj = $model->new_related($related, ($attrs||+{}));
-
-  # TODO do this dance need to go into other places???
-  # TODO do I need some set_from_related or something here to get everthing into _relationship_data ???
-  my $relinfo = $model->relationship_info($related);
-  if ($relinfo->{attrs}{accessor} eq 'single') {
-    $model->{_relationship_data}{$related} = $related_obj;
-  }
-  elsif ($relinfo->{attrs}{accessor} eq 'filter') {
-    $model->{_inflated_column}{$related} = $related_obj;
-  }
-
-  $model->related_resultset($related)->set_cache([@current_cache, $related_obj]);
-  return $related_obj;
-}
-
 sub build {
   my ($self, %attrs) = @_;
-  return $resultset->new_result(\%attrs);
+  return $self->result_source->resultset->new_result(\%attrs);
 }
 
 sub build_related {
   my ($self, $related, $attrs) = @_;
+  debug 2, "Building related entity '$related' for @{[ $self->model_name->human ]}";
+
   my $related_obj = $self->new_related($related, ($attrs||+{}));
 
   # TODO do this dance need to go into other places???
@@ -144,6 +149,106 @@ sub build_related {
   $self->related_resultset($related)->set_cache([@current_cache, $related_obj]);
 
   return $related_obj;
+}
+
+sub build_related_if_empty {
+  my ($self, $related, $attrs) = @_;
+  debug 2, "Build related entity '$related' for @{[ ref $self ]} if empty";
+  return if @{ $self->related_resultset($related)->get_cache ||[] };
+  return $self->build_related($related, $attrs);
+}
+
+sub set_from_params_recursively {
+  my ($self, %params) = @_;
+  foreach my $param (keys %params) {
+    # Spot to normalize serialized params (like for dates, etc).
+    if($self->has_column($param)) {
+      $self->set_column($param => $params{$param});
+    } elsif($self->has_relationship($param)) {
+      $self->set_related_from_params($param, $params{$param});
+    } elsif($self->can($param)) {
+      # Right now this is only used by confirmation stuff
+      $self->$param($params{$param});
+    } else {
+      die "Not sure what to do with '$param'";
+    }
+  }
+}
+
+sub set_related_from_params {
+  my ($self, $related, $params) = @_;
+  my $rel_data = $self->relationship_info($related);
+  my $rel_type = $rel_data->{attrs}{accessor};
+
+  return $self->set_single_related_from_params($related, $params) if $rel_type eq 'single';  
+}
+
+sub set_single_related_from_params {
+  my ($self, $related, $params) = @_;
+
+  my $related_result = eval {
+    my $new_related = $self->new_related($related, +{});
+    my @primary_columns = $new_related->result_source->primary_columns;
+
+    my %primary_columns = map {
+      exists($params->{$_}) ? ($_ => $params->{$_}) : ();
+    } @primary_columns;
+
+    if(scalar(%primary_columns) == scalar(@primary_columns)) {
+      my $found_related = $self->find_related($related, \%primary_columns, +{key=>'primary'}); # hits the DB
+      die "Result not found for relation $related on @{[ ref $self ]}" unless $found_related;
+      $found_related;
+    } else {
+      $new_related;
+    }
+  } || die $@; # TODO do something useful here...
+
+  $related_result->set_from_params_recursively(%$params);
+  $self->related_resultset($related)->set_cache([$related_result]);
+  $self->{__valiant_related_resultset}{$related} = [$related_result];
+}
+
+
+sub mutate_recursively {
+  my ($self) = @_;
+  $self->_mutate if $self->is_changed;
+  foreach my $related (keys %{$self->{__valiant_related_resultset}}) {
+    next unless $self->related_resultset($related)->first;
+    debug 2, "mutating relationship $related";
+    $self->_mutate_related($related);
+  }
+}
+
+sub _mutate {
+  my ($self) = @_;
+  if($self->is_marked_for_deletion) {
+    $self->delete_if_in_storage;
+  } else {
+    $self->update_or_insert;
+  }
+}
+
+sub _mutate_related {
+  my ($self, $related) = @_;
+  my $rel_data = $self->relationship_info($related);
+  my $rel_type = $rel_data->{attrs}{accessor};
+
+  return $self->_mutate_single_related($related) if $rel_type eq 'single'; 
+}
+
+sub _mutate_single_related {
+  my ($self, $related) = @_;
+  
+  my ($related_result) = @{ $self->{__valiant_related_resultset}{$related} ||[] };
+  my $rev_data = $self->result_source->reverse_relationship_info($related);
+  my ($reverse_related) = keys %$rev_data;
+
+  return unless $related_result->is_changed || $related_result->is_marked_for_deletion;
+  $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
+  $related_result->mutate_recursively;
+
+  my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
+  $self->related_resultset($related)->set_cache(\@new_cache);
 }
 
 
