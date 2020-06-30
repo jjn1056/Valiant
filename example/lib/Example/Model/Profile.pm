@@ -159,7 +159,7 @@ sub ACCEPT_CONTEXT {
 
     Dwarn \%params;
     Dwarn +{ $model->errors->to_hash(1) } if $model->invalid;
-    Dwarn +{ $model->profile->errors->to_hash(1) } if $model->invalid;
+    Dwarn +{ $model->profile->errors->to_hash(1) } if $model->profile->invalid;
 
   }
 

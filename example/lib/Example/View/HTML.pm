@@ -96,6 +96,7 @@ __PACKAGE__->config(
     checkbox_from_related => \&checkbox_from_related,
     current_namespace_id => sub { join '_', @{$_[1]->stash->{'valiant.view.form.namespace'}||[]} },
     namespace_id_for => \&namespace_id_for,
+    namespace_name_for => \&namespace_name_for,
     formbuilder => \&formbuilder,
   },
 );
@@ -108,6 +109,10 @@ sub formbuilder {
 
 sub namespace_id_for {
   return join '_', (@{$_[1]->stash->{'valiant.view.form.namespace'}||[]}, @_[2...$#_])
+}
+
+sub namespace_name_for {
+  return join '.', (@{$_[1]->stash->{'valiant.view.form.namespace'}||[]}, @_[2...$#_])
 }
 
 sub _parse_proto {
@@ -392,6 +397,13 @@ sub fields_for_related {
   if( $rel_type eq 'single') {
     my $content = '';
     my $result = $model->related_resultset($related)->first;
+    return '' unless $result;
+
+    # If the result is not yet saved (or has just been deleted) and we're
+    # marked for deletion then don't add markup since there's nothing to
+    # preserve.
+    return '' if $result->is_marked_for_deletion && !$result->in_storage;
+
     local $c->stash->{'valiant.view.form.model'} = $result;
     local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related];
     my @primary_columns = $result->result_source->primary_columns;
@@ -399,7 +411,13 @@ sub fields_for_related {
       next unless my $value = $result->get_column($primary_column);
       $content .= $self->hidden($c, $primary_column);
     }
-    $content .= $inner->();
+
+    if($result->is_marked_for_deletion) {
+      # TODO need to do something with in_storage or not I think
+      $content .= $self->hidden($c, '_destroy', value=>1);
+    } else {
+      $content .= $inner->();
+    }
     return b $content;
   }
 

@@ -55,6 +55,15 @@
         </div>
         % end
       </fieldset>
+      % if ($model->profile && !$model->profile->is_marked_for_deletion && $model->profile->in_storage) {
+        <button class='btn btn-lg btn-success btn-block' value='1' name='<%= namespace_name_for("profile","_destroy") %>' >
+          Remove <%= $model->profile->human_attribute_name('profile') %>
+        </button>
+      % } elsif($model->profile && $model->profile->is_marked_for_deletion && $model->profile->in_storage) {
+        <button class='btn btn-lg btn-success btn-block' value='1' name='<%= namespace_name_for("profile","_restore") %>' >
+          Restore <%= $model->profile->human_attribute_name('profile') %>
+        </button>
+      % }
     </div>
     %= submit 'update', class=>'btn btn-lg btn-primary btn-block', value=>'Save Changes';
   </fieldset>
