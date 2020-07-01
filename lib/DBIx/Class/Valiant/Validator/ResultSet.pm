@@ -1,4 +1,4 @@
-package Valiant::Validator::ResultSet;
+package DBIx::Class::Valiant::Validator::ResultSet;
 
 use Moo;
 use Valiant::I18N;
@@ -47,7 +47,7 @@ sub validate_each {
 
 =head1 TITLE
 
-Valiant::Validator::ResultSet - Verify a DBIC related resultset 
+DBIx::Class::Valiant::Validator::ResultSet - Verify a DBIC related resultset 
 
 =head1 SYNOPSIS
 

@@ -4,10 +4,10 @@ use base 'DBIx::Class';
 
 use warnings;
 use strict;
-use Role::Tiny;
+use Role::Tiny::With;
 use Valiant::Util 'debug';
 
-with 'Valiant::Validates';
+with 'DBIx::Class::Valiant::Validates';
 
 sub register_column {
   my $self = shift;
@@ -19,10 +19,6 @@ sub register_column {
   # TODO future home of validations declares inside the register column call
 }
 
-around 'default_validator_namespaces' => sub  {
-  my ($orig, $self, @args) = @_;
-  return('DBIx::Class::Valiant::Validator', $self->$orig(@args));
-};
 
 # Gotta jump thru these hoops because of the way the Catalyst
 # DBIC model messes with the result namespace but not the schema
@@ -32,7 +28,7 @@ sub namespace {
   my $self = shift;
   my $class = ref($self) ? ref($self) : $self; 
   my $source_name = $class->new->result_source->source_name;
-  return unless $source_name;
+  return unless $source_name; # Trouble... somewhere $self is a package
 
   $class =~s/::${source_name}$//;
   return $class;
@@ -160,7 +156,7 @@ sub build_related_if_empty {
 
 sub set_from_params_recursively {
   my ($self, %params) = @_;
-  foreach my $param (keys %params) {
+  foreach my $param (keys %params) { # probably needs to be sorted so we get specials (_destroy) first
     # Spot to normalize serialized params (like for dates, etc).
     if($self->has_column($param)) {
       $self->set_column($param => $params{$param});
@@ -169,6 +165,21 @@ sub set_from_params_recursively {
     } elsif($self->can($param)) {
       # Right now this is only used by confirmation stuff
       $self->$param($params{$param});
+    } elsif($param eq '_destroy' && $params{$param}) {
+      if($self->in_storage) {
+        debug 2, "Marking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
+        $self->mark_for_deletion;
+      } else {
+        die "didn't deal with destroy on unsaved records";
+      }
+    } elsif($param eq '_restore' && $params{$param}) {
+      if($self->in_storage) {
+        debug 2, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
+        $self->unmark_for_deletion;
+        delete $params{_destroy}; 
+      } else {
+        die "didn't deal with restore on unsaved records";
+      }
     } else {
       die "Not sure what to do with '$param'";
     }
@@ -179,6 +190,7 @@ sub set_related_from_params {
   my ($self, $related, $params) = @_;
   my $rel_data = $self->relationship_info($related);
   my $rel_type = $rel_data->{attrs}{accessor};
+  debug 2, "Setting params for $related on @{[ ref $self ]} using rel_type $rel_type";
 
   return $self->set_single_related_from_params($related, $params) if $rel_type eq 'single';  
 }
@@ -206,14 +218,15 @@ sub set_single_related_from_params {
   $related_result->set_from_params_recursively(%$params);
   $self->related_resultset($related)->set_cache([$related_result]);
   $self->{__valiant_related_resultset}{$related} = [$related_result];
+  $self->{_relationship_data}{$related} = $related_result;
 }
 
 
 sub mutate_recursively {
   my ($self) = @_;
-  $self->_mutate if $self->is_changed;
+  $self->_mutate if $self->is_changed || $self->is_marked_for_deletion;
   foreach my $related (keys %{$self->{__valiant_related_resultset}}) {
-    next unless $self->related_resultset($related)->first;
+    next unless $self->related_resultset($related)->first; # TODO don't think I need this
     debug 2, "mutating relationship $related";
     $self->_mutate_related($related);
   }
@@ -222,8 +235,10 @@ sub mutate_recursively {
 sub _mutate {
   my ($self) = @_;
   if($self->is_marked_for_deletion) {
+    debug 2, "deleting @{[ ref $self ]} if in storage";
     $self->delete_if_in_storage;
   } else {
+    debug 2, "update_or_insert for @{[ ref $self ]}";
     $self->update_or_insert;
   }
 }
@@ -238,17 +253,25 @@ sub _mutate_related {
 
 sub _mutate_single_related {
   my ($self, $related) = @_;
-  
   my ($related_result) = @{ $self->{__valiant_related_resultset}{$related} ||[] };
   my $rev_data = $self->result_source->reverse_relationship_info($related);
   my ($reverse_related) = keys %$rev_data;
 
+  debug 2, "Trying to mutate @{[ ref $related_result ]}, id: @{[ $related_result->id ]}";
+  debug 3, "@{[ ref $related_result ]}, id: @{[ $related_result->id ]} is_changed: @{[ $related_result->is_changed]}";
+  debug 3, "@{[ ref $related_result ]}, id: @{[ $related_result->id ]} is_marked_for_deletion @{[ $related_result->is_marked_for_deletion]}";
+
   return unless $related_result->is_changed || $related_result->is_marked_for_deletion;
+
+  debug 3, "@{[ ref $related_result ]}, id: @{[ $related_result->id ]} ready for mutating";
   $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
   $related_result->mutate_recursively;
 
-  my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
-  $self->related_resultset($related)->set_cache(\@new_cache);
+  # I think if its in storage we need to set cache and all even if marked for deletation
+  #my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
+  $self->related_resultset($related)->set_cache([$related_result]);
+  $self->{__valiant_related_resultset}{$related} = [$related_result];
+  $self->{_relationship_data}{$related} = $related_result;
 }
 
 
