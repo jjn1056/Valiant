@@ -89,12 +89,15 @@ Valiant::Exception - Base exceptions class;
 
 =head1 SYNOPSIS
 
+    # Nothing for end users here
 
 =head1 DESCRIPTION
 
 I just copied this from L<Moose::Exception> since I trust the authors.  You shouldn't
 really use this unless you add doing L<Valiant> extensions and need to create a new
 exception type.
+
+You won't use any of this unless you are doing L<Valiant> extensions or validators.
 
 =head1 ATTRIBUTES
 
