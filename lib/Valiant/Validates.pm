@@ -206,6 +206,7 @@ sub validates {
 
     unless((ref($args)||'') eq 'HASH') {
       $args = $validator_package->normalize_shortcut($args);
+      throw_exception InvalidValidatorArgs => ( args => $args) unless ref($args) eq 'HASH';
     }
 
     # merge global options into args

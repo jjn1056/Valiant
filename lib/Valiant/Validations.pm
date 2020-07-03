@@ -56,7 +56,7 @@ sub import {
 
 =head1 TITLE
 
-Valiant::Validations - Add a validations DSL to your Moo/se classes
+Valiant::Validations - Addos a validation DSL and API to your Moo/se classes
 
 =head1 SYNOPSIS
 
@@ -132,7 +132,7 @@ Using validations on objects:
     # };
 
 See below for details of the full API as well as L<Valiant::Validates> which is the role
-which defines the API (additional API docs there).
+which defines the API.
 
 =head1 DESCRIPTION
 
@@ -153,6 +153,76 @@ of the documentation will be here.
 Documentation here details using L<Valiant> with L<Moo> or L<Moose> based classes.
 If you want to use L<Valiant> with L<DBIx::Class> you will also wish to review
 L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class>.
+
+=head1 WHY OBJECT VALIDATIONS
+
+Validating the state of things is one of the most common tasks we perform.  For example
+a user might wish to change their profile information and you need to make sure that
+the new settings conform to acceptable limits (such as the user first and last name
+fits into the database and has acceptable characters, that a password is complex enough
+and all that).  This logic can get tricky over time as a system grows in complexity and
+edge cases need to be accounted for (for example for business reasons you might wish to
+allow pre-existing users to conform to different password complexity constraints or require 
+newer users to supply more profile details).
+
+L<Valiant> offers a DSL (domain specific language) for adding validation meta data as
+class data to your business objects.  This allows you to maintain separation of
+concerns between the job of validation and the rest of your business logic but also keeps
+the validation work close to the object that actually needs it, preventing action at a
+distance confusion.  The actual validation code can be neatly encapsulated into standalone
+validator classes (subclasses based on L<Valiant::Validator>) so they can be reused across
+more than one business object. To bootstrap your validation work, L<Valiant> comes with a good
+number of validators which cover many common cases, such as validating string lengths and
+formats, date-time validation and numeric validations.  Lastly, the validation meta data
+which is added via the DSL can aggregate across consumed roles and inherited classes.  So
+you can create shared roles and base classes which defined validations that are used in many
+places.
+
+Once you have decorated your business logic classes with L<Valiant> validations, you can 
+run those validations on blessed instances of those classes and inspect errors.  There is
+also some instrospection capability making it possible to do things like generate display UI
+from your errors.
+
+=head1 EXAMPLE
+
+A simple example case.  Your application is a TODO list and you have a business object
+called 'Task' which encapsulates all the rules around creating and updating tasks in that
+list.  One set of business rules defines the attributes of that class and another the
+constraints on field members of that class.
+
+    package Local::Task;
+
+    use Valiant::Validations;
+    use Moo;
+
+    has priority => (is => 'ro');
+    has description => (is => 'ro');
+    has due_date => (is => 'ro');
+
+    validates priority => (
+      presence => 1,
+      numericality => { only_integer => 1, between => [1,10] },
+    );
+
+    validates description => (
+      presence => 1,
+      length => [10,60],
+    );
+
+    validates due_date => (
+      presence => 1,
+      date => 'is_future',
+    );
+
+In this case our class defines three attributes, 'priority' (which defined how important a task
+is), 'description' (which is a human read description of the task that needs to happen) and
+a 'due_date' (which is when the task should be completed).  We then have validations which
+place some constraints on the allowed values for these attributes.  Our validations state that:
+
+    'priority' must be defined, must be an integer and the number must be from 1 thru 10.
+    'description' must be defined and a string that is longer than 10 characters but less than 60.
+    'due_date' must be in a date format (YYYY-MM-DD or 2000-01-01) and also must be a future date.
+
 
 =head1 IMPORTS
 

@@ -57,7 +57,6 @@ around BUILDARGS => sub {
   # and so on.
 
   if(my $integer = $args->{only_integer}) {
-    return $args if $integer eq '1';
 
     if($integer eq 'positive_integer') {
       $args->{greater_than_or_equal_to} = 0;
@@ -78,6 +77,11 @@ around BUILDARGS => sub {
       $args->{less_than_or_equal_to} = 9223372036854775807;
       $args->{message} = _t("pg_bigserial_err") unless defined $args->{message};
     }
+  }
+
+  if(my $between = delete $args->{between}) {
+    $args->{greater_than_or_equal_to} = $between->[0];
+    $args->{less_than_or_equal_to} = $between->[1];
   }
 
   if($args->{positive}) {
@@ -264,6 +268,11 @@ the attribute value isn't less than.
 
 Accepts numeric value or coderef.  Returns error message tag V<less_than_or_equal_to_err> if
 the attribute value isn't less than or equal.
+
+=item between
+
+Accepts a two item arrayref, where the first is an inclusive lower number bound and the
+second is an inclusive upper number bound.
 
 =item even
 

@@ -7,13 +7,16 @@ use DateTime::Format::Strptime;
 use Scalar::Util 'blessed';
 
 our $_pattern = '%Y-%m-%d';
-our $_strp = DateTime::Format::Strptime->new(pattern => $_pattern); # Just do this once per class
 
 with 'Valiant::Validator::Each';
 
 has min => (is=>'ro', required=>0, predicate=>'has_min');
 has max => (is=>'ro', required=>0, predicate=>'has_max');
 has cb => (is=>'ro', required=>0, predicate=>'has_cb');
+
+has pattern => (is=>'ro', required=>1, default=>sub { $_pattern });
+has _strp => (is=>'ro', required=>1, lazy=>1, default=>sub { DateTime::Format::Strptime->new(pattern => shift->pattern) });
+
 
 has below_min_msg => (is=>'ro', required=>1, default=>sub {_t 'below_min'});
 has above_max_msg => (is=>'ro', required=>1, default=>sub {_t 'above_max'});
@@ -23,11 +26,14 @@ sub normalize_shortcut {
   my ($class, $arg) = @_;
   return +{ } if $arg eq '1';
   return +{ cb => $arg } if ((ref($arg)||'') eq 'CODE');
+  return +{ min => sub { pop->now } } if $arg eq 'is_future';
+  return +{ max => sub { pop->now } } if $arg eq 'is_past';
+
 }
 
 sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
-  my $dt = $_strp->parse_datetime($value);
+  my $dt = $self->_strp->parse_datetime($value);
 
   unless($dt) {
     $record->errors->add($attribute, $self->invalid_date_msg, $opts);
@@ -37,14 +43,14 @@ sub validate_each {
   if($self->has_min) {
     my $min = $self->_cb_value($record, $self->min);
     my $min_dt_obj = $self->parse_if_needed($min);
-    $record->errors->add($attribute, $self->below_min_msg, +{%$opts, min=>$min_dt_obj->strftime($_pattern)})
+    $record->errors->add($attribute, $self->below_min_msg, +{%$opts, min=>$min_dt_obj->strftime($self->pattern)})
       unless $dt > $min_dt_obj;
   }
 
   if($self->has_max) {
     my $max = $self->_cb_value($record, $self->max);
     my $max_dt_obj = $self->parse_if_needed($max);
-    $record->errors->add($attribute, $self->above_max_msg, +{%$opts, max=>$max_dt_obj->strftime($_pattern)})
+    $record->errors->add($attribute, $self->above_max_msg, +{%$opts, max=>$max_dt_obj->strftime($self->pattern)})
       unless $dt < $max_dt_obj;
   }
 
@@ -55,13 +61,13 @@ sub validate_each {
 
 sub to_pattern {
   my ($self, $dt) = @_;
-  return $dt->strftime($_pattern);
+  return $dt->strftime($self->pattern);
 }
 
 sub parse_if_needed {
   my ($self, $value_proto) = @_;
   return $value_proto if blessed($value_proto) && $value_proto->isa('DateTime');
-  return $_strp->parse_datetime($value_proto);
+  return $self->_strp->parse_datetime($value_proto);
 }
 
 sub looks_like_a_date {
@@ -148,6 +154,13 @@ the date input type automatically.
 =head1 ATTRIBUTES
 
 This validator supports the following attributes:
+
+=head2 pattern
+
+This is a string pattern that is used by L<DateTime::Format::Strptime> that your
+date value must conform to (that is it must parse into a L<DateTime> object or the
+validation fails).  The default is '%Y-%m-%d'.  This is a common database format and
+is also used by HTML5 input date type fields.
 
 =head2 min
 
@@ -261,6 +274,20 @@ Which is the same as:
     validates attribute => (
       date => +{
         cb => \&my_special_method,
+      },
+    );
+
+Lastly you can specify that the date must be either future or past with a shortcut:
+
+    validates attribute => ( date => 'is_future', ... );
+    validates attribute => ( date => 'is_past', ... );
+
+Which is the same as:
+
+    validates attribute => (
+      date => +{
+        min => sub { pop->is_future },
+        max => sub { pop->is_past }
       },
     );
 
