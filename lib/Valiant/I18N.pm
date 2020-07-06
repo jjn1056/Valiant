@@ -22,7 +22,12 @@ sub import {
   *{"${target}::_t"} = sub { $class->make_tag(@_) };
 }
 
-sub dl { $dl };
+sub dl {
+  my $self_or_class = shift;
+  my $class = ref($self_or_class) ? ref($self_or_class) : $self_or_class;
+  $dl ||= $class->init;
+  return $dl;
+}
 
 sub init {
   my $class = shift;
@@ -39,7 +44,7 @@ sub add_locale_path {
   my $flag = @found ? 1 : -1;
   if($flag == 1) {
     debug 1, "Adding locale_path at $path";
-    $dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
+    $class->dl->add_localizer(Data::Localize::MultiLevel->new(paths => [$path]));
   } else {
     debug 1, "No translation files found at $path";
   }
@@ -97,7 +102,7 @@ sub translate {
   $key = "${scope}.${key}" if $scope;
 
   debug 1, "Trying to translate: '$key'";
-  my $translated = $dl->localize($key, \%args);
+  my $translated = $self->dl->localize($key, \%args);
 
   # If $translated is a hashref that means we need to apply the $count
   $translated = $self->_lookup_translation_by_count($count, $key, $translated, %args)
@@ -127,7 +132,7 @@ sub translate {
 
     return $default unless $self->is_i18n_tag($default);
     my $tag = $$default;
-    my $translated = $dl->localize($tag, \%args);
+    my $translated = $self->dl->localize($tag, \%args);
     $translated = $self->_lookup_translation_by_count($count, $tag, $translated, %args)
       if ref($translated) and defined($count);
 
@@ -149,12 +154,12 @@ sub valid_paths {
 
 sub detect_languages_from_header {
   my ($class, $header) = @_;
-  return $dl->detect_languages_from_header($header);
+  return $class->dl->detect_languages_from_header($header);
 }
 
 sub set_languages {
   my ($class, @languages) = @_;
-  $dl->set_languages(@languages);
+  $class->dl->set_languages(@languages);
 }
 
 sub is_i18n_tag {

@@ -65,14 +65,14 @@ Valiant::Validator::Check - Validate using a 'check' method
 Let's you use an object that does C<check> as the validation method.  Basically
 this exists to let you use or reuse a lot of existing type constraint validation
 libraries on CPAN such as L<Type::Tiny>. You might already be making heavy use of
-these in your code (or you might just be very fami;iar with them) so it it might
+these in your code (or you might just be very familiar with them) so it it might
 make sense to you to just reuse them rather than learn a bunch of the custom
 validators that are packaged with L<Valiant>.
 
 You might also prefer the 'spellchecking' safety of something like L<Type::Tiny>
 which uses imported methods and will result in a compile time error if you 
 mistype the constraint name.  Its also possible some of the XS versions of
-L<Type::Tiny> are faster then the built in validators.
+L<Type::Tiny> are faster then the built in validators that ship with L<Valiant>
 
 Please note this validator is also a available as a shortcut which is built into
 the C<validates> method itself:

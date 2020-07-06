@@ -17,7 +17,7 @@ use Test::Most;
   );
 
   validates age => (
-    numericality => {
+    Numericality => {
       is_integer => 1,
       greater_than_or_equal_to => 18,
     },

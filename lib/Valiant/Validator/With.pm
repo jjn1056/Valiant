@@ -121,6 +121,26 @@ message will be used if the method or coderef returns false. You
 may find this approach neater if you need to use a validation method in several
 places, or for promoting looser coupling in your code.
 
+=head1 Passing parameters to $opts
+
+You can pass parameters to the C<$opts> hashref using the C<opts> argument:
+
+    validates date_of_birth => (
+      with => {
+        method => 'minimum_year',
+        opts => {year => 2000},
+      },
+    );
+
+    sub not_future_with_opts {
+      my ($self, $attribute_name, $value, $opts) = @_;
+      $self->errors->add($attribute_name, 'Year too low') unless
+        $value->year > $opts->{year};
+    }
+
+You might find this useful in creating more parametered callbacks.  However at this point
+you might wish to consider just writing a custom validator.
+
 =head1 SHORTCUT FORM
 
 This validator supports the follow shortcut forms:

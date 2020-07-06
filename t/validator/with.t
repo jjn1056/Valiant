@@ -20,8 +20,9 @@ use Test::Most;
 
   validates date_of_birth => (
     with => {
-      method => 'not_future',
+      method => 'not_future_with_opts',
       message_if_false => _t('not_future'),
+      opts => {arg1 => 100},
     },
   );
 
@@ -43,6 +44,14 @@ use Test::Most;
     my ($self, $attribute_name, $value, $opts) = @_;
     return $value < DateTime->today;
   }
+
+  sub not_future_with_opts {
+    my ($self, $attribute_name, $value, $opts) = @_;
+    Test::Most::is $opts->{arg1}, 100, 'got right opts';
+    return $value < DateTime->today;
+  }
+
+
 }
 
 ok my $dt = DateTime->new(year=>2364, month=>4, day=>30); # ST:TNG Encounter At Farpoint ;)

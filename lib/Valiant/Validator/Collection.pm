@@ -68,11 +68,12 @@ sub validate {
     return unless $matches;
   }
 
+  my $opts = $self->options(%$options);
   foreach my $validator (@{ $self->validators }) {
     if( (ref($validator)||'') eq 'ARRAY') {
-      $validator->[0]->($object, $validator->[1]);
+      $validator->[0]->($object, +{ %{$validator->[1]||+{}}, %$opts });
     } else {
-      $validator->validate($object, $self->options(%$options));
+      $validator->validate($object, $opts);
     }
   }
 }
