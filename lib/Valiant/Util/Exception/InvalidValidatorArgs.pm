@@ -1,8 +1,8 @@
-package Valiant::Exception::InvalidValidatorArgs;
+package Valiant::Util::Exception::InvalidValidatorArgs;
 
 use Moo;
 use Data::Dumper;
-extends 'Valiant::Exception';
+extends 'Valiant::Util::Exception';
 
 has args => (is=>'ro', required=>1);
 
@@ -16,7 +16,7 @@ sub _build_message {
 
 =head1 TITLE
 
-Valiant::Exception::InvalidValidatorArgs - Args passed to a Validator are invalid
+Valiant::Util::Exception::InvalidValidatorArgs - Args passed to a Validator are invalid
 
 =head1 SYNOPSIS
 

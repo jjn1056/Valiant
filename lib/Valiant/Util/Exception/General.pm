@@ -1,7 +1,7 @@
-package Valiant::Exception::Strict;
+package Valiant::Util::Exception::General;
 
 use Moo;
-extends 'Valiant::Exception';
+extends 'Valiant::Util::Exception';
 
 has msg => (is=>'ro', required=>1);
 
@@ -14,16 +14,15 @@ sub _build_message {
 
 =head1 TITLE
 
-Valiant::Exception::Strict - A Validation error that throws strictly
+Valiant::Util::Exception::General - A non categorized exception
 
 =head1 SYNOPSIS
 
-    throw_exception('Strict' => (msg=>$message))
+    throw_exception General => (msg=>'validations argument in unsupported format');
 
 =head1 DESCRIPTION
 
-If you mark a validation as strict then instead of returning error messages we get an
-immediate exception thrown.
+A non categorized exception
 
 =head1 ATTRIBUTES
 

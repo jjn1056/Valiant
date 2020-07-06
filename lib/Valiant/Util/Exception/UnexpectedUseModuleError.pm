@@ -1,7 +1,7 @@
-package Valiant::Exception::UnexpectedUseModuleError;
+package Valiant::Util::Exception::UnexpectedUseModuleError;
 
 use Moo;
-extends 'Valiant::Exception';
+extends 'Valiant::Util::Exception';
 
 has err => (is=>'ro', required=>1);
 has package => (is=>'ro', required=>1);
@@ -15,7 +15,7 @@ sub _build_message {
 
 =head1 TITLE
 
-Valiant::Exception::UnexpectedUseModuleError - Unexpected error while using a module dynamically
+Valiant::Util::Exception::UnexpectedUseModuleError - Unexpected error while using a module dynamically
 
 =head1 SYNOPSIS
 

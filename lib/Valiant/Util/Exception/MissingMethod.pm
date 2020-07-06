@@ -1,7 +1,7 @@
-package Valiant::Exception::MissingMethod;
+package Valiant::Util::Exception::MissingMethod;
 
 use Moo;
-extends 'Valiant::Exception';
+extends 'Valiant::Util::Exception';
 
 has object => (is=>'ro', required=>1);
 has method => (is=>'ro', required=>1);
@@ -20,7 +20,7 @@ sub _build_message {
 
 =head1 TITLE
 
-Valiant::Exception::MissingMethod - Object is missing method
+Valiant::Util::Exception::MissingMethod - Object is missing method
 
 =head1 SYNOPSIS
 

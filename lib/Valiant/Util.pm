@@ -17,7 +17,7 @@ Sub::Exporter::setup_exporter({
 
 sub throw_exception {
   my ($class_name, @args) = @_;
-  die Module::Runtime::use_module("Valiant::Exception::$class_name")
+  die Module::Runtime::use_module("Valiant::Util::Exception::$class_name")
     ->new(@args);
 }
 

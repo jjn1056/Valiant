@@ -1,7 +1,7 @@
-package Valiant::Exception::MissingCountKey;
+package Valiant::Util::Exception::MissingCountKey;
 
 use Moo;
-extends 'Valiant::Exception';
+extends 'Valiant::Util::Exception';
 
 has tag => (is=>'ro', required=>1);
 has count => (is=>'ro', required=>1);
@@ -15,7 +15,7 @@ sub _build_message {
 
 =head1 TITLE
 
-Valiant::Exception::MissingCountKey - Not count subkey for the translation tag
+Valiant::Util::Exception::MissingCountKey - Not count subkey for the translation tag
 
 =head1 SYNOPSIS
 

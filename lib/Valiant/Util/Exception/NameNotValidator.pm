@@ -1,7 +1,7 @@
-package Valiant::Exception::NameNotValidator;
+package Valiant::Util::Exception::NameNotValidator;
 
 use Moo;
-extends 'Valiant::Exception';
+extends 'Valiant::Util::Exception';
 
 has name => (is=>'ro', required=>1);
 has packages => (is=>'ro', required=>1);
@@ -16,7 +16,7 @@ sub _build_message {
 
 =head1 TITLE
 
-Valiant::Exception::NameNotValidator - Failure to load a validator
+Valiant::Util::Exception::NameNotValidator - Failure to load a validator
 
 =head1 SYNOPSIS
 

@@ -32,7 +32,4 @@ is_deeply +{ $person->errors->to_hash(full_messages=>1) },{
   ],
 }; 
 
-use Devel::Dwarn;
-Dwarn +{ $person->errors->to_hash(full_messages=>1) };
-
 done_testing;
