@@ -652,6 +652,8 @@ find useful in furthering your knowledge of L<Valiant>:  L<Valiant::Validator::C
 L<Valiant::Validator::Each>.
       
 =head1 GLOBAL OPTIONS
+
+validation contexts
 =head1 TYPE CONSTRAINT SUPPORT
 =head1 INHERITANCE AND ROLES
 =head1 NESTED OBJECTS AND ARRAYS

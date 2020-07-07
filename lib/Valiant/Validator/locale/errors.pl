@@ -49,6 +49,7 @@
         invalid_format_match => 'does not match the required pattern',
         invalid_format_without => 'contains invalid characters',
         not_alpha => 'must contain only alphabetic characters',
+        not_words => 'must be letters and spaces only',
         not_alpha_numeric => 'must contain only alphabetic and number characters',
         not_email => 'is not an email address',
         not_zip => 'is not a zip code',

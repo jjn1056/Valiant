@@ -133,6 +133,7 @@ $RFC822PAT =~ s/\n//g;
 
 our %prebuilt_formats = (
   alpha           => [ qr/^[a-z]+$/i,                 _t('not_alpha') ],
+  words           => [ qr/^[a-z ]+$/i,                 _t('not_words') ], # letters and spaces only
   alpha_numeric   => [ qr/^\w+$/,                     _t('not_alpha_numeric') ],
   alphanumeric    => [ qr/^\w+$/,                     _t('not_alpha_numeric') ], # likely common error
   email           => [ qr/^$RFC822PAT$/o,             _t('not_email') ],
@@ -276,6 +277,10 @@ Text can only be upper or lowercase letter.  Uses translation tag C<not_alpha>.
 
 Text can only be upper or lowercase letters, numbers or '_'.  Uses translation
 tag C<not_alpha_numeric>.
+
+=item words
+
+Only letters and spaces.  Error message default is translation tag C<not_words>.
 
 =item zip
 
