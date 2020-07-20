@@ -237,7 +237,11 @@ sub message {
       %{$self->options||+{}},
     );
     delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
-    return $type->($self->object, $attribute, $value, \%options);
+    my $return = $type->($self->object, $attribute, $value, \%options);
+    # Allow a coderef to either return a straight up string or a translation tag
+    return $self->i18n->is_i18n_tag($return) ?
+      $self->generate_message($self->attribute, $return, $self->object, \%options) :
+      $return;
   } elsif((ref($type)||'') eq 'SCALAR') {
     my $attribute = $self->attribute;
     my $value = defined($attribute) ? $self->object->read_attribute_for_validation($attribute) : undef;
@@ -256,7 +260,6 @@ sub message {
     return $translated;
   } else {
     # Its just a plain string
-    # #TODO we might wish to support basic {{var}} I guess
     return $type;
   }
 }
