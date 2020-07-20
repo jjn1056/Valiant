@@ -172,5 +172,66 @@ sub prepare_model_name_args {
   return %args;
 }
 
-
 1;
+
+=head1 TITLE
+
+Valiant::Naming - Standard naming information for your models
+
+=head1 SYNOPSIS
+
+    $model->model_name->human;
+    $model->model_name->singular;
+    $model->model_name->plural;
+    $model->model_name->param_key;
+
+
+=head1 DESCRIPTION
+
+Exposes a method on your models called C<model_name> which returns an instance of
+L<Valiant::Name>.  This object contains various attributes used for creating a standard
+approach to naming or referencing your object.
+
+If your object defines a method C<i18n_scope> that will be used as the base namespace
+part to lookup your objects naming information from a set of defined translations.
+
+=head1 METHODS
+
+This component adds the following methods to your result classes.
+
+=head2 model_name
+
+An instance of L<Valiant::Name>.  This object exposes the following attributes:
+
+=head2 human
+
+A human readable name for your object.  This will either be inferred from the package 
+name of the object or if C<i18n_scope> is defined will be looked up in translations.
+
+=head2 singular
+
+=head2 plural
+
+Your model name in singular or plural form.
+
+=head2 param_key
+
+A name for your object that is suitable for serialization such as in an HTML form or
+other serialization formats.
+
+=head1 AUTHOR
+ 
+John Napiorkowski L<email:jjnapiork@cpan.org>
+  
+=head1 SEE ALSO
+ 
+L<Valiant>
+
+=head1 COPYRIGHT & LICENSE
+ 
+Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
+ 
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut

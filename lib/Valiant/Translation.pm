@@ -4,6 +4,7 @@ use Moo::Role;
 use Text::Autoformat 'autoformat';
 
 with 'Valiant::Naming';
+with 'Valiant::Util::Ancestors';
 
 sub i18n_class { 'Valiant::I18N' }
 
@@ -67,45 +68,6 @@ sub human_attribute_name {
   $options->{count} = 1 unless exists $options->{count};
 
   return  my $localized = $self->i18n->translate($key, %{$options||+{}});
-}
-
-my %injected_role = ();
-my $inject_role_if_needed = sub {
-  my $class = shift;
-  return if $injected_role{$class};
-  if(Role::Tiny->is_role($class)) {
-
-    eval qq[
-      package ${class}; 
-      sub does_roles { shift->maybe::next::method(\@_) }
-    ];
-
-    my $around = \&{"${class}::around"};
-    $around->(does_roles => sub {
-      my ($orig, $self) = @_;
-      return ($self->$orig, $class);
-    });
-
-    $injected_role{$class} = 1;
-  }
-};
-
-sub ancestors {
-  my $class = shift;
-  $class = ref($class) if ref($class);
-  $class->$inject_role_if_needed;
-
-  no strict "refs";
-  my @ancestors = ();
-
-  push @ancestors, grep {
-    Role::Tiny::does_role($_, __PACKAGE__);
-  } @{"${class}::ISA"};
-
-  push @ancestors, $class->does_roles
-    if $class->can('does_roles');
-
-  return @ancestors;
 }
 
 1;

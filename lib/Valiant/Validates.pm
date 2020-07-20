@@ -356,13 +356,13 @@ Valiant::Validates - Role that adds class and instance methods supporting valida
 
 =head1 SYNOPSIS
 
-See L<Valiant::Validations>.
+See L<Valiant>.
 
 =head1 DESCRIPTION
 
 This is a role that adds class level validations to you L<Moo> or L<Moose> classes.
-The main point of entry for use and documentation currently is L<Valiant::Validations>. Here
-we have API level documentation without details or examples.  You should read L<Valiant::Validations>
+The main point of entry for use and documentation currently is L<Valiant>. Here
+we have API level documentation without details or examples.  You should read L<Valiant>
 first and then you can refer to documentation her for further details.
 
 In addition to methods this class provides, it also proves all methods from L<Valiant::Translation>
@@ -493,9 +493,10 @@ context.  All other arguments will be passed down to the C<$opts> hashref.
 =head2 invalid
 
 Return true or false depending on if the current object state is valid or not.  If you call this method and
-validations have not been run (via C<validates>) then we will first run validations and pass any arguments
+validations have not been run (via C<validate>) then we will first run validations and pass any arguments
 to L</valiates>.  If validations have already been run we just return true or false directly UNLESS you
-pass arguments in which case we clear errors first and then rerun validations before return true or false.
+pass arguments in which case we clear errors first and then rerun validations with the arguments before
+returning true or false.
 
 =head1 ATTRIBUTES
 

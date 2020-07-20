@@ -137,12 +137,47 @@ Valiant::Validator::With - A Role to create custom validators
 
 =head1 SYNOPSIS
 
-  
+    package Valiant::Validator::Presence;
 
+    use Moo;
+    use Valiant::I18N;
+
+    with 'Valiant::Validator::Each';
+
+    has required => (is=>'ro', init_arg=>undef, required=>1, default=>1 );
+    has is_blank => (is=>'ro', required=>1, default=>sub {_t 'is_blank'});
+
+    sub normalize_shortcut {
+      my ($class, $arg) = @_;
+      return +{} if $arg eq '1' ;
+    }
+
+    sub validate_each {
+      my ($self, $record, $attribute, $value, $opts) = @_;
+      if(
+          not(defined $value) ||
+          $value eq '' || 
+          $value =~m/^\s+$/
+      ) {
+        $record->errors->add($attribute, $self->is_blank, $opts)
+      }
+    }
+  
+    package Local::User;
+
+    use Moo;
+    use Valiant::Validations;
+
+    has name => (is=>'ro');
+    has age => (is=>'ro);
+
+    validates ['name', 'age'],
+      Presence => 1;
 
 =head1 DESCRIPTION
 
-Use this role when you with to create a custom validator.  Please note
+Use this role when you with to create a custom validator that will be run 
+on your class attributes.  Please note
 that you can also use the 'with' validator (L<Valiant::Validator::With>)
 for simple custom validation needs.  Its best to use this role when you
 want custom validation that is going to be shared across several classes
@@ -179,8 +214,11 @@ You can set more than one value to these with an arrayref:
 
 =head2 message
 
-Provide a global error message override for the constraint.  Will accept either
-a string message or a translation tag.  Please not that many validators also
+Provide a global error message override for the constraint.  Will accept a string,
+a translation tag, a reference to a string or a reference to a function.  Using
+this will override the custom error message provided by the validator.
+
+Please not that many validators also
 provide error type specific messages for providing custom errors (as well as
 the ability to setup your own errors in a localization file.  Using this attribute
 is the easiest but probably not always your best option.

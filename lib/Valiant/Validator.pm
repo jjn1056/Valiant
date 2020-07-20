@@ -71,6 +71,10 @@ the validator.
 A Validator is created once when the class uses it and exists for the full life cycle
 of the validatable object.
 
+Generally you would write a validator class like this when the validation is very complex
+and cannot be tied to a specific attribute.  If it can be tied to an attribute then you
+might prefer to use   L<Valiant::Validator::Each>.
+
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::Validator::Each>.
