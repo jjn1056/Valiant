@@ -5,6 +5,10 @@ use Data::Perl::Collection::Array;
 use Valiant::NestedError;
 use Valiant::Util 'throw_exception';
 
+use overload (
+  bool  => sub { shift->size ? 1:0 },
+);
+
 has 'object' => (
   is => 'ro',
   required => 1,
@@ -190,7 +194,9 @@ sub TO_JSON { shift->as_json(@_) }
 # More than one error can be added to the same +attribute+.
 sub add {
   my ($self, $attribute, $type, $options) = @_;
-  $type ||= $self->i18n->make_tag('invalid');
+  unless(defined($type)) {
+    $type = $self->i18n->make_tag('invalid');
+  }
   $options ||= +{};
   ($attribute, $type, $options) = $self->_normalize_arguments($attribute, $type, $options);
 

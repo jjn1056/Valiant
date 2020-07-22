@@ -64,10 +64,6 @@ that role.  This provides a local domain specific language for adding object lev
 validations as well as instance methods on blessed objects to run those validations,
 inspect errors and perform some basic introspection / reflection on the validations.
 
-Most of the guts of this is actually in L<Valiant::Validates> but since this class
-will be your main point of entry to using L<Valiant> on Moo/se objects the main part
-of the documentation will be here. 
-
 Documentation here details using L<Valiant> with L<Moo> or L<Moose> based classes.
 If you want to use L<Valiant> with L<DBIx::Class> you will also wish to review
 L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class>.
@@ -78,29 +74,37 @@ extensively when writing this code:
 
 L<https://rubyonrails.org>, L<https://github.com/typestack/class-validator>
 
+You will note that when using validations that you generally won't add type constraints
+on your L<Moo> attributes.  That's because type constraints are applied when the
+object is instantiated and throw an exception when they fail.  Validations on the other 
+hand permit you to create the object and collect all the validation failure conditions.
+Also since you have a created object you can do more complex validations (such as those
+that involve the state of more than one attribute).  You would only use attribute type
+constraints when the created object would be in such an invalid state that one could
+not correctly validate it anyway.
+
 =head1 WHY OBJECT VALIDATIONS
 
 Validating the state of things is one of the most common tasks we perform.  For example
 a user might wish to change their profile information and you need to make sure that
 the new settings conform to acceptable limits (such as the user first and last name
 fits into the database and has acceptable characters, that a password is complex enough
-and all that).  This logic can get tricky over time as a system grows in complexity and
-edge cases need to be accounted for (for example for business reasons you might wish to
-allow pre-existing users to conform to different password complexity constraints or require 
-newer users to supply more profile details).
+and that an address is complete).  This logic can get tricky over time as a system grows in
+complexity and edge cases need to be accounted for (for example for business reasons you might
+wish to allow pre-existing users to conform to different password complexity constraints or
+require newer users to supply more profile details).
 
 L<Valiant> offers a DSL (domain specific language) for adding validation meta data as
 class data to your business objects.  This allows you to maintain separation of
 concerns between the job of validation and the rest of your business logic but also keeps
 the validation work close to the object that actually needs it, preventing action at a
 distance confusion.  The actual validation code can be neatly encapsulated into standalone
-validator classes (subclasses based on L<Valiant::Validator>) so they can be reused across
-more than one business object. To bootstrap your validation work, L<Valiant> comes with a good
-number of validators which cover many common cases, such as validating string lengths and
-formats, date-time validation and numeric validations.  Lastly, the validation meta data
-which is added via the DSL can aggregate across consumed roles and inherited classes.  So
-you can create shared roles and base classes which defined validations that are used in many
-places.
+validator classes (subclasses based on L<Valiant::Validator> or L<Valiant::Validator::Each>)
+so they can be reused across more than one business object. To bootstrap your validation work,
+L<Valiant> comes with a good number of validators which cover many common cases, such as validating
+string lengths and formats, date-time validation and numeric validations.  Lastly, the validation meta data
+which is added via the DSL can aggregate across consumed roles and inherited classes.  So you can
+create shared roles and base classes which defined validations that are used in many places.
 
 Once you have decorated your business logic classes with L<Valiant> validations, you can 
 run those validations on blessed instances of those classes and inspect errors.  There is
@@ -122,7 +126,7 @@ error messages based on conditions you code:
     use Moo;
 
     has name => (is => 'ro');
-    has age => (is => 'ro);
+    has age => (is => 'ro');
 
     validates_with sub {
       my ($self, $opts) = @_;
@@ -149,12 +153,6 @@ error messages based on conditions you code:
     #    "Name is too long",
     #  ],
     #}
-
-One thing you should note is that if you are using validations you probably won't be adding
-type constraints on your L<Moo> or L<Moose> attributes.  That is because the validations run
-on an instance of the class.  The only time you'd use a constraint on your attribute declaration
-is if you really wanted to throw a hard exception (for example the user supplies a value that
-is so out of bounds that the object can't be created).
 
 The subroutine reference that the C<validates_with> keyword accepts will receive the blessed
 instance as the first argument and a hash of options as the second.  Options are added as
@@ -202,11 +200,11 @@ validation methods:
     #  ],
     #}
 
-The validation methods have access to the fully blessed instance you can create complex
+The validation methods have access to the fully blessed instance ao you can create complex
 validation rules based on your business requirements.
 
 Since many of your validations will be directly on attributes of you object, you can use the
-C<validates> keyword which offers some shortcuts and better code reusabilitu for attributes.
+C<validates> keyword which offers some shortcuts and better code reusability for attributes.
 We can rewrite the last class as follows:
 
     package Local::Simple3;
@@ -292,8 +290,8 @@ reference we will rewrite it as a custom validator:
 
     sub validate {
       my ($self, $object, $opts) = @_;
-      $object->errors->add(name => "is too long") if length($object->name) > $self->max_name_length;
-      $object->errors->add(age => "can't be lower than @{[ $self->min_age ]}") if $object->age < $self->min_age;
+      $object->errors->add(name => "is too long", $opts) if length($object->name) > $self->max_name_length;
+      $object->errors->add(age => "can't be lower than @{[ $self->min_age ]}", $opts) if $object->age < $self->min_age;
     }
 
 And use it in a class:
@@ -363,6 +361,10 @@ we will search for it in all the namespaces below, in order written:
     Validator::Custom
     Valiant::ValidatorX::Custom
     Valiant::Validator::Custom
+
+This lookup only happens ones when your classes are first loaded, so this will cause a a delay in startup
+but not at runtime.  However the delay probably makes L<Valiant> unsuitable for non persistant applications
+such as CGI web applications or possibly scripts that run as part of a cron job.
 
 B<NOTE:> The namespace C<Valiant::Validator> is reserved for validators that ship with L<Valiant>.  The
 C<Valiant::ValidatorX> namespace is reserved for additional validators on CPAN that are packaged separately
@@ -588,6 +590,11 @@ use those directly as validation rules much in the same way you can use subrouti
       },
     );
 
+When using this option you should use a library system such as L<Type::Tiny> that provides
+an object with a C<check> method that returns a boolean indicating if the constraint was passed
+or not.  There are several such library systems on CPAN that you might find useful in helping
+you to write validations.
+
 Please note this is just wrapping L<Valiant::Validator::Check> so if you need more control
 you might prefer to use the validator class.
 
@@ -726,7 +733,8 @@ Example:
 
 =head2 message
 
-Provide a global error message override for the constraint.  Will accept a string,
+Provide a global error message override for the constraint.  Message can be formated in the
+same way as the secind argument to 'errors->add' and will accept a string,
 a translation tag, a reference to a string or a reference to a function.  Using
 this will override the custom error message provided by the validator.
 
@@ -813,7 +821,8 @@ attribute and object (the actual object instance that has the error).
 
 Similar to the scalar reference option just more flexible since you can write custom code
 to build the error message.  For example you could return different error messages based on
-the identity of a person.
+the identity of a person.  Also if you return a translation tag instead of a simple string
+we will attempt to resolve it to a translated string (see L<Valiant::I18N>).
 
 =back
 
@@ -825,11 +834,11 @@ message, will use that instead.
 
 =head2 on
 
-A scalar or list of contexts that can be used to control the situation ('context')
+A scalar or array reference of contexts that can be used to control the situation ('context')
 under which the validation is executed. If you specify an C<on> context that 
 validation will only run if you pass that context via C<validate>.  However if you
 don't set a context for the validate (in other words you don't set an C<on> value)
-then that validation ALWAYS runs (whether or not you set a context via C<validates>.
+then that validation ALWAYS runs (whether or not you set a context via C<validate>.
 Basically not setting a context means validation runs in all contexts and none.
 Examples:
 
@@ -847,17 +856,14 @@ Examples:
       less_than => 200,
     },
     numericality => {
-      is_integer => 1,
       greater_than_or_equal_to => 18,
       on => 'voter',
     },
     numericality => {
-      is_integer => 1,
       greater_than_or_equal_to => 65,
       on => 'retiree',
     },
     numericality => {
-      is_integer => 1,
       greater_than_or_equal_to => 100,
       on => 'centarion',
     },
@@ -877,10 +883,160 @@ Examples:
   $person->validate(context=>'centarion');
   $person->valid; # False; "Age must be greater than or equal to 100"
 
+  my $another_person = Local::Test::Person->new(age=>"not a number");
+
+  $another_person->validate();
+  $another_person->valid; # False "Age does not look like an integer"
+
+In this example you can see that since the first validation does not set an C<on> context
+it always runs no matter what context you set via C<validate> (even when you don't set one).
+So we always check that the value is an integer.
+
+Basically the rule to remember is validations with no C<on> option will run no matter the context.
+Validations with some C<on> option will only run in the specified context.
+
 =head1 ERROR MESSAGES
-=head1 WORKING WITH ERRORS
-=head1 INTERNATONALIZATION
+
+When you create an instance of a class that consumes the L<Valiant::Validates> role (typically
+by using L<Valiant::Validations> to import the standard methods into the class) that role will
+add an attribute called C<errors> to your class.  This attribute will contain an instance of
+L<Valiant::Errors>, which is a collection class that contains a list of errors (instances of
+L<Valiant::Error>) along with methods to add, retrieve and introspect errors.  You should
+review L<Valiant::Errors> for the full class API since we will only coverage the most commonly
+used methods in our example.
+
+The most common use cases you will have is adding errors and checking for and recovering error
+messages.
+
+=head2 Adding an error message.
+
+You can add an error message anywhere in your code, although most commonly you will do so in you
+validation methods or validation callbacks.  In all cases the method signature is the same:
+
+    $object->errors->add($attribute_name, $error_message, \%opts);
+
+Where C<$attribute_name> is the string name of the attribute for which a validation error is being
+recorded, C<$error_message> is one of the allowed error message types (see below for details) and
+\%opts is a hashref of options and/or error message template variable expansions which is used to
+influence how the error is processed.
+
+When the error is scoped to the C<$object> and not a particular attribute you can just use C<undef>
+instead of an attribute name.  This will record the error as a model error:
+
+    $object->errors->add(undef, $error_message, \%opts);
+
+Lastly the C<%opts> hashref can be left off the method call if you don't have it.  Generally its
+passed as the last argument to C<validate>, C<validates_each> or any validation subroutine references
+but if you are adding an error outside those methods you won't have it.  For example you might wrap a  
+database call insidean eval and wish to add a model error if there's an exception.
+
+=head2 Error message types.
+
+When adding an error there's four options for what the value of <$error_message> can be:
+
+=over4
+
+=item A string
+
+If a string this is the error message recorded.
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => 'Unacceptable Name',
+    );
+
+=item A translation tag
+
+    use Valiant::I18N;
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => _t('bad_name'),
+    );
+
+This will look up a translated version of the tag.  See L<Valiant::I18N> for more details.
+
+=item A scalar reference
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => \'Unacceptable {{attribute}}',
+    );
+
+Similar to string but we will expand any placeholder variables which are indicated by the
+'{{' and '}}' tokens (which are removed from the final string).  You can use any placeholder
+that is a key in the options hash (and you can pass additional values when you add an error).
+By default the following placeholder expansions are available attribute (the attribute name),
+value (the current attribute value), model (the human name of the model containing the
+attribute and object (the actual object instance that has the error).
+
+=item A subroutine reference
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => sub {
+        my ($self, $attr, $value, $opts) = @_;
+        return "Unacceptable $attr!";
+      }
+    );
+
+Similar to the scalar reference option just more flexible since you can write custom code
+to build the error message.  For example you could return different error messages based on
+the identity of a person.  Also if you return a translation tag instead of a simple string
+we will attempt to resolve it to a translated string (see L<Valiant::I18N>).
+
+=back
+
+You will note this is exactly the same as the options for the C<message> global option described
+above.  It is in fact the same underlying code.  This gives you a lot of options for both
+standardizing and customizing your error messages.
+
+=head2 Accessing and displaying error messages
+
+Once you have validated your object (via the ->validate method) you can check for for validate
+state and review or display any errors.
+
+=head3  Checking for errors on a validated object
+
+You can use the C<valid> or C<invalid> methods on your object to check for its validation state.
+These methods won't run validations, unless they have not yet been run, so you can call them as
+often as you want without incurring a runtime performance penalty.
+
+B<NOTE> However if you pass arguments such as C<context> then any existing validations are cleared
+and validations are re run.
+
+    $object->validate;
+    $object->valid; # TRUE if there are no errors, FALSE otherwise
+    $object->invalid # Opposite of 'valid'
+
+You can also just check the size of the errors collection (size of 0 means no errors):
+
+    $object->validate;
+    $object->errors->size;
+
+To make this a bit easier the C<validate> method returns its calling object so you can chain methods:
+
+    $object->validate->valid;
+
+=head3 Retrieving error messages
+
+The L<Valiant::Errors> collection object gives you a few ways to retrieve error messages:
+
+- get all the errors at once
+  - as a list
+  - as a hash
+- get all errors for an attribute
+- get all model errors
+- messages versus full messages
+- 
+
 =head1 NESTED OBJECTS AND ARRAYS
+
+=head1 INTERNATONALIZATION
 
 =head1 SEE ALSO
  

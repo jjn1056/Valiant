@@ -57,7 +57,9 @@ around BUILDARGS => sub {
     Module::Runtime::use_module($class->i18n_class);
 
   # set a default error type
-  $type ||= $i18n->make_tag('invalid');
+  unless(defined($type)) {
+    $type = $i18n->make_tag('invalid');
+  }
 
   return +{
     object => $object,
