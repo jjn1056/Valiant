@@ -56,7 +56,7 @@ is_deeply +{ $user1->errors->to_hash }, +{
     ],
   };
 
-is_deeply [ $user1->errors->model_errors_array ], [
+is_deeply [ $user1->errors->model_messages ], [
   "test model error",
 ];
 
@@ -116,4 +116,127 @@ is_deeply [$user2->errors->full_messages], [
     "test model error",
   ];
 
+{
+  package Local::MessageRetrieval;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has [qw/name age email password/] => (is=>'ro');
+}
+
+my $model = Local::MessageRetrieval->new;
+
+$model->errors->add(undef, "Your Form is invalid");
+$model->errors->add(name => "is too short");
+$model->errors->add(name => "has disallowed characters");
+$model->errors->add(age => "must be above 5");
+$model->errors->add(email => "does not look like an email address");
+$model->errors->add(password => "is too short");
+$model->errors->add(password => "can't look like your name");
+$model->errors->add(password => "needs to contain both numbers and letters");
+
+ok $model->invalid;
+
+is_deeply [$model->errors->messages], [
+  "Your Form is invalid",
+  "is too short",
+  "has disallowed characters",
+  "must be above 5",
+  "does not look like an email address",
+  "is too short",
+  "can't look like your name",
+  "needs to contain both numbers and letters",
+];
+
+is_deeply [$model->errors->full_messages], [
+  "Your Form is invalid",
+  "Name is too short",
+  "Name has disallowed characters",
+  "Age must be above 5",
+  "Email does not look like an email address",
+  "Password is too short",
+  "Password can't look like your name",
+  "Password needs to contain both numbers and letters",
+];
+
+is_deeply [$model->errors->model_messages], [
+  "Your Form is invalid",
+];
+
+is_deeply [$model->errors->attribute_messages], [
+  "is too short",
+  "has disallowed characters",
+  "must be above 5",
+  "does not look like an email address",
+  "is too short",
+  "can't look like your name",
+  "needs to contain both numbers and letters",
+];
+
+is_deeply [$model->errors->full_attribute_messages], [
+  "Name is too short",
+  "Name has disallowed characters",
+  "Age must be above 5",
+  "Email does not look like an email address",
+  "Password is too short",
+  "Password can't look like your name",
+  "Password needs to contain both numbers and letters",
+];
+
+is_deeply +{ $model->errors->to_hash }, {
+  "*" => [
+    "Your Form is invalid",
+  ],
+  age => [
+    "must be above 5",
+  ],
+  email => [
+    "does not look like an email address",
+  ],
+  name => [
+    "is too short",
+    "has disallowed characters",
+  ],
+  password => [
+    "is too short",
+    "can't look like your name",
+    "needs to contain both numbers and letters",
+  ],
+};
+
+is_deeply +{ $model->errors->to_hash(full_messages=>1) }, {
+  "*" => [
+    "Your Form is invalid",
+  ],
+  age => [
+    "Age must be above 5",
+  ],
+  email => [
+    "Email does not look like an email address",
+  ],
+  name => [
+    "Name is too short",
+    "Name has disallowed characters",
+  ],
+  password => [
+    "Password is too short",
+    "Password can't look like your name",
+    "Password needs to contain both numbers and letters",
+  ],
+};
+
+is_deeply [$model->errors->full_messages_for('password')], [
+    "Password is too short",
+    "Password can't look like your name",
+    "Password needs to contain both numbers and letters",
+  ];
+
+is_deeply [$model->errors->messages_for('password')], [
+    "is too short",
+    "can't look like your name",
+    "needs to contain both numbers and letters",
+  ];
+
+Dwarn [$model->errors->messages_for('asdasd') ];
 done_testing;

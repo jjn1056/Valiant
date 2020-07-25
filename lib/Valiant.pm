@@ -995,6 +995,37 @@ You will note this is exactly the same as the options for the C<message> global 
 above.  It is in fact the same underlying code.  This gives you a lot of options for both
 standardizing and customizing your error messages.
 
+=hea2 Message priority
+
+L<Valiant> allows you to set messages at various points to give you a lot of flexibility in 
+customizing your response.  You can add errors messages at the point you add it to the errors
+collection, in the options for the validator and globally for all validators in a chain.  For
+example:
+
+    package MyApp::Errors
+
+    use Moo;
+    use Valiant::Validations
+
+    has name => (is=>'ro');
+
+    validates name => (
+      with => {
+        cb => sub {
+          my ($self, $attr, $value, $opts) = @_;
+          $self->errors->add($attr, 'is always in error!', $opts);
+        },
+        message => 'has wrong value',
+      },
+      message => 'has some sort of error',
+    );
+
+Here you can see error messages at three levels. In order to give you the greatest flexibilty the
+outermost message always wins (in this case the error would be "Name has some sort of error").
+
+B<Note> for the outermost global message, please keep in mind that it will override all the error
+messages of any of the validators in the clause.
+
 =head2 Accessing and displaying error messages
 
 Once you have validated your object (via the ->validate method) you can check for for validate
@@ -1024,19 +1055,175 @@ To make this a bit easier the C<validate> method returns its calling object so y
 
 =head3 Retrieving error messages
 
-The L<Valiant::Errors> collection object gives you a few ways to retrieve error messages:
+The L<Valiant::Errors> collection object gives you a few ways to retrieve error messages.  Assuming
+there is a model with errors like the following for these examples and discussion:
 
-- get all the errors at once
-  - as a list
-  - as a hash
-- get all errors for an attribute
-- get all model errors
-- messages versus full messages
-- 
+    $model->errors->add(undef, "Your Form is invalid");
+    $model->errors->add(name => "is too short");
+    $model->errors->add(name => "has disallowed characters");
+    $model->errors->add(age => "must be above 5");
+    $model->errors->add(email => "does not look like an email address");
+    $model->errors->add(password => "is too short");
+    $model->errors->add(password => "can't look like your name");
+    $model->errors->add(password => "needs to contain both numbers and letters");
+
+=over 4
+
+=item Getting all the errors at once, or groups of errors
+
+You can get all the error messages in a simple array with either the C<messages> or
+C<full_messages> method on the errors collection:
+
+For C<messages>:
+
+    is_deeply [$model->errors->messages], [
+      "Your Form is invalid",
+      "is too short",
+      "has disallowed characters",
+      "must be above 5",
+      "does not look like an email address",
+      "is too short",
+      "can't look like your name",
+      "needs to contain both numbers and letters",
+    ];
+
+For C<full_messages>:
+
+    is_deeply [$model->errors->full_messages], [
+      "Your Form is invalid",
+      "Name is too short",
+      "Name has disallowed characters",
+      "Age must be above 5",
+      "Email does not look like an email address",
+      "Password is too short",
+      "Password can't look like your name",
+      "Password needs to contain both numbers and letters",
+    ];
+
+This combines all the attribute and model message into a flat list.  Please not that
+the current order is the order in which messages are added as errors to the errors
+collection but this is not something you should rely on as we reserve the right to
+use a different storage method in the future that might shuffe the order (or even 
+return it differently each time).
+
+The only difference between C<messages> and C<full_messages> is that the latter will
+combine your error message with a human readable version of your attribute name.  By
+default this is just a title cased version of the attribute name but you can customize
+this via setting a translation (see L</INTERNATONALIZATION>).  C<full_messages> by 
+default uses the following expansion template: "{attribute} {message}" however you can
+customize this by setting the C<format> key (again see L</INTERNATONALIZATION>).
+
+If you just want the model level errors you can use C<model_messages>:
+
+    is_deeply [$model->errors->model_messages], [
+      "Your Form is invalid",
+    ];
+
+There is a similar pair of methods for just getting messages associated with attributes:
+C<attribute_messages> and C<full_attribute_messages>:
+
+    is_deeply [$model->errors->attribute_messages], [
+      "is too short",
+      "has disallowed characters",
+      "must be above 5",
+      "does not look like an email address",
+      "is too short",
+      "can't look like your name",
+      "needs to contain both numbers and letters",
+    ];
+
+    is_deeply [$model->errors->full_attribute_messages], [
+      "Name is too short",
+      "Name has disallowed characters",
+      "Age must be above 5",
+      "Email does not look like an email address",
+      "Password is too short",
+      "Password can't look like your name",
+      "Password needs to contain both numbers and letters",
+    ];
+
+Lastly you can retrieve all the error messages as a hash using the C<to_hash> method.  This
+return a hash where the hash keys refer to attributes with errors (or in the case of model
+errors the key is '*') and the value is an arrayref of the error(s) associated with that key.
+The C<to_hash> method accepts an argument to control if the error messages return using
+the C<full_messages> value or the C<messages> value:
+
+    is_deeply +{ $model->errors->to_hash }, {
+      "*" => [
+        "Your Form is invalid",
+      ],
+      age => [
+        "must be above 5",
+      ],
+      email => [
+        "does not look like an email address",
+      ],
+      name => [
+        "is too short",
+        "has disallowed characters",
+      ],
+      password => [
+        "is too short",
+        "can't look like your name",
+        "needs to contain both numbers and letters",
+      ],
+    };
+
+    is_deeply +{ $model->errors->to_hash(full_messages=>1) }, {
+      "*" => [
+        "Your Form is invalid",
+      ],
+      age => [
+        "Age must be above 5",
+      ],
+      email => [
+        "Email does not look like an email address",
+      ],
+      name => [
+        "Name is too short",
+        "Name has disallowed characters",
+      ],
+      password => [
+        "Password is too short",
+        "Password can't look like your name",
+        "Password needs to contain both numbers and letters",
+      ],
+    };
+
+=item Getting errors for individual attributes
+
+Similar to the method that allows you to get the errors just for the model you
+can get errors for individual attibutes with the C<messages_for> and C<full_messages_for>
+methods:
+
+    is_deeply [$model->errors->full_messages_for('password')], [
+        "Password is too short",
+        "Password can't look like your name",
+        "Password needs to contain both numbers and letters",
+      ];
+
+    is_deeply [$model->errors->messages_for('password')], [
+        "is too short",
+        "can't look like your name",
+        "needs to contain both numbers and letters",
+      ];
+
+If you request errors for an attribute that has none you will get an empty array.
+
+=item Searching for errors, interating and introspection.
+
+L<Valiant::Errors> contains additional methods for iterating over error collections,
+searching for errors and introspecting errors.  
+
+=back
 
 =head1 NESTED OBJECTS AND ARRAYS
 
 =head1 INTERNATONALIZATION
+
+formats
+attribute and model names
+arbitrary tags
 
 =head1 SEE ALSO
  

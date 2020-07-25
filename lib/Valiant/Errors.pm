@@ -150,12 +150,37 @@ sub model_errors {
   return @errors;
 }
 
-sub model_errors_array {
+sub model_messages {
   my ($self, $full_messages_flag) = @_;
   return map {
+    # AFAIK the full_messages_flag does nothing for model errors
     $full_messages_flag ? $_->full_message : $_->message
   } $self->model_errors;
 }
+
+sub attribute_errors {
+  my $self = shift;
+  my @errors;
+  foreach my $error($self->errors->all) {
+    push @errors, $error if $error->has_attribute and defined($error->attribute);
+  }
+  return @errors;
+}
+
+sub attribute_messages {
+  my ($self) = @_;
+  return map {
+    $_->message;
+  } $self->attribute_errors;
+}
+
+sub full_attribute_messages {
+  my ($self) = @_;
+  return map {
+    $_->full_message;
+  } $self->attribute_errors;
+}
+
 
 sub group_by_attribute {
   my $self = shift;
@@ -271,6 +296,8 @@ sub of_kind {
   }
 }
 
+sub messages { map { $_->message } shift->errors->all }
+  
 # Returns all the full error messages in an array.
 sub full_messages {
   my $self = shift;
