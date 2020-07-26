@@ -238,5 +238,4 @@ is_deeply [$model->errors->messages_for('password')], [
     "needs to contain both numbers and letters",
   ];
 
-Dwarn [$model->errors->messages_for('asdasd') ];
 done_testing;

@@ -5,7 +5,6 @@ use File::Spec;
 use Data::Localize;
 use Data::Localize::MultiLevel;
 use Scalar::Util;
-use Carp;
 use Valiant::Util 'throw_exception', 'debug';
 
 our $dl;
@@ -145,7 +144,7 @@ sub translate {
   
   my $list = join (', ', $key, map { $$_ if $self->is_i18n_tag($_) } @defaults);
   my $path = join ',', $self->valid_paths;
-  Carp::croak "Can't find a translation for key in ($list) at paths ($path)";
+  throw_exception General => (msg=>"Can't find a translation for key in ($list) at paths ($path)");
 }
 
 sub valid_paths {

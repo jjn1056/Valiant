@@ -27,7 +27,6 @@ has errors => (
     clear => 'clear',
     blank => 'is_empty',
     empty => 'is_empty',
-    uniq => 'uniq',
   }
 );
 
@@ -41,6 +40,9 @@ has 'i18n' => (
 
 sub error_class { 'Valiant::Error' }
 
+# return a flat list of all errors with duplicated removed. To we probably
+# need to make use the the equals method on Valiant::Error
+sub uniq { die 'todo' }
 
 sub any {
   my ($self, $code) = @_;
@@ -131,9 +133,6 @@ sub delete {
   return @deleted;
 }
 
-# Iterates through each error key, value pair in the error messages hash.
-# Yields the attribute and the error for that attribute. If the attribute
-# has more than one error message, yields once for each error message.
 sub each {
   my ($self, $block) = @_;
   foreach my $error($self->errors->all) {
@@ -298,7 +297,6 @@ sub of_kind {
 
 sub messages { map { $_->message } shift->errors->all }
   
-# Returns all the full error messages in an array.
 sub full_messages {
   my $self = shift;
   $self->full_messages_collection->all;
@@ -310,7 +308,6 @@ sub full_messages_collection {
 }
 
 
-# Returns all the full error messages for a given attribute in an array.
 sub full_messages_for {
   my ($self, $attribute) = @_;
   return map {
@@ -325,7 +322,6 @@ sub messages_for {
   } $self->where($attribute)
 }
 
-# Returns a full message for a given attribute.  Class method
 sub full_message {
   my ($self, $attribute, $message) = @_;
   $self->error_class->full_message(
@@ -361,9 +357,137 @@ Valiant::Errors - A collection of errors associated with an object
 
 =head1 DESCRIPTION
 
+A collection of errors (each instances of L<Valiant::Error>) associated with attributes
+or a model.  This class provides methods for adding, retrieving and introspecting 
+error, typically via a L<Valiant::Validator> or L<Valiant::Validator::Each> subclass.
+
+The goal of this class is to make it as easy as possible to work with and understand
+errors that have been added to your instance.  In general you will never make an instance
+of this directly since it will be used via the L<Valiant::Validates> role.
+
 =head1 ATTRIBUTES
 
+This class defined the following attributes
+
+=head2 object
+
+This is a weak reference to the object which the errors belong to.
+
+=head2 errors
+
+This is an instance of L<Data::Perl::Collection::Array> which in a collection of
+L<Valiant::Error> objects added by validators.
+
+=head2 i18n
+
+The internationalization and translation class.  Generally this is an instance of
+L<Valiant::I18N>.  You won't need to supply this as it normally is built automatically.
+
 =head1 METHODS
+
+The class defines the following methods
+
+=head2 count 
+
+=head2 size
+
+The number of errors collected.  If there are no errors then the size is 0.
+
+=head2 empty
+
+=head2 blank
+
+Returns true if there are no errors collected.
+
+=head2 any(\&code)
+
+Accepts a coderef that will receive each error object in the collect and return true
+if any of the coderef calls return true.  Used to determine if the errors collection
+contains at least one type of error.
+
+=head2 copy
+
+Return a new copy of the errors collectiom
+
+=head2 import_error ($error)
+
+Given a single L<Valiant::Error> inport it into the current errors collection
+
+=head2 merge ($collectio)
+
+Given a L<Valiant::Errors> collection, merge it into the current one.
+
+=head2 where (@args)
+
+return all the L<Valiant::Error> objects in the current collection which match criteria.
+
+=head2 include ($attribute)
+
+Returns +true+ if the error messages include an error for the given key
++attribute+, +false+ otherwise.
+
+=head2 delete ($attribute)
+
+Delete messages for +key+. Returns the deleted messages.
+
+=head2 each ($coderef)
+
+Iterates through each error key, value pair in the error messages hash.
+Yields the attribute and the error for that attribute. If the attribute
+has more than one error message, yields once for each error message.
+
+=head2 model_messages
+
+Returns an array of all the errors that are associated with the model.
+
+=head2 attribute_messages
+
+Returns an array of all the errors that are associated with attributes.
+
+=head2 full_attribute_messages
+
+Returns an array of the full messages of all attributes.
+
+=head2 to_hash (?$flag)
+
+Returns a hash where each key is an attribute (or '*' for the model) and
+each value is an arrayref of errors.  C<?$flag> when true will return
+the full messages for each error.
+
+=head2 add ($attribute|undef, $message, \%opts)
+
+Add a new error message to the object.  Error can be associated with an attribute
+or with the object itself.
+
+=head2 added  ($attribute|undef, $message, \%opts)
+
+Return true if the error has already been created.
+
+=head2 of_kind  ($attribute|undef, $message)
+
+Similar to <added> expect we don't need to match options
+
+=head2 messages
+
+An array of the error messages.
+
+=head2 full_messages
+
+An array of the full messages.
+
+=head2 messages_for ($attribute)
+
+An array of all the messages for the given attribute.
+
+=head2 full_messages_for ($attribute)
+
+An array of all the full messages for the given attribute.
+
+=head1 JSONification
+
+This class provides a C<TO_JSON> method suitable for use in some of the common
+JSON serializers.  When supported it will delegate the job of turning the object
+into a hash that can be serialized to JSON to the C<to_hash> method.
 
 =head1 SEE ALSO
  
