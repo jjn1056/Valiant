@@ -1,6 +1,7 @@
 package Valiant::I18N;
 
-use Moo;
+use warnings;
+use strict;
 use File::Spec;
 use Data::Localize;
 use Data::Localize::MultiLevel;
@@ -198,3 +199,29 @@ sub not_equals {
 }
 
 1;
+
+=head1 TITLE
+
+Valiant::I18N - Translations
+
+=head1 SYNOPSIS
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+This package defines the following methods;
+
+=head1 SEE ALSO
+ 
+L<Valiant>
+
+=head1 AUTHOR
+ 
+See L<Valiant>
+
+=head1 COPYRIGHT & LICENSE
+ 
+See L<Valiant>
+
+=cut

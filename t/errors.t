@@ -238,4 +238,30 @@ is_deeply [$model->errors->messages_for('password')], [
     "needs to contain both numbers and letters",
   ];
 
+{
+    package MyApp::Errors;
+
+    use Moo;
+    use Valiant::Validations;
+
+    has name => (is=>'ro');
+
+    validates name => (
+      with => {
+        cb => sub {
+          my ($self, $attr, $value, $opts) = @_;
+          $self->errors->add($attr, 'is always in error!', $opts);
+        },
+        message => 'has wrong value',
+      },
+      message => 'has some sort of error',
+    );
+}
+
+my $errors = MyApp::Errors->new;
+
+ok $errors->invalid;
+
+is_deeply [$errors->errors->full_messages ], ["Name has wrong value"];
+
 done_testing;

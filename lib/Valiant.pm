@@ -1002,10 +1002,10 @@ customizing your response.  You can add errors messages at the point you add it 
 collection, in the options for the validator and globally for all validators in a chain.  For
 example:
 
-    package MyApp::Errors
+    package MyApp::Errors;
 
     use Moo;
-    use Valiant::Validations
+    use Valiant::Validations;
 
     has name => (is=>'ro');
 
@@ -1020,8 +1020,13 @@ example:
       message => 'has some sort of error',
     );
 
-Here you can see error messages at three levels. In order to give you the greatest flexibilty the
-outermost message always wins (in this case the error would be "Name has some sort of error").
+Here you can see error messages at three levels. Here's the resolution order:
+
+    Messages added to the errors collection via ->add are last
+    Messages added globally to a validation clause are second
+    Messages added via the 'message' option for a validator is first
+
+In this case the error would be "Name has wrong value".
 
 B<Note> for the outermost global message, please keep in mind that it will override all the error
 messages of any of the validators in the clause.

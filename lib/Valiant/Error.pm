@@ -166,14 +166,6 @@ sub generate_message {
   $options ||= +{};
   $type = delete $options->{message} if $i18n->is_i18n_tag($options->{message}||'');
 
-  # Current hack for nested support. This needs WORK
-  if(Scalar::Util::blessed($type)) {
-    #warn ref($type);
-    #warn "Detected object for error type, not sure what will happen";
-  }
-  # End nested hack
-
-
   # There's only a value associated with this error if there is an attribute
   # as well.  Otherwise its just an error on the model as a whole
   my $value = defined($attribute) ? 
