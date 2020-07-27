@@ -769,7 +769,7 @@ this attribute is the easiest but probably not always your best option.
 
 Messages can be:
 
-=over4
+=over 4
 
 =item A string
 
@@ -934,7 +934,7 @@ database call insidean eval and wish to add a model error if there's an exceptio
 
 When adding an error there's four options for what the value of <$error_message> can be:
 
-=over4
+=over 14
 
 =item A string
 
@@ -995,7 +995,7 @@ You will note this is exactly the same as the options for the C<message> global 
 above.  It is in fact the same underlying code.  This gives you a lot of options for both
 standardizing and customizing your error messages.
 
-=hea2 Message priority
+=head2 Message priority
 
 L<Valiant> allows you to set messages at various points to give you a lot of flexibility in 
 customizing your response.  You can add errors messages at the point you add it to the errors

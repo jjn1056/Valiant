@@ -984,6 +984,8 @@ You will note this is exactly the same as the options for the `message` global o
 above.  It is in fact the same underlying code.  This gives you a lot of options for both
 standardizing and customizing your error messages.
 
+## Message priority
+
 [Valiant](https://metacpan.org/pod/Valiant) allows you to set messages at various points to give you a lot of flexibility in 
 customizing your response.  You can add errors messages at the point you add it to the errors
 collection, in the options for the validator and globally for all validators in a chain.  For
@@ -1223,27 +1225,3 @@ Copyright 2020, John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpa
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 772:
-
-    Unknown directive: =over4
-
-- Around line 774:
-
-    '=item' outside of any '=over'
-
-- Around line 937:
-
-    Unknown directive: =over4
-
-- Around line 939:
-
-    '=item' outside of any '=over'
-
-- Around line 998:
-
-    Unknown directive: =hea2
