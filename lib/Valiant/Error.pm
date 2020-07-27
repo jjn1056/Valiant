@@ -4,7 +4,6 @@ use Moo;
 use Text::Autoformat 'autoformat';
 use Module::Runtime;
 use FreezeThaw;
-use Clone;
 use Scalar::Util ();
 
 # These groups are often present in the options hash and need to be removed 
@@ -272,7 +271,7 @@ sub detail {
 sub match {
   my ($self, $attribute, $type, $options) = @_;
   if(
-    $attribute ne ($self->attribute||'')
+    ($attribute||'') ne ($self->attribute||'')
     ||
     ($type && ($self->type ne $type))
   ) {
@@ -292,7 +291,14 @@ sub match {
 
 sub clone {
   my $self = shift;
-  return Clone::clone($self);
+  my $class = ref $self;
+  return $class->new(
+    object => $self->object,
+    attribute => $self->attribute,
+    type => $self->type,
+    i18n => $self->i18n,
+    options => $self->options,
+  );
 }
 
 sub strict_match {
@@ -303,14 +309,20 @@ sub strict_match {
   # exactly.  Its possible my approach here is suspect around object comparisons.
   my %options = %{$self->options};
   delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
+
   return FreezeThaw::cmpStr(\%options, $options) == 0 ? 1:0;
 }
 
 # Are two errors the same?
 sub equals {
   my ($self, $target) = @_;
-  return (ref($self) eq ref($target)) &&
-    FreezeThaw::cmpStr([$self->attributes_for_hash], [$target->attributes_for_hash]) ? 1:0;
+
+  return 0 unless ref($self) eq ref($target);
+
+  my $a = FreezeThaw::freeze $self->attributes_for_hash;
+  my $b = FreezeThaw::freeze $target->attributes_for_hash;
+
+  return $a eq $b;
 }
 
 sub hash {
@@ -327,7 +339,7 @@ sub attributes_for_hash {
     object => $self->object,
     attribute => $self->attribute,
     raw_type => $self->raw_type,
-    %options,
+    map { $_ => $options{$_} } sort keys %options, # This needs sorting to support checking equality
   );
 }
 
@@ -347,9 +359,32 @@ A Single Error.
 This is generally an internal class and you are unlikely to use it directly.  For
 the most part its used by L<Valiant::Errors>.
 
-=head1 ATTRIBUTES
-
 =head1 METHODS
+
+This class exposes the following methods for public users.
+
+=head2 match ($attribute, $type, $options)
+
+Returns true of the error matches (has the same parameters) as the arguments 
+passed.  This differs from L</strict_match> in that C<$options> don't need to
+be completely identical; it must ony be the case that the C<$options> passed
+in the arguments intersects with that actual options of the error (that is
+the error has to have everything in C<$options> BUT it can have more things.
+
+=head2 strict_match ($attribute, $type, $options)
+
+Same as L</match> except <$options> must exactly match and not just intersect.
+
+=head2 equals ($error)
+
+Returna a boolean based on if C<$error> is functionally equal.  By this it is meant
+that it has the same attribute values (not that it is the same error instance).
+
+This includes C<options> matching.
+
+=head2 clone
+
+Create a new copy of the error.
 
 =head1 SEE ALSO
  
