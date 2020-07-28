@@ -1248,6 +1248,14 @@ formats
 attribute and model names
 arbitrary tags
 
+=head1 DEBUGGING
+
+You can set the %ENV variable C<VALIANT_DEBUG> to a number ranging 1 to 3 which will give
+increasing more detailed debugging output that should assist you if things are not working
+as expected.  Debug level 1 only returns messages during the startup / compile stage so its
+reasonable safe to run even in a production environment since it should not impact run time
+performance.
+
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::Validations>, L<Valiant::Validates>

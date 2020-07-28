@@ -264,6 +264,8 @@ ok $errors->invalid;
 
 is_deeply [$errors->errors->full_messages ], ["Name has wrong value"];
 
+ok my $clone = $errors->errors->errors->get(0)->clone;
+
 $errors->errors->copy($model->errors);
 
 is_deeply [$errors->errors->full_attribute_messages], [
@@ -276,5 +278,24 @@ is_deeply [$errors->errors->full_attribute_messages], [
   "Password needs to contain both numbers and letters",
 ];
 
+$errors->errors->import_error($clone);
+
+is_deeply [$errors->errors->full_attribute_messages], [
+  "Name is too short",
+  "Name has disallowed characters",
+  "Age must be above 5",
+  "Email does not look like an email address",
+  "Password is too short",
+  "Password can't look like your name",
+  "Password needs to contain both numbers and letters",
+  "Name has wrong value",
+];
+
+my @results = map { $_->full_message } $errors->errors->where('name');
+is_deeply \@results, [
+  "Name is too short",
+  "Name has disallowed characters",
+  "Name has wrong value",
+];
 
 done_testing;

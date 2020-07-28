@@ -415,7 +415,8 @@ contains at least one type of error.
 
 =head2 copy
 
-Copy an errors collection into the current (replacing any existing).
+Copy an errors collection into the current (replacing any existing).  The copies are
+new instances of L<Valiant::Error>, not references to the original objects.
 
 =head2 import_error ($error)
 
@@ -425,7 +426,7 @@ Given a single L<Valiant::Error> inport it into the current errors collection
 
 Given a L<Valiant::Errors> collection, merge it into the current one.
 
-=head2 where (@args)
+=head2 where ($attribute, $message, \%options)
 
 return all the L<Valiant::Error> objects in the current collection which match criteria.
 
@@ -446,15 +447,16 @@ has more than one error message, yields once for each error message.
 
 =head2 model_messages
 
-Returns an array of all the errors that are associated with the model.
+Returns an array of all the errors that are associated with the model (Localized
+if needed).
 
 =head2 attribute_messages
 
-Returns an array of all the errors that are associated with attributes.
+Returns an array of all the errors that are associated with attributes (localized if needed).
 
 =head2 full_attribute_messages
 
-Returns an array of the full messages of all attributes.
+Returns an array of the full messages of all attributes (localized if needed).
 
 =head2 to_hash (?$flag)
 
@@ -465,7 +467,64 @@ the full messages for each error.
 =head2 add ($attribute|undef, $message, \%opts)
 
 Add a new error message to the object.  Error can be associated with an attribute
-or with the object itself.
+or with the object itself. C<$message> can be one of:
+
+=over 14
+
+=item A string
+
+If a string this is the error message recorded.
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => 'Unacceptable Name',
+    );
+
+=item A translation tag
+
+    use Valiant::I18N;
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => _t('bad_name'),
+    );
+
+This will look up a translated version of the tag.  See L<Valiant::I18N> for more details.
+
+=item A scalar reference
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => \'Unacceptable {{attribute}}',
+    );
+
+Similar to string but we will expand any placeholder variables which are indicated by the
+'{{' and '}}' tokens (which are removed from the final string).  You can use any placeholder
+that is a key in the options hash (and you can pass additional values when you add an error).
+By default the following placeholder expansions are available attribute (the attribute name),
+value (the current attribute value), model (the human name of the model containing the
+attribute and object (the actual object instance that has the error).
+
+=item A subroutine reference
+
+    validates name => (
+      format => 'alphabetic',
+      length => [3,20],
+      message => sub {
+        my ($self, $attr, $value, $opts) = @_;
+        return "Unacceptable $attr!";
+      }
+    );
+
+Similar to the scalar reference option just more flexible since you can write custom code
+to build the error message.  For example you could return different error messages based on
+the identity of a person.  Also if you return a translation tag instead of a simple string
+we will attempt to resolve it to a translated string (see L<Valiant::I18N>).
+
+=back
 
 =head2 added  ($attribute|undef, $message, \%opts)
 
@@ -477,19 +536,20 @@ Similar to <added> expect we don't need to match options
 
 =head2 messages
 
-An array of the error messages.
+An array of the error messages.  All translation tags will be translated to strings in the
+expected local langauge.
 
 =head2 full_messages
 
-An array of the full messages.
+An array of the full messages (localized if needed).
 
 =head2 messages_for ($attribute)
 
-An array of all the messages for the given attribute.
+An array of all the messages for the given attribute (localized if needed).
 
 =head2 full_messages_for ($attribute)
 
-An array of all the full messages for the given attribute.
+An array of all the full messages for the given attribute (localized if needed).
 
 =head1 JSONification
 
