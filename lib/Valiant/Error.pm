@@ -359,6 +359,19 @@ A Single Error.
 This is generally an internal class and you are unlikely to use it directly.  For
 the most part its used by L<Valiant::Errors>.
 
+=head1 ATTRIBUTES
+
+This class defines the following attributes
+
+=head2 type
+
+Either a translation tag or text string of the error
+
+=head2 attribute
+
+The attribute which is associated with the error or undef if the error
+is for the model
+
 =head1 METHODS
 
 This class exposes the following methods for public users.

@@ -264,4 +264,17 @@ ok $errors->invalid;
 
 is_deeply [$errors->errors->full_messages ], ["Name has wrong value"];
 
+$errors->errors->copy($model->errors);
+
+is_deeply [$errors->errors->full_attribute_messages], [
+  "Name is too short",
+  "Name has disallowed characters",
+  "Age must be above 5",
+  "Email does not look like an email address",
+  "Password is too short",
+  "Password can't look like your name",
+  "Password needs to contain both numbers and letters",
+];
+
+
 done_testing;

@@ -4,7 +4,7 @@ package Valiant;
 
 =head1 TITLE
 
-Valiant - Super heroic validations for Moo or Moose classes
+Valiant - Super heroic validation framework.
 
 =head1 SYNOPSIS
 
@@ -54,26 +54,14 @@ Valiant - Super heroic validations for Moo or Moose classes
 
 =head1 DESCRIPTION
 
-Validations for your L<Moo> objects.  Allows you to defined for a given class what
+Domain level validations for L<Moo> classes.  Allows you to defined for a given class what
 a valid state for an instance of that class would be.  Used to defined constraints
 related to business logic or for validating user input (for example via CGI forms).
 
-The way this works is that it applies the L<Valiant::Validates> role and then
-imports the C<validates>, C<valiates_with> and C<validates_each> class method from
-that role.  This provides a local domain specific language for adding object level
-validations as well as instance methods on blessed objects to run those validations,
-inspect errors and perform some basic introspection / reflection on the validations.
-
-Documentation here details using L<Valiant> with L<Moo> or L<Moose> based classes.
-If you want to use L<Valiant> with L<DBIx::Class> you will also wish to review
-L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class>.
-
-Prior art for this would be the validations system for ActiveRecords in Ruby on Rails
-and the Javascript library class-validator.js, both of which the author reviewed 
-extensively when writing this code:
-
-L<https://rubyonrails.org>, L<https://github.com/typestack/class-validator>
-
+This differs from type constraints (such as L<Type::Tiny>) that you might put on your
+L<Moo> attributes which are used to expressed when attributes have values that are
+so unacceptable that no further work can be done and an exception must be throw.  L<Valiant>
+fits into a similar category as L<HTML::Formhander> and L<FormFu>.  In fact 
 You will note that when using validations that you generally won't add type constraints
 on your L<Moo> attributes.  That's because type constraints are applied when the
 object is instantiated and throw an exception when they fail.  Validations on the other 
@@ -83,7 +71,24 @@ that involve the state of more than one attribute).  You would only use attribut
 constraints when the created object would be in such an invalid state that one could
 not correctly validate it anyway.
 
-=head1 WHY OBJECT VALIDATIONS
+The way this works is that it applies the L<Valiant::Validates> role and then
+imports the C<validates> and C<valiates_with> class method from
+that role.  This provides a local domain specific language for adding object level
+validations as well as instance methods on blessed objects to run those validations,
+inspect errors and perform some basic introspection / reflection on the validations.  You
+can then process these errors and display them to the user.
+
+Prior art for this would be the validations system for ActiveRecords in Ruby on Rails
+and the Javascript library class-validator.js, both of which the author reviewed 
+extensively when writing this code:
+
+L<https://rubyonrails.org>, L<https://github.com/typestack/class-validator>
+
+Documentation here details using L<Valiant> with L<Moo> or L<Moose> based classes.
+If you want to use L<Valiant> with L<DBIx::Class> you will also wish to review
+L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class>.
+
+=head1 WHY OBJECT VALIDATION AS CLASS DATA?
 
 Validating the state of things is one of the most common tasks we perform.  For example
 a user might wish to change their profile information and you need to make sure that
@@ -93,6 +98,19 @@ and that an address is complete).  This logic can get tricky over time as a syst
 complexity and edge cases need to be accounted for (for example for business reasons you might
 wish to allow pre-existing users to conform to different password complexity constraints or
 require newer users to supply more profile details).
+
+One approach to this is to build a specific validation object that receives and processes
+data input.  If the incoming data passes, you can proceed to send the data to your
+storage object.  If it fails you then proceed to message the user the failure conditions.
+For example this is the approach taken by L<HTML::Formhandler>.
+
+The approach has much to merit because it clearly separates your validation logic from
+your storage logic.  However when there is a big affinity between the two (such as when
+all your HTML forms are very similar to your database tables) this can lead to a lot of
+redundent code (such as defining the same field names in more than one class) which leads
+to a maintainence and understanding burden.  Also it can be hard to do proper validation
+without access to a data object since often you will have validation logic that is dependent
+on the current state of your data.
 
 L<Valiant> offers a DSL (domain specific language) for adding validation meta data as
 class data to your business objects.  This allows you to maintain separation of

@@ -56,15 +56,21 @@ sub any {
 
 sub copy {
   my ($self, $other) = @_;
-  my @errors = $other
+  my $errors = $other
     ->errors
     ->map(sub {
-      my $new = $_->clone;
-      $new->object($self->object);
+      my $class = ref $_;
+      my $new = $class->new(
+        object => $self->object,
+        attribute => $_->attribute,
+        type => $_->type,
+        i18n => $_->i18n,
+        options => $_->options,
+      );
       return $new;
     });
-
-  $self->errors(\@errors);
+  $self->errors->clear;
+  $self->errors->push($errors->all);
 }
 
 sub import_error {
@@ -80,8 +86,6 @@ sub import_error {
 
 sub merge {
   my ($self, $other) = @_;
-  use Devel::Dwarn;
-  #Dwarn $other;
   foreach my $error ($other->errors->all) {
     $self->import_error($error);
   }
@@ -405,9 +409,13 @@ Accepts a coderef that will receive each error object in the collect and return 
 if any of the coderef calls return true.  Used to determine if the errors collection
 contains at least one type of error.
 
+    my $has_invalids = $user1->errors->any(sub {
+      ${\$_->type} eq 'invalid';
+    });
+
 =head2 copy
 
-Return a new copy of the errors collectiom
+Copy an errors collection into the current (replacing any existing).
 
 =head2 import_error ($error)
 
