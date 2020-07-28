@@ -237,19 +237,6 @@ sub validates {
   $self->_validates_coderef($coderef, %global_options); 
 }
 
-sub validates_each {
-  my ($self, @proto) = @_;
-  my $coderef = pop @proto;
-  @proto = @{$proto[0]} if ref($proto[0]) eq 'ARRAY';
-  foreach my $attr (@proto) {
-    my $coderef_each = sub {
-      my $object = shift;
-      return $coderef->($object, $attr, $object->$attr); # TODO might need to call 'read_attribute_for_validation'
-    };
-    $self->_validates_coderef($coderef_each);  
-  }
-}
-
 sub _normalize_validator_package {
   my ($self, $with) = @_;
   my ($prefix, $package) = ($with =~m/^(\+?)(.+)$/);

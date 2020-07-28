@@ -17,7 +17,7 @@ validates 'retirement_date' => (
 
 validates_with 'Custom', notes=>'123';
 
-validates_each 'age', 'name', sub {
+validates ['age', 'name'], sub {
   my ($self, $attr_name, $value) = @_;
   $self->errors->add($attr_name => _t('log'), +{value=>$value});
 };

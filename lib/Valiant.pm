@@ -944,7 +944,7 @@ instead of an attribute name.  This will record the error as a model error:
     $object->errors->add(undef, $error_message, \%opts);
 
 Lastly the C<%opts> hashref can be left off the method call if you don't have it.  Generally its
-passed as the last argument to C<validate>, C<validates_each> or any validation subroutine references
+passed as the last argument to C<validate> or any validation subroutine references
 but if you are adding an error outside those methods you won't have it.  For example you might wrap a  
 database call insidean eval and wish to add a model error if there's an exception.
 

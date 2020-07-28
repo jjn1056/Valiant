@@ -7,7 +7,7 @@ use Valiant::Util 'debug';
 require Role::Tiny;
 
 our @DEFAULT_ROLES = (qw(Valiant::Validates));
-our @DEFAULT_EXPORTS = (qw(validates validates_with validates_each));
+our @DEFAULT_EXPORTS = (qw(validates validates_with));
 
 sub default_roles { @DEFAULT_ROLES }
 sub default_exports { @DEFAULT_EXPORTS }
