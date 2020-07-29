@@ -209,6 +209,9 @@ sub validates {
       throw_exception InvalidValidatorArgs => ( args => $args) unless ref($args) eq 'HASH';
     }
 
+    # so strip out the reserved and if any wrap in a conditional that
+    # way we can remove all that stuff from each
+
     # merge global options into args
     $args->{strict} = 1 if $global_options{strict} and !exists $args->{strict};
     $args->{allow_undef} = 1 if $global_options{allow_undef} and !exists $args->{allow_undef};
@@ -459,8 +462,6 @@ you should consume the L<Validate::Validator> role to enforce the contract).
 If you pass a string that is a validator class we resolve its namespace using the same approach as
 detailed above for C<validates>.  Any arguments are passed to the C<new> method of the found class
 excluding global options.
-
-=head2 GLOBAL OPTIONS
 
 =head1 INSTANCE METHODS
 
