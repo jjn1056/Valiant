@@ -68,28 +68,25 @@ use Test::Most;
   ok $person->validate->invalid;
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
-        address => [
-          {
-            street => [
-              "Street is too short (minimum is 2 characters)",
-              "Street cannot have silly characters",
-            ],
-            zip => [
-              "Zip must be a positive integer",
-              "Zip does not match the required pattern",
-              "Zip is too short (minimum is 5 characters)",
-            ],
-          },
-          "Address Always Bad",
-          "Address Bad Address",
-        ],
-        'name' => [
-                'Name does not match the required pattern'
-              ]
-      };
-
-      #use Devel::Dwarn;
-      #Dwarn +{ $person->errors->to_hash(full_messages=>1) };
+      address => [
+        "Address Is Invalid",
+        "Address Always Bad",
+        "Address Is Invalid",
+        "Address Bad Address",
+      ],
+      "address.street" => [
+        "Address Street is too short (minimum is 2 characters)",
+        "Address Street cannot have silly characters",
+      ],
+      "address.zip" => [
+        "Address Zip must be a positive integer",
+        "Address Zip does not match the required pattern",
+        "Address Zip is too short (minimum is 5 characters)",
+      ],
+      name => [
+        "Name does not match the required pattern",
+      ],
+    };
 }
 
 done_testing;

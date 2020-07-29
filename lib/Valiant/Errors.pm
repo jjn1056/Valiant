@@ -140,7 +140,7 @@ sub delete {
 sub each {
   my ($self, $block) = @_;
   foreach my $error($self->errors->all) {
-    $block->(($error->attribute||'*'), $error->message);
+    $block->((defined($error->attribute) ? $error->attribute : '*'), $error->message);
   }
 }
 
@@ -227,18 +227,6 @@ sub add {
   }
   $options ||= +{};
   ($attribute, $type, $options) = $self->_normalize_arguments($attribute, $type, $options);
-
-  # hack for nested..
-  if(Scalar::Util::blessed($type) and $type->isa('Valiant::Errors')) {
-    my @existing = $self->where($attribute);
-    ## Todo this needs to be first if it doesn't exist
-    foreach my $existing(@existing) {
-      next unless Scalar::Util::blessed($existing->type) and $existing->type->isa('Valiant::Errors');
-      $existing->type->merge($type);
-      return;
-    }
-  }
-  # end hack
 
   my $error = $self->error_class
     ->new(
@@ -444,6 +432,12 @@ Delete messages for +key+. Returns the deleted messages.
 Iterates through each error key, value pair in the error messages hash.
 Yields the attribute and the error for that attribute. If the attribute
 has more than one error message, yields once for each error message.
+
+    $object->errors->each*(sub {
+      my ($attribute, $message) = @_;
+    });
+
+If the error is a model error then C<$attribute> will be '*'.
 
 =head2 model_messages
 

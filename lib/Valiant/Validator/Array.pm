@@ -12,16 +12,11 @@ has validations => (is=>'ro', required=>1);
 
 has validator_class => (is=>'ro', required=>1, default=>'Valiant::Proxy::Array');
 has validator_class_args => (is=>'ro', required=>1, default=>sub { +{} });
-has for => (is=>'ro');
+has invalid_msg => (is=>'ro', required=>1, default=>sub {_t 'invalid'});
 
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
   my $args = $class->$orig(@args);
-
-  if($args->{namespace}) {
-    $args->{for} = $args->{namespace};
-  }
-
   return $args;
 };
 
@@ -39,18 +34,27 @@ sub normalize_shortcut {
 sub validate_each {
   my ($self, $record, $attribute, $value, $options) = @_;
   my @validations = @{$self->validations};
+
   my $validator = use_module($self->validator_class)
       ->new(
         validations => [[ [keys @$value], @validations ]],
         %{ $self->validator_class_args },
       );
 
-  my $result = $validator->validate($value, %$options, attribute=>'item');  
+  my $result = $validator->validate($value, %$options);  
 
   if($result->invalid) {
     my $errors = $result->errors;
     $errors->{__result} = $result; # hack to keep this in scope
-    $record->errors->add($attribute, $errors, $options);
+    $record->errors->add($attribute, $self->invalid_msg, $options);
+
+    $errors->each(sub {
+      my ($index, $message) = @_;
+      $record->errors->add("${attribute}.${index}", $message);
+    });
+
+
+
   }
 }
 

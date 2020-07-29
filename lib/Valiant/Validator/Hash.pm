@@ -9,6 +9,7 @@ with 'Valiant::Validator::Each';
 
 has validations => (is=>'ro', required=>1);
 has validator => (is=>'ro', required=>1);
+has invalid_msg => (is=>'ro', required=>1, default=>sub {_t 'invalid'});
 
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
@@ -59,7 +60,13 @@ sub validate_each {
   if($result->invalid) {
     my $errors = $result->errors;
     $errors->{__result} = $result; # hack to keep this in scope
-    $record->errors->add($attribute, $errors, \%opts);
+    $record->errors->add($attribute, $self->invalid_msg, \%opts);
+
+    $result->errors->each(sub {
+      my ($attr, $message) = @_;
+      $record->errors->add("${attribute}.${attr}", $message);
+    });
+
   }
 }
 

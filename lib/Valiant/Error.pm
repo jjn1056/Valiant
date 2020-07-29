@@ -93,12 +93,6 @@ sub full_message {
     Module::Runtime::use_module($self->i18n_class);
 
   return $message unless defined($attribute);
-
-  # Current hack for nested support. This needs WORK
-  if(Scalar::Util::blessed($message)) {
-      return +{ $message->to_hash(1) };
-  }
-  # End nested hack
   
   my @defaults = ();
   if($object->can('i18n_scope')) {

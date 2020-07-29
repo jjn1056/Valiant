@@ -67,6 +67,13 @@ sub validate_each {
   if($self->has_nested && $self->nested) {
     $value->validate(%$opts) unless $value->validated; # Don't validate again
     $record->errors->add($attribute, $self->invalid_msg, $opts) if $value->errors->size;
+
+    $value->errors->each(sub {
+      my ($attr, $message) = @_;
+      $record->errors->add("${attribute}.${attr}", $message);
+    });
+
+
   }
 }
 

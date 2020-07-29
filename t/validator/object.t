@@ -136,11 +136,21 @@ use Test::Most;
 
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
-      'name' => [
-        'Name does not match the required pattern',
+      address => [
+        "Address Is Invalid",
       ],
-      'address' => [
-        'Address Is Invalid',
+      "address.city" => [
+        "Address City is too short (minimum is 3 characters)",
+      ],
+      "address.country" => [
+        "Address Country is not in the list",
+      ],
+      "address.street" => [
+        "Address Street can't be blank",
+        "Address Street is too short (minimum is 3 characters)",
+      ],
+      name => [
+        "Name does not match the required pattern",
       ],
     };
 
@@ -188,17 +198,35 @@ use Test::Most;
 
   is_deeply +{ $person->errors->to_hash(full_messages=>1) },
     {
-      'name' => [
-        'Name does not match the required pattern',
+      address => [
+        "Address Is Invalid",
       ],
-      'address' => [
-        'Address Is Invalid',
+      "address.city" => [
+        "Address City is too short (minimum is 3 characters)",
       ],
-      'car' => [
-        'Car Is Invalid',
+      "address.country" => [
+        "Address Country is not in the list",
+      ],
+      "address.street" => [
+        "Address Street can't be blank",
+        "Address Street is too short (minimum is 3 characters)",
+      ],
+      car => [
+        "Car Is Invalid",
         "Car ALWAYS FAIL",
       ],
-
+      "car.make" => [
+        "Car Make is not in the list",
+      ],
+      "car.model" => [
+        "Car Model is too short (minimum is 2 characters)",
+      ],
+      "car.year" => [
+        "Car Year must be greater than or equal to 1960",
+      ],
+      name => [
+        "Name does not match the required pattern",
+      ],
     };
 
   is_deeply +{ $person->address->errors->to_hash(full_messages=>1) },
