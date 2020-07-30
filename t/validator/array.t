@@ -103,12 +103,4 @@ is_deeply +{ $object->errors->to_hash(full_messages=>1) },
   ],
 };
 
-#use Devel::Dwarn;
-#Dwarn +{ $object->errors->to_hash(full_messages=>1)  };
-
 done_testing;
-
-__END__
-
-
-
