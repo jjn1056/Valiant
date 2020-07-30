@@ -72,16 +72,16 @@ is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     "Car Is Invalid",
   ],
   "car.0" => [
-    "Car 0 Is Invalid",
+    "Car Is Invalid",
   ],
   "car.0.make" => [
-    "Car 0 Make is not in the list",
+    "Car Make is not in the list",
   ],
   "car.0.model" => [
-    "Car 0 Model is too short (minimum is 2 characters)",
+    "Car Model is too short (minimum is 2 characters)",
   ],
   "car.0.year" => [
-    "Car 0 Year must be greater than or equal to 1960",
+    "Car Year must be greater than or equal to 1960",
   ],
   name => [
     "Name is too long (maximum is 5 characters)",
@@ -90,18 +90,21 @@ is_deeply +{ $object->errors->to_hash(full_messages=>1) },
     "Status Is Invalid",
   ],
   "status.1" => [
-    "Status 1 is not in the list",
+    "Status is not in the list",
   ],
   "status.4" => [
-    "Status 4 is not in the list",
+    "Status is not in the list",
   ],
   "status.5" => [
-    "Status 5 is not in the list",
+    "Status is not in the list",
   ],
   "status.6" => [
-    "Status 6 is not in the list",
+    "Status is not in the list",
   ],
 };
+
+#use Devel::Dwarn;
+#Dwarn +{ $object->errors->to_hash(full_messages=>1)  };
 
 done_testing;
 

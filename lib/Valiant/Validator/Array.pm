@@ -52,9 +52,6 @@ sub validate_each {
       my ($index, $message) = @_;
       $record->errors->add("${attribute}.${index}", $message);
     });
-
-
-
   }
 }
 

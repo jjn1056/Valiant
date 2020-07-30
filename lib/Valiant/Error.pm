@@ -96,8 +96,10 @@ sub full_message {
   
   my @defaults = ();
   if($object->can('i18n_scope')) {
+    $attribute =~s/\.\d+//g;
     my $i18n_scope = $object->i18n_scope;
-    my @parts = split '.', $attribute; # For nested attributes
+    my @parts =  split '\.', $attribute; # For nested attributes
+    #TODO remove array indexes [\d]
     my $attribute_name = pop @parts;
     my $namespace = join '/', @parts if @parts;
     my $attributes_scope = "${i18n_scope}.errors.models";
