@@ -17,8 +17,9 @@ Sub::Exporter::setup_exporter({
 
 sub throw_exception {
   my ($class_name, @args) = @_;
-  die Module::Runtime::use_module("Valiant::Util::Exception::$class_name")
-    ->new(@args);
+  my $namespace = "Valiant::Util::Exception::$class_name";
+  my $exception = Module::Runtime::use_module($namespace)->new(@args);
+  die $exception->as_string;
 }
 
 sub DEBUG_FLAG { $ENV{VALIANT_DEBUG} ? 1:0 }

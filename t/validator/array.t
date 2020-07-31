@@ -25,7 +25,7 @@ use Test::Most;
   validates car => ( array => { validations => [object=>1] } );
   validates status => (
     array => {
-      max_length => 3,
+      max_length => 10,
       min_length => 1,
       validations => [
         inclusion => +{
@@ -41,7 +41,6 @@ ok  my $car = Local::Test::Car->new(
     model => '1',
     year => 1900
   );
-
 
 ok my $object = Local::Test::Array->new(
   name => 'napiorkowski',

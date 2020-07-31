@@ -1,4 +1,4 @@
-package Valiant::Exception;
+package Valiant::Util::Exception;
 
 use Moo;
 use Devel::StackTrace 2.03;

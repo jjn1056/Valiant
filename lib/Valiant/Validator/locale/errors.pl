@@ -81,6 +81,10 @@
         type_constraint_violation => 'violates type constraint "{{display_name}}"',
         wrong_inheritance => 'does not inherit from "{{parent}}"',
         not_role => 'does not provide the role "{{role}}"',
+        #array
+        max_length_err => 'has too many items (maximum is {{max}})',
+        min_length_err => 'has too few rows (minimum is {{min}})',
+        not_array_err => 'is not an array',
       },
     }
   },
