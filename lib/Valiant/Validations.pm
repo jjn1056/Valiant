@@ -170,6 +170,18 @@ Create validations on an objects attributes.  Accepts the name of an attributes 
 arrayref of names) followed by a list of validators and global options.  Validators can
 be a subroutine reference, a type constraint or the name of a Validator class.
 
+    validates name => sub {
+      my ($self, $attribute, $value, $opts) = @_;
+      $self->errors->add($attribute, "Invalid", $opts) if ...
+    };
+
+    validates name => (
+      length => {
+        maximum => 10,
+        minimum => 3,
+      }
+    );
+
 See C<validates> in either L<Valiant> or L<Valiant::Validates> for more.
 
 =head1 METHODS

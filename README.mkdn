@@ -1,6 +1,6 @@
 # TITLE
 
-Valiant - Super heroic validations for Moo or Moose classes
+Valiant - Ruby on Rails-like validation framework.
 
 # SYNOPSIS
 
@@ -50,27 +50,24 @@ Valiant - Super heroic validations for Moo or Moose classes
 
 # DESCRIPTION
 
-Validations for your [Moo](https://metacpan.org/pod/Moo) objects.  Allows you to defined for a given class what
+Domain level validations for [Moo](https://metacpan.org/pod/Moo) classes.  Provides a domain specific language
+which allows you to defined for a given class what
 a valid state for an instance of that class would be.  Used to defined constraints
 related to business logic or for validating user input (for example via CGI forms).
 
-The way this works is that it applies the [Valiant::Validates](https://metacpan.org/pod/Valiant::Validates) role and then
-imports the `validates`, `valiates_with` and `validates_each` class method from
-that role.  This provides a local domain specific language for adding object level
-validations as well as instance methods on blessed objects to run those validations,
-inspect errors and perform some basic introspection / reflection on the validations.
+When we say domain level or business logic validation, what we mean is that
+invalid data is a possible and expected state that needs to be evaluated and reported to
+the end user for correction.  For example when writing a web application you might have
+a form that requests user profile information (such as name, DOB, address, etc).  Its an
+expected condition that the user might submit form data that invalid in some way (such
+as a DOB that is in the future) but is still 'well formed' and is able to be processed.
+In these caused your business logic would be to inform the user of the incorrect data and
+request fixes (rather than simply throw a 500 server error and giving up).  
 
-Documentation here details using [Valiant](https://metacpan.org/pod/Valiant) with [Moo](https://metacpan.org/pod/Moo) or [Moose](https://metacpan.org/pod/Moose) based classes.
-If you want to use [Valiant](https://metacpan.org/pod/Valiant) with [DBIx::Class](https://metacpan.org/pod/DBIx::Class) you will also wish to review
-[DBIx::Class::Valiant](https://metacpan.org/pod/DBIx::Class::Valiant) which details how [Valiant](https://metacpan.org/pod/Valiant) glues into [DBIx::Class](https://metacpan.org/pod/DBIx::Class).
-
-Prior art for this would be the validations system for ActiveRecords in Ruby on Rails
-and the Javascript library class-validator.js, both of which the author reviewed 
-extensively when writing this code:
-
-[https://rubyonrails.org](https://rubyonrails.org), [https://github.com/typestack/class-validator](https://github.com/typestack/class-validator)
-
-You will note that when using validations that you generally won't add type constraints
+This differs from type constraints (such as [Type::Tiny](https://metacpan.org/pod/Type::Tiny)) that you might put on your
+[Moo](https://metacpan.org/pod/Moo) attributes which are used to express when attributes have values that are
+so unacceptable that no further work can be done and an exception must be throw.  
+In fact you will note that when using validations that you generally won't add type constraints
 on your [Moo](https://metacpan.org/pod/Moo) attributes.  That's because type constraints are applied when the
 object is instantiated and throw an exception when they fail.  Validations on the other 
 hand permit you to create the object and collect all the validation failure conditions.
@@ -79,7 +76,27 @@ that involve the state of more than one attribute).  You would only use attribut
 constraints when the created object would be in such an invalid state that one could
 not correctly validate it anyway.
 
-# WHY OBJECT VALIDATIONS
+[Valiant](https://metacpan.org/pod/Valiant) fits into a similar category as [HTML::Formhander](https://metacpan.org/pod/HTML::Formhander) and [FormFu](https://metacpan.org/pod/FormFu) although
+its not HTML form specific.
+
+The way this works is that it applies the [Valiant::Validates](https://metacpan.org/pod/Valiant::Validates) role and then
+imports the `validates` and `valiates_with` class method from
+that role.  This provides a local domain specific language for adding object level
+validations as well as instance methods on blessed objects to run those validations,
+inspect errors and perform some basic introspection / reflection on the validations.  You
+can then process these errors and display them to the user.
+
+Prior art for this would be the validations system for ActiveRecords in Ruby on Rails
+and the Javascript library class-validator.js, both of which the author reviewed 
+extensively when writing this code:
+
+[https://rubyonrails.org](https://rubyonrails.org), [https://github.com/typestack/class-validator](https://github.com/typestack/class-validator)
+
+Documentation here details using [Valiant](https://metacpan.org/pod/Valiant) with [Moo](https://metacpan.org/pod/Moo) or [Moose](https://metacpan.org/pod/Moose) based classes.
+If you want to use [Valiant](https://metacpan.org/pod/Valiant) with [DBIx::Class](https://metacpan.org/pod/DBIx::Class) you will also wish to review
+[DBIx::Class::Valiant](https://metacpan.org/pod/DBIx::Class::Valiant) which details how [Valiant](https://metacpan.org/pod/Valiant) glues into [DBIx::Class](https://metacpan.org/pod/DBIx::Class).
+
+# WHY OBJECT VALIDATION AS CLASS DATA?
 
 Validating the state of things is one of the most common tasks we perform.  For example
 a user might wish to change their profile information and you need to make sure that
@@ -89,6 +106,19 @@ and that an address is complete).  This logic can get tricky over time as a syst
 complexity and edge cases need to be accounted for (for example for business reasons you might
 wish to allow pre-existing users to conform to different password complexity constraints or
 require newer users to supply more profile details).
+
+One approach to this is to build a specific validation object that receives and processes
+data input.  If the incoming data passes, you can proceed to send the data to your
+storage object.  If it fails you then proceed to message the user the failure conditions.
+For example this is the approach taken by [HTML::Formhandler](https://metacpan.org/pod/HTML::Formhandler).
+
+The approach has much to merit because it clearly separates your validation logic from
+your storage logic.  However when there is a big affinity between the two (such as when
+all your HTML forms are very similar to your database tables) this can lead to a lot of
+redundent code (such as defining the same field names in more than one class) which leads
+to a maintainence and understanding burden.  Also it can be hard to do proper validation
+without access to a data object since often you will have validation logic that is dependent
+on the current state of your data.
 
 [Valiant](https://metacpan.org/pod/Valiant) offers a DSL (domain specific language) for adding validation meta data as
 class data to your business objects.  This allows you to maintain separation of
@@ -196,7 +226,7 @@ validation methods:
     #  ],
     #}
 
-The validation methods have access to the fully blessed instance ao you can create complex
+The validation methods have access to the fully blessed instance so you can create complex
 validation rules based on your business requirements.
 
 Since many of your validations will be directly on attributes of you object, you can use the
@@ -327,7 +357,7 @@ And use it in a class:
 A custom validator is just a class that does the `validate` method (although I recommend that you
 consume the [Valiant::Validator](https://metacpan.org/pod/Valiant::Validator) role as well; this might be required at some point).  When this validator
 is added to a class, it is instantiated once with any provided arguments (which are passed to `new` as init\_args).
-Each time your call validate, it runs the `validate` method with the following signature:
+Each time you call validate, it runs the `validate` method with the following signature:
 
     sub validate {
       my ($self, $object, $opts) = @_;
@@ -440,7 +470,7 @@ Where `$self` is the validator class instance (this is created once when the val
 this validation is running on, `$value` is the current attribute's value and `$opts` is a hashref of options
 passed to the class.  For example, here is simple Boolean truth validator:
 
-    package Local::Application::Validator::True;
+    package MyApp::Validator::True;
 
     use Moo;
 
@@ -451,6 +481,17 @@ passed to the class.  For example, here is simple Boolean truth validator:
       $object->errors->add($attribute, 'is not a truth value', $opts) unless $value;
     }
 
+And example of using it in a class:
+
+    package MyApp::Foo;
+
+    use Moo;
+    use Valiant::Validations;
+
+    has 'bar' => ('ro'=>1);
+
+    validates bar => (True => +{});
+
 Two things to note: There is no meaning assigned to the return value of `validate_each` (or of `validates`).
 Also you should remember to pass `$opts` as the third argument to the `add` method.  Even if you are not
 using the options hashref in your custom validator, it might contain values that influence other aspects
@@ -460,112 +501,8 @@ When resolving a validator namepart, the same rules described above for general 
 
 # PREPACKAGED VALIDATOR CLASSES
 
-The following attribute validator classes are shipped with [Valiant](https://metacpan.org/pod/Valiant).  Please see the package POD for
-usage details (this is only a sparse summary)
-
-## Absence
-
-Checks that a value is absent (undefinef or empty).
-
-See [Valiant::Validator::Absence](https://metacpan.org/pod/Valiant::Validator::Absence) for details.
-
-## Array
-
-Validations on an array value.  Has options for nested errors when the array contains objects that
-themselves are validatible.
-
-See [Valiant::Validator::Array](https://metacpan.org/pod/Valiant::Validator::Array) for details.
-
-## Boolean
-
-Returns errors messages based on the boolean state of an attribute.
-
-See [Valiant::Validator::Boolean](https://metacpan.org/pod/Valiant::Validator::Boolean) for details.
-
-## Check
-
-Use your existing [Type::Tiny](https://metacpan.org/pod/Type::Tiny) constraints with [Valiant](https://metacpan.org/pod/Valiant)
-
-See [Valiant::Validator::Check](https://metacpan.org/pod/Valiant::Validator::Check) for details.
-
-## Confirmation
-
-Add a confirmation error check.  Used for when you want to verify that a given field is correct
-(such as when a user submits a new password or an email address).
-
-See [Valiant::Validator::Confirmation](https://metacpan.org/pod/Valiant::Validator::Confirmation) for details.
-
-## Date
-
-Value must conform to standard date format (default is YYYY-MM-DD or eg 2000-01-01) and be a valid date.
-
-See [Valiant::Validator::Date](https://metacpan.org/pod/Valiant::Validator::Date) for details.
-
-## Exclusion
-
-Value cannot match a fixed list.
-
-See [Valiant::Validator::Exclusion](https://metacpan.org/pod/Valiant::Validator::Exclusion) for details.
-
-## Format
-
-Value must be a string tht matched a given format or regular expression.
-
-See [Valiant::Validator::Format](https://metacpan.org/pod/Valiant::Validator::Format) for details.
-
-## Inclusion
-
-Value must be one of a fixed list
-
-See [Valiant::Validator::Inclusion](https://metacpan.org/pod/Valiant::Validator::Inclusion) for details.
-
-## Length
-
-Value must be a string with given minimum and maximum lengths.
-
-See [Valiant::Validator::Length](https://metacpan.org/pod/Valiant::Validator::Length) for details.
-
-## Numericality
-
-Validate various types of numbers.
-
-See [Valiant::Validator::Numericality](https://metacpan.org/pod/Valiant::Validator::Numericality) for details.
-
-## Object
-
-Value is an object.  Allows one to have nested validations when the object itself can be validated.
-
-See [Valiant::Validator::Object](https://metacpan.org/pod/Valiant::Validator::Object) for details.
-
-## OnlyOf
-
-Validates that only one or more of a group of attributes is defined.  
-
-See [Valiant::Validator::OnlyOf](https://metacpan.org/pod/Valiant::Validator::OnlyOf) for details.
-
-## Presence
-
-That the value is defined and not empty
-
-See [Valiant::Validator::Absence](https://metacpan.org/pod/Valiant::Validator::Absence) for details.
-
-## Unique
-
-That the value is unique based on some custom logic that your class must provide.
-
-See [Valiant::Validator::Unique](https://metacpan.org/pod/Valiant::Validator::Unique) for details.
-
-## With
-
-Use a subroutine reference or the name of a method on your class to provide validation.
-
-See [Valiant::Validator::With](https://metacpan.org/pod/Valiant::Validator::With) for details.
-
-## Special Validators
-
-The following validators are not considered for end users but have documentation you might
-find useful in furthering your knowledge of [Valiant](https://metacpan.org/pod/Valiant):  [Valiant::Validator::Collection](https://metacpan.org/pod/Valiant::Validator::Collection),
-[Valiant::Validator::Each](https://metacpan.org/pod/Valiant::Validator::Each).
+Please see [Valiant::Validator](https://metacpan.org/pod/Valiant::Validator) for a list of all the valiators that are shipped with
+[Valiant](https://metacpan.org/pod/Valiant) and/or search CPAN for validators in the [Valiant::ValidatorX](https://metacpan.org/pod/Valiant::ValidatorX) namespace.
 
 # TYPE CONSTRAINT SUPPORT
 
@@ -652,9 +589,9 @@ Example:
     #   age => ["Age must be greater than 64" ]
     # }
 
-# GLOBAL VALIDATOR OPTIONS
+# GLOBAL ATTRIBUTE VALIDATOR OPTIONS
 
-All validators can accept the following options.  Options can be added to each
+All attribute validators can accept the following options.  Options can be added to each
 validator separately (if you have several) or can be added globally to the end
 of the validator rules.  Global rules run first, followed by those applied to
 each validator.
@@ -888,6 +825,17 @@ So we always check that the value is an integer.
 Basically the rule to remember is validations with no `on` option will run no matter the context.
 Validations with some `on` option will only run in the specified context.
 
+# GLOBAL MODEL VALIDATOR OPTIONS
+
+Model validators (added via `validates_with`) support a subset of the the same options
+as ["GLOBAL ATTRIBUTE VALIDATOR OPTIONS"](#global-attribute-validator-options).  These options work identically as described
+in that section:
+
+    if/unless
+    on
+    message
+    strict
+
 # ERROR MESSAGES
 
 When you create an instance of a class that consumes the [Valiant::Validates](https://metacpan.org/pod/Valiant::Validates) role (typically
@@ -919,7 +867,7 @@ instead of an attribute name.  This will record the error as a model error:
     $object->errors->add(undef, $error_message, \%opts);
 
 Lastly the `%opts` hashref can be left off the method call if you don't have it.  Generally its
-passed as the last argument to `validate`, `validates_each` or any validation subroutine references
+passed as the last argument to `validate` or any validation subroutine references
 but if you are adding an error outside those methods you won't have it.  For example you might wrap a  
 database call insidean eval and wish to add a model error if there's an exception.
 
@@ -960,7 +908,7 @@ When adding an error there's four options for what the value of &lt;$error\_mess
     Similar to string but we will expand any placeholder variables which are indicated by the
     '{{' and '}}' tokens (which are removed from the final string).  You can use any placeholder
     that is a key in the options hash (and you can pass additional values when you add an error).
-    By default the following placeholder expansions are available attribute (the attribute name),
+    By default the following placeholder expansions are available: attribute (the attribute name),
     value (the current attribute value), model (the human name of the model containing the
     attribute and object (the actual object instance that has the error).
 
@@ -1094,16 +1042,14 @@ there is a model with errors like the following for these examples and discussio
 
     This combines all the attribute and model message into a flat list.  Please not that
     the current order is the order in which messages are added as errors to the errors
-    collection but this is not something you should rely on as we reserve the right to
-    use a different storage method in the future that might shuffe the order (or even 
-    return it differently each time).
+    collection.
 
     The only difference between `messages` and `full_messages` is that the latter will
     combine your error message with a human readable version of your attribute name.  By
     default this is just a title cased version of the attribute name but you can customize
     this via setting a translation (see ["INTERNATONALIZATION"](#internatonalization)).  `full_messages` by 
-    default uses the following expansion template: "{attribute} {message}" however you can
-    customize this by setting the `format` key (again see ["INTERNATONALIZATION"](#internatonalization)).
+    default uses the following expansion template: "{{attribute}} {{message}}" however you can
+    customize this by setting the `format` key in your translation file (again see ["INTERNATONALIZATION"](#internatonalization)).
 
     If you just want the model level errors you can use `model_messages`:
 
@@ -1202,18 +1148,37 @@ there is a model with errors like the following for these examples and discussio
 
     If you request errors for an attribute that has none you will get an empty array.
 
+    Please note that these methods always return arrays even if the case where you have only
+    a single error.
+
 - Searching for errors, interating and introspection.
 
     [Valiant::Errors](https://metacpan.org/pod/Valiant::Errors) contains additional methods for iterating over error collections,
-    searching for errors and introspecting errors.  
+    searching for errors and introspecting errors.  Please refer to that package for
+    full documentation and examples.
 
 # NESTED OBJECTS AND ARRAYS
+
+In some cases you may have complex, nested objects or objects that contain arrays of
+values which need validation.  When an object is nested as a attribute under another
+object it may itself contain validations. For these more complex cases we provide
+two validator classes [Valiant::Validator::Object](https://metacpan.org/pod/Valiant::Validator::Object) and [Valiant::Validator::Array](https://metacpan.org/pod/Valiant::Validator::Array).
+You should refer to documentation in each of those validators for API level overview and
+examples.
 
 # INTERNATONALIZATION
 
 formats
 attribute and model names
 arbitrary tags
+
+# DEBUGGING
+
+You can set the %ENV variable `VALIANT_DEBUG` to a number ranging 1 to 3 which will give
+increasing more detailed debugging output that should assist you if things are not working
+as expected.  Debug level 1 only returns messages during the startup / compile stage so its
+reasonable safe to run even in a production environment since it should not impact run time
+performance.
 
 # SEE ALSO
 

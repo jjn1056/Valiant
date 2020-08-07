@@ -75,6 +75,116 @@ Generally you would write a validator class like this when the validation is ver
 and cannot be tied to a specific attribute.  If it can be tied to an attribute then you
 might prefer to use   L<Valiant::Validator::Each>.
 
+=head1 PREPACKAGED VALIDATOR CLASSES
+
+The following attribute validator classes are shipped with L<Valiant>.  Please see the package POD for
+usage details (this is only a sparse summary)
+
+=head2 Absence
+
+Checks that a value is absent (undefinef or empty).
+
+See L<Valiant::Validator::Absence> for details.
+
+=head2 Array
+
+Validations on an array value.  Has options for nested errors when the array contains objects that
+themselves are validatible.
+
+See L<Valiant::Validator::Array> for details.
+
+=head2 Boolean
+
+Returns errors messages based on the boolean state of an attribute.
+
+See L<Valiant::Validator::Boolean> for details.
+
+=head2 Check
+
+Use your existing L<Type::Tiny> constraints with L<Valiant>
+
+See L<Valiant::Validator::Check> for details.
+
+=head2 Confirmation
+
+Add a confirmation error check.  Used for when you want to verify that a given field is correct
+(such as when a user submits a new password or an email address).
+
+See L<Valiant::Validator::Confirmation> for details.
+
+=head2 Date
+
+Value must conform to standard date format (default is YYYY-MM-DD or eg 2000-01-01) and be a valid date.
+
+See L<Valiant::Validator::Date> for details.
+
+=head2 Exclusion
+
+Value cannot match a fixed list.
+
+See L<Valiant::Validator::Exclusion> for details.
+
+
+=head2 Format
+
+Value must be a string tht matched a given format or regular expression.
+
+See L<Valiant::Validator::Format> for details.
+
+=head2 Inclusion
+
+Value must be one of a fixed list
+
+See L<Valiant::Validator::Inclusion> for details.
+
+=head2 Length
+
+Value must be a string with given minimum and maximum lengths.
+
+See L<Valiant::Validator::Length> for details.
+
+=head2 Numericality
+
+Validate various types of numbers.
+
+See L<Valiant::Validator::Numericality> for details.
+
+=head2 Object
+
+Value is an object.  Allows one to have nested validations when the object itself can be validated.
+
+See L<Valiant::Validator::Object> for details.
+
+=head2 OnlyOf
+
+Validates that only one or more of a group of attributes is defined.  
+
+See L<Valiant::Validator::OnlyOf> for details.
+
+=head2 Presence
+
+That the value is defined and not empty
+
+See L<Valiant::Validator::Absence> for details.
+
+=head2 Unique
+
+That the value is unique based on some custom logic that your class must provide.
+
+See L<Valiant::Validator::Unique> for details.
+
+=head2 With
+
+Use a subroutine reference or the name of a method on your class to provide validation.
+
+See L<Valiant::Validator::With> for details.
+
+=head2 Special Validators
+
+The following validators are not considered for end users but have documentation you might
+find useful in furthering your knowledge of L<Valiant>:  L<Valiant::Validator::Collection>,
+L<Valiant::Validator::Each>.
+
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::Validator::Each>.

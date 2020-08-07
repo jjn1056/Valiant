@@ -30,7 +30,6 @@ sub debug {
   warn "@args\n" if $ENV{VALIANT_DEBUG}  >= $level;
 }
 
-
 1;
 
 =head1 TITLE

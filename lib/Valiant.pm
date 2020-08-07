@@ -4,7 +4,7 @@ package Valiant;
 
 =head1 TITLE
 
-Valiant - Super heroic validation framework.
+Valiant - Ruby on Rails-like validation framework.
 
 =head1 SYNOPSIS
 
@@ -54,15 +54,24 @@ Valiant - Super heroic validation framework.
 
 =head1 DESCRIPTION
 
-Domain level validations for L<Moo> classes.  Allows you to defined for a given class what
+Domain level validations for L<Moo> classes.  Provides a domain specific language
+which allows you to defined for a given class what
 a valid state for an instance of that class would be.  Used to defined constraints
 related to business logic or for validating user input (for example via CGI forms).
 
+When we say domain level or business logic validation, what we mean is that
+invalid data is a possible and expected state that needs to be evaluated and reported to
+the end user for correction.  For example when writing a web application you might have
+a form that requests user profile information (such as name, DOB, address, etc).  Its an
+expected condition that the user might submit form data that invalid in some way (such
+as a DOB that is in the future) but is still 'well formed' and is able to be processed.
+In these caused your business logic would be to inform the user of the incorrect data and
+request fixes (rather than simply throw a 500 server error and giving up).  
+
 This differs from type constraints (such as L<Type::Tiny>) that you might put on your
-L<Moo> attributes which are used to expressed when attributes have values that are
-so unacceptable that no further work can be done and an exception must be throw.  L<Valiant>
-fits into a similar category as L<HTML::Formhander> and L<FormFu>.  In fact 
-You will note that when using validations that you generally won't add type constraints
+L<Moo> attributes which are used to express when attributes have values that are
+so unacceptable that no further work can be done and an exception must be throw.  
+In fact you will note that when using validations that you generally won't add type constraints
 on your L<Moo> attributes.  That's because type constraints are applied when the
 object is instantiated and throw an exception when they fail.  Validations on the other 
 hand permit you to create the object and collect all the validation failure conditions.
@@ -70,6 +79,9 @@ Also since you have a created object you can do more complex validations (such a
 that involve the state of more than one attribute).  You would only use attribute type
 constraints when the created object would be in such an invalid state that one could
 not correctly validate it anyway.
+
+L<Valiant> fits into a similar category as L<HTML::Formhander> and L<FormFu> although
+its not HTML form specific.
 
 The way this works is that it applies the L<Valiant::Validates> role and then
 imports the C<validates> and C<valiates_with> class method from
@@ -218,7 +230,7 @@ validation methods:
     #  ],
     #}
 
-The validation methods have access to the fully blessed instance ao you can create complex
+The validation methods have access to the fully blessed instance so you can create complex
 validation rules based on your business requirements.
 
 Since many of your validations will be directly on attributes of you object, you can use the
@@ -349,7 +361,7 @@ And use it in a class:
 A custom validator is just a class that does the C<validate> method (although I recommend that you
 consume the L<Valiant::Validator> role as well; this might be required at some point).  When this validator
 is added to a class, it is instantiated once with any provided arguments (which are passed to C<new> as init_args).
-Each time your call validate, it runs the C<validate> method with the following signature:
+Each time you call validate, it runs the C<validate> method with the following signature:
 
     sub validate {
       my ($self, $object, $opts) = @_;
@@ -462,7 +474,7 @@ C<$object> is the instance of the class you are validating, C<$attribute> is the
 this validation is running on, C<$value> is the current attribute's value and C<$opts> is a hashref of options
 passed to the class.  For example, here is simple Boolean truth validator:
 
-    package Local::Application::Validator::True;
+    package MyApp::Validator::True;
 
     use Moo;
 
@@ -473,6 +485,17 @@ passed to the class.  For example, here is simple Boolean truth validator:
       $object->errors->add($attribute, 'is not a truth value', $opts) unless $value;
     }
 
+And example of using it in a class:
+
+    package MyApp::Foo;
+
+    use Moo;
+    use Valiant::Validations;
+
+    has 'bar' => ('ro'=>1);
+
+    validates bar => (True => +{});
+
 Two things to note: There is no meaning assigned to the return value of C<validate_each> (or of C<validates>).
 Also you should remember to pass C<$opts> as the third argument to the C<add> method.  Even if you are not
 using the options hashref in your custom validator, it might contain values that influence other aspects
@@ -482,113 +505,9 @@ When resolving a validator namepart, the same rules described above for general 
 
 =head1 PREPACKAGED VALIDATOR CLASSES
 
-The following attribute validator classes are shipped with L<Valiant>.  Please see the package POD for
-usage details (this is only a sparse summary)
+Please see L<Valiant::Validator> for a list of all the valiators that are shipped with
+L<Valiant> and/or search CPAN for validators in the L<Valiant::ValidatorX> namespace.
 
-=head2 Absence
-
-Checks that a value is absent (undefinef or empty).
-
-See L<Valiant::Validator::Absence> for details.
-
-=head2 Array
-
-Validations on an array value.  Has options for nested errors when the array contains objects that
-themselves are validatible.
-
-See L<Valiant::Validator::Array> for details.
-
-=head2 Boolean
-
-Returns errors messages based on the boolean state of an attribute.
-
-See L<Valiant::Validator::Boolean> for details.
-
-=head2 Check
-
-Use your existing L<Type::Tiny> constraints with L<Valiant>
-
-See L<Valiant::Validator::Check> for details.
-
-=head2 Confirmation
-
-Add a confirmation error check.  Used for when you want to verify that a given field is correct
-(such as when a user submits a new password or an email address).
-
-See L<Valiant::Validator::Confirmation> for details.
-
-=head2 Date
-
-Value must conform to standard date format (default is YYYY-MM-DD or eg 2000-01-01) and be a valid date.
-
-See L<Valiant::Validator::Date> for details.
-
-=head2 Exclusion
-
-Value cannot match a fixed list.
-
-See L<Valiant::Validator::Exclusion> for details.
-
-=head2 Format
-
-Value must be a string tht matched a given format or regular expression.
-
-See L<Valiant::Validator::Format> for details.
-
-=head2 Inclusion
-
-Value must be one of a fixed list
-
-See L<Valiant::Validator::Inclusion> for details.
-
-=head2 Length
-
-Value must be a string with given minimum and maximum lengths.
-
-See L<Valiant::Validator::Length> for details.
-
-=head2 Numericality
-
-Validate various types of numbers.
-
-See L<Valiant::Validator::Numericality> for details.
-
-=head2 Object
-
-Value is an object.  Allows one to have nested validations when the object itself can be validated.
-
-See L<Valiant::Validator::Object> for details.
-
-=head2 OnlyOf
-
-Validates that only one or more of a group of attributes is defined.  
-
-See L<Valiant::Validator::OnlyOf> for details.
-
-=head2 Presence
-
-That the value is defined and not empty
-
-See L<Valiant::Validator::Absence> for details.
-
-=head2 Unique
-
-That the value is unique based on some custom logic that your class must provide.
-
-See L<Valiant::Validator::Unique> for details.
-
-=head2 With
-
-Use a subroutine reference or the name of a method on your class to provide validation.
-
-See L<Valiant::Validator::With> for details.
-
-=head2 Special Validators
-
-The following validators are not considered for end users but have documentation you might
-find useful in furthering your knowledge of L<Valiant>:  L<Valiant::Validator::Collection>,
-L<Valiant::Validator::Each>.
-   
 =head1 TYPE CONSTRAINT SUPPORT
 
 If you are comfortable using common type contraint libaries such as L<Type::Tiny> you can
@@ -674,9 +593,9 @@ Example:
     #   age => ["Age must be greater than 64" ]
     # }
 
-=head1 GLOBAL VALIDATOR OPTIONS
+=head1 GLOBAL ATTRIBUTE VALIDATOR OPTIONS
 
-All validators can accept the following options.  Options can be added to each
+All attribute validators can accept the following options.  Options can be added to each
 validator separately (if you have several) or can be added globally to the end
 of the validator rules.  Global rules run first, followed by those applied to
 each validator.
@@ -913,6 +832,17 @@ So we always check that the value is an integer.
 Basically the rule to remember is validations with no C<on> option will run no matter the context.
 Validations with some C<on> option will only run in the specified context.
 
+=head1 GLOBAL MODEL VALIDATOR OPTIONS
+
+Model validators (added via C<validates_with>) support a subset of the the same options
+as L</"GLOBAL ATTRIBUTE VALIDATOR OPTIONS">.  These options work identically as described
+in that section:
+
+    if/unless
+    on
+    message
+    strict
+
 =head1 ERROR MESSAGES
 
 When you create an instance of a class that consumes the L<Valiant::Validates> role (typically
@@ -952,7 +882,7 @@ database call insidean eval and wish to add a model error if there's an exceptio
 
 When adding an error there's four options for what the value of <$error_message> can be:
 
-=over 14
+=over 4
 
 =item A string
 
@@ -987,7 +917,7 @@ This will look up a translated version of the tag.  See L<Valiant::I18N> for mor
 Similar to string but we will expand any placeholder variables which are indicated by the
 '{{' and '}}' tokens (which are removed from the final string).  You can use any placeholder
 that is a key in the options hash (and you can pass additional values when you add an error).
-By default the following placeholder expansions are available attribute (the attribute name),
+By default the following placeholder expansions are available: attribute (the attribute name),
 value (the current attribute value), model (the human name of the model containing the
 attribute and object (the actual object instance that has the error).
 
@@ -1054,7 +984,7 @@ messages of any of the validators in the clause.
 Once you have validated your object (via the ->validate method) you can check for for validate
 state and review or display any errors.
 
-=head3  Checking for errors on a validated object
+=head3 Checking for errors on a validated object
 
 You can use the C<valid> or C<invalid> methods on your object to check for its validation state.
 These methods won't run validations, unless they have not yet been run, so you can call them as
@@ -1125,16 +1055,14 @@ For C<full_messages>:
 
 This combines all the attribute and model message into a flat list.  Please not that
 the current order is the order in which messages are added as errors to the errors
-collection but this is not something you should rely on as we reserve the right to
-use a different storage method in the future that might shuffe the order (or even 
-return it differently each time).
+collection.
 
 The only difference between C<messages> and C<full_messages> is that the latter will
 combine your error message with a human readable version of your attribute name.  By
 default this is just a title cased version of the attribute name but you can customize
 this via setting a translation (see L</INTERNATONALIZATION>).  C<full_messages> by 
-default uses the following expansion template: "{attribute} {message}" however you can
-customize this by setting the C<format> key (again see L</INTERNATONALIZATION>).
+default uses the following expansion template: "{{attribute}} {{message}}" however you can
+customize this by setting the C<format> key in your translation file (again see L</INTERNATONALIZATION>).
 
 If you just want the model level errors you can use C<model_messages>:
 
@@ -1233,14 +1161,25 @@ methods:
 
 If you request errors for an attribute that has none you will get an empty array.
 
+Please note that these methods always return arrays even if the case where you have only
+a single error.
+
 =item Searching for errors, interating and introspection.
 
 L<Valiant::Errors> contains additional methods for iterating over error collections,
-searching for errors and introspecting errors.  
+searching for errors and introspecting errors.  Please refer to that package for
+full documentation and examples.
 
 =back
 
 =head1 NESTED OBJECTS AND ARRAYS
+
+In some cases you may have complex, nested objects or objects that contain arrays of
+values which need validation.  When an object is nested as a attribute under another
+object it may itself contain validations. For these more complex cases we provide
+two validator classes L<Valiant::Validator::Object> and L<Valiant::Validator::Array>.
+You should refer to documentation in each of those validators for API level overview and
+examples.
 
 =head1 INTERNATONALIZATION
 
