@@ -8,6 +8,15 @@ sub build {
   return $self->new_result(\%attrs);
 }
 
+sub new_result {
+  my ($self, $fields, @args) = @_;
+  my $context = delete $fields->{__context};
+  my $result = $self->next::method($fields, @args);
+  $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context;
+  return $result;
+}
+
+
 =head1 DESCRIPTION
 
 =head1 METHODS

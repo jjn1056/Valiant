@@ -70,7 +70,8 @@ request fixes (rather than simply throw a 500 server error and giving up).
 
 This differs from type constraints (such as L<Type::Tiny>) that you might put on your
 L<Moo> attributes which are used to express when attributes have values that are
-so unacceptable that no further work can be done and an exception must be throw.  
+so unacceptable that no further work can be done and an exception must be thrown. 
+
 In fact you will note that when using validations that you generally won't add type constraints
 on your L<Moo> attributes.  That's because type constraints are applied when the
 object is instantiated and throw an exception when they fail.  Validations on the other 
@@ -1183,6 +1184,31 @@ examples.
 
 =head1 INTERNATONALIZATION
 
+Internationalization for L<Valiant> will concern our ability to create tags that represent
+human readable strings for different languages.  Generally we will create tags, which are
+abstract labels representing a message, and then map those lables to various human languages
+which we wish to support.  In using L<Valiant::I18N> with L<Valiant> there are generally
+three things that we will internationalize
+
+=over 4
+
+=item error messages
+
+=item attribute names
+
+=item model names
+
+=back
+
+In the case of error messages there is an additional complication in that often we need to
+customize the message base on the value of the attributes.  For example when the attribute
+represents a number of items often the message for zero items will be different than for
+many (think "You have 3 items in you bag, the minimum is 5" versus "You have no items in
+your bag, the minimum is 5").  The rules for this can be complex depending on the language.
+Therefore in the case of error messages you will need the ability to return a different
+string for those cases.
+
+errors
 formats
 attribute and model names
 arbitrary tags

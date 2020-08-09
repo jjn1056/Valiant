@@ -33,9 +33,15 @@ sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
   my $confirmation_attribute = "${attribute}${\$self->suffix}";
   my $confirmation = $record->can($confirmation_attribute) ||
-    throw_exception MissingMethod => (object=>$record, method=>$confirmation_attribute); 
+    throw_exception MissingMethod => (object=>$record, method=>$confirmation_attribute);
 
-  unless($value eq $confirmation->($record)) {
+  my $confirmation_value = $confirmation->($record);
+
+  unless(
+    defined($confirmation_value)
+      &&
+    ($value eq $confirmation_value)
+  ) {
     my $human_attribute_name = $record->human_attribute_name($attribute);
     $record->errors->add($confirmation_attribute, $self->confirmation, +{%$opts, attribute=>"$human_attribute_name"})
   }

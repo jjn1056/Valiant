@@ -5,6 +5,7 @@ use Module::Runtime 'use_module';
 use String::CamelCase 'camelize';
 use Scalar::Util 'blessed';
 use Valiant::Util 'throw_exception', 'debug';
+use namespace::clean;
 
 with 'Valiant::Translation';
 

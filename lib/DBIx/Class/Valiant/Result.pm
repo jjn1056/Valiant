@@ -13,10 +13,28 @@ sub register_column {
   my $self = shift;
   my ($column, $info) = @_;
   $self->next::method(@_);
-
-  use Devel::Dwarn;
+  #use Devel::Dwarn;
   #Dwarn \@_;
   # TODO future home of validations declares inside the register column call
+}
+
+sub insert {
+  my ($self, @args) = @_;
+  $self->validate(%{ $self->{__VALIANT_CREATE_ARGS} ||+{} });
+  return $self if $self->invalid;
+  return $self->next::method(@args);
+}
+
+sub update {
+  my ($self, $upd) = @_;
+  my $context = delete $upd->{__context};
+  my %validate_args = (context => $context) if $context;
+  $self->set_inflated_columns($upd) if $upd;
+  $self->validate(%validate_args);
+
+  return $self if $self->invalid;
+  return $self->next::method();
+
 }
 
 
@@ -24,14 +42,19 @@ sub register_column {
 # DBIC model messes with the result namespace but not the schema
 # namespace
 
-sub namespace {
-  my $self = shift;
+sub namespaceiXX {
+  my $self = shift;  
   my $class = ref($self) ? ref($self) : $self; 
+#  $class =~s/::${source_name}$//;
+
+  warn ".... $class";
+  return $class;
+
+
+  # Rest of this is to deal with Catalyst wrapper (for later)
   my $source_name = $class->new->result_source->source_name;
   return unless $source_name; # Trouble... somewhere $self is a package
 
-  $class =~s/::${source_name}$//;
-  return $class;
 }
 
 # Trouble here is you can only inject one attribute per model.  Will be an
@@ -91,8 +114,10 @@ sub read_attribute_for_validation {
 sub is_unique {
   my ($self, $attribute_name, $value) = @_;
   # Don't do this check unless the user is actually trying to change the
-  # value (otherwise it will fail all the time
-  return 1 unless $self->is_column_changed($attribute_name);
+  # value (otherwise it will fail all the time).
+  if($self->in_storage) {
+    return 1 unless $self->is_column_changed($attribute_name);
+  }
   my $found = $self->result_source->resultset->find({$attribute_name=>$value});
   return $found ? 0:1;
 }

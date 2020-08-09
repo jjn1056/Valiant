@@ -2,6 +2,7 @@ package Valiant::Proxy::Object;
 
 use Moo;
 use Valiant::Util 'throw_exception';
+use Scalar::Util 'blessed';
 
 with 'Valiant::Proxy';
 

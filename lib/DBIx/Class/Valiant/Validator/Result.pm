@@ -19,6 +19,11 @@ sub normalize_shortcut {
 sub validate_each {
   my ($self, $record, $attribute, $result, $opts) = @_;
 
+  unless(defined $result) {
+    $record->errors->add($attribute, $self->invalid_msg, $opts);
+    return;
+  }
+
   # If a row is marked to be deleted then don't bother to validate it.
   return if $result->is_marked_for_deletion;
   return unless $self->validations;
