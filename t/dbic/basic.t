@@ -33,10 +33,12 @@ use Test::DBIx::Class
   ok my $person = Schema
     ->resultset('Person')
     ->create({
+      __context => ['registration'],
       username => 'jjn',
       first_name => 'john',
       last_name => 'napiorkowski',
       password => 'abc123aaaaaa',
+      password_confirmation => 'abc123aaaaaa',
     }), 'created fixture';
 
   ok $person->valid, 'attempted record valid';
@@ -64,25 +66,31 @@ use Test::DBIx::Class
 }
 
 {
-  # Basic multicreate test.
+  # Basic multicreate test. (might have /has one)
   ok my $person = Schema
     ->resultset('Person')
     ->create({
-      __context => 'profile',
+      __context => ['registration','profile'],
       username => 'jjn2',
       first_name => 'john',
       last_name => 'napiorkowski',
       password => 'abc123',
+      password_confirmation => 'abc123',
       profile => {
-        zip => "asdasdå",
+        zip => "78621",
+        city => 'Elgin',
       }
     }), 'created fixture';
 
   ok $person->invalid, 'attempted record invalid';
   ok !$person->in_storage, 'record was not saved';
+  ok !$person->profile->in_storage, 'record was not saved';
+  ok $person->profile->zip eq '78621';
 
 use Devel::Dwarn;
 Dwarn +{ $person->errors->to_hash(full_messages=>1) };
+Dwarn +{ $person->profile->errors->to_hash(full_messages=>1) };
+
 }
 
 
@@ -90,3 +98,12 @@ Dwarn +{ $person->errors->to_hash(full_messages=>1) };
 #Dwarn +{ $person->errors->to_hash(full_messages=>1) };
 
 done_testing;
+
+__END__
+
+      credit_cards => [
+        {
+          card_number => '11111222223333344444',
+          expiration => '2021-01-01',
+        },
+      ],

@@ -9,6 +9,18 @@ use Valiant::Util 'debug';
 
 with 'DBIx::Class::Valiant::Validates';
 
+my @validate_associated;
+sub validate_associated {
+  my ($class, $arg) = @_;
+  $class = ref($class) if ref($class);
+  my $varname = "${class}validate_associated";
+
+  no strict "refs";
+  push @$varname, $arg if defined($arg);
+
+  return @$varname,
+}
+
 sub register_column {
   my $self = shift;
   my ($column, $info) = @_;
@@ -36,7 +48,6 @@ sub update {
   return $self->next::method();
 
 }
-
 
 # Gotta jump thru these hoops because of the way the Catalyst
 # DBIC model messes with the result namespace but not the schema
@@ -95,6 +106,7 @@ sub read_attribute_for_validation {
     my $rel_data = $self->relationship_info($attribute);
     my $rel_type = $rel_data->{attrs}{accessor};
     if($rel_type eq 'single') {
+      return $self->$attribute;
       return $self->related_resultset($attribute)->first;
     } elsif($rel_type eq 'multi') {
       return $self->related_resultset($attribute);

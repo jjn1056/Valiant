@@ -33,6 +33,12 @@ sub normalize_shortcut {
 
 sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
+  
+  unless(defined $value) {
+    $record->errors->add($attribute, $self->invalid_date_msg, $opts);
+    return;
+  }
+
   my $dt = $self->_strp->parse_datetime($value);
 
   unless($dt) {

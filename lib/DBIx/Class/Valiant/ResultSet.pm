@@ -10,9 +10,21 @@ sub build {
 
 sub new_result {
   my ($self, $fields, @args) = @_;
+
   my $context = delete $fields->{__context};
+  my %related = ();
+  foreach my $associated($self->result_class->validate_associated) {
+    $related{$associated} = delete($fields->{$associated})
+      if exists($fields->{$associated});
+  }  
   my $result = $self->next::method($fields, @args);
   $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context;
+  $result->{__VALIANT_ASSOCIATED} = \%related if %related;
+
+  foreach my $related(keys %related) {
+    $result->set_related_from_params($related, $related{$related});
+  }
+
   return $result;
 }
 
