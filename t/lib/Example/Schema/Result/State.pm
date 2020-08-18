@@ -17,7 +17,7 @@ __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['name']);
 __PACKAGE__->add_unique_constraint(['abbreviation']);
 
-__PACKAGE__->validates(name => (presence=>1, length=>[2,18], with=>'isa_state_name'));
+#__PACKAGE__->validates(name => (presence=>1, length=>[2,18], with=>'isa_state_name'));
 
 __PACKAGE__->has_many(
    profiles =>
@@ -28,7 +28,7 @@ __PACKAGE__->has_many(
 sub isa_state_name {
   my ($self, $attribute_name, $value) = @_;
   return if $self->result_source->resultset->find({name=>$value});
-  $self->errors->add($attribute_name, '{{value}} is not a State name'); 
+  $self->errors->add($attribute_name, \'{{value}} is not a State name'); 
 }
 
 1;

@@ -13,7 +13,7 @@ my @validate_associated;
 sub validate_associated {
   my ($class, $arg) = @_;
   $class = ref($class) if ref($class);
-  my $varname = "${class}validate_associated";
+  my $varname = "${class}::validate_associated";
 
   no strict "refs";
   push @$varname, $arg if defined($arg);
@@ -21,14 +21,18 @@ sub validate_associated {
   return @$varname,
 }
 
-sub register_column {
-  my $self = shift;
-  my ($column, $info) = @_;
-  $self->next::method(@_);
-  #use Devel::Dwarn;
-  #Dwarn \@_;
-  # TODO future home of validations declares inside the register column call
+my @accept_nested_for;
+sub accept_nested_for {
+  my ($class, $arg) = @_;
+  $class = ref($class) if ref($class);
+  my $varname = "${class}::accept_nested_for";
+
+  no strict "refs";
+  push @$varname, $arg if defined($arg);
+
+  return @$varname,
 }
+
 
 sub insert {
   my ($self, @args) = @_;
@@ -47,6 +51,21 @@ sub update {
   return $self if $self->invalid;
   return $self->next::method();
 
+}
+
+
+
+
+
+
+
+sub register_column {
+  my $self = shift;
+  my ($column, $info) = @_;
+  $self->next::method(@_);
+  #use Devel::Dwarn;
+  #Dwarn \@_;
+  # TODO future home of validations declares inside the register column call
 }
 
 # Gotta jump thru these hoops because of the way the Catalyst
@@ -229,7 +248,40 @@ sub set_related_from_params {
   my $rel_type = $rel_data->{attrs}{accessor};
   debug 2, "Setting params for $related on @{[ ref $self ]} using rel_type $rel_type";
 
-  return $self->set_single_related_from_params($related, $params) if $rel_type eq 'single';  
+  return $self->set_single_related_from_params($related, $params) if $rel_type eq 'single'; 
+  return $self->set_multi_related_from_params($related, @{$params||{}}) if $rel_type eq 'multi'; 
+  die "Unhandled relationship type: $rel_type";
+
+}
+
+sub set_multi_related_from_params {
+  my ($self, $related, @param_rows) = @_;
+  my @related_models = ();
+  foreach my $param_row (@param_rows) {
+    my $related_model = eval {
+      my $new_related = $self->new_related($related, +{});
+      my @primary_columns = $new_related->result_source->primary_columns;
+      my %found_primary_columns = map {
+        exists($param_row->{$_}) ? ($_ => $param_row->{$_}) : ();
+      } @primary_columns;
+
+      if(scalar(%found_primary_columns) == scalar(@primary_columns)) {
+        # TODO I don't think this is looking in the resultset cache and as a result is
+        # running additional SQL queries that already have been run.
+        my $found_related = $self->find_related($related, \%found_primary_columns, +{key=>'primary'});
+        die "Result not found for relation $related on @{[ $self->model_name->human ]}" unless $found_related;
+        $found_related;
+      } else {
+        $new_related;
+      }
+    } || die $@; # TODO do something useful here...
+    
+    $related_model->set_from_params_recursively(%$param_row);
+    push @related_models, $related_model;
+  }
+  $self->related_resultset($related)->set_cache(\@related_models);
+  $self->{_relationship_data}{$related} = \@related_models;
+  $self->{__valiant_related_resultset}{$related} = \@related_models; # we have a private copy
 }
 
 sub set_single_related_from_params {
@@ -254,8 +306,8 @@ sub set_single_related_from_params {
 
   $related_result->set_from_params_recursively(%$params);
   $self->related_resultset($related)->set_cache([$related_result]);
-  $self->{__valiant_related_resultset}{$related} = [$related_result];
   $self->{_relationship_data}{$related} = $related_result;
+  $self->{__valiant_related_resultset}{$related} = [$related_result];
 }
 
 

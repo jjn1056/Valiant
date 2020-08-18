@@ -44,6 +44,7 @@ sub looks_like_a_datetime {
 sub is_future {
   my ($self, $attribute_name, $value) = @_;
   my $dt = $strp->parse_datetime($value);
+  return unless $dt; # If not a valid date format don't bother
   $self->errors->add($attribute_name, 'must be in the future') unless $dt && ($dt > DateTime->now);
 }
 
