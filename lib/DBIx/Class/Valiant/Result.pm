@@ -6,6 +6,7 @@ use warnings;
 use strict;
 use Role::Tiny::With;
 use Valiant::Util 'debug';
+use Scalar::Util 'blessed';
 
 with 'DBIx::Class::Valiant::Validates';
 
@@ -44,8 +45,20 @@ sub insert {
 sub update {
   my ($self, $upd) = @_;
   my $context = delete $upd->{__context};
+
+  my %related = ();
+  foreach my $associated($self->result_class->accept_nested_for) {
+    $related{$associated} = delete($upd->{$associated})
+      if exists($upd->{$associated});
+  }
+
   my %validate_args = (context => $context) if $context;
   $self->set_inflated_columns($upd) if $upd;
+
+  foreach my $related(keys %related) {
+    $self->set_related_from_params($related, $related{$related});
+  }
+
   $self->validate(%validate_args);
 
   return $self if $self->invalid;
@@ -125,7 +138,7 @@ sub read_attribute_for_validation {
     my $rel_data = $self->relationship_info($attribute);
     my $rel_type = $rel_data->{attrs}{accessor};
     if($rel_type eq 'single') {
-      return $self->$attribute;
+      #return $self->$attribute;
       return $self->related_resultset($attribute)->first;
     } elsif($rel_type eq 'multi') {
       return $self->related_resultset($attribute);
@@ -210,6 +223,8 @@ sub build_related_if_empty {
   return $self->build_related($related, $attrs);
 }
 
+
+
 sub set_from_params_recursively {
   my ($self, %params) = @_;
   foreach my $param (keys %params) { # probably needs to be sorted so we get specials (_destroy) first
@@ -249,34 +264,31 @@ sub set_related_from_params {
   debug 2, "Setting params for $related on @{[ ref $self ]} using rel_type $rel_type";
 
   return $self->set_single_related_from_params($related, $params) if $rel_type eq 'single'; 
-  return $self->set_multi_related_from_params($related, @{$params||{}}) if $rel_type eq 'multi'; 
+  return $self->set_multi_related_from_params($related, $params) if $rel_type eq 'multi'; 
   die "Unhandled relationship type: $rel_type";
 
 }
 
 sub set_multi_related_from_params {
-  my ($self, $related, @param_rows) = @_;
+  my ($self, $related, $params) = @_;
+
+  # We do this to allow for both multi create/update via an array (typical DBIC
+  # usage or via a hash of ordered keys (typical via CGI/Web).
+  my @param_rows = ();
+  if(ref($params) eq 'HASH') {
+    @param_rows = map { $params->{$_} } sort { $a <=> $b} keys %{$params || +{}};
+  } elsif(ref($params) eq 'ARRAY') { 
+    @param_rows = @{$params || []};
+  } else {
+    # I think if we are here its because the nests set is
+    # empty and we can ignore it for now but... not 100% sure :)
+    next;
+    die "We expect '$params' to be some sort of reference but its not!";
+  }
+
   my @related_models = ();
   foreach my $param_row (@param_rows) {
-    my $related_model = eval {
-      my $new_related = $self->new_related($related, +{});
-      my @primary_columns = $new_related->result_source->primary_columns;
-      my %found_primary_columns = map {
-        exists($param_row->{$_}) ? ($_ => $param_row->{$_}) : ();
-      } @primary_columns;
-
-      if(scalar(%found_primary_columns) == scalar(@primary_columns)) {
-        # TODO I don't think this is looking in the resultset cache and as a result is
-        # running additional SQL queries that already have been run.
-        my $found_related = $self->find_related($related, \%found_primary_columns, +{key=>'primary'});
-        die "Result not found for relation $related on @{[ $self->model_name->human ]}" unless $found_related;
-        $found_related;
-      } else {
-        $new_related;
-      }
-    } || die $@; # TODO do something useful here...
-    
-    $related_model->set_from_params_recursively(%$param_row);
+    my $related_model = $self->_find_or_create_related_result_from_params($related, $param_row);
     push @related_models, $related_model;
   }
   $self->related_resultset($related)->set_cache(\@related_models);
@@ -286,9 +298,18 @@ sub set_multi_related_from_params {
 
 sub set_single_related_from_params {
   my ($self, $related, $params) = @_;
+  my $related_result = $self->_find_or_create_related_result_from_params($related, $params);
 
+  $self->related_resultset($related)->set_cache([$related_result]);
+  $self->{_relationship_data}{$related} = $related_result;
+  $self->{__valiant_related_resultset}{$related} = [$related_result];
+}
+
+sub _find_or_create_related_result_from_params {
+  my ($self, $related, $params) = @_;
+  return $params if blessed $params;
   my $related_result = eval {
-    my $new_related = $self->new_related($related, +{});
+    my $new_related = $self->new_related($related, $params);
     my @primary_columns = $new_related->result_source->primary_columns;
 
     my %primary_columns = map {
@@ -304,10 +325,7 @@ sub set_single_related_from_params {
     }
   } || die $@; # TODO do something useful here...
 
-  $related_result->set_from_params_recursively(%$params);
-  $self->related_resultset($related)->set_cache([$related_result]);
-  $self->{_relationship_data}{$related} = $related_result;
-  $self->{__valiant_related_resultset}{$related} = [$related_result];
+  return $related_result;
 }
 
 

@@ -3,6 +3,7 @@ package Valiant::Validator::Each;
 use Moo::Role;
 use Valiant::I18N; # So that _t is available in subclasses
 use Valiant::Util 'throw_exception', 'debug';
+use Scalar::Util 'blessed';
 
 with 'Valiant::Validator';
 requires 'validate_each';
@@ -56,9 +57,12 @@ sub validate {
   ATTRIBUTE_LOOP: foreach my $attribute ($self->generate_attributes(@_)) {
     my $value = $object->read_attribute_for_validation($attribute);
 
-    ## TODO when $value is an object do we want to check of ->is_blank or something?
     next if $self->allow_undef && not(defined $value);
     next if $self->allow_blank && ( not(defined $value) || $value eq '' || $value =~m/^\s+$/ );
+
+    if(blessed($value) && $self->allow_blank) {
+      next if $value->can('is_blank') and $value->is_blank;
+    }
 
     if($self->has_if) {
       my @if = (ref($self->if)||'') eq 'ARRAY' ? @{$self->if} : ($self->if);

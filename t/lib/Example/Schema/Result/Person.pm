@@ -22,7 +22,17 @@ __PACKAGE__->validates(password => presence=>1, length=>[8,24], confirmation=> {
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
-__PACKAGE__->validates(credit_cards => (presence=>1, result_set=>+{validations=>0, min=>2, max=>4}, on=>'profile' ));
+__PACKAGE__->validates(
+  credit_cards => (
+    presence=>1, 
+    result_set=>+{validations=>0, min=>2, max=>4}, 
+    if => sub { 
+      my ($self, $attr, $value) = @_;
+      return "$value"; # only validate if present
+    },
+  )
+);
+
 #__PACKAGE__->validates(person_roles => (presence=>1, result_set=>+{validations=>1, min=>1}, on=>'profile' ));
 __PACKAGE__->validates(profile => (result=>+{validations=>0}, on=>'profile' ));
 

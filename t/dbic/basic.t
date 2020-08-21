@@ -195,4 +195,166 @@ ok $state->id;
   ok $credit_cards[1]->in_storage, 'record was saved';
 }
 
+{
+  # Test mulicreate with objects
+  # What happens when you try to add a related object that
+
+  ok my $profile = Schema
+    ->resultset('Profile')
+    ->new_result({
+      zip => "78621",
+      city => 'Elgin',
+      address => '15604 Harry Lind Road',
+      birthday => '1991-01-23',
+      phone_number => '2123879509',
+      state_id => $state->id,
+    }), 'created profile';
+
+  ok $profile->valid, 'attempted profile was valid';
+  ok ! $profile->in_storage, 'record has not been saved';
+
+  ok my $cc_1 = Schema
+    ->resultset('CreditCard')
+    ->new_result({
+      card_number => '11111222223333344444',
+      expiration => '2100-01-01'
+    }), 'created credit card one';
+
+  ok $cc_1->valid, 'attempted cc was valid';
+  ok ! $cc_1->in_storage, 'record has not been saved';
+
+  ok my $cc_2 = Schema
+    ->resultset('CreditCard')
+    ->new_result({
+      card_number => '1111122222333334466',
+      expiration => '2200-01-01'
+    }), 'created credit card two';
+
+  ok my $cc_invalid = Schema
+    ->resultset('CreditCard')
+    ->new_result({
+      card_number => '1111122222333334466',
+      expiration => '1200-01-01'
+    }), 'created credit card two';
+
+
+  ok $cc_2->valid, 'attempted cc was valid';
+  ok ! $cc_2->in_storage, 'record has not been saved';
+
+  ok my $person_correct = Schema
+    ->resultset('Person')
+    ->create({
+      __context => ['registration','profile'],
+      username => 'jjn4',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123rrrrrr',
+      password_confirmation => 'abc123rrrrrr',
+      profile => $profile,
+      credit_cards => [ $cc_1, $cc_2 ],
+    }), 'created person';
+
+  ok $person_correct->valid, 'attempted record was valid';
+  ok $person_correct->in_storage, 'record has been saved';
+
+  ok my $person_invalid = Schema
+    ->resultset('Person')
+    ->create({
+      __context => ['registration','profile'],
+      username => 'jjn4',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123rrrrrr',
+      password_confirmation => 'abc123rrrrrr',
+      profile => $profile,
+      credit_cards => [ $cc_1, $cc_invalid ],
+    }), 'created person';
+
+  ok $person_invalid->invalid, 'attempted record was valid';
+  ok ! $person_invalid->in_storage, 'record has not been saved';
+  is_deeply +{$person_invalid->errors->to_hash(full_messages=>1)}, +{
+    credit_cards => [
+      "Credit Cards Is Invalid",
+    ],
+    username => [
+      "Username chosen is not unique",
+    ],
+  }, 'Got expected errors';
+
+  ok my @credit_cards = $person_invalid->credit_cards->all;
+  is_deeply +{$credit_cards[1]->errors->to_hash(full_messages=>1)}, +{
+    expiration => [
+      "Expiration must be in the future",
+    ],
+  }, 'Got expected errors';
+}
+
+{
+  # update deeply
+  ok my $person = Schema
+    ->resultset('Person')
+    ->create({
+      __context => ['registration'],
+      username => 'jjn5',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123aaaaaa',
+      password_confirmation => 'abc123aaaaaa',
+    }), 'created fixture';
+
+  ok $person->valid, 'attempted record valid';
+  ok $person->in_storage, 'record was saved';
+
+  $person->update({
+    __context => ['registration','profile'],
+    last_name => 'a',
+    profile => {
+      birthday => '2991-01-23',
+      zip => '78621',
+    },
+  });
+
+  ok $person->invalid, 'attempted record was invalid';
+  ok $person->is_changed, 'record has unsaved changes';
+  is $person->last_name, 'a', 'got correct last_name';
+  
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    last_name => [
+      "Last Name is too short (minimum is 2 characters)",
+    ],
+    profile => [
+      "Profile Is Invalid",
+    ],
+  };
+
+  ok $person->profile->invalid, 'attempted record was invalid';
+  ok ! $person->profile->in_storage, 'record not yet stored';
+
+  is_deeply +{$person->profile->errors->to_hash(full_messages=>1)}, +{
+    address => [
+      "Address can't be blank",
+      "Address is too short (minimum is 2 characters)",
+    ],
+    birthday => [
+      "Birthday chosen date can't be later than 2020-08-19",
+    ],
+    city => [
+      "City can't be blank",
+      "City is too short (minimum is 2 characters)",
+    ],
+    phone_number => [
+      "Phone Number can't be blank",
+      "Phone Number is too short (minimum is 10 characters)",
+    ],
+    state_id => [
+      "State Id can't be blank",
+    ],
+  }, 'Got expected errors';
+  
+}
+
 done_testing;
+
+__END__
+
+

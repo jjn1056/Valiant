@@ -12,6 +12,7 @@ around default_validator_namespaces => sub {
 
 around validate => sub {
   my ($orig, $self, %args) = @_;
+  $self->clear_validated;
   foreach my $associated ($self->validate_associated) {
     my $related_rs = $self->related_resultset($associated);
     my $invalid = 0;
@@ -19,7 +20,9 @@ around validate => sub {
       $row->validate(%args);
       $invalid = 1 if $row->invalid;
     }
-    $self->errors->add($associated, _t('invalid')) if $invalid;
+    if($invalid) {
+      $self->errors->add($associated, _t('invalid'));
+    };
   }
   return $self->$orig(%args);
 };
