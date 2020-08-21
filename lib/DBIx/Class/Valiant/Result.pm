@@ -34,7 +34,6 @@ sub accept_nested_for {
   return @$varname,
 }
 
-
 sub insert {
   my ($self, @args) = @_;
   $self->validate(%{ $self->{__VALIANT_CREATE_ARGS} ||+{} });
@@ -62,6 +61,11 @@ sub update {
   $self->validate(%validate_args);
 
   return $self if $self->invalid;
+  # TODO add mutate from related or something
+  foreach my $related(keys %related) {
+    $self->_mutate_related($related);
+  }
+
   return $self->next::method();
 
 }
@@ -340,7 +344,7 @@ sub mutate_recursively {
 }
 
 sub _mutate {
-  my ($self) = @_;
+  my ($self) = @_; 
   if($self->is_marked_for_deletion) {
     debug 2, "deleting @{[ ref $self ]} if in storage";
     $self->delete_if_in_storage;
@@ -364,13 +368,14 @@ sub _mutate_single_related {
   my $rev_data = $self->result_source->reverse_relationship_info($related);
   my ($reverse_related) = keys %$rev_data;
 
-  debug 2, "Trying to mutate @{[ ref $related_result ]}, id: @{[ $related_result->id ]}";
-  debug 3, "@{[ ref $related_result ]}, id: @{[ $related_result->id ]} is_changed: @{[ $related_result->is_changed]}";
-  debug 3, "@{[ ref $related_result ]}, id: @{[ $related_result->id ]} is_marked_for_deletion @{[ $related_result->is_marked_for_deletion]}";
+  debug 2, "Trying to mutate @{[ ref $related_result ]}";
+  debug 3, "@{[ ref $related_result ]} is_changed: @{[ $related_result->is_changed]}";
+  debug 3, "@{[ ref $related_result ]} is_marked_for_deletion: @{[ $related_result->is_marked_for_deletion]}";
+  debug 3, "@{[ ref $related_result ]} in_storage: @{[ $related_result->in_storage]}";
 
-  return unless $related_result->is_changed || $related_result->is_marked_for_deletion;
+  return unless $related_result->is_changed || $related_result->is_marked_for_deletion || !$related_result->in_storage;
 
-  debug 3, "@{[ ref $related_result ]}, id: @{[ $related_result->id ]} ready for mutating";
+  debug 3, "@{[ ref $related_result ]} ready for mutating";
   $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
   $related_result->mutate_recursively;
 

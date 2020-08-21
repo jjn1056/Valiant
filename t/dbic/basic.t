@@ -350,7 +350,28 @@ ok $state->id;
       "State Id can't be blank",
     ],
   }, 'Got expected errors';
-  
+
+  $person->update({
+    __context => ['registration','profile'],
+    last_name => 'abcdefghi',
+    profile => {
+      zip => "78621",
+      city => 'Elgin',
+      address => '15604 Harry Lind Road',
+      birthday => '1991-01-23',
+      phone_number => '2123879509',
+      state_id => $state->id,
+    },
+  });
+
+  ok $person->valid, 'attempted record was valid';
+  ok ! $person->is_changed, 'record has no unsaved changes';
+  ok $person->in_storage, 'record stored';
+
+  ok $person->profile->valid;
+  is $person->profile->city, 'Elgin';
+  ok $person->profile->in_storage, 'Profile stored';
+
 }
 
 done_testing;
