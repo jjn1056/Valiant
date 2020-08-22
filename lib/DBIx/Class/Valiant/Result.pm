@@ -61,7 +61,6 @@ sub update {
   $self->validate(%validate_args);
 
   return $self if $self->invalid;
-  # TODO add mutate from related or something
   foreach my $related(keys %related) {
     $self->_mutate_related($related);
   }
@@ -302,7 +301,18 @@ sub set_multi_related_from_params {
 
 sub set_single_related_from_params {
   my ($self, $related, $params) = @_;
-  my $related_result = $self->_find_or_create_related_result_from_params($related, $params);
+
+  # Is there an existing related object in the cache?  If so then we
+  # will merge params with existing rather than create a new one or
+  # run a new query to find one.  I 'think' that's the most expected behavior...
+  my ($related_result) = @{ $self->related_resultset($related)->get_cache ||[] }; # its single so only one
+  if($related_result) {
+    $related_result->set_from_params_recursively(%$params);
+  } else {
+    $related_result = $self->_find_or_create_related_result_from_params($related, $params);
+  }
+
+  #$related_result = $self->_find_or_create_related_result_from_params($related, $params);
 
   $self->related_resultset($related)->set_cache([$related_result]);
   $self->{_relationship_data}{$related} = $related_result;

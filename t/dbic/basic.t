@@ -336,7 +336,7 @@ ok $state->id;
       "Address is too short (minimum is 2 characters)",
     ],
     birthday => [
-      "Birthday chosen date can't be later than 2020-08-19",
+      "Birthday chosen date can't be later than 2020-08-20",
     ],
     city => [
       "City can't be blank",
@@ -372,10 +372,99 @@ ok $state->id;
   is $person->profile->city, 'Elgin';
   ok $person->profile->in_storage, 'Profile stored';
 
+  {
+    my $person_profile = Schema->resultset('Person')
+      ->find({username=>'jjn5'}, {prefetch=>'profile'});
+
+    ok $person_profile->profile->zip;
+    ok $person_profile->first_name;
+
+    $person_profile->first_name('f');
+    $person_profile->update({
+        __context => ['profile']
+    });
+
+    ok $person_profile->invalid;
+
+    is_deeply +{$person_profile->errors->to_hash(full_messages=>1)}, +{
+      first_name => [
+        "First Name is too short (minimum is 2 characters)",
+      ],
+    };
+
+    #$person_profile->discard_changes;
+
+    $person_profile->last_name('f');
+    $person_profile->profile->zip('dd');
+    $person_profile->update({
+        __context => ['profile']
+    });
+
+    ok $person_profile->invalid;
+    ok $person_profile->is_changed;
+    is $person_profile->last_name, 'f';
+
+    is_deeply +{$person_profile->errors->to_hash(full_messages=>1)}, +{
+      first_name => [
+        "First Name is too short (minimum is 2 characters)",
+      ],
+      last_name => [
+        "Last Name is too short (minimum is 2 characters)",
+      ],
+      profile => [
+        "Profile Is Invalid",
+      ],
+    };
+
+    ok $person_profile->profile->invalid;
+    ok $person_profile->profile->is_changed;
+    is $person_profile->profile->zip, 'dd';
+
+    is_deeply +{$person_profile->profile->errors->to_hash(full_messages=>1)}, +{
+      zip => [
+        "Zip is not a zip code",
+      ],
+    };
+
+    is $person_profile->profile->city, 'Elgin';
+
+    $person_profile->update({
+        __context => ['profile'],
+        first_name => 'joe',
+        last_name => 'nobody',
+        profile => {
+          zip => '88888',
+          city => 'New York',
+        },
+    });
+
+    is_deeply +{ $person_profile->get_columns }, {
+      first_name => "joe",
+      id => $person_profile->id,
+      last_name => "nobody",
+      password => "abc123aaaaaa",
+      username => "jjn5",
+    };
+
+    is_deeply +{ $person_profile->profile->get_columns }, {
+      address => "15604 Harry Lind Road",
+      birthday => "1991-01-23",
+      city => "New York",
+      id => $person_profile->profile->id,
+      person_id => $person_profile->id,
+      phone_number => "2123879509",
+      state_id => $state->id,
+      zip => 88888,
+    };
+
+    ok $person_profile->valid;
+    ok $person_profile->in_storage;
+    ok $person_profile->profile->valid;
+    ok $person_profile->profile->in_storage;
+  }
+
 }
 
 done_testing;
-
-__END__
 
 
