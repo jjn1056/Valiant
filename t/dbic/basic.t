@@ -1,5 +1,6 @@
 use Test::Most;
 use Test::Lib;
+use DateTime;
 use Test::DBIx::Class
   -schema_class => 'Example::Schema';
 
@@ -336,7 +337,7 @@ ok $state->id;
       "Address is too short (minimum is 2 characters)",
     ],
     birthday => [
-      "Birthday chosen date can't be later than 2020-08-20",
+      "Birthday chosen date can't be later than @{[ DateTime->now->subtract(days=>2)->ymd ]}",
     ],
     city => [
       "City can't be blank",
