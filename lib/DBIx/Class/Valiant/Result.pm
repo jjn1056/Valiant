@@ -369,8 +369,35 @@ sub _mutate_related {
   my $rel_data = $self->relationship_info($related);
   my $rel_type = $rel_data->{attrs}{accessor};
 
-  return $self->_mutate_single_related($related) if $rel_type eq 'single'; 
+  return $self->_mutate_single_related($related) if $rel_type eq 'single';
+  return $self->_mutate_multi_related($related) if $rel_type eq 'multi';
+
+  die "not sure how to mutate $related of type $rel_type";
 }
+
+sub _mutate_multi_related {
+  my ($self, $related) = @_;
+  my @related_results = @{ $self->{__valiant_related_resultset}{$related} ||[] };
+  my $rev_data = $self->result_source->reverse_relationship_info($related);
+  my ($reverse_related) = keys %$rev_data;
+
+  foreach my $related_result (@related_results) {
+    warn "1111";
+    next unless $related_result->is_changed || $related_result->is_marked_for_deletion || !$related_result->in_storage;
+
+    debug 3, "@{[ ref $related_result ]} ready for mutating";
+    $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
+    $related_result->mutate_recursively;
+  }
+
+
+  # I think if its in storage we need to set cache and all even if marked for deletation
+  #my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
+  #$self->related_resultset($related)->set_cache([$related_result]);
+  #$self->{__valiant_related_resultset}{$related} = [$related_result];
+  #$self->{_relationship_data}{$related} = $related_result;
+}
+
 
 sub _mutate_single_related {
   my ($self, $related) = @_;

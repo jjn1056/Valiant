@@ -463,7 +463,112 @@ ok $state->id;
     ok $person_profile->profile->valid;
     ok $person_profile->profile->in_storage;
   }
+}
 
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->create({
+      __context => ['registration'],
+      username => 'jjn6',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123aaaaaa',
+      password_confirmation => 'abc123aaaaaa',
+    }), 'created fixture';
+
+  ok $person->valid, 'attempted record valid';
+  ok $person->in_storage, 'record was saved';
+
+  $person->update({
+    first_name => 'a',
+    credit_cards => [
+      {card_number=>'asdasd', expiration=>'ddw'},
+      {card_number=>'0000111122223333', expiration=>'2122-01-01'},
+    ],
+  });
+
+  ok $person->invalid, 'attempted record invalid';
+  ok $person->is_changed, 'record has unsaved changes';
+
+  is_deeply +{ $person->errors->to_hash }, +{
+    credit_cards => [
+      "Is Invalid",
+    ],
+    first_name => [
+      "is too short (minimum is 2 characters)",
+    ],
+  };
+
+
+  ok my @ccs = $person->credit_cards->all;
+  is_deeply +{ $ccs[0]->errors->to_hash }, +{
+    card_number => [
+      "is too short (minimum is 13 characters)",
+      "does not look like a credit card",
+    ],
+    expiration => [
+      "does not look like a datetime value",
+    ],    
+  };
+
+  ok $ccs[1]->valid;
+
+  is_deeply +{ $person->get_columns }, +{
+    username => 'jjn6',
+    first_name => 'a',
+    last_name => 'napiorkowski',
+    password => 'abc123aaaaaa',
+    id => $person->id,
+  };
+  is_deeply +{ $ccs[0]->get_columns }, +{
+    card_number => 'asdasd',
+    expiration => 'ddw',
+    person_id => $person->id,
+  };
+  is_deeply +{ $ccs[1]->get_columns }, +{
+    card_number => '0000111122223333',
+    expiration => '2122-01-01',   
+    person_id => $person->id,
+  };
+
+  {
+    $person->update({
+      first_name => 'aaaaaaaaa',
+      credit_cards => [
+        {card_number=>'0000111122224444', expiration=>'2222-01-01'},
+        {card_number=>'0000111122223333', expiration=>'2122-01-01'},
+      ],
+    });
+
+    ok $person->valid;
+    ok !$person->is_changed, 'no unsaved changes';
+    ok my @ccs = $person->credit_cards->all;
+    ok $ccs[0]->valid;
+    ok $ccs[1]->valid;
+    ok !$ccs[0]->is_changed, 'no unsaved changes';;
+    ok !$ccs[1]->is_changed, 'no unsaved changes';;
+
+    is_deeply +{ $person->get_columns }, +{
+      first_name => "aaaaaaaaa",
+      id => $person->id,
+      last_name => "napiorkowski",
+      password => "abc123aaaaaa",
+      username => "jjn6",
+    };
+    is_deeply +{ $ccs[0]->get_columns }, +{
+      card_number => "0000111122224444",
+      expiration => "2222-01-01",
+      id => $ccs[0]->id,
+      person_id => $person->id,
+    };
+    is_deeply +{ $ccs[1]->get_columns }, +{
+      card_number => "0000111122223333",
+      expiration => "2122-01-01",
+      id => $ccs[1]->id,
+      person_id => $person->id,
+    };
+  }
 }
 
 done_testing;
