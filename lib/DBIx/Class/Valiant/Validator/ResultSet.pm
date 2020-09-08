@@ -39,8 +39,6 @@ sub validate_each {
   foreach my $row (@rows) {
     $row->validate(%$opts);
     $found_errors = 1 if $row->errors->size;
-    use Devel::Dwarn;
-    Dwarn +{$row->errors->to_hash};
   }
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $found_errors;
 }

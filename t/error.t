@@ -23,8 +23,6 @@ $model->errors->add(password => "needs to contain both numbers and letters");
 
 ok $model->invalid;
 
-use Devel::Dwarn;
-
 my @all =  $model->errors->errors->all;
 
 ok $all[0]->match(undef, "Your Form is invalid");

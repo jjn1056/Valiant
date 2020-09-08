@@ -114,10 +114,11 @@ ok $state->id;
 
   ok $person->invalid, 'attempted record invalid';
   ok !$person->in_storage, 'record was not saved';
+
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     credit_cards => [
-      "Credit Cards Is Invalid",
       "Credit Cards has too few rows (minimum is 2)",
+      "Credit Cards Is Invalid",
     ],
     password => [
       "Password is too short (minimum is 8 characters)",

@@ -13,7 +13,9 @@ sub new_result {
   my $context = delete $fields->{__context};
 
   my %related = ();
-  foreach my $associated($self->result_class->accept_nested_for) {
+  my %nested = $self->result_class->accept_nested_for;
+  
+  foreach my $associated (keys %nested) {
     $related{$associated} = delete($fields->{$associated})
       if exists($fields->{$associated});
   }

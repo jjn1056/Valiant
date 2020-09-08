@@ -10,29 +10,44 @@ use Scalar::Util 'blessed';
 
 with 'DBIx::Class::Valiant::Validates';
 
-my @validate_associated;
-sub validate_associated {
-  my ($class, $arg) = @_;
-  $class = ref($class) if ref($class);
-  my $varname = "${class}::validate_associated";
-
-  no strict "refs";
-  push @$varname, $arg if defined($arg);
-
-  return @$varname,
-}
-
 my @accept_nested_for;
 sub accept_nested_for {
+  my $class = blessed($_[0]) ? ref(shift) : shift;
+  my $varname = "${class}::accept_nested_for";
+  my %default_config = (
+    allow_destroy => 0,
+    reject_if => 0,
+    limit => 0,
+    update_only => 0,
+  );
+  
+  no strict "refs";
+  while(my $attribute = shift) {
+    my $config = ref($_[0]) eq 'HASH' ? shift : +{};
+    push @$varname, $attribute;
+    push @$varname, +{ %default_config, %$config };
+  }
+  
+  return @$varname;
+}
+
+
+my @validations;
+sub validations {
   my ($class, $arg) = @_;
   $class = ref($class) if ref($class);
-  my $varname = "${class}::accept_nested_for";
+  my $varname = "${class}::validations";
 
   no strict "refs";
   push @$varname, $arg if defined($arg);
 
   return @$varname,
+    map { $_->validations } 
+    grep { $_->can('validations') }
+      $class->ancestors;
 }
+
+
 
 sub insert {
   my ($self, @args) = @_;
@@ -382,9 +397,7 @@ sub _mutate_multi_related {
   my ($reverse_related) = keys %$rev_data;
 
   foreach my $related_result (@related_results) {
-    warn "1111";
     next unless $related_result->is_changed || $related_result->is_marked_for_deletion || !$related_result->in_storage;
-
     debug 3, "@{[ ref $related_result ]} ready for mutating";
     $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
     $related_result->mutate_recursively;
