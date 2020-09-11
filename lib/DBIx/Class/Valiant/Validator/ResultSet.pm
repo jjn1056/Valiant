@@ -8,9 +8,12 @@ with 'Valiant::Validator::Each';
 
 has min => (is=>'ro', required=>0, predicate=>'has_min');
 has max => (is=>'ro', required=>0, predicate=>'has_max');
+has skip_if_empty => (is=>'ro', required=>1, default=>sub {0});
 has too_few_msg => (is=>'ro', required=>1, default=>sub {_t 'too_few'});
 has too_many_msg => (is=>'ro', required=>1, default=>sub {_t 'too_many'});
 has invalid_msg => (is=>'ro', required=>1, default=>sub {_t 'invalid'});
+has must_have_rows_msg => (is=>'ro', required=>1, default=>sub {_t 'must_have_rows'});
+
 has validations => (is=>'ro', required=>1, default=>sub {0});
 
 sub normalize_shortcut {
@@ -26,6 +29,15 @@ sub validate_each {
   # If a row is marked to be deleted then don't bother to validate it.
   my @rows = grep { not $_->is_marked_for_deletion } $value->all;
   my $count = scalar(@rows);
+
+  # If there's zero $count and skip_if_empty is true (default is false) then
+  # don't bother doing any more validations.
+  if(!@rows) {
+    return if $self->skip_if_empty;
+    warn "....";
+    warn $self->must_have_rows;
+    $record->errors->add($attribute, $self->must_have_rows_msg, $opts);
+  }
 
   $record->errors->add($attribute, $self->too_few_msg, +{%$opts, count=>$count, min=>$self->min})
     if $self->has_min and $count < $self->min;

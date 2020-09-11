@@ -24,12 +24,7 @@ __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
 __PACKAGE__->validates(
   credit_cards => (
-    presence=>1, 
-    result_set=>+{validations=>1, min=>2, max=>4}, 
-    if => sub { 
-      my ($self, $attr, $value) = @_;
-      return "$value"; # only validate if present
-    },
+    result_set=>+{validations=>1, skip_if_empty=>1, min=>2, max=>4}, 
   )
 );
 
