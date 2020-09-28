@@ -43,9 +43,19 @@ sub update {
   my $context = delete $upd->{__context};
 
   my %related = ();
-  foreach my $associated($self->result_class->accept_nested_for) {
+  my %accept = $self->result_class->accept_nested_for;
+
+  foreach my $associated(keys %accept) {
     $related{$associated} = delete($upd->{$associated})
       if exists($upd->{$associated});
+  }
+
+  # Remove any relationed keys we didn't find with the allows nested
+  my @rel_names = $self->result_source->relationships();
+  my %found = delete %$upd{@rel_names};
+  if(grep { defined $_ } values %found) {
+    my $related = join(', ', grep { $found{$_} } keys %found);
+    die "You are trying to create a relationship ($related) without setting 'accept_nested_for'";
   }
 
   my %validate_args = (context => $context) if $context;

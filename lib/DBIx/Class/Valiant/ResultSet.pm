@@ -20,6 +20,14 @@ sub new_result {
       if exists($fields->{$associated});
   }
 
+  # Remove any relationed keys we didn't find with the allows nested
+  my @rel_names = $self->result_source->relationships();
+  my %found = delete %$fields{@rel_names};
+  if(grep { defined $_ } values %found) {
+    my $related = join(', ', grep { $found{$_} } keys %found);
+    die "You are trying to create a relationship ($related) without setting 'accept_nested_for'";
+  }
+
   my $result = $self->next::method($fields, @args);
   $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context; # Need this for ->insert
 
