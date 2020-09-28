@@ -655,6 +655,39 @@ ok $state->id;
   };
 }
 
+{
+   eval {
+    Schema
+    ->resultset('Person')
+    ->create({
+      __context => ['registration','profile'],
+      username => 'jjn3',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123rrrrrr',
+      password_confirmation => 'abc123rrrrrr',
+      profile => {
+        zip => "78621",
+        city => 'Elgin',
+        address => '15604 Harry Lind Road',
+        birthday => '1991-01-23',
+        phone_number => '2123879509',
+        state_id => $state->id,
+      },
+      credit_cards => [
+        {card_number=>'11111222223333344444', expiration=>'2100-01-01'},
+        {card_number=>'11111222223333555555', expiration=>'2101-01-01'},
+        {card_number=>'11111222223333555555', expiration=>'2101-01-01'},
+
+      ],
+    });
+  } || do {
+    ok $@=~/Relationship credit_cards can't create more than 2 rows at once/, 'expected error';
+  };
+
+}
+
+
 done_testing;
 
 __END__

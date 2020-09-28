@@ -7,6 +7,7 @@ use strict;
 use Role::Tiny::With;
 use Valiant::Util 'debug';
 use Scalar::Util 'blessed';
+use Carp;
 
 with 'DBIx::Class::Valiant::Validates';
 
@@ -43,9 +44,9 @@ sub update {
   my $context = delete $upd->{__context};
 
   my %related = ();
-  my %accept = $self->result_class->accept_nested_for;
+  my %nested = $self->result_class->accept_nested_for;
 
-  foreach my $associated(keys %accept) {
+  foreach my $associated(keys %nested) {
     $related{$associated} = delete($upd->{$associated})
       if exists($upd->{$associated});
   }
@@ -62,6 +63,18 @@ sub update {
   $self->set_inflated_columns($upd) if $upd;
 
   foreach my $related(keys %related) {
+
+    if(my $cb = $nested{$related}->{reject_if}) {
+      next if $cb->($self, $related{$related});
+    }
+    if(my $limit_proto = $nested{$related}->{limit}) {
+      my $limit = (ref($limit_proto)||'' eq 'CODE') ?
+        $limit_proto->($self) :
+        $limit_proto;
+      my $num = scalar @{$related{$related}};
+      confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
+    }
+    
     $self->set_related_from_params($related, $related{$related});
   }
 

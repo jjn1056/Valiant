@@ -2,6 +2,7 @@ package DBIx::Class::Valiant::ResultSet;
 
 use warnings;
 use strict;
+use Carp;
 
 sub build {
   my ($self, %attrs) = @_;
@@ -32,6 +33,23 @@ sub new_result {
   $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context; # Need this for ->insert
 
   foreach my $related(keys %related) {
+
+    confess "Relationship $related is only nested for update" if $nested{$related}->{update_only};
+
+    if(my $cb = $nested{$related}->{reject_if}) {
+      next if $cb->($self, $related{$related});
+    }
+
+    if(my $limit_proto = $nested{$related}->{limit}) {
+      my $limit = (ref($limit_proto)||'' eq 'CODE') ?
+        $limit_proto->($self) :
+        $limit_proto;
+      my $num = scalar @{$related{$related}};
+      confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
+    }
+
+    #Dwarn $related{$related}; Can be hash or array of objects
+
     $result->set_related_from_params($related, $related{$related});
   }
 
