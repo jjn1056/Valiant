@@ -8,6 +8,7 @@ with 'Valiant::Validator::Each';
 
 has is_not_unique_msg => (is=>'ro', required=>1, default=>sub {_t 'is_not_unique'});
 has unique_method => (is=>'ro', required=>1, default=>sub {'is_unique'});
+has skip_if_undef => (is=>'ro', required=>1, default=>0);
 
 sub normalize_shortcut {
   my ($class, $arg) = @_;
@@ -21,6 +22,8 @@ sub normalize_shortcut {
 sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
   my $is_unique = $self->unique_method;
+  
+  return if !defined($value) and $self->skip_if_undef;
   
   if($record->can("${attribute}_${is_unique}")) {
     my $attribute_is_unique = "${attribute}_${is_unique}";
@@ -109,6 +112,10 @@ test in your business logic).
 
 The error message / tag used when the value is not true.  Default is _t('is_not_unique')
 which resolves in English to 'choosen is not unique'. 
+
+=head2 skip_if_undef
+
+Don't perform the uniqueness test if the value is undefined.
 
 =head1 SHORTCUT FORM
 

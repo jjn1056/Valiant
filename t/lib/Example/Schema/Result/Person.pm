@@ -16,7 +16,7 @@ __PACKAGE__->add_columns(
   },
 );
 
-__PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
+__PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>{skip_if_undef=>1});
 __PACKAGE__->validates(password => presence=>1, length=>[8,24], confirmation=> { on=>'registration'} );
 
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));

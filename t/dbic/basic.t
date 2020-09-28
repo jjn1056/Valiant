@@ -572,6 +572,97 @@ ok $state->id;
   }
 }
 
+{
+  # just a test to inflate empties (you needs these for forms
+  # when the form has not bee processed yet.
+
+  ok my $p = Schema->resultset('Person')
+    ->find_or_new({});
+
+  $p->validate;
+  is_deeply +{ $p->errors->to_hash }, +{
+    first_name => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    last_name => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    password => [
+      "can't be blank",
+      "is too short (minimum is 8 characters)",
+    ],
+    username => [
+      "can't be blank",
+      "is too short (minimum is 3 characters)",
+      "must contain only alphabetic and number characters",
+    ],   
+  };
+
+  $p->errors->clear;
+  is_deeply +{ $p->errors->to_hash }, +{};
+
+  $p->profile(Schema->resultset('Profile')->find_or_new({}));
+  $p->validate(context=>'profile');
+
+  is_deeply +{ $p->errors->to_hash }, +{
+    first_name => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    last_name => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    password => [
+      "can't be blank",
+      "is too short (minimum is 8 characters)",
+    ],
+    profile => [
+      "Is Invalid",
+    ],
+    username => [
+      "can't be blank",
+      "is too short (minimum is 3 characters)",
+      "must contain only alphabetic and number characters",
+    ],
+  };
+
+  is_deeply +{ $p->profile->errors->to_hash }, +{
+    address => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    birthday => [
+      "doesn't look like a date",
+    ],
+    city => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    phone_number => [
+      "can't be blank",
+      "is too short (minimum is 10 characters)",
+    ],
+    state_id => [
+      "can't be blank",
+    ],
+    zip => [
+      "can't be blank",
+      "is not a zip code",
+    ],
+  };
+}
+
 done_testing;
 
+__END__
+
+Deleting
+proper control over nested with
+deal with many to many.....
+docs :(
+
+step back and write out ll the test cases
 

@@ -31,24 +31,6 @@ sub accept_nested_for {
   return @$varname;
 }
 
-
-my @validations;
-sub validations {
-  my ($class, $arg) = @_;
-  $class = ref($class) if ref($class);
-  my $varname = "${class}::validations";
-
-  no strict "refs";
-  push @$varname, $arg if defined($arg);
-
-  return @$varname,
-    map { $_->validations } 
-    grep { $_->can('validations') }
-      $class->ancestors;
-}
-
-
-
 sub insert {
   my ($self, @args) = @_;
   $self->validate(%{ $self->{__VALIANT_CREATE_ARGS} ||+{} });
@@ -103,23 +85,18 @@ sub register_column {
 # DBIC model messes with the result namespace but not the schema
 # namespace
 
-sub namespaceiXX {
-  my $self = shift;  
-  my $class = ref($self) ? ref($self) : $self; 
+#sub namespace {
+#  my $self = shift;  
+#  my $class = ref($self) ? ref($self) : $self; 
 #  $class =~s/::${source_name}$//;
 
-  warn ".... $class";
-  return $class;
-
-
-  # Rest of this is to deal with Catalyst wrapper (for later)
-  my $source_name = $class->new->result_source->source_name;
-  return unless $source_name; # Trouble... somewhere $self is a package
-
-}
+# Rest of this is to deal with Catalyst wrapper (for later)
+#  my $source_name = $class->new->result_source->source_name#;
+#  return unless $source_name; # Trouble... somewhere $self is a# package
+#}
 
 # Trouble here is you can only inject one attribute per model.  Will be an
-# issue if you have more than one confirmation validation. Should be an easy
+# issue if you have more than one confirmation validation on the model. Should be an easy
 # fix, we just need to track incoming attributes so 'new' knows how to init
 # all of them
 
@@ -156,8 +133,8 @@ sub read_attribute_for_validation {
     my $rel_data = $self->relationship_info($attribute);
     my $rel_type = $rel_data->{attrs}{accessor};
     if($rel_type eq 'single') {
-      #return $self->$attribute;
-      return $self->related_resultset($attribute)->first;
+      return $self->$attribute;
+      #return $self->related_resultset($attribute)->first;
     } elsif($rel_type eq 'multi') {
       return $self->related_resultset($attribute);
     } else {

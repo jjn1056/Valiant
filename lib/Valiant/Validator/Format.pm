@@ -172,7 +172,7 @@ sub validate_each {
   if($self->has_match) {
     my $with = $self->_cb_value($record, $self->match);
     $record->errors->add($attribute, $self->invalid_format_match, $opts)
-      unless $value =~m/$with/;
+      unless defined($value) && $value =~m/$with/;
   }
   if($self->has_without) {
     my $with = $self->_cb_value($record, $self->without);
