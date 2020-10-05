@@ -2,7 +2,8 @@
   package Local::A;
 
   use Moo;
-  
+
+  with 'Valiant::Util::Ancestors';
   with 'Valiant::Validates';
 
   has equals => (is=>'ro', default=>303);

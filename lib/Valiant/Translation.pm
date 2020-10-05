@@ -4,7 +4,6 @@ use Moo::Role;
 use Text::Autoformat 'autoformat';
 
 with 'Valiant::Naming';
-with 'Valiant::Util::Ancestors';
 
 sub i18n_class { 'Valiant::I18N' }
 
@@ -31,7 +30,7 @@ sub human_attribute_name {
   my $namespace = join '/', @parts if @parts;
   my $attributes_scope = "${i18n_scope}.attributes";
 
-  if($namespace) {
+  if($self->can('ancestors') && $namespace) {
       @defaults = map {
         my $class = $_;
         "${attributes_scope}.${\$class->i18n_key}/${namespace}.${attribute}"     

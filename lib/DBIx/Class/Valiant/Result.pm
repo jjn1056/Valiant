@@ -82,11 +82,13 @@ sub update {
 
   return $self if $self->invalid;
   foreach my $related(keys %related) {
+    if(my $cb = $nested{$related}->{reject_if}) {
+      next if $cb->($self, $related{$related});
+    }
     $self->_mutate_related($related);
   }
 
   return $self->next::method();
-
 }
 
 

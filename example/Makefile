@@ -15,7 +15,7 @@ help:
 
 
 update_cpanlib:
-	@cpanm --verbose --installdeps .'
+	@cpanm --verbose --installdeps .
 
 update_db:
 	@sqitch deploy
@@ -29,5 +29,5 @@ dependencies:
 	@ack '^use ' -h --nobreak | perl -nle'++$lines{$_}; END { print for sort grep $lines{$_}==1, keys %lines; }
 
 create_migration:
-	perl -Ilib -I ../lib/ -MExample -e 'Example->create_migration("$(name)")'
+	perl -Ilib  -I ~/Desktop/Valiant/lib -I ./lib/ -MExample -e 'Example->create_migration("$(name)", "$(notes)")'
 

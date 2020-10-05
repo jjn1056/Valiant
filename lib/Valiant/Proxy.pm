@@ -1,6 +1,7 @@
 package Valiant::Proxy;
 
 use Moo::Role;
+
 with 'Valiant::Validates';
 
 requires 'read_attribute_for_validation';
@@ -12,6 +13,8 @@ has '_validations' => (
   init_arg => 'validations',
   required => 1,
   default => sub { [] });
+
+sub ancestors { }
 
 sub BUILD {
   my $self = shift;

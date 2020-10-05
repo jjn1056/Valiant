@@ -9,6 +9,8 @@ use namespace::clean;
 
 with 'Valiant::Translation';
 
+requires 'ancestors';
+
 my @validations;
 sub validations {
   my ($class, $arg) = @_;
