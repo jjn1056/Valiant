@@ -3,6 +3,7 @@ package DBIx::Class::Valiant::Validates;
 use Moo::Role;
 use Valiant::I18N;
 
+with 'Valiant::Util::Ancestors'; # TODO needs tests around this...
 with 'Valiant::Validates';
 
 around default_validator_namespaces => sub {
