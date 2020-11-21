@@ -59,7 +59,7 @@ sub import {
 
 =head1 TITLE
 
-Valiant::Filters - Addos a validation DSL and API to your Moo/se classes
+Valiant::Filters - Adds a validation DSL and API to your Moo/se classes
 
 =head1 SYNOPSIS
 

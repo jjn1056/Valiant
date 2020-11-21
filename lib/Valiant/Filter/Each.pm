@@ -7,12 +7,13 @@ use Scalar::Util 'blessed';
 with 'Valiant::Filter';
 requires 'filter_each';
 
-has attributes => (is=>'ro', required=>1);
+has attributes => (is=>'ro', predicate=>'has_attributes');
 has model => (is=>'ro', required=>1);
 
 
 sub generate_attributes {
   my ($self, $class, $attrs) = @_;
+  return keys %$attrs unless $self->has_attributes;
   if(ref($self->attributes) eq 'ARRAY') {
     return @{ $self->attributes };
   } elsif(ref($self->attributes) eq 'CODE') {

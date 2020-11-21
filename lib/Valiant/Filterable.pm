@@ -36,12 +36,15 @@ sub _filters_coderef {
 sub _prepare_filter_packages {
   my ($class, $key) = @_;
   my $camel = camelize($key);
-  return (
-    $class->_normalize_filter_package($camel),
-    map {
-      "${_}::${camel}";
-    } $class->default_filter_namespaces
-  );
+  my @packages = $class->_normalize_filter_package($camel);
+
+  return @packages if $camel =~/^\+/;
+
+  push @packages, map {
+    "${_}::${camel}";
+  } $class->default_filter_namespaces;
+
+  return @packages;
 }
 
 sub default_filter_namespaces {
@@ -158,27 +161,21 @@ sub filters_with {
       next FILTER_WITHS;
     }
     debug 1, "Trying to find a filter for '$with'";
-    my @possible_packages = $self->_normalize_filter_package($with);
-    foreach my $package(@possible_packages) {
-      my $found_package = eval {
-        use_module($package);
-      } || do {
-        my $notional_filename = Module::Runtime::module_notional_filename($package);
-        if($@=~m/^Can't locate $notional_filename/) {
-          debug 1, "Can't find '$package' in \@INC";
-          0;
-        } else {
-          # Probably a syntax error in the code of $package
-          throw_exception UnexpectedUseModuleError => (package => $package, err => $@);
-        }
-      };
-      if($found_package) {
-        debug 1, "Found '$found_package' in \@INC";
-        push @filters, $package->new(%options);
-        next FILTER_WITHS; # Only load the first one found
-      } 
+
+    my $filter_package = $self->_filter_package($with);
+
+    my $args;
+    unless((ref($args)||'') eq 'HASH') {
+      $args = $filter_package->can('normalize_shortcut') ? $filter_package->normalize_shortcut(\%options) : \%options;
+      throw_exception InvalidFilterArgs => ( args => $args) unless ref($args) eq 'HASH';
     }
-    throw_exception General => (msg => "Failed to find Filter for '$with' in \@INC");
+    
+    $args->{model} = $self;
+
+    my $new_filter = $self->_create_filter($filter_package, $args);
+    push @filters, $new_filter;
+
+
   }
   my $collection = use_module($self->default_collection_class)
     ->new(filters=>\@filters);

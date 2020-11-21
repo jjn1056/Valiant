@@ -22,6 +22,7 @@ use Test::Most;
 
   has 'name' => (is=>'ro', required=>1);
   has 'last' => (is=>'ro', required=>1);
+  has 'another' => (is=>'ro', required=>1);
 
   filters last => (Trim=>1);
 
@@ -51,11 +52,15 @@ use Test::Most;
       return $attrs->{$name} . "AAA";
     },
   );
+
+  filters_with 'Trim';
+
 }
 
-my $user = Local::Test::User->new(name=>'  john ', last=>'  napiorkowski  ');
+my $user = Local::Test::User->new(name=>'  john ', last=>'  napiorkowski  ', another=>'  dd  ');
 
 is $user->name, '1JOHN2';
 is $user->last, 'NapiorkowskiXXXAAA';
+is $user->another, 'dd';
 
 done_testing;

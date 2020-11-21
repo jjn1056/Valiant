@@ -121,12 +121,15 @@ sub _is_reserved_option_key {
 sub _prepare_validator_packages {
   my ($class, $key) = @_;
   my $camel = camelize($key);
-  return (
-    $class->_normalize_validator_package($camel),
-    map {
-      "${_}::${camel}";
-    } $class->default_validator_namespaces
-  );
+  my @packages = $class->_normalize_validator_package($camel);
+
+  return @packages if $camel =~/^\+/;
+
+  push @packages, map {
+    "${_}::${camel}";
+  } $class->default_validator_namespaces;
+
+  return @packages;
 }
 
 sub default_validator_namespaces {
