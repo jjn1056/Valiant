@@ -23,6 +23,9 @@ use Test::Most;
     'Valiant::Filterable';
 
   has 'name' => (is=>'ro', required=>1);
+  has 'last' => (is=>'ro', required=>1);
+
+  __PACKAGE__->filters(last => (Trim=>1));
 
   __PACKAGE__->filters_with(sub {
     my ($class, $attrs, $opts) = @_;
@@ -38,11 +41,24 @@ use Test::Most;
   }, a=>1, b=>2);
 
   __PACKAGE__->filters_with(Foo => (a=>1,b=>2));
+
+  __PACKAGE__->filters(last => (
+    uc_first => 1,
+    with => sub {
+      my ($class, $attrs, $name) = @_;
+      return $attrs->{$name} . "XXX";
+    },
+    sub {
+      my ($class, $attrs, $name) = @_;
+      return $attrs->{$name} . "AAA";
+    },
+  ));
 }
 
-my $user = Local::Test::User->new(name=>'  john ');
+my $user = Local::Test::User->new(name=>'  john ', last=>'  napiorkowski  ');
 
 is $user->name, '1JOHN2';
+is $user->last, 'NapiorkowskiXXXAAA';
 
 
 done_testing;

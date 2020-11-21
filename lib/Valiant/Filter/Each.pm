@@ -1,136 +1,31 @@
-package Valiant::Validator::Each;
+package Valiant::Filter::Each;
 
 use Moo::Role;
-use Valiant::I18N; # So that _t is available in subclasses
 use Valiant::Util 'throw_exception', 'debug';
 use Scalar::Util 'blessed';
 
-with 'Valiant::Validator';
-requires 'validate_each';
+with 'Valiant::Filter';
+requires 'filter_each';
 
-has allow_undef => (is=>'ro', required=>1, default=>0); # Allows undef and 'not exists'
-has allow_blank => (is=>'ro', required=>1, default=>0); # A string is blank if it's empty or contains whitespaces only:
-has if => (is=>'ro', predicate=>'has_if');
-has unless => (is=>'ro', predicate=>'has_unless');
-has on => (is=>'ro', predicate=>'has_on');
-has message => (is=>'ro', predicate=>'has_message');
-has strict => (is=>'ro', required=>1, default=>0);
-has opts => (is=>'ro', required=>1, default=>sub { +{} });
 has attributes => (is=>'ro', required=>1);
-has model_class => (is=>'ro', required=>1);
+has model => (is=>'ro', required=>1);
 
-# TODO maybe have a 'where' attribute which allows a callback so you can
-# stick callback / coderefs all over without needed to invoke the 'with'
-# validator.
-#
-# TODO do we need some sort of loop control, like 'stop_on_first_error' or
-# something?  Is possible that notion belongs in Valiant::Validatable
-
-sub options { 
-  my $self = shift;
-  my %opts = (
-    %{$self->opts},
-    strict => $self->strict,
-    @_);
-
-  $opts{message} = $self->message if $self->has_message;
-  return \%opts;
-}
 
 sub generate_attributes {
-  my ($self, $object, $options) = @_;
+  my ($self, $class, $attrs) = @_;
   if(ref($self->attributes) eq 'ARRAY') {
     return @{ $self->attributes };
   } elsif(ref($self->attributes) eq 'CODE') {
-    return $self->attributes->($object, $options);
+    return $self->attributes->($class, $attrs);
   }
 }
 
-# TODO A lot of this code is redundent with ::Collection. I think we could just
-# wrap a ::Collection over the Validators list somewhere (probably in ::Validation
-# where we gather the Validators).  
-
-sub validate {
-  my ($self, $object, $options) = @_;
-
-  # Loop over each attribute and run the validators
-  ATTRIBUTE_LOOP: foreach my $attribute ($self->generate_attributes(@_)) {
-    my $value = $object->read_attribute_for_validation($attribute);
-
-    next if $self->allow_undef && not(defined $value);
-    next if $self->allow_blank && ( not(defined $value) || $value eq '' || $value =~m/^\s+$/ );
-
-    if(blessed($value) && $self->allow_blank) {
-      next if $value->can('is_blank') and $value->is_blank;
-    }
-
-    if($self->has_if) {
-      my @if = (ref($self->if)||'') eq 'ARRAY' ? @{$self->if} : ($self->if);
-      foreach my $if (@if) {
-        if((ref($if)||'') eq 'CODE') {
-          next ATTRIBUTE_LOOP unless $if->($object, $attribute, $value, $options);
-        } else {
-          if(my $method_cb = $object->can($if)) {
-            next ATTRIBUTE_LOOP unless $method_cb->($object, $attribute, $value, $options);
-          } else {
-            throw_exception MissingMethod => (object=>$object, method=>$if); 
-          }
-        }
-      }
-    }
-    if($self->has_unless) {
-      my @unless = (ref($self->unless)||'') eq 'ARRAY' ? @{$self->unless} : ($self->unless);
-      foreach my $unless (@unless) {
-        if((ref($unless)||'') eq 'CODE') {
-          next ATTRIBUTE_LOOP if $unless->($object, $attribute, $value, $options);
-        } else {
-          if(my $method_cb = $object->can($unless)) {
-            next ATTRIBUTE_LOOP if $method_cb->($object, $attribute, $value, $options);
-          } else {
-            throw_exception MissingMethod => (object=>$object, method=>$unless); 
-          }
-        }
-      }
-    }
-
-    if($self->has_on) {
-      my @on = ref($self->on) ? @{$self->on} : ($self->on);
-      my $context = $options->{context}||'';
-      my @context = ref($context) ? @$context : ($context);
-      my $matches = 0;
-
-      OUTER: foreach my $c (@context) {
-        foreach my $o (@on) {
-          if($c eq $o) {
-            $matches = 1;
-            last OUTER;
-          }
-        }
-      }
-
-      next unless $matches;
-    }
-
-    $self->validate_each($object, $attribute, $value, $self->options(%{$options||+{}}) );
+sub filter {
+  my ($self, $class, $attrs) = @_;
+  foreach my $attribute ($self->generate_attributes($class, $attrs)) {
+    $attrs->{$attribute} = $self->filter_each($class, $attrs, $attribute);
   }
-}
-
-sub _requires_one_of {
-  my ($self, $args, @list) = @_;
-  foreach my $arg (@list) {
-    return if defined($args->{$arg});
-  }
-  my $list = join ', ', @list;
-  throw_exception General => (msg => "Missing at least one of the following args: $list");
-}
-
-sub _cb_value {
-  my ($self, $object, $value) = @_;
-  if((ref($value)||'') eq 'CODE') {    
-    return $value->($object, $self);
-  } else {
-    return $value;
-  } 
+  return $attrs;
 }
 
 1;

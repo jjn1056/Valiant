@@ -27,19 +27,6 @@ sub _filters {
 sub default_filter_namepart { 'Filter' }
 sub default_collection_class { 'Valiant::Filter::Collection' }
 
-sub read_attribute_for_filtering {
-  my ($self, $attribute) = @_;
-  return unless defined $attribute;
-  return my $value = $self->$attribute
-    if $self->can($attribute);
-}
-
-sub set_attribute_for_filtering {
-  my ($self, $attribute, $value) = @_;
-  return unless defined $attribute;
-  $self->$attribute($value) if $self->can($attribute);
-}
-
 sub _filters_coderef {
   my ($self, $coderef) = @_;
   $self->_filters($coderef);
@@ -128,12 +115,18 @@ sub filters {
     }
     
     $args->{attributes} = $attributes;
-    $args->{model_class} = $self;
+    $args->{model} = $self;
 
     my $new_filter = $self->_create_filter($filter_package, $args);
     push @filters, $new_filter;
   }
-  my $coderef = sub { $_->filter(@_) foreach @filters };
+  my $coderef = sub {
+    my ($class, $attrs) = @_;
+    foreach my $filter (@filters) {
+      $attrs = $filter->filter($class, $attrs);
+    }
+    return $attrs;
+  };
   $self->_filters_coderef($coderef); 
 }
 

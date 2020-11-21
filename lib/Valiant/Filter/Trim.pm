@@ -1,24 +1,20 @@
-package Valiant::Filter::With;
+package Valiant::Filter::Trim;
 
 use Moo;
 use Valiant::Util 'throw_exception';
 
 with 'Valiant::Filter::Each';
 
-has cb => (is=>'ro', required=>1);
-
 sub normalize_shortcut {
   my ($class, $arg) = @_;
-  if((ref($arg)||'') eq 'CODE') {
-    return +{
-      cb => $arg,
-    };
-  }
+  return +{ };
 }
 
 sub filter_each {
   my ($self, $class, $attrs, $attribute_name) = @_;  
-  return $self->cb->($class, $attrs, $attribute_name);
+  my $value = $attrs->{$attribute_name};
+  $value =~ s/^\s+|\s+$//g;
+  return $value;
 }
 
 1;
