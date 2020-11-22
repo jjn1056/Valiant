@@ -204,14 +204,51 @@ Valiant::Filters - Role that adds class and instance methods supporting field fi
 
 =head1 SYNOPSIS
 
-See L<Valiant>.
+    package Local::Test::User;
+
+    use Moo;
+
+    with 'Valiant::Util::Ancestors',
+      'Valiant::Filterable';
+
+    has 'name' => (is=>'ro', required=>1);
+    has 'last' => (is=>'ro', required=>1);
+
+    __PACKAGE__->filters(last => (Trim=>1));
+
+    __PACKAGE__->filters_with(sub {
+      my ($class, $attrs, $opts) = @_;
+      $attrs = +{
+        map {
+          my $value = $attrs->{$_};
+          $value =~ s/^\s+|\s+$//g;
+          $_ => $value;
+        } keys %$attrs
+      };
+      $attrs->{name} = "$opts->{a}$attrs->{name}$opts->{b}";
+      return $attrs;
+    }, a=>1, b=>2);
+
+    __PACKAGE__->filters_with(Foo => (a=>1,b=>2));
+
+    __PACKAGE__->filters(last => (
+      uc_first => 1,
+      with => sub {
+        my ($class, $attrs, $name) = @_;
+        return $attrs->{$name} . "XXX";
+      },
+      sub {
+        my ($class, $attrs, $name) = @_;
+        return $attrs->{$name} . "AAA";
+      },
+    ));
 
 =head1 DESCRIPTION
 
-This is a role that adds class level filtering to you L<Moo> or L<Moose> classes.
-The main point of entry for use and documentation currently is L<Valiant>. Here
-we have API level documentation without details or examples.  You should read L<Valiant>
-first and then you can refer to documentation her for further details.
+This is a role that adds class level filtering to you L<Moo> or L<Moose> classes.  Generally
+you may prefer to us L<Valiant::Filters> since that gives you a nice DSL for applying filters
+to your classes but if you have very special or custom needs (or you need to extend the filter
+API itself) you might need to use the role directly.  
 
 =head1 CLASS METHODS
 
@@ -220,138 +257,70 @@ first and then you can refer to documentation her for further details.
 Used to declare filters on an attribute.  The first argument is either a scalar or arrayref of
 scalars which should be attributes on your object:
 
-    validates name => (...);
-    validates ['name', 'age'] => (...);
+    __PACKAGE__->filters( name => (...) );
+    __PACKAGE__->filters(['name', 'age'] => (...));
 
 Following arguments should be in one of two forms: a coderef or subroutine reference that contains
-filter rules, a key - value pair which is a validator class and its arguments   You may also have key value pairs which are global
-arguments for the validate set as a whole:
+filter rules or a key - value pair which is a class and its arguments:
 
-    package Local::Model::User;
+    __PACKAGE__->filters( name => (
+      trim => 1,
+      with => sub { my ($class, $attrs, $name) = @_; },
+      sub { my ($class, $attrs, $name) = @_; }m
+    ));
 
-    use Moo;
-    use Valiant::Validations;
-    use Types::Standard 'Int';
-
-    has ['name', 'age'] => (is=>'ro);
-
-    validates name => (
-      length => { minimum => 5, maximum => 25 },
-      format => { match => 'words' },
-      sub {
-        my ($self, $attribute, $value, $opts) = @_;
-        $self->errors->add($attribute, "can't be Joe.  We hate Joe :)" ,$opts) if $value eq 'Joe';
-      }, +{ arg1=>'1', arg2=>2 }, # args are optional for coderefs but are passed into $opts
-      \&must_be_unique,
-    );
-
-    valiates age => (
-      Int->where('$_ >= 65'), +{
-        message => 'A retiree must be at least 65 years old,
-      },
-      ..., # additional validations
-    );
-
-    sub must_be_unique {
-      my ($self, $attribute, $value, $opts) = @_;
-      # Some local validation to make sure the name is unique in storage (like a database).
-    }
-
-If you use a validator class name then the hashref of arguments that follows is not optional.  If you pass
-an options hashref it should contain arguments that are defined for the validation type you are passing
-or one of the global arguments: C<on>, C<message>, C<if> and C<unless>.  See L</"GLOBAL OPTIONS"> for more.
-
-For subroutine reference and L<Type::Tiny> objects you can or not pass an options hashref depending on your
-needs.  Additionally the three types can be mixed and matched within a single C<validates> clause.
-
-When you use a validator class (such as C<length => { minimum => 5, maximum => 25 }>) we resolve the class
-name C<length> in the following way.  We first camel case the name and then look for a 'Validator' package
+When you use a Filter class (such as C<trim => { maximum => 25 }>) we resolve the class
+name C<trim> in the following way.  We first camel case the name and then look for a 'Filter' package
 in the current class namespace.  If we don't find a match we check each namespace up the hierarchy and
-then check the two global namespaces C<Valiant::ValidatorX> and C<Validate::Validator>.  For example if
-you declare validators as in the example class above C<Local::Model::User> we would look for the following:
+then check the two global namespaces C<Valiant::FilterX> and C<Validate::Filters>.  For example if
+you declare filters as in the example class C<Local::Model::User> we would look for the following:
 
-    Local::Model::User::Validator::Length
-    Local::Model:::Validator::Length
-    Local::Validator::Length
-    Validator::Length
-    Valiant::ValidatorX::Validator::Length
-    Valiant::Validator::Validator::Length
+    Local::Model::User::Filter::Trim
+    Local::Model:::Filter::Trim
+    Local::Filter::Trim
+    Validator::Trim
+    Valiant::FilterX::Trim
+    Valiant::Filter:::Trim
 
 These get checked in the order above and loaded and instantiated once at setup time.
 
-B<NOTE:> The namespace C<Valiant::Validator> is reserved for validators that ship with L<Valiant>.  The
-C<Valiant::ValidatorX> namespace is reserved for additional validators on CPAN that are packaged separately
-from L<Valiant>.  If you wish to share a custom validator that you wrote the proper namespace to use on
-CPAN is C<Valiant::ValidatorX>.
+B<NOTE:> The namespace C<Valiant::Filter> is reserved for filters that ship with L<Valiant>.  The
+C<Valiant::FilterX> namespace is reserved for additional filters on CPAN that are packaged separately
+from L<Valiant>.  If you wish to share a custom fiter that you wrote the proper namespace to use on
+CPAN is C<Valiant::FilterX>.
 
-You can also prepend your validator name with '+' which will cause L<Valiant> to ignore the namespace 
+You can also prepend your filter name with '+' which will cause L<Valiant> to ignore the namespace 
 resolution and try to load the class directly.  For example:
 
-    validates_with '+App::MyValidator';
+    __PACKAGE__->filters(name => ('+App::MyFilter' => {}), );
 
-Will try to load the class C<App::MyValidator> and use it as a validator directly (or throw an exception if
+Will try to load the class C<App::MyFilter> and use it as a filter directly (or throw an exception if
 it fails to load).
 
-=head2 validates_with
+=head2 filters_with
 
-C<validates_with> is intended to process validations that are on the class as a whole, or which are very
+C<filters_with> is intended to process filters that are on the class as a whole, or which are very
 complex and can't easily be assigned to a single attribute.  It accepts either a subroutine reference
 with an optional hash of key value pair options (which are passed to C<$opts>) or a scalar name which
-should be a stand alone validator class (basically a class that does the C<validates> method although
-you should consume the L<Validate::Validator> role to enforce the contract).
+should be a stand alone filter class (basically a class that does the C<filters> method although
+you should consume the L<Validate::Filter> role to enforce the contract).
 
-    validates_with sub {
-      my ($self, $opts) = @_;
+    filters_with sub {
+      my ($self, $class, $attrs)) = @_;
       ...
     };
 
-    validates_with \&check_object => (arg1=>'foo', arg2=>'bar');
+    filters_with \&check_object => (arg1=>'foo', arg2=>'bar');
 
-    sub check_object {
-      my ($self, $opts) = @_;
+    sub filters_with {
+      my ($self, $class, $attrs) = @_;
       ...
     }
 
-    validates with 'Custom' => (arg1=>'foo', arg2=>'bar');
+    filters_with with 'Custom' => (arg1=>'foo', arg2=>'bar');
 
-If you pass a string that is a validator class we resolve its namespace using the same approach as
-detailed above for C<validates>.  Any arguments are passed to the C<new> method of the found class
-excluding global options.
-
-=head1 INSTANCE METHODS
-
-=head2 validate
-
-Run validation rules on the current object, optionally with arguments hash.  If validation has already
-been run on this object, we clear existing errors and run validations again.  Currently the return
-value of this method is not defined in the API.  Example:
-
-    $object->validate(%args);
-
-Currently the only arguments with defined meaning is C<context>, which is used to defined a validation
-context.  All other arguments will be passed down to the C<$opts> hashref.
-
-=head2 valid
-
-=head2 invalid
-
-Return true or false depending on if the current object state is valid or not.  If you call this method and
-validations have not been run (via C<validate>) then we will first run validations and pass any arguments
-to L</valiates>.  If validations have already been run we just return true or false directly UNLESS you
-pass arguments in which case we clear errors first and then rerun validations with the arguments before
-returning true or false.
-
-=head1 ATTRIBUTES
-
-=head2 errors
-
-An instance of L<Valiant::Errors>.  
-
-=head2 validated
-
-This attribute will be true if validations have already been been run on the current instance.  It
-merely says if validations have been run or not, it does not indicate if validations have been passed
-or failed see L</valid> pr L</invalid>
+If you pass a string that is a filter class we resolve its namespace using the same approach as
+detailed above for C<filters>.  Any arguments are passed to the C<new> method of the found class.
 
 =head1 AUTHOR
  
@@ -359,7 +328,7 @@ John Napiorkowski L<email:jjnapiork@cpan.org>
   
 =head1 SEE ALSO
  
-L<Valiant::Validations>
+L<Valiant::Filters>
 
 =head1 COPYRIGHT & LICENSE
  

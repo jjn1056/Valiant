@@ -137,7 +137,7 @@ sub _cb_value {
 
 =head1 TITLE
 
-Valiant::Validator::With - A Role to create custom validators
+Valiant::Validator::Each - A Role to create custom validators
 
 =head1 SYNOPSIS
 

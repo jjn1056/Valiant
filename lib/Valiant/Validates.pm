@@ -424,8 +424,8 @@ you declare validators as in the example class above C<Local::Model::User> we wo
     Local::Model:::Validator::Length
     Local::Validator::Length
     Validator::Length
-    Valiant::ValidatorX::Validator::Length
-    Valiant::Validator::Validator::Length
+    Valiant::ValidatorX::Length
+    Valiant::Validator::Length
 
 These get checked in the order above and loaded and instantiated once at setup time.
 

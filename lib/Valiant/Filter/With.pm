@@ -6,6 +6,7 @@ use Valiant::Util 'throw_exception';
 with 'Valiant::Filter::Each';
 
 has cb => (is=>'ro', required=>1);
+has opts => (is=>'ro', predicate=>'has_opts');
 
 sub normalize_shortcut {
   my ($class, $arg) = @_;
@@ -14,109 +15,95 @@ sub normalize_shortcut {
       cb => $arg,
     };
   }
+  if((ref($arg)||'') eq 'ARRAY') {
+    return +{
+      cb => $arg->[0],
+      opts => $arg->[1],
+    };
+  }
+
 }
 
 sub filter_each {
-  my ($self, $class, $attrs, $attribute_name) = @_;  
-  return $self->cb->($class, $attrs, $attribute_name);
+  my ($self, $class, $attrs, $attribute_name) = @_;
+  my @args = ($class, $attrs, $attribute_name);
+  push @args, $self->opts if $self->has_opts;
+  return $self->cb->(@args);
 }
 
 1;
 
 =head1 TITLE
 
-Valiant::Validator::With - Validate using a coderef or method
+Valiant::Validator::With - Filter using a coderef and options opts
 
 =head1 SYNOPSIS
 
-    package Local::Test::With;
+    package Local::Test::User;
 
     use Moo;
-    use Valiant::Validations;
-    use Valiant::I18N;
-    use DateTime;
+    use Valiant::Filters;
 
-    has date_of_birth => (is => 'ro');
+    has 'name' => (is=>'ro', required=>1);
 
-    validates date_of_birth => (
-      with => sub {
-        my ($self, $attribute_name, $value, $opts) = @_;
-        $self->errors->add($attribute_name, "Can't be born tomorrow") 
-          if $value > DateTime->today;
-      },
-    );
-
-    validates date_of_birth => (
+    filters name => (
       with => {
-        method => 'not_future',
-        message_if_false => _t('not_future'),
+        cb => sub {
+          my ($class, $attrs, $name, $opts) = @_;
+          return $attrs->{$name}.$opts->{a};
+        },
+        opts => +{ a=>'foo' },
       },
+      with => sub {
+          my ($class, $attrs, $name) = @_;
+          return $attrs->{$name}.'bar';
+      },
+      with => [sub {
+          my ($class, $attrs, $name, $opts) = @_;
+          return $attrs->{$name}.$opts;
+      }, 'baz'],
     );
 
-    sub not_future {
-      my ($self, $attribute_name, $value, $opts) = @_;
-      return $value < DateTime->today;
-    }
+    my $user = Local::Test::User->new(name=>'john');
 
-    my $dt = DateTime->new(year=>2364, month=>4, day=>30); # ST:TNG Encounter At Farpoint ;)
-    my $object = Local::Test::With->new(date_of_birth=>$dt);
-    $object->validate;
+    print $user->name; # 'johnfoobarbaz'
 
-    warn $object->errors->_dump;
+=head1 DESCRIPTIONi
 
-    $VAR1 = {
-      'date_of_birth' => [
-        'Date of birth Can\'t be born tomorrow',
-        'Date of birth Date 2364-04-30T00:00:00 is future'
-      ]
-    };
-
-=head1 DESCRIPTION
-
-This validator allows you to set a custom coderef or method name to handle all
-special validation needs.  You can use this instead of overriding the C<validate>
-method.  This validator doesn't itself set any error messages and relies on you
-knowing what you are doing.  Use this when creating your own validator is too
-much work or the validation requirement is too special and not generically reusable.
-
-You can also use a validation object and call that with C<validates_with> as an
-alternative to using this validator.  You should consider doing so if you validation
-is very complex and requires initial arguments for example.
-
-If you set the parameter C<message_if_false> you can just have your validation
-coderef or method return a boolean and it will set the error message for you.  Given
-message will be used if the method or coderef returns false. You
-may find this approach neater if you need to use a validation method in several
-places, or for promoting looser coupling in your code.
+this filter allows you to make a custom subroutine reference into a filter, with
+options options for parameterization.   You can use this when you have a very
+special filter need but don't feel like writing a custom filter by subclassing
+L<Valiant::Filter::Each>.
 
 =head1 Passing parameters to $opts
 
 You can pass parameters to the C<$opts> hashref using the C<opts> argument:
 
-    validates date_of_birth => (
+    my $filter = sub {
+      my ($self, $class, $attrs, $attribute_name, $opts) = @_;
+      my $old_value = $attrs->{$attribute_name};
+      # ...
+      return $new_value
+
+    };
+
+    filters my_attribute => (
       with => {
-        method => 'minimum_year',
-        opts => {year => 2000},
+        cb => $filter,
+        opts => {arg => 2000},
       },
     );
 
-    sub not_future_with_opts {
-      my ($self, $attribute_name, $value, $opts) = @_;
-      $self->errors->add($attribute_name, 'Year too low') unless
-        $value->year > $opts->{year};
-    }
 
 You might find this useful in creating more parametered callbacks.  However at this point
-you might wish to consider just writing a custom validator.
+you might wish to consider just writing a custom filter class.
 
 =head1 SHORTCUT FORM
 
-This validator supports the follow shortcut forms:
+This filter supports the follow shortcut forms:
 
     validates attribute => ( with => sub { my $self = shift; ... }, ... );
-    validates attribute => ( with => 'mymethod', ... );
-    validates attribute => ( with => ['mymethod', 'Value is invalid'], ... );
-    validates attribute => ( with => [sub { my $self = shift; ... }, 'Value is invalid'], ... );
+    validates attribute => ( with => [\&method, [1,2,3]], ... );
 
 Which is the same as:
 
@@ -126,35 +113,18 @@ Which is the same as:
       },
       ...
     );
+
     validates attribute => (
       with => {
-        method => 'mymethod',
+        cb => \&method,
+        opts => [1,2,3],
       },
       ...
     );
-    validates attribute => (
-      with => {
-        method => 'mymethod',
-        message_if_false => 'Value is invalid',
-      },
-      ...
-    ); 
-    validates attribute => (
-      with => {
-        cb => sub { ... },
-        message_if_false => 'Value is invalid',
-      },
-      ...
-    );
-
-=head1 GLOBAL PARAMETERS
-
-This validator supports all the standard shared parameters: C<if>, C<unless>,
-C<message>, C<strict>, C<allow_undef>, C<allow_blank>.
 
 =head1 SEE ALSO
  
-L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
+L<Valiant>, L<Valiant::Filter>, L<Valiant::Filter::Each>.
 
 =head1 AUTHOR
  

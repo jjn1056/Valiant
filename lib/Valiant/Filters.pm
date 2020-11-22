@@ -59,112 +59,76 @@ sub import {
 
 =head1 TITLE
 
-Valiant::Filters - Adds a validation DSL and API to your Moo/se classes
+Valiant::Filters - Adds a filter DSL and API to your Moo/se classes
 
 =head1 SYNOPSIS
 
     package Local::Person;
 
     use Moo;
-    use Valiant::Validations;
+    use Valiant::Filters;
 
-    has name => (is=>'ro');
-    has age => (is=>'ro');
+    has name => (is => 'ro');
+    has age => (is => 'ro');
 
-    validates name => (
-      length => {
-        maximum => 10,
-        minimum => 3,
-      }
+    filters name => (
+      truncate => { max_length=>25 }
     );
 
-    validates age => (
-      numericality => {
-        is_integer => 1,
-        less_than => 200,
-      },
-    );
+    filters_with 'Trim';
 
-Validators on specific attributes can be added to the C<has> clause if you prefer:
+Filters on specific attributes can be added to the C<has> clause if you prefer:
 
     package Local::Person;
 
     use Moo;
-    use Valiant::Validations;
+    use Valiant::Filters;
 
-    has name => (
-      is => 'ro',
-      validates => [
-        length => {
-          maximum => 10,
-          minimum => 3,
-        },
-      ],
-    );
+    has name => (is => 'ro', filters => [ truncate=>25 ] );
+    has age => (is => 'ro');
 
-    has age => (
-      is => 'ro',
-      validates => [
-        numericality => {
-          is_integer => 1,
-          less_than => 200,
-        },
-      ],
-    );
+    filters_with 'Trim';
 
-Using validations on objects:
+Using filters on objects:
 
     my $person = Local::Person->new(
-        name => 'Ja',
+        name => ' Ja      ',
         age => 300,
       );
 
-    $person->validate;
-    $person->valid;     # FALSE
-    $person->invalid;   # TRUE
+    print $person->name; # "Ja" not " Ja      ";
 
-    my %errors = $person->errors->to_hash(full_messages=>1);
-
-    # \%errors = +{
-    #   age => [
-    #     "Age must be less than 200",
-    #   ],
-    #   name => [
-    #     "Name is too short (minimum is 3 characters)',   
-    #   ],
-    # };
-
-See L<Valiant> for overall overview and L<Valiant::Validates> for additional API
+See L<Valiant> for overall overview and L<Valiant::Filterable> for additional API
 level documentation.
 
 =head1 DESCRIPTION
 
-Using this package will apply the L<Valiant::Validates> role to your current class
+Using this package will apply the L<Valiant::Filterable> role to your current class
 as well as import several class methods from that role.  It also wraps the C<has>
-imported method so that you can add attribute validations as arguments to C<has> if
-you find that approach to be neater than calling C<validates>.
+imported method so that you can add attribute filters as arguments to C<has> if
+you find that approach to be neater than calling C<filter>.
 
 You can override several class methods of this package if you need to create your
 own custom subclass.
 
 =head1 IMPORTS
 
-The following subroutines are imported from L<Valiant::Validates>
+The following subroutines are imported from L<Valiant::Filters>
 
-=head2 validates_with
+=head2 filters_with
 
 Accepts the name of a custom validator or a reference to a function, followed by a list
 of arguments.  
 
-    validates_with sub {
-      my ($self, $opts) = @_;
+    filter_with sub {
+      my ($self, $class, $attrs) = @_;
     };
 
-    valiates_with 'SpecialValidator', arg1=>'foo', arg2=>'bar';
+    filter_with 'SpecialFilters', arg1=>'foo', arg2=>'bar';
 
-See C<validates_with> in either L<Valiant> or L<Valiant::Validates> for more.
+See C<filters_with> in L<Valiant::Filterable> for more.
 
-=head2 validates
+=head2 filters
 
 Create validations on an objects attributes.  Accepts the name of an attributes (or an
 arrayref of names) followed by a list of validators and global options.  Validators can
@@ -182,7 +146,7 @@ be a subroutine reference, a type constraint or the name of a Validator class.
       }
     );
 
-See C<validates> in either L<Valiant> or L<Valiant::Validates> for more.
+See C<filters> in L<Valiant::Filterable> for more.
 
 =head1 METHODS
 
@@ -190,9 +154,9 @@ The following class methods are available for subclasses
 
 =head2 default_role
 
-Roles that are applied when using this class.  Default is L<Valiant::Validates>.  If
+Roles that are applied when using this class.  Default is L<Valiant::Filterable>.  If
 you are subclassing and wish to apply more roles, or if you've made your own version
-of L<Valiant::Validates> you can override this method.
+of L<Valiant::Filterable> you can override this method.
 
 =head2 default_exports
 
@@ -200,7 +164,7 @@ Methods that are automatically exported into the calling package.
 
 =head1 SEE ALSO
  
-L<Valiant>, L<Valiant::Validates>
+L<Valiant>, L<Valiant::Filterable>
 
 =head1 AUTHOR
  

@@ -54,10 +54,13 @@ use Test::Most;
   );
 
   filters_with 'Trim';
-
 }
 
-my $user = Local::Test::User->new(name=>'  john ', last=>'  napiorkowski  ', another=>'  dd  ');
+my $user = Local::Test::User->new(
+  name => '  john ',
+  last => '  napiorkowski  ',
+  another => '  dd  '
+);
 
 is $user->name, '1JOHN2';
 is $user->last, 'NapiorkowskiXXXAAA';

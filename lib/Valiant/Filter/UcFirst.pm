@@ -20,136 +20,33 @@ sub filter_each {
 
 =head1 TITLE
 
-Valiant::Validator::With - Validate using a coderef or method
+Valiant::Filter::UcFirst - upper case the first letter of a string
 
 =head1 SYNOPSIS
 
-    package Local::Test::With;
+  package Local::Test::User;
 
-    use Moo;
-    use Valiant::Validations;
-    use Valiant::I18N;
-    use DateTime;
+  use Moo;
+  use Valiant::Filters;
 
-    has date_of_birth => (is => 'ro');
+  has 'name' => (is=>'ro', required=>1);
 
-    validates date_of_birth => (
-      with => sub {
-        my ($self, $attribute_name, $value, $opts) = @_;
-        $self->errors->add($attribute_name, "Can't be born tomorrow") 
-          if $value > DateTime->today;
-      },
-    );
+  filters name => (
+    uc_first => 1,
+  );
 
-    validates date_of_birth => (
-      with => {
-        method => 'not_future',
-        message_if_false => _t('not_future'),
-      },
-    );
+  my $user = Local::Test::User->new(name=>'john');
 
-    sub not_future {
-      my ($self, $attribute_name, $value, $opts) = @_;
-      return $value < DateTime->today;
-    }
-
-    my $dt = DateTime->new(year=>2364, month=>4, day=>30); # ST:TNG Encounter At Farpoint ;)
-    my $object = Local::Test::With->new(date_of_birth=>$dt);
-    $object->validate;
-
-    warn $object->errors->_dump;
-
-    $VAR1 = {
-      'date_of_birth' => [
-        'Date of birth Can\'t be born tomorrow',
-        'Date of birth Date 2364-04-30T00:00:00 is future'
-      ]
-    };
-
+  print $user->name; # 'John'
+  
 =head1 DESCRIPTION
 
-This validator allows you to set a custom coderef or method name to handle all
-special validation needs.  You can use this instead of overriding the C<validate>
-method.  This validator doesn't itself set any error messages and relies on you
-knowing what you are doing.  Use this when creating your own validator is too
-much work or the validation requirement is too special and not generically reusable.
-
-You can also use a validation object and call that with C<validates_with> as an
-alternative to using this validator.  You should consider doing so if you validation
-is very complex and requires initial arguments for example.
-
-If you set the parameter C<message_if_false> you can just have your validation
-coderef or method return a boolean and it will set the error message for you.  Given
-message will be used if the method or coderef returns false. You
-may find this approach neater if you need to use a validation method in several
-places, or for promoting looser coupling in your code.
-
-=head1 Passing parameters to $opts
-
-You can pass parameters to the C<$opts> hashref using the C<opts> argument:
-
-    validates date_of_birth => (
-      with => {
-        method => 'minimum_year',
-        opts => {year => 2000},
-      },
-    );
-
-    sub not_future_with_opts {
-      my ($self, $attribute_name, $value, $opts) = @_;
-      $self->errors->add($attribute_name, 'Year too low') unless
-        $value->year > $opts->{year};
-    }
-
-You might find this useful in creating more parametered callbacks.  However at this point
-you might wish to consider just writing a custom validator.
-
-=head1 SHORTCUT FORM
-
-This validator supports the follow shortcut forms:
-
-    validates attribute => ( with => sub { my $self = shift; ... }, ... );
-    validates attribute => ( with => 'mymethod', ... );
-    validates attribute => ( with => ['mymethod', 'Value is invalid'], ... );
-    validates attribute => ( with => [sub { my $self = shift; ... }, 'Value is invalid'], ... );
-
-Which is the same as:
-
-    validates attribute => (
-      with => {
-        cb => sub { ... },
-      },
-      ...
-    );
-    validates attribute => (
-      with => {
-        method => 'mymethod',
-      },
-      ...
-    );
-    validates attribute => (
-      with => {
-        method => 'mymethod',
-        message_if_false => 'Value is invalid',
-      },
-      ...
-    ); 
-    validates attribute => (
-      with => {
-        cb => sub { ... },
-        message_if_false => 'Value is invalid',
-      },
-      ...
-    );
-
-=head1 GLOBAL PARAMETERS
-
-This validator supports all the standard shared parameters: C<if>, C<unless>,
-C<message>, C<strict>, C<allow_undef>, C<allow_blank>.
+This is a very simple filter that takes no paramters and just does a 'ucfirst' on the
+value of the attribute.
 
 =head1 SEE ALSO
  
-L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
+L<Valiant>, L<Valiant::Filter>, L<Valiant::Validator::Filter>.
 
 =head1 AUTHOR
  
