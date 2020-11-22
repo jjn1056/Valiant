@@ -82,6 +82,18 @@ filters that are applied to individual attributes you should create a subclass o
 The following attribute filter classes are shipped with L<Valiant>.  Please see the package POD for
 usage details (this is only a sparse summary)
 
+=head2 Collapse
+
+Collapse all whitespace in a string to a single space.  See L<Valiant::Filter::Collapse> for details.
+
+=head2 Lower
+
+Lowercase a string.  See L<Valiant::Filter::Trim> for details.
+
+=head2 Title
+
+'title' cases a string (all first letters up cased).  See L<Valiant::Filter::Title> for details.
+
 =head2 Trim
 
 Trims whitespace from the start and/or end of the attribute string.
@@ -99,6 +111,10 @@ See L<Valiant::Filter::With> for details.
 Uppercases the first letter of a string
 
 See L<Valiant::Filter::UcFirst> for details.
+
+=head2 Upper
+
+Upcase a string.  See L<Valiant::Filter::Upper> for details.
 
 =head2 Special Validators
 
