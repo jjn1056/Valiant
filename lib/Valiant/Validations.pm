@@ -3,6 +3,7 @@ package Valiant::Validations;
 use Sub::Exporter 'build_exporter';
 use Class::Method::Modifiers qw(install_modifier);
 use Valiant::Util 'debug';
+use Scalar::Util 'blessed';
 
 require Role::Tiny;
 
@@ -32,7 +33,13 @@ sub import {
       map {
         my $key = $_; 
         $key => sub {
-          sub { return $cb{$key}->($target, @_) };
+          sub { 
+            if(blessed($_[0])) {
+              return $cb{$key}->(@_);
+            } else {
+              return $cb{$key}->($target, @_);
+            }
+          };
         }
       } keys %cb,
     ],
@@ -197,6 +204,21 @@ of L<Valiant::Validates> you can override this method.
 =head2 default_exports
 
 Methods that are automatically exported into the calling package.
+
+=head1 ADDING VALIDATIONS TO OBJECTS
+
+Generally for best performance you will want to add validations to your classes, that way
+we can searching and precompile all the validations for optimized runtime.   However you
+can add validations to objects after they are initialized and they will DTRT (add those
+validations only to the instance and not to the class).
+
+    my $object = Local::Test::User->new(age=>5);
+    $object->validates(age => (numericality => {greater_than => 10}));
+
+Please note that you should expect some performance hit here since we need to search for
+and prepare the validation.  So don't use this in hot parts of your code.  Ideally you won't
+really need this feature and can work around using validation contexts but I saw now reason
+to prevent this from working for those unusual cases where it might be worth the price.
 
 =head1 SEE ALSO
  

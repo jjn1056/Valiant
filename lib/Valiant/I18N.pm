@@ -77,7 +77,8 @@ sub _lookup_translation_by_count {
   # Data::Localize::Format::NamedArgs
 
   # TODO this has an error when $args{$1} is 0
-  $translated =~ s/\{\{([^}]+)\}\}/ $args{$1} || '' /gex;
+  #$translated =~ s/\{\{([^}]+)\}\}/ $args{$1} || '' /gex;
+  $translated =~ s/\{\{([^}]+)\}\}/ defined($args{$1}) ? $args{$1}: '' /gex;
 
   debug 1, "Resolved count translation; $translated";
   return $translated;

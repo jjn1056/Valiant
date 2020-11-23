@@ -11,16 +11,26 @@ with 'Valiant::Translation';
 
 requires 'ancestors';
 
+has _instance_validations => (is=>'rw', init_arg=>undef);
+
 my @validations;
 sub validations {
-  my ($class, $arg) = @_;
-  $class = ref($class) if ref($class);
+  my ($class_or_self, $arg) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
   my $varname = "${class}::validations";
 
   no strict "refs";
-  push @$varname, $arg if defined($arg);
+  if(defined($arg)) {
+    if(ref($class_or_self)) { # its $self
+      my @existing = @{ $class_or_self->_instance_validations||[] };
+      $class_or_self->_instance_validations([$arg, @existing]);
+    } else {
+      push @$varname, $arg;
+    }
+  }
 
-  return @$varname,
+  return @{ ref($class_or_self) ? $class_or_self->_instance_validations||[] : [] },
+    @$varname,
     map { $_->validations } 
     grep { $_->can('validations') }
       $class->ancestors;

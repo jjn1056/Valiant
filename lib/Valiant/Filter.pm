@@ -86,6 +86,10 @@ usage details (this is only a sparse summary)
 
 Collapse all whitespace in a string to a single space.  See L<Valiant::Filter::Collapse> for details.
 
+=head2 Flatten
+
+Flatten an arrayref to a string.  See L<Valiant::Filter::Flatten> for details.
+
 =head2 Lower
 
 Lowercase a string.  See L<Valiant::Filter::Trim> for details.

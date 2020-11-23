@@ -9,16 +9,27 @@ use namespace::clean;
 
 requires 'ancestors';
 
+has _instance_filters => (is=>'rw', init_arg=>undef);
+
 my @_filters;
 sub _filters {
-  my ($class, $arg) = @_;
-  $class = ref($class) if ref($class);
+  my ($class_or_self, $arg) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
   my $varname = "${class}::_filters";
 
   no strict "refs";
-  push @$varname, $arg if defined($arg);
 
-  return @$varname,
+  if(defined($arg)) {
+    if(ref($class_or_self)) { # its $self
+      my @existing = @{ $class_or_self->_instance_filters||[] };
+      $class_or_self->_instance_filters([$arg, @existing]);
+    } else {
+      push @$varname, $arg;
+    }
+  }
+
+  return @{ ref($class_or_self) ? $class_or_self->_instance_filters||[] : [] },
+    @$varname,
     map { $_->_filters } 
     grep { $_->can('validations') }
       $class->ancestors;
