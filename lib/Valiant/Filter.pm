@@ -102,6 +102,11 @@ Lowercase a string.  See L<Valiant::Filter::Trim> for details.
 
 'title' cases a string (all first letters up cased).  See L<Valiant::Filter::Title> for details.
 
+=head2 ToArray
+
+Given a string force to a single element array (do nothing if its already an array. 
+See L<Valiant::Filter::ToArray> for details.
+
 =head2 Trim
 
 Trims whitespace from the start and/or end of the attribute string.
