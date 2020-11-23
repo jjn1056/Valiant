@@ -90,6 +90,10 @@ Collapse all whitespace in a string to a single space.  See L<Valiant::Filter::C
 
 Flatten an arrayref to a string.  See L<Valiant::Filter::Flatten> for details.
 
+=head2 HtmlEscape
+
+Basic HTML escaping on a string.  See L<Valiant::Filter::HtmlEscape> for details.
+
 =head2 Lower
 
 Lowercase a string.  See L<Valiant::Filter::Trim> for details.
@@ -104,12 +108,6 @@ Trims whitespace from the start and/or end of the attribute string.
 
 See L<Valiant::Filter::Trim> for details.
 
-=head2 With
-
-Use a subroutine reference to provide filtering.
-
-See L<Valiant::Filter::With> for details.
-
 =head2 UcFirst
 
 Uppercases the first letter of a string
@@ -119,6 +117,12 @@ See L<Valiant::Filter::UcFirst> for details.
 =head2 Upper
 
 Upcase a string.  See L<Valiant::Filter::Upper> for details.
+
+=head2 With
+
+Use a subroutine reference to provide filtering.
+
+See L<Valiant::Filter::With> for details.
 
 =head2 Special Validators
 
