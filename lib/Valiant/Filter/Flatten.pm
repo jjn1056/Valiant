@@ -7,6 +7,7 @@ with 'Valiant::Filter::Each';
 has pick => (is=>'ro', predicate=>'has_pick');
 has join => (is=>'ro', predicate=>'has_join');
 has sprintf => (is=>'ro', predicate=>'has_sprintf');
+has pattern => (is=>'ro', predicate=>'has_pattern');
 
 sub normalize_shortcut {
   my ($class, $arg) = @_;
@@ -28,6 +29,12 @@ sub filter_each {
   if($self->has_sprintf) {
     return sprintf($self->sprintf, @$value);
   }
+  if($self->has_pattern) {
+    my $pattern = $self->pattern;
+    $pattern =~ s/\{\{([^}]+)\}\}/ defined($value->{$1}) ? $value->{$1}: '' /gex; 
+    return $pattern;
+  }
+
   die 'Flatten filter must define one of pick, join or sprintf';
 }
 
@@ -35,11 +42,11 @@ sub filter_each {
 
 =head1 TITLE
 
-Valiant::Filter::Flatten - Array to string
+Valiant::Filter::Flatten - Array or Hash ref to string
 
 =head1 SYNOPSIS
 
-    package Local::Test::User;
+    package Local::Test;
 
     use Moo;
     use Valiant::Filters;
@@ -48,23 +55,27 @@ Valiant::Filter::Flatten - Array to string
     has 'pick_last' => (is=>'ro', required=>1);
     has 'join' => (is=>'ro', required=>1);
     has 'sprintf' => (is=>'ro', required=>1);
+    has 'pattern' => (is=>'ro', required=>1);
 
-    filters pick_first =>  (flatten=>+{pick=>'first'});
-    filters pick_last =>  (flatten=>+{pick=>'last'});
-    filters join =>  (flatten=>+{join=>','});
-    filters sprintf =>  (flatten=>+{sprintf=>'%s-%s-%s'});
+    filters pick_first => (flatten => +{pick => 'first'});
+    filters pick_last => (flatten => +{pick => 'last'});
+    filters join => (flatten => +{join => ','});
+    filters sprintf => (flatten => +{sprintf => '%s-%s-%s'});
+    filters pattern => (flatten => +{pattern => 'hi {{a}} there {{b}}'});
 
-    my $user = Local::Test::User->new(
+    my $object = Local::Test->new(
       pick_first => [1,2,3],
       pick_last => [1,2,3],
       join => [1,2,3],
       sprintf => [1,2,3],
+      pattern => +{ a=>'now', b=>'john' },
     );
 
-    print $user->pick_first;  # 1
-    print $user->pick_last;   # 3
-    print $user->join;        # '1,2,3'
-    print $user->sprintf;     # '1-2-3'
+    print $object->pick_first;  # 1
+    print $object->pick_last;   # 3
+    print $object->join;        # '1,2,3'
+    print $object->sprintf;     # '1-2-3'
+    print $object->pattern;     # 'hi now there john'
 
 =head1 DESCRIPTION
 
@@ -86,6 +97,13 @@ Join the arrayref into a string using the value of 'join' as the deliminator
 =head2 sprintf
 
 Use C<sprintf> formatted string to convert an arrayref.
+
+=head2 pattern
+
+Uses a L<Valiant> style pattern string to convert a hashref to a string.  Basically
+inside the pattern string we look for "{{$key}}" and substitute $key for whatever
+matches in the incoming hashref as a key value.  If there's no match we replace with
+an empty string without raising warnings.
 
 =head1 SEE ALSO
  

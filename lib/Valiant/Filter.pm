@@ -88,7 +88,7 @@ Collapse all whitespace in a string to a single space.  See L<Valiant::Filter::C
 
 =head2 Flatten
 
-Flatten an arrayref to a string.  See L<Valiant::Filter::Flatten> for details.
+Flatten an arrayref or hashref to a string.  See L<Valiant::Filter::Flatten> for details.
 
 =head2 HtmlEscape
 
