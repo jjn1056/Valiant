@@ -35,6 +35,13 @@ sub validate_each {
 
   $result->validate(%$opts);
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $result->invalid;
+
+  # Not sure if this should be default behavior or not...
+  $result->errors->each(sub {
+    my ($attr, $message) = @_;
+    $record->errors->add("${attribute}.${attr}", $message);
+  });
+
 }
 
 1;

@@ -72,8 +72,6 @@ sub validate_each {
       my ($attr, $message) = @_;
       $record->errors->add("${attribute}.${attr}", $message);
     });
-
-
   }
 }
 

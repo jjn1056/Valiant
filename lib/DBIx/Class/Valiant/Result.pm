@@ -13,9 +13,9 @@ with 'Valiant::Util::Ancestors';
 with 'DBIx::Class::Valiant::Validates';
 with 'Valiant::Filterable';
 
-sub BUILDARGS { } # The base class wants this (for now)
+sub BUILDARGS { } # The filter role wants this (for now)
 
-sub new {
+sub new { # also support for the filter role
   my ($class, $attrs) = @_;
   $attrs = $class->_process_filters($attrs);
   return $class->next::method($attrs);
@@ -343,6 +343,8 @@ sub set_single_related_from_params {
   # will merge params with existing rather than create a new one or
   # run a new query to find one.  I 'think' that's the most expected behavior...
   my ($related_result) = @{ $self->related_resultset($related)->get_cache ||[] }; # its single so only one
+  $related_result = $self->{_relationship_data}{$related} unless $related_result;
+
   if($related_result) {
     $related_result->set_from_params_recursively(%$params);
   } else {

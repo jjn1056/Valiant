@@ -135,6 +135,129 @@ use Test::DBIx::Class
   ok $profile->in_storage, 'record was saved';
 }
 
+# For kicks lets test the uniqueness constraint in concert with
+# the trim filter
+
+{
+  my $person = Schema
+    ->resultset('Person')
+    ->create({
+      username => '     jjn ', # will be 'jjn' after trim
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'hellohello',
+      password_confirmation => 'hellohello',
+    }), 'created fixture';
+
+  ok $person->invalid, 'attempted record invalid';
+  ok !$person->in_storage, 'record was not saved';
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    username => [
+      'Username chosen is not unique',
+    ],
+  }, 'Got expected errors';
+
+  # ok fix it
+
+  $person->username('jjn2');
+  $person->insert;
+
+  ok $person->valid, 'valid record';
+  ok $person->in_storage, 'record was saved';
+
+  # Ok not try to update it to a username that is taken
+
+  $person->username('jjn');
+  $person->update;
+
+  ok $person->invalid, 'attempted record invalid';
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    username => [
+      'Username chosen is not unique',
+    ],
+  }, 'Got expected errors';
+}
+
+# Some simple update tests.  We also test the password confirmation
+# validation on update when changed.
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->find({username=>'jjn'});
+
+  $person->first_name('j');
+  $person->update;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    first_name => [
+      'First Name is too short (minimum is 2 characters)',
+    ],
+  }, 'Got expected errors';
+
+  $person->first_name('jon');
+  $person->password('abc');
+  $person->update;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    password => [
+      "Password is too short (minimum is 8 characters)",
+    ],
+    password_confirmation => [
+      "Password Confirmation doesn't match 'Password'",
+    ],
+  }, 'Got expected errors';
+
+  $person->password('abc124efg');
+  $person->password_confirmation('abc124efg');
+  $person->update;
+
+  ok $person->valid, 'valid record';
+
+  # Again for kicks and since we are here likes do a nestd update
+
+  $person->last_name('n');
+  $person->profile->zip('sadsdasdasdasdsdfsdfsdfsdf');
+  $person->update;
+
+  ok $person->invalid;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    "last_name",
+    [
+      "Last Name is too short (minimum is 2 characters)",
+    ],
+    "profile",
+    [
+      "Profile Is Invalid",
+    ],
+    "profile.zip",
+    [
+      "Profile Zip is not a zip code",
+    ],
+  }, 'Got expected errors';
+
+  is_deeply +{$person->profile->errors->to_hash(full_messages=>1)}, +{
+    "zip",
+    [
+      "Zip is not a zip code",
+    ],
+  }, 'Got expected errors';
+
+  # Ok, try a deep update and expect it to work this time.
+
+  $person->update({
+    last_name => 'longenough',
+    profile => {
+      zip => '12345',
+    }
+  });
+
+  ok $person->valid;
+}
+
 done_testing;
 
 __END__

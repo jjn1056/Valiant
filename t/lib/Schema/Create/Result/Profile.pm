@@ -15,7 +15,7 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
-__PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
+__PACKAGE__->validates(zip => (presence=>1, format=>'zip', on=>['create','update'])); # context here to make sure context passed to nested
 __PACKAGE__->validates(birthday => (
     date => {
       max => sub { pop->now->subtract(days=>2) }, 

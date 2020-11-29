@@ -3,7 +3,6 @@ package Schema::Create::Result::Person;
 use base 'Schema::Result';
 
 __PACKAGE__->table("person");
-
 __PACKAGE__->add_columns(
   id => { data_type => 'bigint', is_nullable => 0, is_auto_increment => 1 },
   username => { data_type => 'varchar', is_nullable => 0, size => 48 },
@@ -35,4 +34,5 @@ __PACKAGE__->might_have(
   { 'foreign.person_id' => 'self.id' }
 );
 
+__PACKAGE__->accept_nested_for('profile');
 1;
