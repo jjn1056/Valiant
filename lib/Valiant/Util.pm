@@ -4,19 +4,35 @@ use strict;
 use warnings;
  
 use Module::Runtime;
-use Sub::Exporter;
+use Sub::Exporter 'build_exporter';
  
-my @exports = qw(
-  throw_exception debug DEBUG_FLAG
-  );
+our @DEFAULT_EXPORTS = qw( throw_exception debug DEBUG_FLAG );
 
-Sub::Exporter::setup_exporter({
-  exports => \@exports,
-  groups  => { all => \@exports }
-});
+sub default_exports { @DEFAULT_EXPORTS }
+
+sub import {
+  my $class = shift;
+  my $target = caller;
+  my @exports = $class->default_exports;
+  my $exporter = build_exporter({
+    into_level => 1,
+    groups  => { all => \@exports },
+    exports => [
+      map {
+        my $method = $_;
+        $method => sub {
+          #my ($class, $name, $arg) = @_;
+          sub { $class->$method($target, @_) }
+        };
+      } @exports,
+    ],
+  });
+
+  $class->$exporter(@exports);
+}
 
 sub throw_exception {
-  my ($class_name, @args) = @_;
+  my ($class, $target, $class_name, @args) = @_;
   my $namespace = "Valiant::Util::Exception::$class_name";
   my $exception = Module::Runtime::use_module($namespace)->new(@args);
   die $exception->as_string;
@@ -25,9 +41,13 @@ sub throw_exception {
 sub DEBUG_FLAG { $ENV{VALIANT_DEBUG} ? 1:0 }
 
 sub debug {
-  my ($level, @args) = @_;
+  my ($class, $target, $target_level, @args) = @_;
   return unless exists $ENV{VALIANT_DEBUG};
-  warn "@args\n" if $ENV{VALIANT_DEBUG}  >= $level;
+  my ($level, $package_pattern) = split(',', $ENV{VALIANT_DEBUG});
+  if($package_pattern) {
+    return unless $target eq ($package_pattern||'');
+  }
+  warn "$target: @args\n" if $level  >= $target_level;
 }
 
 1;

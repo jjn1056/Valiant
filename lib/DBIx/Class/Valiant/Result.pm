@@ -9,7 +9,17 @@ use Valiant::Util 'debug';
 use Scalar::Util 'blessed';
 use Carp;
 
+with 'Valiant::Util::Ancestors';
 with 'DBIx::Class::Valiant::Validates';
+with 'Valiant::Filterable';
+
+sub BUILDARGS { } # The base class wants this (for now)
+
+sub new {
+  my ($class, $attrs) = @_;
+  $attrs = $class->_process_filters($attrs);
+  return $class->next::method($attrs);
+}
 
 my @accept_nested_for;
 sub accept_nested_for {
@@ -34,14 +44,24 @@ sub accept_nested_for {
 
 sub insert {
   my ($self, @args) = @_;
-  $self->validate(%{ $self->{__VALIANT_CREATE_ARGS} ||+{} });
+  my %args = %{ $self->{__VALIANT_CREATE_ARGS} ||+{} };
+
+  my $context = $args{context}||[];
+  $context = ref($context)||'' eq 'ARRAY' ? $context : [$context];
+  push @$context, 'create';
+  $args{context} = $context;
+
+  $self->validate(%args);
   return $self if $self->invalid;
+  ## delete $self->{__VALIANT_CREATE_ARGS};  We might need this at some point
   return $self->next::method(@args);
 }
 
 sub update {
   my ($self, $upd) = @_;
-  my $context = delete $upd->{__context};
+  my $context = delete($upd->{__context})||[];
+  $context = ref($context)||'' eq 'ARRAY' ? $context : [$context];
+  push @$context, 'update';
 
   my %related = ();
   my %nested = $self->result_class->accept_nested_for;
@@ -182,7 +202,7 @@ sub is_unique {
   if($self->in_storage) {
     return 1 unless $self->is_column_changed($attribute_name);
   }
-  my $found = $self->result_source->resultset->find({$attribute_name=>$value});
+  my $found = $self->result_source->resultset->single({$attribute_name=>$value});
   return $found ? 0:1;
 }
 

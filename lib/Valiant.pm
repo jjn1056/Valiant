@@ -830,8 +830,13 @@ In this example you can see that since the first validation does not set an C<on
 it always runs no matter what context you set via C<validate> (even when you don't set one).
 So we always check that the value is an integer.
 
-Basically the rule to remember is validations with no C<on> option will run no matter the context.
+Basically the rule to remember is validations with no C<on> option will run no matter the context
+is set via validation options (or set automatically).
 Validations with some C<on> option will only run in the specified context.
+
+So if your validation requests one or more contexts via C<on> they only run when at least one
+of the passed contexts is matching. If your validation does not request a context via C<on>
+then they match ANY or NONE contexts!
 
 =head1 GLOBAL MODEL VALIDATOR OPTIONS
 

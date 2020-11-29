@@ -2,7 +2,7 @@ package Valiant::Validator::Confirmation;
 
 use Moo;
 use Valiant::I18N;
-use Valiant::Util 'throw_exception';
+use Valiant::Util 'throw_exception', 'debug';
 
 with 'Valiant::Validator::Each';
 
@@ -36,6 +36,8 @@ sub validate_each {
     throw_exception MissingMethod => (object=>$record, method=>$confirmation_attribute);
 
   my $confirmation_value = $confirmation->($record);
+
+  debug 2, "Field value is '$value' and confirmation field ('$confirmation_attribute') value is '@{[ defined($confirmation_value) ? $confirmation_value : 'undefined' ]}'";
 
   unless(
     defined($confirmation_value)

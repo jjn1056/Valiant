@@ -2,7 +2,6 @@ package DBIx::Class::Valiant::Validator::Result;
 
 use Moo;
 use Valiant::I18N;
-use Module::Runtime 'use_module';
 
 with 'Valiant::Validator::Each';
 
@@ -20,8 +19,14 @@ sub validate_each {
   my ($self, $record, $attribute, $result, $opts) = @_;
 
   unless(defined $result) {
-    $record->errors->add($attribute, $self->invalid_msg, $opts);
-    return;
+    my $rel_data = $record->relationship_info($attribute);
+    if($rel_data->{attrs}{accessor} eq 'single' && $rel_data->{attrs}{join_type} eq 'LEFT') {
+      # Its an optional relation like 'might have' so its not an error to be undefined.
+      return;
+    } else {
+      $record->errors->add($attribute, $self->invalid_msg, $opts);
+      return;
+    }
   }
 
   # If a row is marked to be deleted then don't bother to validate it.

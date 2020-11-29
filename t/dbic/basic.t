@@ -54,7 +54,7 @@ ok $state->id;
   $person->password('aaa');
   $person->update({last_name=>'1', __context => 'registration'});
 
-  ok $person->invalid, 'attempted record invalid';
+  ok $person->invalid, 'attempted record invalid with context';
 
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     last_name => [
@@ -112,7 +112,7 @@ ok $state->id;
       ],
     }), 'created fixture';
 
-  ok $person->invalid, 'attempted record invalid';
+  ok $person->invalid, 'attempted record invalid multi context';
   ok !$person->in_storage, 'record was not saved';
 
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
@@ -489,7 +489,7 @@ ok $state->id;
     ],
   });
 
-  ok $person->invalid, 'attempted record invalid';
+  ok $person->invalid, 'attempted record invalid 3';
   ok $person->is_changed, 'record has unsaved changes';
 
   is_deeply +{ $person->errors->to_hash }, +{
