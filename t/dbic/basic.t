@@ -126,6 +126,20 @@ ok $state->id;
     profile => [
       "Profile Is Invalid",
     ],
+    "profile.address" => [
+      "Profile Address can't be blank",
+      "Profile Address is too short (minimum is 2 characters)",
+    ],
+    "profile.birthday" => [
+      "Profile Birthday doesn't look like a date",
+    ],
+    "profile.phone_number" => [
+      "Profile Phone Number can't be blank",
+      "Profile Phone Number is too short (minimum is 10 characters)",
+    ],
+    "profile.state_id" => [
+      "Profile State Id can't be blank",
+    ],
   }, 'Got expected errors';
 
   ok $person->profile->invalid, 'attempted profile was invalid';
@@ -327,6 +341,24 @@ ok $state->id;
     profile => [
       "Profile Is Invalid",
     ],
+    "profile.address" => [
+      "Profile Address can't be blank",
+      "Profile Address is too short (minimum is 2 characters)",
+    ],
+    "profile.birthday" => [
+      "Profile Birthday chosen date can't be later than 2020-11-28",
+    ],
+    "profile.city" => [
+      "Profile City can't be blank",
+      "Profile City is too short (minimum is 2 characters)",
+    ],
+    "profile.phone_number" => [
+      "Profile Phone Number can't be blank",
+      "Profile Phone Number is too short (minimum is 10 characters)",
+    ],
+    "profile.state_id" => [
+      "Profile State Id can't be blank",
+    ],
   };
 
   ok $person->profile->invalid, 'attempted record was invalid';
@@ -415,6 +447,9 @@ ok $state->id;
       ],
       profile => [
         "Profile Is Invalid",
+      ],
+      "profile.zip" => [
+        "Profile Zip is not a zip code",
       ],
     };
 
@@ -621,6 +656,28 @@ ok $state->id;
     ],
     profile => [
       "Is Invalid",
+    ],
+    "profile.address" => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    "profile.birthday" => [
+      "doesn't look like a date",
+    ],
+    "profile.city" => [
+      "can't be blank",
+      "is too short (minimum is 2 characters)",
+    ],
+    "profile.phone_number" => [
+      "can't be blank",
+      "is too short (minimum is 10 characters)",
+    ],
+    "profile.state_id" => [
+      "can't be blank",
+    ],
+    "profile.zip" => [
+      "can't be blank",
+      "is not a zip code",
     ],
     username => [
       "can't be blank",

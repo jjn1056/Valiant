@@ -246,7 +246,8 @@ use Test::DBIx::Class
     ],
   }, 'Got expected errors';
 
-  # Ok, try a deep update and expect it to work this time.
+  # Ok, try a deep update and expect it to work this time. (might_have relation
+  # and we are expecting an update on the relation)
 
   $person->update({
     last_name => 'longenough',
@@ -255,7 +256,90 @@ use Test::DBIx::Class
     }
   });
 
-  ok $person->valid;
+  ok $person->valid; #ok properly updated the profile relation otherwise if it did a create we'd expect missing field errors
+}
+
+{
+  # create a person, then do an update with nested and make sure
+  # we validate aand then insert the new profile.
+  #
+  my $person = Schema
+    ->resultset('Person')
+    ->create({
+      username => '     jjn3 ', # will be 'jjn3' after trim
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'hellohello',
+      password_confirmation => 'hellohello',
+    }), 'created fixture';
+
+  ok $person->valid, 'attempted record valid';
+  ok $person->in_storage, 'record was saved';
+  is $person->username, 'jjn3';
+
+  # Lets reload from the DB rather than reuse the existing object this
+  # time (like we did in the above tests) to make sure there's no weird
+  # stuff going on in th caches.
+
+  {
+    ok my $person = Schema->resultset('Person')->find({username=>'jjn3'});
+
+    # Ok try to update and let the nested profile require a create but
+    # be invalid so that we get error results.
+    $person->update({
+      last_name => 'n',
+      profile => {
+        zip => '12345',
+        city => 'Elgin',
+        birthday => '1991-01-01',
+      }
+    });
+
+    ok $person->invalid;
+    ok !$person->profile->in_storage;
+    is $person->last_name, 'n';
+    is $person->profile->zip, '12345';
+    is $person->profile->city, 'Elgin';
+    is $person->profile->birthday->ymd, '1991-01-01'; #this gets inflated to a DateTime object
+
+    is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+      "profile.address",
+      [
+        "Profile Address can't be blank",
+        "Profile Address is too short (minimum is 2 characters)",
+      ],
+      "profile",
+      [
+        "Profile Is Invalid",
+      ],
+      "last_name",
+      [
+        "Last Name is too short (minimum is 2 characters)",
+      ],
+    }, 'Got expected errors';
+
+    #  Now fix it si that Person properly updates and the profile gets saved
+    $person->update({
+      last_name => 'nnnnnnnnnnnnnn',
+      profile => {
+        address => '12345 Home Way',
+      }
+    });
+
+    ok $person->valid;
+    ok $person->profile->in_storage;
+    is $person->last_name, 'nnnnnnnnnnnnnn';
+    is $person->profile->address, '12345 Home Way';
+
+    # reload from DB once last time and make sure all the expected updates 
+    # happened
+
+    {
+      ok my $person = Schema->resultset('Person')->find({username=>'jjn3'});
+      is $person->last_name, 'nnnnnnnnnnnnnn';
+      is $person->profile->address, '12345 Home Way';
+    }
+  }
 }
 
 done_testing;
