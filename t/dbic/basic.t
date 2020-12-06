@@ -255,7 +255,7 @@ ok $state->id;
 
 
   ok $cc_2->valid, 'attempted cc was valid';
-  ok ! $cc_2->in_storage, 'record has not been saved';
+  ok ! $cc_2->in_storage, 'record has not been saved 3';
 
   ok my $person_correct = Schema
     ->resultset('Person')
@@ -287,7 +287,7 @@ ok $state->id;
     }), 'created person';
 
   ok $person_invalid->invalid, 'attempted record was valid';
-  ok ! $person_invalid->in_storage, 'record has not been saved';
+  ok ! $person_invalid->in_storage, 'record has not been saved 4';
   is_deeply +{$person_invalid->errors->to_hash(full_messages=>1)}, +{
     credit_cards => [
       "Credit Cards Is Invalid",
@@ -330,6 +330,8 @@ ok $state->id;
     },
   });
 
+  my $yesterday = DateTime->now->subtract(days=>2);
+
   ok $person->invalid, 'attempted record was invalid';
   ok $person->is_changed, 'record has unsaved changes';
   is $person->last_name, 'a', 'got correct last_name';
@@ -346,7 +348,7 @@ ok $state->id;
       "Profile Address is too short (minimum is 2 characters)",
     ],
     "profile.birthday" => [
-      "Profile Birthday chosen date can't be later than 2020-11-28",
+      "Profile Birthday chosen date can't be later than @{[ $yesterday->ymd ]}",
     ],
     "profile.city" => [
       "Profile City can't be blank",

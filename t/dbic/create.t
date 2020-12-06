@@ -263,7 +263,7 @@ use Test::DBIx::Class
   # create a person, then do an update with nested and make sure
   # we validate aand then insert the new profile.
   #
-  my $person = Schema
+  ok my $person = Schema
     ->resultset('Person')
     ->create({
       username => '     jjn3 ', # will be 'jjn3' after trim
@@ -342,10 +342,148 @@ use Test::DBIx::Class
   }
 }
 
+# find_or_create we only test the create side
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->find_or_create({
+      username => '     jjn4 ', # will be 'jjn4' after trim
+      first_name => 'john',
+      last_name => 'napiorkowski',
+    }), 'created fixture';
+
+  ok $person->invalid;
+  ok !$person->in_storage;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    password => [
+      "Password can't be blank",
+      "Password is too short (minimum is 8 characters)",
+    ],
+    password_confirmation => [
+      "Password Confirmation doesn't match 'Password'",
+    ],
+  }, 'Got expected errors';
+}
+
+# update_or_create need to test both the create and update side
+# we do create first
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->update_or_create({
+      username => '     jjn4 ', # will be 'jjn4' after trim
+      first_name => 'john',
+      last_name => 'napiorkowski',
+    }), 'created fixture';
+
+  ok $person->invalid;
+  ok !$person->in_storage;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    password => [
+      "Password can't be blank",
+      "Password is too short (minimum is 8 characters)",
+    ],
+    password_confirmation => [
+      "Password Confirmation doesn't match 'Password'",
+    ],
+  }, 'Got expected errors';
+}
+
+# now test the update side
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->update_or_create({
+      username => 'jjn3',
+      first_name => 'j',
+    }), 'created fixture';
+
+  ok $person->invalid;
+  ok $person->is_changed;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    "first_name", [
+      "First Name is too short (minimum is 2 characters)",
+    ],
+  }, 'Got expected errors';
+}
+
+# For kicks lets try this with a nested relation.  When updating a record
+# with a 'might_have' relation IF the relation exists we update that relation
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->find({username => 'jjn3'});
+
+    #$person->profile;  # Ok so lets NOT inflate the relation and make sure
+    #the code does the right thing and inflates it for us.
+
+  $person->update({
+      username => 'jjn3',
+      first_name => 'j',
+      profile => { zip => 'asfdsadfsafasdfsdf' }
+    });
+
+  ok $person->invalid;
+  ok $person->is_changed;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    "first_name", [
+      "First Name is too short (minimum is 2 characters)",
+    ],
+    "profile", [
+      "Profile Is Invalid",
+    ],
+    "profile.zip", [
+      "Profile Zip is not a zip code",
+    ],
+  }, 'Got expected errors';
+}
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->update_or_create({
+      username => 'jjn3',
+      first_name => 'j',
+      profile => { zip => 'asfdsadfsafasdfsdf' }
+    }), 'created fixture update_or_create';
+
+  ok $person->invalid;
+  ok $person->is_changed;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    "first_name", [
+      "First Name is too short (minimum is 2 characters)",
+    ],
+    "profile", [
+      "Profile Is Invalid",
+    ],
+    "profile.zip", [
+      "Profile Zip is not a zip code",
+    ],
+  }, 'Got expected errors';
+}
+
+
+# find_or_create_related
+#
+# need to test create new recrod with just an update on a related
+
 done_testing;
 
 __END__
 
   use Devel::Dwarn;
   Dwarn $person->errors->to_hash(full_messages=>1);
+
+
+
+
 

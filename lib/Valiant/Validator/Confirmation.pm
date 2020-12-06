@@ -37,8 +37,6 @@ sub validate_each {
 
   my $confirmation_value = $confirmation->($record);
 
-  debug 2, "Field value is '$value' and confirmation field ('$confirmation_attribute') value is '@{[ defined($confirmation_value) ? $confirmation_value : 'undefined' ]}'";
-
   unless(
     defined($confirmation_value)
       &&

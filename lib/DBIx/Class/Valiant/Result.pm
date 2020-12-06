@@ -94,7 +94,9 @@ sub update {
       my $num = scalar @{$related{$related}};
       confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
     }
-    
+    debug 2, "Settinged related $related for @{[ ref $self ]} ";
+
+    #$self->update_or_create_related($related, $related{$related});
     $self->set_related_from_params($related, $related{$related});
   }
 
@@ -110,12 +112,6 @@ sub update {
 
   return $self->next::method();
 }
-
-
-
-
-
-
 
 sub register_column {
   my $self = shift;
@@ -263,8 +259,6 @@ sub build_related_if_empty {
   return $self->build_related($related, $attrs);
 }
 
-
-
 sub set_from_params_recursively {
   my ($self, %params) = @_;
   foreach my $param (keys %params) { # probably needs to be sorted so we get specials (_destroy) first
@@ -272,6 +266,7 @@ sub set_from_params_recursively {
     if($self->has_column($param)) {
       $self->set_column($param => $params{$param});
     } elsif($self->has_relationship($param)) {
+      debug 2, "set_related_from_params for @{[ ref $self ]}, related $param";
       $self->set_related_from_params($param, $params{$param});
     } elsif($self->can($param)) {
       # Right now this is only used by confirmation stuff
@@ -328,7 +323,14 @@ sub set_multi_related_from_params {
 
   my @related_models = ();
   foreach my $param_row (@param_rows) {
-    my $related_model = $self->_find_or_create_related_result_from_params($related, $param_row);
+    #my $related_model = $self->_find_or_create_related_result_from_params($related, $param_row);
+    my $related_model;
+    if(blessed $param_row) {
+      $related_model = $param_row;
+    } else {
+      $related_model = $self->find_or_new_related($related, $param_row);
+      $related_model->set_from_params_recursively(%$param_row);
+    }
     push @related_models, $related_model;
   }
   $self->related_resultset($related)->set_cache(\@related_models);
@@ -346,13 +348,23 @@ sub set_single_related_from_params {
   $related_result = $self->{_relationship_data}{$related} unless $related_result;
 
   if($related_result) {
+    ## TODO I might need to do something else if $params is blessed
+    debug 2, "Found cached related_result $related for @{[ ref $self ]} ";
     $related_result->set_from_params_recursively(%$params);
   } else {
-    $related_result = $self->_find_or_create_related_result_from_params($related, $params);
+    debug 2, "No cached related_result $related for @{[ ref $self ]} ";
+    #$related_result = $self->_find_or_create_related_result_from_params($related, $params);
+    if(blessed($params)) {
+      debug 2, "related_result $related for @{[ ref $self ]} is blessed object";
+      $related_result = $params;
+    } else {
+      $related_result = $self->find_or_new_related($related, $params);
+      $related_result->set_from_params_recursively(%$params);
+    }
   }
 
   #$related_result = $self->_find_or_create_related_result_from_params($related, $params);
-
+  
   $self->related_resultset($related)->set_cache([$related_result]);
   $self->{_relationship_data}{$related} = $related_result;
   $self->{__valiant_related_resultset}{$related} = [$related_result];
@@ -365,15 +377,27 @@ sub _find_or_create_related_result_from_params {
     my $new_related = $self->new_related($related, $params);
     my @primary_columns = $new_related->result_source->primary_columns;
 
+    # If $params contain primary_columns OR unique columns then
+    # we expect to be able to find a matching record in the DB for updating
+    # otherwise DIE.
+
     my %primary_columns = map {
       exists($params->{$_}) ? ($_ => $params->{$_}) : ();
     } @primary_columns;
 
+    # IF $self has 
+    use Devel::Dwarn;
+    Dwarn \%primary_columns;
+    Dwarn \@primary_columns;
+    Dwarn $params;
+
     if(scalar(%primary_columns) == scalar(@primary_columns)) {
+      warn "doing findrealted";
       my $found_related = $self->find_related($related, \%primary_columns, +{key=>'primary'}); # hits the DB
       die "Result not found for relation $related on @{[ ref $self ]}" unless $found_related;
       $found_related;
     } else {
+      warn "just return the new";
       $new_related;
     }
   } || die $@; # TODO do something useful here...
