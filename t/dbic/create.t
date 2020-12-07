@@ -471,19 +471,24 @@ use Test::DBIx::Class
   }, 'Got expected errors';
 }
 
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->find({username => 'jjn3'});
 
-# find_or_create_related
-#
-# need to test create new recrod with just an update on a related
+  my $profile = $person->find_or_create_related('profile', +{});
+
+  is $profile->zip, 12345;
+
+  $profile->zip("asdasda");
+  $person->update;
+
+  ok $person->valid;
+  ok $person->profile->valid;
+
+  $profile->update;
+
+  ok $profile->invalid;
+}
 
 done_testing;
-
-__END__
-
-  use Devel::Dwarn;
-  Dwarn $person->errors->to_hash(full_messages=>1);
-
-
-
-
-

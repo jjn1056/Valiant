@@ -323,7 +323,6 @@ sub set_multi_related_from_params {
 
   my @related_models = ();
   foreach my $param_row (@param_rows) {
-    #my $related_model = $self->_find_or_create_related_result_from_params($related, $param_row);
     my $related_model;
     if(blessed $param_row) {
       $related_model = $param_row;
@@ -353,58 +352,20 @@ sub set_single_related_from_params {
     $related_result->set_from_params_recursively(%$params);
   } else {
     debug 2, "No cached related_result $related for @{[ ref $self ]} ";
-    #$related_result = $self->_find_or_create_related_result_from_params($related, $params);
     if(blessed($params)) {
       debug 2, "related_result $related for @{[ ref $self ]} is blessed object";
       $related_result = $params;
     } else {
+      debug 2, "related_result $related for @{[ ref $self ]} is hashed params";
       $related_result = $self->find_or_new_related($related, $params);
       $related_result->set_from_params_recursively(%$params);
     }
   }
 
-  #$related_result = $self->_find_or_create_related_result_from_params($related, $params);
-  
   $self->related_resultset($related)->set_cache([$related_result]);
   $self->{_relationship_data}{$related} = $related_result;
   $self->{__valiant_related_resultset}{$related} = [$related_result];
 }
-
-sub _find_or_create_related_result_from_params {
-  my ($self, $related, $params) = @_;
-  return $params if blessed $params;
-  my $related_result = eval {
-    my $new_related = $self->new_related($related, $params);
-    my @primary_columns = $new_related->result_source->primary_columns;
-
-    # If $params contain primary_columns OR unique columns then
-    # we expect to be able to find a matching record in the DB for updating
-    # otherwise DIE.
-
-    my %primary_columns = map {
-      exists($params->{$_}) ? ($_ => $params->{$_}) : ();
-    } @primary_columns;
-
-    # IF $self has 
-    use Devel::Dwarn;
-    Dwarn \%primary_columns;
-    Dwarn \@primary_columns;
-    Dwarn $params;
-
-    if(scalar(%primary_columns) == scalar(@primary_columns)) {
-      warn "doing findrealted";
-      my $found_related = $self->find_related($related, \%primary_columns, +{key=>'primary'}); # hits the DB
-      die "Result not found for relation $related on @{[ ref $self ]}" unless $found_related;
-      $found_related;
-    } else {
-      warn "just return the new";
-      $new_related;
-    }
-  } || die $@; # TODO do something useful here...
-
-  return $related_result;
-}
-
 
 sub mutate_recursively {
   my ($self) = @_;
