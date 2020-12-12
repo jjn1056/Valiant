@@ -175,7 +175,7 @@ sub read_attribute_for_validation {
     my $rel_type = $rel_data->{attrs}{accessor};
     if($rel_type eq 'single') {
       return $self->$attribute;
-      #return $self->related_resultset($attribute)->first;
+      #return $self->related_resultset($attribute)->single;
     } elsif($rel_type eq 'multi') {
       return $self->related_resultset($attribute);
     } else {

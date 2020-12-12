@@ -25,7 +25,7 @@ __PACKAGE__->validates(password => confirmation => {
     if => 'is_column_changed', # This method defined by DBIx::Class::Row
   });
  
- # nested validations run only if the relation exists since this is optional relation
+# nested validations run only if the relation exists since this is optional relation
 __PACKAGE__->validates(profile => (result=>+{validations=>1} ));
 
 __PACKAGE__->might_have(

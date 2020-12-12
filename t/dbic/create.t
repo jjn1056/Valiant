@@ -478,7 +478,7 @@ use Test::DBIx::Class
 
   my $profile = $person->find_or_create_related('profile', +{});
 
-  is $profile->zip, 12345;
+  is $profile->zip, 12345; # Found expected
 
   $profile->zip("asdasda");
   $person->update;
@@ -487,8 +487,11 @@ use Test::DBIx::Class
   ok $person->profile->valid;
 
   $profile->update;
-
   ok $profile->invalid;
+
+  # Still valid because its got cached the orginal
+  ok $person->profile->valid;
+  is $person->profile->zip, 12345;
 }
 
 done_testing;
