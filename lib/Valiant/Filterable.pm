@@ -316,19 +316,19 @@ with an optional hash of key value pair options (which are passed to C<$opts>) o
 should be a stand alone filter class (basically a class that does the C<filters> method although
 you should consume the L<Validate::Filter> role to enforce the contract).
 
-    filters_with sub {
+    __PACKAGE__->filters_with(sub {
       my ($self, $class, $attrs)) = @_;
       ...
-    };
+    });
 
-    filters_with \&check_object => (arg1=>'foo', arg2=>'bar');
+    __PACKAGE__->filters_with(\&check_object => (arg1=>'foo', arg2=>'bar'));
 
     sub filters_with {
       my ($self, $class, $attrs) = @_;
       ...
     }
 
-    filters_with with 'Custom' => (arg1=>'foo', arg2=>'bar');
+    __PACKAGE__->filters_with( 'Custom' => (arg1=>'foo', arg2=>'bar'));
 
 If you pass a string that is a filter class we resolve its namespace using the same approach as
 detailed above for C<filters>.  Any arguments are passed to the C<new> method of the found class.

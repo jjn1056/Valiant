@@ -12,6 +12,10 @@ DBIx::Class::Valiant - Glue Valiant validations into DBIx::Class
 
 =head1 DESCRIPTION
 
+This seems to work is is currently utterly undocumented.   Feel free to use it
+if you are willing to get into the code, review test cases, etc.   Also at some
+point this will be pulled into its own distribution.
+
 =head1 IMPORTS
 
 =head1 ATTRIBUTES

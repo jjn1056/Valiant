@@ -379,8 +379,8 @@ In addition to methods this class provides, it also proves all methods from L<Va
 Used to declare validations on an attribute.  The first argument is either a scalar or arrayref of
 scalars which should be attributes on your object:
 
-    validates name => (...);
-    validates ['name', 'age'] => (...);
+    __PACKAGE__->validates( name => (...) );
+    __PACKAGE__->validates( ['name', 'age'] => (...));
 
 Following arguments should be in one of three forms: a coderef or subroutine reference that contains
 validation rules, a key - value pair which is a validator class and its arguments or lastly you can
@@ -390,7 +390,7 @@ arguments for the validate set as a whole:
     package Local::Model::User;
 
     use Moo;
-    use Valiant::Validations;
+    use Valiant::Validations; # Importer that wraps Valiant::Validates
     use Types::Standard 'Int';
 
     has ['name', 'age'] => (is=>'ro);
@@ -460,19 +460,19 @@ with an optional hash of key value pair options (which are passed to C<$opts>) o
 should be a stand alone validator class (basically a class that does the C<validates> method although
 you should consume the L<Validate::Validator> role to enforce the contract).
 
-    validates_with sub {
+    __PACKAGE__->validates_with(sub {
       my ($self, $opts) = @_;
       ...
-    };
+    });
 
-    validates_with \&check_object => (arg1=>'foo', arg2=>'bar');
+    __PACKAGE__->validates_with(\&check_object => (arg1=>'foo', arg2=>'bar'));
 
     sub check_object {
       my ($self, $opts) = @_;
       ...
     }
 
-    validates with 'Custom' => (arg1=>'foo', arg2=>'bar');
+    __PACKAGE__->validates with('Custom' => (arg1=>'foo', arg2=>'bar'));
 
 If you pass a string that is a validator class we resolve its namespace using the same approach as
 detailed above for C<validates>.  Any arguments are passed to the C<new> method of the found class

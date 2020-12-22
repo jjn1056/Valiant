@@ -22,6 +22,9 @@ use Test::Most;
 ??many to many???
 
 
+when many to many we can find on the far side of the bdir
+
+
 
 =back
 

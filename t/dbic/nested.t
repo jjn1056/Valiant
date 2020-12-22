@@ -12,6 +12,9 @@ use Test::DBIx::Class
 # do a FIND and update that found record with the new FK info and any updated fields
 # if valid.  If the find fails for unique or PK we go ahead and create anyway.
 
+# If one wants to replace a might have with a new record you should first delete the
+# exising record.
+
 {
   # Just successfully create a nested relationship.
   ok my $one = Schema
@@ -222,16 +225,6 @@ use Test::DBIx::Class
     is $copy->one->value, 'test05';
     is $copy->one->might->value, 'test06';
   }
-
-  #  ok my $steal_rel = Schema
-  #    ->resultset('OneOne')
-  #    ->create({
-  #      value => 'test10',
-  #      one => {
-  #        value => 'test05',
-  #      },
-  #    }), 'created fixture';
-
 }
 
 {
@@ -249,7 +242,6 @@ use Test::DBIx::Class
   ok $one->valid;
   ok $one->one;
   ok !$one->one->might;
-
 }
 
 done_testing;
