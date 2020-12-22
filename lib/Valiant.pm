@@ -11,8 +11,6 @@ Valiant - Ruby on Rails-like validation framework.
 
 =begin markdown
 
-https://travis-ci.org/jjn1056/Plack-App-GraphQL
-
 # PROJECT STATUS
 [![Build Status](https://travis-ci.org/jjn1056/Valiant.svg?branch=master)](https://travis-ci.org/jjn1056/Valiant)
 [![CPAN version](https://badge.fury.io/pl/Valiant.svg)](https://metacpan.org/pod/Valiant) 
