@@ -7,6 +7,7 @@ use Data::Localize;
 use Data::Localize::MultiLevel;
 use Scalar::Util;
 use Valiant::Util 'throw_exception', 'debug';
+use namespace::autoclean -also => ['throw_exception', 'debug'];
 
 our $dl;
 our %locale_paths;

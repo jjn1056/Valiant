@@ -8,6 +8,8 @@ use Role::Tiny::With;
 use Valiant::Util 'debug';
 use Scalar::Util 'blessed';
 use Carp;
+use namespace::autoclean -also => ['debug'];
+
 
 with 'Valiant::Util::Ancestors';
 with 'DBIx::Class::Valiant::Validates';
@@ -29,7 +31,6 @@ sub accept_nested_for {
     allow_destroy => 0,
     reject_if => 0,
     limit => 0,
-    update_only => 0,
   );
   
   no strict "refs";
@@ -45,14 +46,13 @@ sub accept_nested_for {
 sub insert {
   my ($self, @args) = @_;
   my %args = %{ $self->{__VALIANT_CREATE_ARGS} ||+{} };
-
   my $context = $args{context}||[];
-  $context = ref($context)||'' eq 'ARRAY' ? $context : [$context];
-  push @$context, 'create';
-  $args{context} = $context;
+  my @context = ref($context)||'' eq 'ARRAY' ? @$context : ($context);
+  push @context, 'create' unless grep { $_ eq 'create' } @context;
+  $args{context} = \@context;
 
   $self->validate(%args);
-  return $self if $self->invalid;
+  return $self if $self->invalid; # maybe should be return 0
   ## delete $self->{__VALIANT_CREATE_ARGS};  We might need this at some point
   return $self->next::method(@args);
 }
@@ -60,12 +60,11 @@ sub insert {
 sub update {
   my ($self, $upd) = @_;
   my $context = delete($upd->{__context})||[];
-  $context = ref($context)||'' eq 'ARRAY' ? $context : [$context];
-  push @$context, 'update';
+  my @context = ref($context)||'' eq 'ARRAY' ? @$context : ($context);
+  push @context, 'update' unless grep { $_ eq 'update' } @context;
 
   my %related = ();
   my %nested = $self->result_class->accept_nested_for;
-
   foreach my $associated(keys %nested) {
     $related{$associated} = delete($upd->{$associated})
       if exists($upd->{$associated});
@@ -79,12 +78,13 @@ sub update {
     die "You are trying to create a relationship ($related) without setting 'accept_nested_for'";
   }
 
-  my %validate_args = (context => $context) if $context;
-  $self->set_inflated_columns($upd) if $upd;
+  my %validate_args = (context => \@context) if @context;
 
+  $self->set_inflated_columns($upd) if $upd;
   foreach my $related(keys %related) {
 
     if(my $cb = $nested{$related}->{reject_if}) {
+      warn 'aaaaa';
       next if $cb->($self, $related{$related});
     }
     if(my $limit_proto = $nested{$related}->{limit}) {
@@ -105,6 +105,7 @@ sub update {
   return $self if $self->invalid;
   foreach my $related(keys %related) {
     if(my $cb = $nested{$related}->{reject_if}) {
+      warn 'bbbbbb';
       next if $cb->($self, $related{$related});
     }
     $self->_mutate_related($related);
@@ -266,6 +267,10 @@ sub set_from_params_recursively {
     if($self->has_column($param)) {
       $self->set_column($param => $params{$param});
     } elsif($self->has_relationship($param)) {
+      my %nested = $self->result_class->accept_nested_for;
+      if(my $cb =  $nested{$param}->{reject_if}) {
+        next if $cb->($self, $params{$param});
+      }
       debug 2, "set_related_from_params for @{[ ref $self ]}, related $param";
       $self->set_related_from_params($param, $params{$param});
     } elsif($self->can($param)) {

@@ -3,6 +3,7 @@ package DBIx::Class::Valiant::Validator::ResultSet;
 use Moo;
 use Valiant::I18N;
 use Module::Runtime 'use_module';
+use namespace::autoclean;
 
 with 'Valiant::Validator::Each';
 
@@ -26,7 +27,13 @@ sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
 
   # If a row is marked to be deleted then don't bother to validate it.
-  my @rows = grep { not $_->is_marked_for_deletion } $value->all;
+  # We use ->next and avoiod ->all because ->all resets the cache.
+  my @rows;
+  while(my $row = $value->next) {
+    push @rows, $row unless $row->is_marked_for_deletion;
+  }
+
+  #my @rows = grep { not $_->is_marked_for_deletion } $value->all;
   my $count = scalar(@rows);
 
   # If there's zero $count and skip_if_empty is true (default is false) then

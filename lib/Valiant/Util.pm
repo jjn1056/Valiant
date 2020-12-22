@@ -5,7 +5,7 @@ use warnings;
  
 use Module::Runtime;
 use Sub::Exporter 'build_exporter';
- 
+
 our @DEFAULT_EXPORTS = qw( throw_exception debug DEBUG_FLAG );
 
 sub default_exports { @DEFAULT_EXPORTS }

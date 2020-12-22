@@ -32,12 +32,12 @@ sub new_result {
   my $result = $self->next::method($fields, @args);
   $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context; # Need this for ->insert
 
-  foreach my $related(keys %related) {
-
-    confess "Relationship $related is only nested for update" if $nested{$related}->{update_only};
+  RELATED: foreach my $related(keys %related) {
 
     if(my $cb = $nested{$related}->{reject_if}) {
-      next if $cb->($self, $related{$related});
+      warn "aaaa";
+      my $response = $cb->($result, $related{$related});
+      next RELATED if $response;
     }
 
     if(my $limit_proto = $nested{$related}->{limit}) {
@@ -47,8 +47,6 @@ sub new_result {
       my $num = scalar @{$related{$related}};
       confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
     }
-
-    #Dwarn $related{$related}; Can be hash or array of objects
 
     $result->set_related_from_params($related, $related{$related});
   }

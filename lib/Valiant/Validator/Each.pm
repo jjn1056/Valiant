@@ -4,6 +4,7 @@ use Moo::Role;
 use Valiant::I18N; # So that _t is available in subclasses
 use Valiant::Util 'throw_exception', 'debug';
 use Scalar::Util 'blessed';
+use namespace::autoclean;
 
 with 'Valiant::Validator';
 requires 'validate_each';
