@@ -3,7 +3,9 @@
 Valiant - Ruby on Rails-like validation framework.
 
 # PROJECT STATUS
-[![Build Status](https://travis-ci.org/jjn1056/Valiant.svg?branch=master)](https://travis-ci.org/jjn1056/Valiant)
+[![](https://github.com/jjn1056/valiant/workflows/linux/badge.svg)](https://github.com/jjn1056/valiant/actions)
+[![](https://github.com/jjn1056/valiant/workflows/macos/badge.svg)](https://github.com/jjn1056/valiant/actions)
+[![](https://github.com/jjn1056/valiant/workflows/windows/badge.svg)](https://github.com/jjn1056/valiant/actions)
 [![CPAN version](https://badge.fury.io/pl/Valiant.svg)](https://metacpan.org/pod/Valiant) 
 
 # SYNOPSIS
@@ -126,8 +128,8 @@ are packaged with [Valiant](https://metacpan.org/pod/Valiant).
 Validating the state of things is one of the most common tasks we perform.  For example
 a user might wish to change their profile information and you need to make sure that
 the new settings conform to acceptable limits (such as the user first and last name
-fits into the database and has acceptable characters, that a password is complex enough
-and that an address is complete).  This logic can get tricky over time as a system grows in
+fits into the database and have acceptable characters, that a password is complex enough
+and that an address is complete, etc).  This logic can get tricky over time as a system grows in
 complexity and edge cases need to be accounted for (for example for business reasons you might
 wish to allow pre-existing users to conform to different password complexity constraints or
 require newer users to supply more profile details).
