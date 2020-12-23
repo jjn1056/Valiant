@@ -30,7 +30,8 @@ jobs:
         run: cpanm -n App::cpanminus ExtUtils::MakeMaker
       - name: Install dependencies
         run: |
-          cpanm -v --installdeps .
+          cpanm Dist::Zilla
+          dzil listdeps | cpanm
       - name: Run tests
         run: prove -lvr t
 
