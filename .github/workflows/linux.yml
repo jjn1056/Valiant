@@ -1,5 +1,4 @@
 name: linux
-
 on:
   push:
     branches:
@@ -7,29 +6,31 @@ on:
     tags-ignore:
       - '*'
   pull_request:
-
 jobs:
   perl:
-
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         perl-version:
           - '5.8'
           - '5.10'
           - '5.16'
-          - 'latest'
-          - 'threaded'
-
+          - '5.18'
+          - '5.20'
+          - '5.22'
+          - '5.30'
+          - '5.32'
     container:
       image: perl:${{ matrix.perl-version }}
-
     steps:
       - uses: actions/checkout@v2
       - name: perl -V
         run: perl -V
-      - name: Install Dependencies
-        run: curl -sL https://git.io/cpm | perl - install -g --show-build-log-on-failure
-      - name: Run Tests
-        run: prove -l t
+      - name: Fix ExtUtils::MakeMaker (for Perl 5.16 and 5.18)
+        run: cpanm -n App::cpanminus ExtUtils::MakeMaker
+      - name: Install dependencies
+        run: |
+          cpanm -n --installdeps .
+      - name: Run tests
+        run: prove -lvr t
+
