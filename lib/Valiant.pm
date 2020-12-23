@@ -70,10 +70,11 @@ Valiant - Ruby on Rails-like validation framework.
 
 B<WARNING>: This is early release code.  I've been using it for a while on personal projects
 and have a lot of test cases but there's probably corners I've not hit yet.   All documented
-features should work as described.   I will only change API and functionality in a breaking
+features should work as described.  I will only change API and functionality in a breaking
 manner if its the only way to fix problems (caveat that I am reserving the right to change
 the way errors are listed and structured for nested validations, for now, as well as the
-way we resolve files for internationalization).
+way we resolve files for internationalization, whose current code may not be as performant
+as needed).
 
 Domain level validations for L<Moo> classes and related capabilities such as attribute
 filtering and internationalization.  Provides a domain specific language
@@ -116,7 +117,7 @@ If you want to use L<Valiant> with L<DBIx::Class> you will also wish to review
 L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class>.
 
 This document reviews all the bits of the L<Valiant> system as a whole (validations, filters,
-internationalization etc).   You might also like to review API details from the following
+internationalization, errores etc).   You might also like to review API details from the following
 files:
 
 L<Valiant::Validates>, a L<Moo::Role> which adds a validation API to your class, or L<Valiant::Validations>
@@ -129,7 +130,7 @@ L<Valiant::I18N>, API information on how we provide internationalized error mess
 validations.
 
 L<Valiant::Validator> and L<Valiant::Filter> which provides details about validations and filters that
-are packaged with L<Valiant>
+are packaged with L<Valiant>.
 
 =head1 WHY OBJECT VALIDATION AS CLASS DATA?
 

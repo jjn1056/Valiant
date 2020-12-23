@@ -59,9 +59,11 @@ Valiant - Ruby on Rails-like validation framework.
 
 **WARNING**: This is early release code.  I've been using it for a while on personal projects
 and have a lot of test cases but there's probably corners I've not hit yet.   All documented
-features should work as described.   I will only change API and functionality in a breaking
+features should work as described.  I will only change API and functionality in a breaking
 manner if its the only way to fix problems (caveat that I am reserving the right to change
-the way errors are listed and structured for nested validations, for now).
+the way errors are listed and structured for nested validations, for now, as well as the
+way we resolve files for internationalization, whose current code may not be as performant
+as needed).
 
 Domain level validations for [Moo](https://metacpan.org/pod/Moo) classes and related capabilities such as attribute
 filtering and internationalization.  Provides a domain specific language
@@ -104,7 +106,7 @@ If you want to use [Valiant](https://metacpan.org/pod/Valiant) with [DBIx::Class
 [DBIx::Class::Valiant](https://metacpan.org/pod/DBIx::Class::Valiant) which details how [Valiant](https://metacpan.org/pod/Valiant) glues into [DBIx::Class](https://metacpan.org/pod/DBIx::Class).
 
 This document reviews all the bits of the [Valiant](https://metacpan.org/pod/Valiant) system as a whole (validations, filters,
-internationalization etc).   You might also like to review API details from the following
+internationalization, errores etc).   You might also like to review API details from the following
 files:
 
 [Valiant::Validates](https://metacpan.org/pod/Valiant::Validates), a [Moo::Role](https://metacpan.org/pod/Moo::Role) which adds a validation API to your class, or [Valiant::Validations](https://metacpan.org/pod/Valiant::Validations)
@@ -117,7 +119,7 @@ object creation time, or [Valiant::Filters](https://metacpan.org/pod/Valiant::Fi
 validations.
 
 [Valiant::Validator](https://metacpan.org/pod/Valiant::Validator) and [Valiant::Filter](https://metacpan.org/pod/Valiant::Filter) which provides details about validations and filters that
-are packaged with [Valiant](https://metacpan.org/pod/Valiant)
+are packaged with [Valiant](https://metacpan.org/pod/Valiant).
 
 # WHY OBJECT VALIDATION AS CLASS DATA?
 
