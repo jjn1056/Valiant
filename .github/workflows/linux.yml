@@ -12,7 +12,6 @@ jobs:
     strategy:
       matrix:
         perl-version:
-          - '5.8'
           - '5.10'
           - '5.16'
           - '5.18'
@@ -30,8 +29,8 @@ jobs:
         run: cpanm -n App::cpanminus ExtUtils::MakeMaker
       - name: Install dependencies
         run: |
-          cpanm Dist::Zilla
-          dzil listdeps | cpanm
+          cpanm -v Dist::Zilla
+          dzil listdeps | cpanm -v
       - name: Run tests
         run: prove -lvr t
 
