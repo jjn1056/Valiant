@@ -72,7 +72,8 @@ B<WARNING>: This is early release code.  I've been using it for a while on perso
 and have a lot of test cases but there's probably corners I've not hit yet.   All documented
 features should work as described.   I will only change API and functionality in a breaking
 manner if its the only way to fix problems (caveat that I am reserving the right to change
-the way errors are listed and structured for nested validations, for now).
+the way errors are listed and structured for nested validations, for now, as well as the
+way we resolve files for internationalization).
 
 Domain level validations for L<Moo> classes and related capabilities such as attribute
 filtering and internationalization.  Provides a domain specific language

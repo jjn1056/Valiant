@@ -10,10 +10,12 @@ use Scalar::Util 'blessed';
 use Carp;
 use namespace::autoclean -also => ['debug'];
 
-
 with 'Valiant::Util::Ancestors';
 with 'DBIx::Class::Valiant::Validates';
 with 'Valiant::Filterable';
+
+use DBIx::Class::Candy::Exports;
+export_methods ['filters', 'validates', 'filters_with', 'validates_with', 'accept_nested_for'];
 
 sub BUILDARGS { } # The filter role wants this (for now)
 
