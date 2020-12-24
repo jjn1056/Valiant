@@ -3,7 +3,7 @@ package Validator::Custom;
 use Moo;
 with 'Valiant::Validator';
 
-has 'notes' => (is=>'ro');
+has 'notes' => (is=>'ro', required=>1);
 
 sub validate {
   my ($self, $object) = @_;
