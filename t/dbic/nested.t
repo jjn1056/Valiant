@@ -204,10 +204,11 @@ use Test::DBIx::Class
   $one->discard_changes;
   is $one->one->might->value, 'xtest02';
 
-  $one->one->might->value('ggggfffffdddd');
+  $one->one->might->value('ggggfffffdddd too long...');
   $one->update;
   
   ok $one->invalid;
+  is $one->one->might->value, 'ggggfffffdddd too long...';
   is_deeply +{$one->errors->to_hash(full_messages=>1)}, +{
     one => [
       "One Is Invalid",
@@ -219,6 +220,20 @@ use Test::DBIx::Class
       "One Might Value is too long (maximum is 8 characters)",
     ],
   }, 'Got expected errors';
+
+  is_deeply +{$one->one->might->errors->to_hash(full_messages=>1)}, +{
+    "value" => [
+      "Value is too long (maximum is 8 characters)",
+    ],
+  }, 'Got expected errors';
+
+  $one->one->might->value('ok');
+  $one->update;
+  ok $one->valid;
+  $one->discard_changes;
+  is $one->one->might->value, 'ok';
+  is $one->one->value, 'hhh';
+  is $one->value, 'test01';
 }
 
 {
