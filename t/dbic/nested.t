@@ -181,6 +181,28 @@ use Test::DBIx::Class
   ok $one->in_storage;
   ok $one->one->in_storage;
   ok $one->one->might->in_storage;
+
+  $one->discard_changes;
+
+  is $one->value, 'test01';
+  is $one->one->value, 'hhh';
+  is $one->one->might->value, 'mighth';
+
+  $one->update({
+    one => {
+      might => { value => 'xtest01' },
+    },
+  });
+
+  ok $one->valid;
+  $one->discard_changes;
+  is $one->one->might->value, 'xtest01';
+
+  $one->one->might->value('xtest02');
+  $one->update;
+  ok $one->valid;
+  $one->discard_changes;
+  is $one->one->might->value, 'xtest02';
 }
 
 {
@@ -255,7 +277,8 @@ use Test::DBIx::Class
   ok !$one->one->might;
 }
 
-# Lets do one or two reverse to stress belongs to
+# Lets do one or two reverse to stress belongs to.  Here's
+# a bunch that shoud all always pass.
 #
 
 {
@@ -301,24 +324,23 @@ use Test::DBIx::Class
   $might->one->oneone->value('might08');
   $might->update;
 
+  ok $might->valid;
   $might->discard_changes; # reload
   
   is $might->value, 'might06';
   is $might->one->value, 'might07';
   is $might->one->oneone->value, 'might08';
 
-  warn ".......\n\n";
-
   $might->value('might09');
   $might->one->oneone->value('might10');
   $might->update;
+  ok $might->valid;
 
   $might->discard_changes; # reload
   
   is $might->value, 'might09';
   is $might->one->value, 'might07';
   is $might->one->oneone->value, 'might10';
-
 }
 
 done_testing;

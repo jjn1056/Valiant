@@ -9,13 +9,12 @@ $VERSION = eval $VERSION;
 
 Valiant - Ruby on Rails-like validation framework.
 
-=begin markdown
+=begin html
 
-# PROJECT STATUS
-[![](https://github.com/jjn1056/valiant/workflows/linux/badge.svg)](https://github.com/jjn1056/valiant/actions)
-[![CPAN version](https://badge.fury.io/pl/Valiant.svg)](https://metacpan.org/pod/Valiant) 
-
-=end markdown
+<a href="https://github.com/jjn1056/valiant/actions"><img src="https://github.com/jjn1056/valiant/workflows/linux/badge.svg"></a>
+<a href="https://metacpan.org/pod/Valiant"><img src="https://badge.fury.io/pl/Valiant.svg"></a>
+ 
+=end html
 
 =head1 SYNOPSIS
 
