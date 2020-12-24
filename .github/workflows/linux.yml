@@ -29,8 +29,9 @@ jobs:
         run: cpanm -n App::cpanminus ExtUtils::MakeMaker
       - name: Install dependencies
         run: |
-          cpanm -v Dist::Zilla
-          dzil listdeps | cpanm -v
+          cpanm Archive::Tar
+          cpanm Dist::Zilla
+          dzil listdeps | cpanm
       - name: Run tests
         run: prove -lvr t
 
