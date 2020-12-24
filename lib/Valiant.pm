@@ -12,8 +12,9 @@ Valiant - Ruby on Rails-like validation framework.
 =begin html
 
 <a href="https://github.com/jjn1056/valiant/actions"><img src="https://github.com/jjn1056/valiant/workflows/linux/badge.svg"></a>
+<a href="https://codecov.io/github/jjn1056/valiant?branch=master"><img src="https://codecov.io/github/jjn1056/valiant/coverage.svg?branch=master"></a>
 <a href="https://metacpan.org/pod/Valiant"><img src="https://badge.fury.io/pl/Valiant.svg"></a>
- 
+
 =end html
 
 =head1 SYNOPSIS

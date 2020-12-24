@@ -27,12 +27,19 @@ jobs:
         run: perl -V
       - name: Fix ExtUtils::MakeMaker (for Perl 5.16 and 5.18)
         run: cpanm -n App::cpanminus ExtUtils::MakeMaker
-      - name: Install dependencies
+      - name: Install author dependencies
         run: |
           cpanm Archive::Tar
           cpanm Archive::Zip
           cpanm Dist::Zilla
+          cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
+      - name: Install project dependencies
+        run: |
           dzil listdeps | cpanm
       - name: Run tests
         run: prove -lr t
+      - name: Code coverage
+        env: # Or as an environment variable
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: cover -test -report codecov
 
