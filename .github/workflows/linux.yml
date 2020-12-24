@@ -34,5 +34,5 @@ jobs:
           cpanm Dist::Zilla
           dzil listdeps | cpanm
       - name: Run tests
-        run: prove -lvr t
+        run: prove -lr t
 
