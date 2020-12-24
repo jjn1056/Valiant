@@ -13,8 +13,6 @@ Valiant - Ruby on Rails-like validation framework.
 
 # PROJECT STATUS
 [![](https://github.com/jjn1056/valiant/workflows/linux/badge.svg)](https://github.com/jjn1056/valiant/actions)
-[![](https://github.com/jjn1056/valiant/workflows/macos/badge.svg)](https://github.com/jjn1056/valiant/actions)
-[![](https://github.com/jjn1056/valiant/workflows/windows/badge.svg)](https://github.com/jjn1056/valiant/actions)
 [![CPAN version](https://badge.fury.io/pl/Valiant.svg)](https://metacpan.org/pod/Valiant) 
 
 =end markdown
