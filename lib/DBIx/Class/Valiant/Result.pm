@@ -86,7 +86,6 @@ sub update {
   foreach my $related(keys %related) {
 
     if(my $cb = $nested{$related}->{reject_if}) {
-      warn 'aaaaa';
       next if $cb->($self, $related{$related});
     }
     if(my $limit_proto = $nested{$related}->{limit}) {
@@ -105,9 +104,8 @@ sub update {
   $self->validate(%validate_args);
 
   return $self if $self->invalid;
-  foreach my $related(keys %related) {
+  foreach my $related(keys %nested) {
     if(my $cb = $nested{$related}->{reject_if}) {
-      warn 'bbbbbb';
       next if $cb->($self, $related{$related});
     }
     $self->_mutate_related($related);
@@ -377,7 +375,7 @@ sub set_single_related_from_params {
 sub mutate_recursively {
   my ($self) = @_;
   $self->_mutate if $self->is_changed || $self->is_marked_for_deletion;
-  foreach my $related (keys %{$self->{__valiant_related_resultset}}) {
+  foreach my $related (keys %{$self->{_relationship_data}}) {
     next unless $self->related_resultset($related)->first; # TODO don't think I need this
     debug 2, "mutating relationship $related";
     $self->_mutate_related($related);
@@ -430,7 +428,15 @@ sub _mutate_multi_related {
 
 sub _mutate_single_related {
   my ($self, $related) = @_;
-  my ($related_result) = @{ $self->{__valiant_related_resultset}{$related} ||[] };
+  #my ($related_result) = @{ $self->{__valiant_related_resultset}{$related} ||[] };
+  #my ($related_result) = @{ $self->related_resultset($related)->get_cache ||[] };
+  my $related_result =  $self->{_relationship_data}{$related};
+
+  unless($related_result) {
+    debug 2, "Skipping _mutate_single_related because related $related is not cached";
+    return;
+  }
+  
   my $rev_data = $self->result_source->reverse_relationship_info($related);
   my ($reverse_related) = keys %$rev_data;
 
@@ -439,17 +445,21 @@ sub _mutate_single_related {
   debug 3, "@{[ ref $related_result ]} is_marked_for_deletion: @{[ $related_result->is_marked_for_deletion]}";
   debug 3, "@{[ ref $related_result ]} in_storage: @{[ $related_result->in_storage]}";
 
-  return unless $related_result->is_changed || $related_result->is_marked_for_deletion || !$related_result->in_storage;
+  if($related_result->is_changed || $related_result->is_marked_for_deletion || !$related_result->in_storage) {
+    debug 3, "@{[ ref $related_result ]} ready for mutating";
+    $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
+    $related_result->mutate_recursively;
 
-  debug 3, "@{[ ref $related_result ]} ready for mutating";
-  $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
+    # I think if its in storage we need to set cache and all even if marked for deletation
+    #my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
+    $self->related_resultset($related)->set_cache([$related_result]);
+    $self->{__valiant_related_resultset}{$related} = [$related_result];
+    $self->{_relationship_data}{$related} = $related_result;
+    return;
+  }
+
+  # Just continue, we need to do this since related objects might have changed...
   $related_result->mutate_recursively;
-
-  # I think if its in storage we need to set cache and all even if marked for deletation
-  #my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
-  $self->related_resultset($related)->set_cache([$related_result]);
-  $self->{__valiant_related_resultset}{$related} = [$related_result];
-  $self->{_relationship_data}{$related} = $related_result;
 }
 
 

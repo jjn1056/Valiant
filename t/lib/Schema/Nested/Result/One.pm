@@ -54,4 +54,6 @@ __PACKAGE__->accept_nested_for(
   }
 );
 
+__PACKAGE__->accept_nested_for('oneone');
+
 1;

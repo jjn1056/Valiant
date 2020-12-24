@@ -30,6 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           cpanm Archive::Tar
+          cpanm Archive::Zip
           cpanm Dist::Zilla
           dzil listdeps | cpanm
       - name: Run tests

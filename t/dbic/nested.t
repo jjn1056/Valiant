@@ -56,6 +56,17 @@ use Test::DBIx::Class
       "One Value is too short (minimum is 2 characters)",
     ],
   }, 'Got expected errors';
+
+  # good update
+  $one->update({
+    value => 'ttttt',
+    one => { value => 'ttttt' }
+  });
+
+  ok $one->valid;
+  $one->discard_changes;
+  is $one->value, 'ttttt';
+  is $one->one->value, 'ttttt';
 }
 
 {
@@ -242,6 +253,72 @@ use Test::DBIx::Class
   ok $one->valid;
   ok $one->one;
   ok !$one->one->might;
+}
+
+# Lets do one or two reverse to stress belongs to
+#
+
+{
+  my $might = Schema
+    ->resultset('Might')
+    ->create({
+      value => 'might01',
+      one => {
+        value => 'might02',
+        oneone => {
+          value => 'might03',
+        },
+      },
+    });
+
+  ok $might->valid;
+  ok $might->in_storage;
+  ok $might->one->in_storage;
+  ok $might->one->oneone->in_storage;
+
+  $might->update({
+    value => 'might05',
+    one => {
+      oneone => {
+        value => 'might04'
+      },
+    },
+  });
+ 
+  ok $might->valid;
+  is $might->value, 'might05';
+  is $might->one->value, 'might02';
+  is $might->one->oneone->value, 'might04';
+  
+  $might->discard_changes; # reload
+  
+  is $might->value, 'might05';
+  is $might->one->value, 'might02';
+  is $might->one->oneone->value, 'might04';
+
+  $might->value('might06');
+  $might->one->value('might07');
+  $might->one->oneone->value('might08');
+  $might->update;
+
+  $might->discard_changes; # reload
+  
+  is $might->value, 'might06';
+  is $might->one->value, 'might07';
+  is $might->one->oneone->value, 'might08';
+
+  warn ".......\n\n";
+
+  $might->value('might09');
+  $might->one->oneone->value('might10');
+  $might->update;
+
+  $might->discard_changes; # reload
+  
+  is $might->value, 'might09';
+  is $might->one->value, 'might07';
+  is $might->one->oneone->value, 'might10';
+
 }
 
 done_testing;

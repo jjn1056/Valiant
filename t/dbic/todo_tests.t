@@ -1,5 +1,12 @@
 use Test::Most;
 
+ok 1;
+
+done_testing;   
+
+
+__END__
+
 =over 4
 
 - When doing an update a default context of 'update' is added
@@ -27,8 +34,5 @@ when many to many we can find on the far side of the bdir
 
 
 =back
-
-done_testing;
-
 
 
