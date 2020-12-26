@@ -52,7 +52,7 @@ sub validate_each {
 
   my $found_errors = 0;
   foreach my $row (@rows) {
-    $row->validate(%$opts);
+    $row->validate(%$opts); #unless $row->validated
     $found_errors = 1 if $row->errors->size;
   }
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $found_errors;

@@ -252,7 +252,7 @@ sub validates {
     push @validators, $new_validator;
     $self->_push_named_validators($package_part, $new_validator);
   }
-  my $coderef = sub { $_->validate(@_) foreach @validators };
+  my $coderef = sub { warn ref $_; $_->validate(@_) foreach @validators };
   $self->_validates_coderef($coderef, %global_options); 
 }
 

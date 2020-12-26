@@ -374,6 +374,42 @@ use Test::DBIx::Class
   is $might->one->oneone->value, 'might10';
 }
 
+warn "/.........\n\n";
+{
+  my $might = Schema
+    ->resultset('Might')
+    ->create({
+      value => 'a',
+      one => {
+        value => 'b',
+        oneone => {
+          value => 'c',
+        },
+      },
+    });
+
+  ok $might->invalid;
+  ok !$might->in_storage;
+
+  is_deeply +{$might->errors->to_hash(full_messages=>1)}, +{
+    one => [
+      "One Is Invalid",
+    ],
+    "one.might" => [
+      "One Might Is Invalid",
+    ],
+    "one.might.value" => [
+      "One Might Value is too long (maximum is 8 characters)",
+    ],
+  }, 'Got expected errors';
+
+  use Devel::Dwarn;
+  Dwarn +{$might->errors->to_hash(full_messages=>1)};
+  
+
+
+}
+
 done_testing;
 
 __END__

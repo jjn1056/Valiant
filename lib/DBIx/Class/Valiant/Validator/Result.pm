@@ -33,7 +33,7 @@ sub validate_each {
   return if $result->is_marked_for_deletion;
   return unless $self->validations;
 
-  $result->validate(%$opts);
+  $result->validate(%$opts); # unless $result->validated
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $result->invalid;
 
   # Not sure if this should be default behavior or not...
