@@ -3,6 +3,8 @@ package DBIx::Class::Valiant::ResultSet;
 use warnings;
 use strict;
 use Carp;
+use Valiant::Util 'debug';
+use namespace::autoclean -also => ['debug'];
 
 sub build {
   my ($self, %attrs) = @_;
@@ -32,10 +34,10 @@ sub new_result {
   my $result = $self->next::method($fields, @args);
   $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context; # Need this for ->insert
 
+  debug 2, "made new_result @{[ $result ]}";
   RELATED: foreach my $related(keys %related) {
 
     if(my $cb = $nested{$related}->{reject_if}) {
-      warn "aaaa";
       my $response = $cb->($result, $related{$related});
       next RELATED if $response;
     }

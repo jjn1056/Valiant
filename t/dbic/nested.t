@@ -374,9 +374,9 @@ use Test::DBIx::Class
   is $might->one->oneone->value, 'might10';
 }
 
-warn "/.........\n\n";
-{
-  my $might = Schema
+SKIP: {
+  skip "Can't have classes that validate each other yet", 4 if 1;
+  ok my $might = Schema
     ->resultset('Might')
     ->create({
       value => 'a',
@@ -402,12 +402,6 @@ warn "/.........\n\n";
       "One Might Value is too long (maximum is 8 characters)",
     ],
   }, 'Got expected errors';
-
-  use Devel::Dwarn;
-  Dwarn +{$might->errors->to_hash(full_messages=>1)};
-  
-
-
 }
 
 done_testing;

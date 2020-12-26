@@ -33,8 +33,8 @@ sub validate_each {
   return if $result->is_marked_for_deletion;
   return unless $self->validations;
 
-  $result->validate(%$opts); # unless $result->validated
-  $record->errors->add($attribute, $self->invalid_msg, $opts) if $result->invalid;
+  $result->validate(%$opts);#;# unless $opts->{Scalar::Util::refaddr $result}; # $result->validated;
+  $record->errors->add($attribute, $self->invalid_msg, $opts) if $result->errors->size;
 
   # Not sure if this should be default behavior or not...
   $result->errors->each(sub {

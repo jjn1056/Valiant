@@ -54,7 +54,11 @@ sub insert {
   $args{context} = \@context;
 
   $self->validate(%args);
-  return $self if $self->invalid; # maybe should be return 0
+
+  if($self->invalid) {
+    debug 2, "Skipping insert for @{[$self]} because its invalid";
+    return $self;
+  }
   ## delete $self->{__VALIANT_CREATE_ARGS};  We might need this at some point
   return $self->next::method(@args);
 }
@@ -374,6 +378,7 @@ sub set_single_related_from_params {
 
 sub mutate_recursively {
   my ($self) = @_;
+  debug 2, "mutating relationships for @{[ $self ]}";
   $self->_mutate if $self->is_changed || $self->is_marked_for_deletion;
   foreach my $related (keys %{$self->{_relationship_data}}) {
     next unless $self->related_resultset($related)->first; # TODO don't think I need this
