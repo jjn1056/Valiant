@@ -404,10 +404,64 @@ SKIP: {
   }, 'Got expected errors';
 }
 
+{
+  ok my $might = Schema
+    ->resultset('Might2')
+    ->create({
+      value => 'a',
+      one => {
+        value => 'b',
+        oneone => {
+          value => 'c',
+        },
+      },
+    });
+
+  ok $might->invalid;
+  ok !$might->in_storage;
+
+
+  is_deeply +{$might->errors->to_hash(full_messages=>1)}, +{
+    one => [
+      "One Is Invalid",
+    ],
+    "one.oneone" => [
+      "One Oneone Is Invalid",
+    ],
+    "one.oneone.value" => [
+      "One Oneone Value is too short (minimum is 3 characters)",
+    ],
+    "one.value" => [
+      "One Value is too short (minimum is 2 characters)",
+    ],
+  }, 'Got expected errors';
+}
+
 done_testing;
 
 __END__
 
+  is_deeply +{$might->errors->to_hash(full_messages=>1)}, +{
+    one => [
+      "One Is Invalid",
+    ],
+    "one.value" => [
+      "One Value is too short (minimum is 2 characters)",
+    ],
+  }, 'Got expected errors';
+
+  use Devel::Dwarn;
+  Dwarn +{$might->one->oneone->errors->to_hash(full_messages=>1)};
+  Dwarn $might->one->oneone->value;
+
+
+$might->one->oneone->validate;
+  Dwarn +{$might->one->oneone->errors->to_hash(full_messages=>1)};
+  Dwarn +{$might->errors->to_hash(full_messages=>1)};
+
+
+
+  
   use Devel::Dwarn;
   Dwarn +{$one->errors->to_hash(full_messages=>1)};
 

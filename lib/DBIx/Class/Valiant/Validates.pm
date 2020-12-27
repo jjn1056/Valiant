@@ -13,8 +13,9 @@ around default_validator_namespaces => sub {
 
 around validate => sub {
   my ($orig, $self, %args) = @_;
-  # return if $args{Scalar::Util::refaddr $self}||''; # try to stop circular
-  $args{Scalar::Util::refaddr $self}++;
+
+  #return $self if $args{refs}{Scalar::Util::refaddr $self}||''; # try to stop circular
+  #$args{refs}{Scalar::Util::refaddr $self}++;
   
   return $self->$orig(%args);
 };

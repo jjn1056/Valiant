@@ -2,6 +2,8 @@ package DBIx::Class::Valiant::Validator::Result;
 
 use Moo;
 use Valiant::I18N;
+use Valiant::Util 'debug';
+use namespace::autoclean -also => ['debug'];
 
 with 'Valiant::Validator::Each';
 
@@ -33,6 +35,7 @@ sub validate_each {
   return if $result->is_marked_for_deletion;
   return unless $self->validations;
 
+  debug 2, "About to run validations for @{[$result]}";
   $result->validate(%$opts);#;# unless $opts->{Scalar::Util::refaddr $result}; # $result->validated;
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $result->errors->size;
 

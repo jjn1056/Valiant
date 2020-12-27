@@ -339,12 +339,16 @@ sub clear_validated {
 
 sub validate {
   my ($self, %args) = @_;
+  return $self if $self->{_inprocess};
+  $self->{_inprocess} =1;
+
   $self->clear_validated if $self->validated;
   foreach my $validation ($self->validations) {
     my %validation_args = (%{$validation->[1]}, %args);
     $validation->[0]($self, \%validation_args);
   }
   $self->validated(1);
+  delete $self->{_inprocess};
   return $self;
 }
 

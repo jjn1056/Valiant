@@ -53,6 +53,7 @@ sub insert {
   push @context, 'create' unless grep { $_ eq 'create' } @context;
   $args{context} = \@context;
 
+  debug 2, "About to run validations for @{[$self]}";
   $self->validate(%args);
 
   if($self->invalid) {
@@ -105,6 +106,7 @@ sub update {
     $self->set_related_from_params($related, $related{$related});
   }
 
+  debug 2, "About to run validations for @{[$self]}";
   $self->validate(%validate_args);
 
   return $self if $self->invalid;
@@ -374,6 +376,11 @@ sub set_single_related_from_params {
   $self->related_resultset($related)->set_cache([$related_result]);
   $self->{_relationship_data}{$related} = $related_result;
   $self->{__valiant_related_resultset}{$related} = [$related_result];
+
+  # ok so... what about the reverse side of this rel?  Seems this makes for infinite recursion
+  #my $rev_data = $self->result_source->reverse_relationship_info($related);
+  #my ($key) = keys(%$rev_data);
+  #$related_result->{_relationship_data}{$key} = $self;
 }
 
 sub mutate_recursively {
