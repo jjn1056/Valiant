@@ -103,7 +103,9 @@ sub update {
     debug 2, "Settinged related $related for @{[ ref $self ]} ";
 
     #$self->update_or_create_related($related, $related{$related});
+    $self->{_valiant_nested_info} = $nested{$related};
     $self->set_related_from_params($related, $related{$related});
+    delete $self->{_valiant_nested_info};
   }
 
   debug 2, "About to run validations for @{[$self]}";
@@ -368,8 +370,45 @@ sub set_single_related_from_params {
       $related_result = $params;
     } else {
       debug 2, "related_result $related for @{[ ref $self ]} is hashed params";
-      $related_result = $self->find_or_new_related($related, $params);
-      $related_result->set_from_params_recursively(%$params);
+
+      # When doing an update on single rels (has_one/belongs_to) you need to figure out
+      # if you are recursing an update into that exist rel or if you are replacing that
+      # rel with a new one (find_or_new).
+
+      if($self->in_storage) {
+        debug 2, "Updating related result '$related' for @{[ ref $self ]} ";
+
+        my %local_params = %$params;
+        my %pk = map { $_ => delete $local_params{$_} }
+          grep { exists $local_params{$_} }
+          $self->related_resultset($related)->result_source->primary_columns;
+
+        # If the user supplied the PK that means use that exact record and replace the current one
+        # also apply any updates to that record as indicated.
+        if(%pk) {
+          $related_result = $self->result_source->related_source($related)->resultset->find($params);
+          $self->set_from_related($related, $related_result);
+
+          #my $rev_data = $self->result_source->reverse_relationship_info($related);
+          #my ($reverse_related) = keys %$rev_data;
+          #$related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
+
+          $related_result->set_from_params_recursively(%$params);
+        } else {
+          # If the user did not give us a PK either;
+          #   1) if undate_only=>1 then update the current record (if existing; create otherwise)
+          #   2) otherwise create a new record off the parent.
+          #
+          use Devel::Dwarn;
+          Dwarn [111111111111, $self->{_valiant_nested_info}];
+          $related_result = $self->find_or_new_related($related, $params);
+          $related_result->set_from_params_recursively(%$params);
+        }
+      } else {
+        debug 2, "Find or new related result '$related' for @{[ ref $self ]} ";
+        $related_result = $self->find_or_new_related($related, $params);
+        $related_result->set_from_params_recursively(%$params);
+      }
     }
   }
 

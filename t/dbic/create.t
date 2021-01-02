@@ -291,7 +291,7 @@ use Test::DBIx::Class
       profile => {
         zip => '12345',
         city => 'Elgin',
-        birthday => '1991-01-01',
+        birthday => '2011-01-01',
       }
     });
 
@@ -300,7 +300,7 @@ use Test::DBIx::Class
     is $person->last_name, 'n';
     is $person->profile->zip, '12345';
     is $person->profile->city, 'Elgin';
-    is $person->profile->birthday->ymd, '1991-01-01'; #this gets inflated to a DateTime object
+    is $person->profile->birthday->ymd, '2011-01-01'; #this gets inflated to a DateTime object
 
     is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
       "profile.address",

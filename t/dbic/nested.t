@@ -437,6 +437,133 @@ SKIP: {
   }, 'Got expected errors';
 }
 
+
+Schema->resultset("State")->populate([
+  [ qw( name abbreviation ) ],
+  [ 'Texas', 'TX' ],
+  [ 'New York', 'NY' ],
+  [ 'California', 'CA' ],
+]);
+
+# These next two tests are to test the case where you have a belongs to when
+# the far side of the relationships is a 'fixed' set, like states, etc and
+# you want to not allow states to be created
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->create({
+      username => 'jjn',
+      last_name => 'napiorkowski',
+      first_name => 'john',
+      state => { abbreviation => 'TX' }
+    });
+
+  ok $person->valid;
+  ok $person->in_storage;
+
+  # modif it
+  $person->discard_changes;
+
+  # If the relation exists (as it does now) and we try to mutate it
+  # and don't provide the PK then that means 'create/find a new record'
+  # rather than actually do an update.   For lookup belongs_to like this
+  # one I think that is the expected behavior.
+  $person->update({
+    state => { id => 3, abbreviation => 'CA' }
+    #state => { abbreviation => 'CA' }
+    #state => { id => 3 }
+  });
+
+  ok $person->valid;
+  ok $person->in_storage;
+  is $person->state->abbreviation, 'CA';
+  is $person->state->id, 3;
+
+  $person->discard_changes;
+
+  is $person->state->abbreviation, 'CA';
+  is $person->state->id, 3;
+
+  $person->update({
+    state => { abbreviation => 'aa' }
+  });
+
+  ok !$person->valid;
+  ok $person->state->is_changed;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    state => [
+      "State Is Invalid",
+    ],
+    "state.abbreviation" => [
+      "State Abbreviation aa is not a valid State Abbreviation",
+    ],
+  }, 'Got expected errors';
+}
+
+{
+  ok my $person = Schema
+    ->resultset('Person')
+    ->create({
+      username => 'jjn2',
+      last_name => 'napiorkowski',
+      first_name => 'john',
+      state => { abbreviation => 'Ta' }
+    });
+
+  ok !$person->valid;
+  ok !$person->in_storage;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    state => [
+      "State Is Invalid",
+    ],
+    "state.abbreviation" => [
+      "State Abbreviation Ta is not a valid State Abbreviation",
+    ],
+  }, 'Got expected errors';
+}
+
+# Same as above these but the common person roles pattern
+
+Schema->resultset("Role")->populate([
+  [ qw( label ) ],
+  [ 'admin' ],
+  [ 'user' ],
+  [ 'superuser' ],
+]);
+
+{
+  # just make sure we can create.
+  ok my $person = Schema
+    ->resultset('Person')
+    ->create({
+      username => 'jjn3',
+      last_name => 'napiorkowski',
+      first_name => 'john',
+      state => { abbreviation => 'TX' },
+      person_roles => [
+        {role => {label=>'user'}},
+      ],
+    });
+
+  ok $person->valid;
+  ok $person->in_storage;
+
+  use Devel::Dwarn;
+  Dwarn +{$person->errors->to_hash(full_messages=>1)};
+
+  # modif it
+  $person->discard_changes;
+  $person->update({
+    person_roles => [
+        {role => {label=>'admin'}},
+    ]
+  });
+
+}
+
+
 done_testing;
 
 __END__

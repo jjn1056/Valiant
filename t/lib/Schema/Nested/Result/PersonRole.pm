@@ -26,6 +26,9 @@ __PACKAGE__->belongs_to(
   { 'foreign.id' => 'self.role_id' }
 );
 
+__PACKAGE__->accept_nested_for('role');
+
+
 sub is_user {
   my $self = shift;
   return $self->role->label eq 'user' ? 1:0;
