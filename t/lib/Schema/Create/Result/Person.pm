@@ -31,6 +31,6 @@ validates password => (confirmation => {
     if => 'is_column_changed', # This method defined by DBIx::Class::Row
   });
  
-accept_nested_for 'profile';
+accept_nested_for 'profile', {update_only=>1};
 
 1;

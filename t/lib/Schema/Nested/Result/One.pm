@@ -49,6 +49,7 @@ __PACKAGE__->validates(might => ( result=>+{validations=>1} ));
 
 __PACKAGE__->accept_nested_for(
   might => {
+    update_only => 1,
     reject_if => sub {
       my ($self, $params) = @_;
       return ($params->{value}||'') eq 'test14' ? 1:0;
@@ -56,6 +57,6 @@ __PACKAGE__->accept_nested_for(
   }
 );
 
-__PACKAGE__->accept_nested_for('oneone');
+__PACKAGE__->accept_nested_for('oneone', {update_only=>1});
 
 1;

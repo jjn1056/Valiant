@@ -32,7 +32,7 @@ __PACKAGE__->validates(
 __PACKAGE__->validates(profile => (result=>+{validations=>1}, on=>'profile' ));
 
 
-__PACKAGE__->accept_nested_for('profile' => {update_only=>0});
+__PACKAGE__->accept_nested_for('profile' => {update_only=>1});
 __PACKAGE__->accept_nested_for('credit_cards' => { limit=>2});
 
 __PACKAGE__->set_primary_key("id");

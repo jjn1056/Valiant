@@ -484,6 +484,7 @@ Schema->resultset("State")->populate([
   is $person->state->abbreviation, 'CA';
   is $person->state->id, 3;
 
+  $person->discard_changes;
   $person->update({
     state => { abbreviation => 'aa' }
   });
@@ -499,6 +500,22 @@ Schema->resultset("State")->populate([
       "State Abbreviation aa is not a valid State Abbreviation",
     ],
   }, 'Got expected errors';
+
+  $person->discard_changes;
+  $person->update({
+    state => { abbreviation => 'TX' }
+  });
+
+  ok $person->valid;
+  ok $person->in_storage;
+  is $person->state->abbreviation, 'TX';
+  is $person->state->id, 1;
+
+  $person->discard_changes;
+
+  is $person->state->abbreviation, 'TX';
+  is $person->state->id, 1;
+
 }
 
 {

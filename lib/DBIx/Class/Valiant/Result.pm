@@ -33,6 +33,7 @@ sub accept_nested_for {
     allow_destroy => 0,
     reject_if => 0,
     limit => 0,
+    update_only => 0,
   );
   
   no strict "refs";
@@ -361,6 +362,9 @@ sub set_single_related_from_params {
 
   if($related_result) {
     ## TODO I might need to do something else if $params is blessed
+    ## TODO I think we need the below logic to see if $params has a PK and then use
+    ## that as an override.
+
     debug 2, "Found cached related_result $related for @{[ ref $self ]} ";
     $related_result->set_from_params_recursively(%$params);
   } else {
@@ -386,6 +390,8 @@ sub set_single_related_from_params {
         # If the user supplied the PK that means use that exact record and replace the current one
         # also apply any updates to that record as indicated.
         if(%pk) {
+          debug 3, "Updating with exact record matching pk";
+
           $related_result = $self->result_source->related_source($related)->resultset->find($params);
           $self->set_from_related($related, $related_result);
 
@@ -395,13 +401,26 @@ sub set_single_related_from_params {
 
           $related_result->set_from_params_recursively(%$params);
         } else {
+          debug 3, "Updating with record from params";
+
           # If the user did not give us a PK either;
           #   1) if undate_only=>1 then update the current record (if existing; create otherwise)
           #   2) otherwise create a new record off the parent.
-          #
-          use Devel::Dwarn;
-          Dwarn [111111111111, $self->{_valiant_nested_info}];
-          $related_result = $self->find_or_new_related($related, $params);
+          
+          if(+{$self->result_class->accept_nested_for}->{$related}{update_only}) {
+            debug 3, 'update_only true';
+            $related_result = $self->find_or_new_related($related, $params);
+          } else {
+            debug 3, "update_only false for rel $related on @{[ $self]}";
+
+            $related_result = $self->result_source->related_source($related)->resultset->find($params) ||$self->result_source->related_source($related)->resultset->new_result;
+            $self->set_from_related($related, $related_result);
+
+            my $rev_data = $self->result_source->reverse_relationship_info($related);
+            my ($key) = keys(%$rev_data);
+
+            $related_result->set_from_related($key, $self) if $key; # Don't have this for might_hav
+          }
           $related_result->set_from_params_recursively(%$params);
         }
       } else {
