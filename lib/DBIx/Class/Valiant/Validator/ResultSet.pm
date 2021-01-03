@@ -51,10 +51,24 @@ sub validate_each {
   return unless $self->validations;
 
   my $found_errors = 0;
+  my $rowidx = 0;
   foreach my $row (@rows) {
     $row->validate(%$opts); #unless $row->validated
     $found_errors = 1 if $row->errors->size;
+
+    if($row->errors->size) {
+      $found_errors = 1;
+      my $errors = $row->errors;
+      $errors->each(sub {
+        my ($index, $message) = @_;
+        #warn "${attribute}.@{[$rowidx++}.${index}";
+        $record->errors->add("${attribute}.${rowidx}.${index}", $message);
+      });
+    }
+
+    $rowidx++;
   }
+  warn ".... $rowidx";
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $found_errors;
 }
 

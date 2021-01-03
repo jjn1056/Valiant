@@ -413,13 +413,17 @@ sub set_single_related_from_params {
           } else {
             debug 3, "update_only false for rel $related on @{[ $self]}";
 
-            $related_result = $self->result_source->related_source($related)->resultset->find($params) ||$self->result_source->related_source($related)->resultset->new_result;
+            $related_result = $self->result_source->related_source($related)->resultset->find($params);
+            unless($related_result) {
+              debug 3, "Did not find result so creating new result";
+              $related_result = $self->result_source->related_source($related)->resultset->new_result;
+            }
+
             $self->set_from_related($related, $related_result);
 
-            my $rev_data = $self->result_source->reverse_relationship_info($related);
-            my ($key) = keys(%$rev_data);
-
-            $related_result->set_from_related($key, $self) if $key; # Don't have this for might_hav
+            #my $rev_data = $self->result_source->reverse_relationship_info($related);
+            # my ($key) = keys(%$rev_data);
+            #$related_result->set_from_related($key, $self) if $key; # Don't have this for might_hav
           }
           $related_result->set_from_params_recursively(%$params);
         }

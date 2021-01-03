@@ -470,8 +470,6 @@ Schema->resultset("State")->populate([
   # one I think that is the expected behavior.
   $person->update({
     state => { id => 3, abbreviation => 'CA' }
-    #state => { abbreviation => 'CA' }
-    #state => { id => 3 }
   });
 
   ok $person->valid;
@@ -515,7 +513,6 @@ Schema->resultset("State")->populate([
 
   is $person->state->abbreviation, 'TX';
   is $person->state->id, 1;
-
 }
 
 {
@@ -570,13 +567,36 @@ Schema->resultset("Role")->populate([
   use Devel::Dwarn;
   Dwarn +{$person->errors->to_hash(full_messages=>1)};
 
-  # modif it
+  # modif it.   We expect to add one
   $person->discard_changes;
   $person->update({
     person_roles => [
         {role => {label=>'admin'}},
     ]
   });
+
+  ok $person->valid;
+  $person->discard_changes;
+  is $person->username, 'jjn3';
+  is $person->state->abbreviation, 'TX';
+  my $rs = $person->person_roles->search({},{order_by=>'role_id ASC'});
+  is $rs->next->role->label, 'admin';
+  is $rs->next->role->label, 'user';
+  ok !$rs->next;
+
+  $person->discard_changes;
+  warn "3423423423423423423423423";
+  $person->update({
+    person_roles => [
+        {role => {label=>'superuser'}},
+        {role => {label=>'adminx'}},
+    ]
+  });
+
+  ok $person->invalid;
+
+  use Devel::Dwarn;
+  Dwarn +{$person->errors->to_hash(full_messages=>1)};
 
 }
 

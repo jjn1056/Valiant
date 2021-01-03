@@ -21,5 +21,12 @@ __PACKAGE__->has_many(
   { 'foreign.role_id' => 'self.id' }
 );
 
+__PACKAGE__->validates(label=>(presence=>1,with=>'is_existing_label'));
+
+sub is_existing_label {
+  my ($self, $attribute_name, $value) = @_;
+  return if my $result = $self->result_source->resultset->find({$attribute_name=>$value});
+  $self->errors->add($attribute_name, \'{{value}} is not a valid'); 
+}
 
 1;

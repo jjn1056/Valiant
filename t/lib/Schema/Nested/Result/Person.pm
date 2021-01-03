@@ -36,6 +36,8 @@ __PACKAGE__->has_many(
 __PACKAGE__->many_to_many('roles' => 'person_roles', 'role');
 __PACKAGE__->accept_nested_for('state');
 __PACKAGE__->validates(state => (presence=>1, result=>1));
+__PACKAGE__->validates(person_roles => (presence=>1, result_set=>1));
+
 __PACKAGE__->accept_nested_for('person_roles');
 
 sub default_roles {

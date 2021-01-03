@@ -27,7 +27,7 @@ __PACKAGE__->belongs_to(
 );
 
 __PACKAGE__->accept_nested_for('role');
-
+__PACKAGE__->validates(role => presence=>1, result=>1);
 
 sub is_user {
   my $self = shift;
