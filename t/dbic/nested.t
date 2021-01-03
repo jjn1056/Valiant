@@ -585,7 +585,6 @@ Schema->resultset("Role")->populate([
   ok !$rs->next;
 
   $person->discard_changes;
-  warn "3423423423423423423423423";
   $person->update({
     person_roles => [
         {role => {label=>'adminxx'}},
@@ -595,6 +594,33 @@ Schema->resultset("Role")->populate([
   });
 
   ok $person->invalid;
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    person_roles => [
+      "Person Roles Is Invalid",
+    ],
+    "person_roles.0.role" => [
+      "Person Roles Role Is Invalid",
+    ],
+    "person_roles.0.role.label" => [
+      "Person Roles Role Label adminxx is not a valid",
+    ],
+    "person_roles.2.role" => [
+      "Person Roles Role already has role admin",
+    ],
+  }, 'Got expected errors';
+
+  $person->update({
+    person_roles => [
+        {role => {label=>'superuser'}},
+    ]
+  });
+
+  ok $person->valid;
+  my $rs = $person->person_roles->search({},{order_by=>'role_id ASC'});
+  is $rs->next->role->label, 'admin';
+  is $rs->next->role->label, 'user';
+  is $rs->next->role->label, 'superuser';
+
 
   use Devel::Dwarn;
   Dwarn +{$person->errors->to_hash(full_messages=>1)};

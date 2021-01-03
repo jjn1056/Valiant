@@ -68,7 +68,6 @@ sub validate_each {
 
     $rowidx++;
   }
-  warn ".... $rowidx";
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $found_errors;
 }
 
