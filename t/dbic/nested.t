@@ -588,8 +588,9 @@ Schema->resultset("Role")->populate([
   warn "3423423423423423423423423";
   $person->update({
     person_roles => [
+        {role => {label=>'adminxx'}},
         {role => {label=>'superuser'}},
-        {role => {label=>'adminx'}},
+        {role => {label=>'admin'}},
     ]
   });
 
