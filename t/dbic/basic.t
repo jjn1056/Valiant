@@ -120,6 +120,13 @@ ok $state->id;
       "Credit Cards has too few rows (minimum is 2)",
       "Credit Cards Is Invalid",
     ],
+    "credit_cards.0.card_number" => [
+      "Credit Cards Card Number is too short (minimum is 13 characters)",
+      "Credit Cards Card Number does not look like a credit card",
+    ],
+    "credit_cards.0.expiration" => [
+      "Credit Cards Expiration does not look like a datetime value",
+    ],
     password => [
       "Password is too short (minimum is 8 characters)",
     ],
@@ -141,6 +148,8 @@ ok $state->id;
       "Profile State Id can't be blank",
     ],
   }, 'Got expected errors';
+
+  use Devel::Dwarn;  Dwarn +{ $person->errors->to_hash(full_messages=>1) };
 
   ok $person->profile->invalid, 'attempted profile was invalid';
   ok !$person->profile->in_storage, 'record was not saved';
@@ -291,6 +300,9 @@ ok $state->id;
   is_deeply +{$person_invalid->errors->to_hash(full_messages=>1)}, +{
     credit_cards => [
       "Credit Cards Is Invalid",
+    ],
+    "credit_cards.1.expiration" => [
+      "Credit Cards Expiration must be in the future",
     ],
     username => [
       "Username chosen is not unique",
@@ -533,11 +545,17 @@ ok $state->id;
     credit_cards => [
       "Is Invalid",
     ],
+    "credit_cards.0.card_number" => [
+      "is too short (minimum is 13 characters)",
+      "does not look like a credit card",
+    ],
+    "credit_cards.0.expiration" => [
+      "does not look like a datetime value",
+    ],
     first_name => [
       "is too short (minimum is 2 characters)",
     ],
   };
-
 
   ok my @ccs = $person->credit_cards->all;
   is_deeply +{ $ccs[0]->errors->to_hash }, +{

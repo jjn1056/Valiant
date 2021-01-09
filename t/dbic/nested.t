@@ -620,18 +620,63 @@ Schema->resultset("Role")->populate([
   is $rs->next->role->label, 'admin';
   is $rs->next->role->label, 'user';
   is $rs->next->role->label, 'superuser';
-
-
-  use Devel::Dwarn;
-  Dwarn +{$person->errors->to_hash(full_messages=>1)};
-
 }
 
+{
+  # just make sure we can create.
+  warn ".........\n\n";
+  ok my $parent = Schema
+    ->resultset('Parent')
+    ->create({
+        value => 'one',
+        children => [
+          { value => 'one.one' },
+          { value => 'one.two' },
+        ],
+      }
+    );
+
+  ok $parent->valid;
+  ok $parent->in_storage;
+  is $parent->children->count, 2;
+
+  $parent->update({
+    children => [
+      { id => 1, value => 'one.three' },
+      { value => 'two.one' },
+    ],
+  });
+
+  ok $parent->valid;
+  is $parent->children->count, 3;   # TODO busted cache issue
+
+
+}
 
 done_testing;
 
 __END__
 
+  $parent->discard_changes;
+
+  $parent->update({
+    children => [
+      { id => 1, value => 'one.four' },
+      { value => 'two.two' },
+    ],
+  });
+
+  ok $parent->valid;
+  is $parent->children->count, 4;
+
+
+
+  
+
+  use Devel::Dwarn;
+  Dwarn +{$person->errors->to_hash(full_messages=>1)};
+
+  
   is_deeply +{$might->errors->to_hash(full_messages=>1)}, +{
     one => [
       "One Is Invalid",
