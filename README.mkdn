@@ -1190,6 +1190,12 @@ performance.
 
 # SEE ALSO
 
+There's no lack of validation systems on CPAN.   I've used (and contributed) to
+[HTML::FormHandler](https://metacpan.org/pod/HTML::FormHandler) and <Data::MuForm>.   I've also used [HTML::FormFu](https://metacpan.org/pod/HTML::FormFu).  Recently I 
+spotted [Form::Tiny](https://metacpan.org/pod/Form::Tiny) which is a similar DSL style system as Valiant but with a smaller
+footprint and sane looking sort code.  This list is not exhaustive, just stuff I've
+either used or reviewed.
+
 [Valiant](https://metacpan.org/pod/Valiant), [Valiant::Validations](https://metacpan.org/pod/Valiant::Validations), [Valiant::Validates](https://metacpan.org/pod/Valiant::Validates), [Valiant::Filters](https://metacpan.org/pod/Valiant::Filters),
 [Valiant::Filterable](https://metacpan.org/pod/Valiant::Filterable)
 

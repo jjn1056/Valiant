@@ -1211,7 +1211,13 @@ reasonable safe to run even in a production environment since it should not impa
 performance.
 
 =head1 SEE ALSO
- 
+
+There's no lack of validation systems on CPAN.   I've used (and contributed) to
+L<HTML::FormHandler> and <Data::MuForm>.   I've also used L<HTML::FormFu>.  Recently I 
+spotted L<Form::Tiny> which is a similar DSL style system as Valiant but with a smaller
+footprint and sane looking sort code.  This list is not exhaustive, just stuff I've
+either used or reviewed.
+
 L<Valiant>, L<Valiant::Validations>, L<Valiant::Validates>, L<Valiant::Filters>,
 L<Valiant::Filterable>
 
