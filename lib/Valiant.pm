@@ -15,16 +15,6 @@ Valiant - Ruby on Rails-like validation framework.
 <a href="https://codecov.io/gh/jjn1056/Valiant"?<img src="https://codecov.io/gh/jjn1056/Valiant/branch/master/graph/badge.svg?token=MQT1M0O4B0"/></a>
 <a href="https://metacpan.org/pod/Valiant"><img src="https://badge.fury.io/pl/Valiant.svg"></a>
 
-
-
-<p>
-<img src="https://img.shields.io/badge/perl-5.10+-blue.svg" alt="Requires Perl 5.10+" />
-<a href="http://cpants.cpanauthors.org/release/CSSON/Dist-Zilla-Plugin-Author-CSSON-GithubActions-0.0106"><img src="http://badgedepot.code301.com/badge/kwalitee/CSSON/Dist-Zilla-Plugin-Author-CSSON-GithubActions/0.0106" alt="Distribution kwalitee" /></a>
-<a href="http://matrix.cpantesters.org/?dist=Dist-Zilla-Plugin-Author-CSSON-GithubActions%200.0106"><img src="http://badgedepot.code301.com/badge/cpantesters/Dist-Zilla-Plugin-Author-CSSON-GithubActions/0.0106" alt="CPAN Testers result" /></a>
-<img src="https://img.shields.io/badge/coverage-84.6%-orange.svg" alt="coverage 84.6%" />
-</p>
-
-
 =end html
 
 =head1 SYNOPSIS

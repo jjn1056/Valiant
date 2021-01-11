@@ -346,6 +346,7 @@ sub set_multi_related_from_params {
     }
     push @related_models, $related_model;
   }
+
   $self->related_resultset($related)->set_cache(\@related_models);
   $self->{_relationship_data}{$related} = \@related_models;
   $self->{__valiant_related_resultset}{$related} = \@related_models; # we have a private copy
