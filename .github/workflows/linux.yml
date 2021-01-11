@@ -43,4 +43,7 @@ jobs:
       - name: Code coverage
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: PERL5OPT=-MDevel::Cover=+ignore,^t,prove$  prove -j9 -lr t; cover -report codecov
+        run: |
+          env
+          PERL5OPT=-MDevel::Cover=+ignore,^t,prove$  prove -j9 -lr t
+          cover -report codecov
