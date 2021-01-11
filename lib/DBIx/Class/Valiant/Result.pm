@@ -80,6 +80,7 @@ sub update {
 
   # Remove any relationed keys we didn't find with the allows nested
   my @rel_names = $self->result_source->relationships();
+  debug 1, "Found related for @{[ $self ]} of @{[ join ',', @rel_names||('none!') ]}";
   my %found = delete %$upd{@rel_names};
   if(grep { defined $_ } values %found) {
     my $related = join(', ', grep { $found{$_} } keys %found);

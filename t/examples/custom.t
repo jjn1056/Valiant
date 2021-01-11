@@ -1,6 +1,8 @@
 use Test::Most;
 use Test::Lib;
 
+BEGIN { $ENV{VALIANT_DEBUG} = 3 }
+
 {
   package Local::Person;
 

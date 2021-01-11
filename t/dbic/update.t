@@ -3,6 +3,10 @@ use Test::Lib;
 use Test::DBIx::Class
   -schema_class => 'Schema::Create';
 
+
+BEGIN { $ENV{VALIANT_DEBUG} = 3 }
+
+
 ok my $person = Schema
   ->resultset('Person')
   ->create({
