@@ -37,9 +37,8 @@ jobs:
         run: |
           dzil listdeps | cpanm
       - name: Run tests
-        run: VALIANT_DEBUG=3 prove -lr t
+        run: prove -lr t
       - name: Code coverage
-        env: # Or as an environment variable
+        env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        run: cover -test -report codecov
-
+        run: PERL5OPT=-MDevel::Cover=+ignore,^t,prove$  prove -j9 -lr t; cover
