@@ -31,6 +31,8 @@ jobs:
       - name: Install author dependencies
         run: |
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
+          cpanm --quiet --notest --skip-satisfied Archive::Tar
+          cpanm --quiet --notest --skip-satisfied Archive::Zip
       - name: Install project dependencies
         run: |
           cpanm --quiet --notest --skip-satisfied --installdeps .
