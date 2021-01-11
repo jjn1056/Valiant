@@ -2,7 +2,7 @@ use Test::Most;
 use Test::Lib;
 
 {
-  package Local::Person;
+  package Person;
 
   use Valiant::Validations;
   use Moo;
@@ -16,7 +16,7 @@ use Test::Lib;
   );
 }
 
-ok my $person = Local::Person->new(
+ok my $person = Person->new(
   name => 'A waaay too loooong name',
   age => -10,
 );
