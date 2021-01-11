@@ -149,8 +149,6 @@ ok $state->id;
     ],
   }, 'Got expected errors';
 
-  use Devel::Dwarn;  Dwarn +{ $person->errors->to_hash(full_messages=>1) };
-
   ok $person->profile->invalid, 'attempted profile was invalid';
   ok !$person->profile->in_storage, 'record was not saved';
   is_deeply +{$person->profile->errors->to_hash(full_messages=>1)}, +{

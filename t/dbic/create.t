@@ -147,7 +147,7 @@ use Test::DBIx::Class
       last_name => 'napiorkowski',
       password => 'hellohello',
       password_confirmation => 'hellohello',
-    }), 'created fixture';
+    });
 
   ok $person->invalid, 'attempted record invalid';
   ok !$person->in_storage, 'record was not saved';
