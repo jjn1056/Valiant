@@ -3,8 +3,6 @@ use Test::Lib;
 use Test::DBIx::Class
   -schema_class => 'Schema::Create';
 
-  BEGIN { $ENV{VALIANT_DEBUG} = 3 }
-
 {
   # Basic create test which also check the confirmation validation and
   # checks to make sure the default 'create' context works.

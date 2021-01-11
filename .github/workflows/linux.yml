@@ -37,7 +37,7 @@ jobs:
         run: |
           dzil listdeps | cpanm
       - name: Run tests
-        run: prove -lr t
+        run: VALIANT_DEBUG=3 prove -lr t
       - name: Code coverage
         env: # Or as an environment variable
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
