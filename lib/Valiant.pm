@@ -12,7 +12,6 @@ Valiant - Ruby on Rails-like validation framework.
 =begin html
 
 <a href="https://github.com/jjn1056/valiant/actions"><img src="https://github.com/jjn1056/valiant/workflows/linux/badge.svg"></a>
-<a href="https://codecov.io/gh/jjn1056/Valiant"?<img src="https://codecov.io/gh/jjn1056/Valiant/branch/master/graph/badge.svg?token=MQT1M0O4B0"/></a>
 <a href="https://metacpan.org/pod/Valiant"><img src="https://badge.fury.io/pl/Valiant.svg"></a>
 
 =end html
@@ -74,7 +73,8 @@ features should work as described.  I will only change API and functionality in 
 manner if its the only way to fix problems (caveat that I am reserving the right to change
 the way errors are listed and structured for nested validations, for now, as well as the
 way we resolve files for internationalization, whose current code may not be as performant
-as needed).
+as needed; additionally the L<Valiant::DBIx::Class> packages are all currently subject to
+breaking changes as needed).
 
 Domain level validations for L<Moo> classes and related capabilities such as attribute
 filtering and internationalization.  Provides a domain specific language

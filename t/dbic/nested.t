@@ -621,7 +621,6 @@ Schema->resultset("Role")->populate([
 
 {
   # just make sure we can create.
-  warn ".........\n\n";
   ok my $parent = Schema
     ->resultset('Parent')
     ->create({
@@ -637,8 +636,6 @@ Schema->resultset("Role")->populate([
   ok $parent->in_storage;
   #is scalar @{$parent->children->get_cache||[]}, 2;    Maybe this is not right....
   is $parent->children->count, 2;
-
-  warn ",,,,,,,,,\n\n";
 
   # Ok so we gotta make sure this respects the existing resultset cache!!
 
@@ -690,8 +687,6 @@ Schema->resultset("Role")->populate([
   ok my $rs = $parent->children;
   ok my $first = $rs->next;
   ok my $second = $rs->next;
-
-  warn "... $first ...";
 
   is $first->value, 'one';
   is $second->value, 'two';
