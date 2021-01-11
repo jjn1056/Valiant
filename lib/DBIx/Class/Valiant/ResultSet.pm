@@ -25,7 +25,10 @@ sub new_result {
 
   # Remove any relationed keys we didn't find with the allows nested
   my @rel_names = $self->result_source->relationships();
-  my %found = delete %$fields{@rel_names};
+
+  #my %found = delete %$fields{@rel_names};
+  my %found = map { $_ => delete($fields->{$_}) } @rel_names; # backcompat with old perl
+
   if(grep { defined $_ } values %found) {
     my $related = join(', ', grep { $found{$_} } keys %found);
     die "You are trying to create a relationship ($related) without setting 'accept_nested_for'";
