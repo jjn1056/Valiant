@@ -17,6 +17,31 @@ with 'Valiant::Filterable';
 use DBIx::Class::Candy::Exports;
 export_methods ['filters', 'validates', 'filters_with', 'validates_with', 'accept_nested_for'];
 
+__PACKAGE__->mk_classdata( _m2m_metadata => {} );
+ 
+sub many_to_many {
+  my $class = shift;
+  my ($meth_name, $link, $far_side) = @_;
+  my $store = $class->_m2m_metadata;
+  warn("You are overwritting another relationship's metadata")
+    if exists $store->{$meth_name};
+ 
+  my $attrs = {
+    accessor => $meth_name,
+    relation => $link, #"link" table or immediate relation
+    foreign_relation => $far_side, #'far' table or foreign relation
+    (@_ > 3 ? (attrs => $_[3]) : ()), #only store if exist
+    rs_method => "${meth_name}_rs",      #for completeness..
+    add_method => "add_to_${meth_name}",
+    set_method => "set_${meth_name}",
+    remove_method => "remove_from_${meth_name}",
+  };
+ 
+  #inheritable data workaround
+  $class->_m2m_metadata({ $meth_name => $attrs, %$store});
+  $class->next::method(@_);
+}
+
 sub BUILDARGS { } # The filter role wants this (for now)
 
 sub new { # also support for the filter role
@@ -80,9 +105,10 @@ sub update {
 
   # Remove any relationed keys we didn't find with the allows nested
   my @rel_names = $self->result_source->relationships();
-  debug 1, "Found related for @{[ $self ]} of @{[ join ',', @rel_names||('none!') ]}";
+  my @m2m_names = keys  %{ $self->result_class->_m2m_metadata ||+{} };
+  debug 1, "Found related for @{[ $self ]} of @{[ join ',', @rel_names ]}";
 
-  my %found = map { $_ => delete($upd->{$_})  } @rel_names; # backcompat with old perl
+  my %found = map { $_ => delete($upd->{$_})  } @rel_names, @m2m_names; # backcompat with old perl
   #my %found = delete(%{$upd}{@rel_names});
 
   if(grep { defined $_ } values %found) {
@@ -197,7 +223,7 @@ sub read_attribute_for_validation {
     }
 
   }
-
+  debug 1, "Failin back to accessor for 'read_attribute_for_validation'";
   return $self->$attribute if $self->can($attribute); 
 }
 
@@ -313,6 +339,13 @@ sub set_from_params_recursively {
 sub set_related_from_params {
   my ($self, $related, $params) = @_;
   my $rel_data = $self->relationship_info($related);
+
+  unless($rel_data) {
+    if(my $rel_data = $self->_m2m_metadata->{$related}) {
+      return $self->set_m2m_related_from_params($related, $params, $rel_data);
+    }
+  }
+
   my $rel_type = $rel_data->{attrs}{accessor};
   debug 2, "Setting params for $related on @{[ ref $self ]} using rel_type $rel_type";
 
@@ -320,6 +353,15 @@ sub set_related_from_params {
   return $self->set_multi_related_from_params($related, $params) if $rel_type eq 'multi'; 
   die "Unhandled relationship type: $rel_type";
 
+}
+
+# m2m is tricky
+sub set_m2m_related_from_params {
+  my ($self, $related, $params, $rel_data) = @_;
+  my $relation = $rel_data->{relation};
+  my $foreign_relation = $rel_data->{foreign_relation};
+
+  return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @$params ]);
 }
 
 sub set_multi_related_from_params {
@@ -453,9 +495,10 @@ sub set_single_related_from_params {
 sub mutate_recursively {
   my ($self) = @_;
   debug 2, "mutating relationships for @{[ $self ]}";
+
   $self->_mutate if $self->is_changed || $self->is_marked_for_deletion;
   foreach my $related (keys %{$self->{_relationship_data}}) {
-    next unless $self->related_resultset($related)->first; # TODO don't think I need this
+    #next unless $self->related_resultset($related)->first; # TODO don't think I need this
     debug 2, "mutating relationship $related";
     $self->_mutate_related($related);
   }
@@ -468,13 +511,31 @@ sub _mutate {
     $self->delete_if_in_storage;
   } else {
     debug 2, "update_or_insert for @{[ ref $self ]}";
-    $self->update_or_insert;
+
+    # Ok so when doing update we are losing the relationed info so brute forse
+    # cache and restore it (probably wrong but passing tests for now....)
+
+    my %rels = %{$self->{_relationship_data}||+{}};
+    my %rels_rs = %{$self->{related_resultsets}||+{}};
+
+    $self->update_or_insert; 
+
+    # copies but quite likely now incorrect even thos my tests pass.....
+    # maybe I need a better way to restore this stuff.
+    $self->{_relationship_data} = \%rels;
+    $self->{related_resultsets} = \%rels_rs if %rels_rs;
   }
 }
 
 sub _mutate_related {
   my ($self, $related) = @_;
   my $rel_data = $self->relationship_info($related);
+  unless($rel_data) {
+    if(my $rel_data = $self->_m2m_metadata->{$related}) {
+      return $self->_mutate_m2m_related($related, $rel_data);
+    }
+  }
+  
   my $rel_type = $rel_data->{attrs}{accessor};
 
   return $self->_mutate_single_related($related) if $rel_type eq 'single';
@@ -483,11 +544,21 @@ sub _mutate_related {
   die "not sure how to mutate $related of type $rel_type";
 }
 
+sub _mutate_m2m_related {
+  my ($self, $related, $rel_data) = @_;
+  my $relation = $rel_data->{relation};
+  my $foreign_relation = $rel_data->{foreign_relation};
+
+  return $self->_mutate_multi_related($relation);
+}
+
 sub _mutate_multi_related {
   my ($self, $related) = @_;
   my @related_results = @{ $self->{__valiant_related_resultset}{$related} ||[] };
   my $rev_data = $self->result_source->reverse_relationship_info($related);
   my ($reverse_related) = keys %$rev_data;
+
+  debug 2, "Trying to mutate multi relations '$related'";
 
   foreach my $related_result (@related_results) {
     next unless $related_result->is_changed || $related_result->is_marked_for_deletion || !$related_result->in_storage;
@@ -495,13 +566,6 @@ sub _mutate_multi_related {
     $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
     $related_result->mutate_recursively;
   }
-
-
-  # I think if its in storage we need to set cache and all even if marked for deletation
-  #my @new_cache = $related_result->is_marked_for_deletion ? () : ($related_result);
-  #$self->related_resultset($related)->set_cache([$related_result]);
-  #$self->{__valiant_related_resultset}{$related} = [$related_result];
-  #$self->{_relationship_data}{$related} = $related_result;
 }
 
 
@@ -510,7 +574,6 @@ sub _mutate_single_related {
   #my ($related_result) = @{ $self->{__valiant_related_resultset}{$related} ||[] };
   #my ($related_result) = @{ $self->related_resultset($related)->get_cache ||[] };
   my $related_result =  $self->{_relationship_data}{$related};
-
   unless($related_result) {
     debug 2, "Skipping _mutate_single_related because related $related is not cached";
     return;

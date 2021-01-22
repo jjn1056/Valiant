@@ -604,6 +604,12 @@ Schema->resultset("Role")->populate([
     "person_roles.2.role" => [
       "Person Roles Role already has role admin",
     ],
+    roles => [
+      "Roles Is Invalid",
+    ],
+    "roles.0.label" => [
+      "Roles Label adminxx is not a valid",
+    ],
   }, 'Got expected errors';
 
   $person->update({
