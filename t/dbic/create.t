@@ -1,5 +1,6 @@
 use Test::Most;
 use Test::Lib;
+use DateTime;
 use Test::DBIx::Class
   -schema_class => 'Schema::Create';
 
@@ -128,7 +129,7 @@ use Test::DBIx::Class
   $profile->address('15604 Harry Lind Road');
   $profile->city('Elgin');
   $profile->zip('78621');
-  $profile->birthday('1991-01-23');
+  $profile->birthday(DateTime->now->subtract(years=>20)->ymd);
   $profile->update_or_insert;
 
   ok $profile->valid, 'valid record';

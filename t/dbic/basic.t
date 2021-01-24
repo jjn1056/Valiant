@@ -195,7 +195,7 @@ ok $state->id;
         zip => "78621",
         city => 'Elgin',
         address => '15604 Harry Lind Road',
-        birthday => '1991-01-23',
+        birthday => DateTime->now->subtract(years=>15)->ymd,
         phone_number => '2123879509',
         state_id => $state->id,
       },
@@ -228,7 +228,7 @@ ok $state->id;
       zip => "78621",
       city => 'Elgin',
       address => '15604 Harry Lind Road',
-      birthday => '1991-01-23',
+      birthday => DateTime->now->subtract(years=>15)->ymd,
       phone_number => '2123879509',
       state_id => $state->id,
     }), 'created profile';
@@ -404,7 +404,7 @@ ok $state->id;
       zip => "78621",
       city => 'Elgin',
       address => '15604 Harry Lind Road',
-      birthday => '1991-01-23',
+      birthday => DateTime->now->subtract(years=>15)->ymd,
       phone_number => '2123879509',
       state_id => $state->id,
     },
@@ -497,7 +497,7 @@ ok $state->id;
 
     is_deeply +{ $person_profile->profile->get_columns }, {
       address => "15604 Harry Lind Road",
-      birthday => "1991-01-23",
+      birthday => DateTime->now->subtract(years=>15)->ymd,    # This will probably heisenfail at midnight Dec 31...
       city => "New York",
       id => $person_profile->profile->id,
       person_id => $person_profile->id,
