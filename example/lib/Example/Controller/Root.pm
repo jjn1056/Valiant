@@ -9,6 +9,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) {}
 
   sub not_found :Chained(root) PathPart('') Args { }
 
+  sub register :Via(root) At(@root/$actionpart%Reg&Register) ReqDataModel(Register) {
+    my ($self, $c, $register) = @_;
+  }
+
   sub register :Chained(root) Args(0) {
     my ($self, $c) = @_;
     my $model = $c->model('Register');
