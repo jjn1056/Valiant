@@ -68,7 +68,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Array - Verify items in an arrayref.
 

@@ -202,7 +202,7 @@ sub not_equals {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::I18N - Translations
 

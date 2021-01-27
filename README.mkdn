@@ -1,4 +1,4 @@
-# TITLE
+# NAME
 
 Valiant - Ruby on Rails-like validation framework.
 

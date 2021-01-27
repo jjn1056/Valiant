@@ -13,7 +13,7 @@ sub _build_message {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Exception::UnexpectedUseModuleError - Unexpected error while using a module dynamically
 

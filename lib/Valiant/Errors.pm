@@ -341,7 +341,7 @@ sub _dump {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Errors - A collection of errors associated with an object
 

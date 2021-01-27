@@ -209,7 +209,7 @@ around BUILDARGS => sub {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filters - Role that adds class and instance methods supporting field filters
 

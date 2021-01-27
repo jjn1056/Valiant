@@ -20,7 +20,7 @@ sub filter {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Collection - A filter that contains and runs other filters
 

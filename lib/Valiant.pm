@@ -5,7 +5,7 @@ $VERSION = eval $VERSION;
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant - Ruby on Rails-like validation framework.
 

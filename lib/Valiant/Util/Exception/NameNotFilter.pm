@@ -14,7 +14,7 @@ sub _build_message {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Exception::NameNotFilter - Failure to load a filter
 

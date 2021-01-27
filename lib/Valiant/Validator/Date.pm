@@ -113,7 +113,7 @@ sub years_from_now {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Date - Verify that a value is is a standard Date (YYY-MM-DD)
 

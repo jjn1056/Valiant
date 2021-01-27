@@ -174,7 +174,7 @@ sub prepare_model_name_args {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Naming - Standard naming information for your models
 

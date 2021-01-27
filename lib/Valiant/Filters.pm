@@ -57,7 +57,7 @@ sub import {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filters - Adds a filter DSL and API to your Moo/se classes
 

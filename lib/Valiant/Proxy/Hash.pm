@@ -17,7 +17,7 @@ sub values { return map { $_[0]->for->{$_} } $_[0]->keys }
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Result::Hash - Wrap a hashref in a result object for validation.
 

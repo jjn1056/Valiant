@@ -14,7 +14,7 @@ sub _build_message {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Exception::InvalidFilterArgs - Args passed to a Filter are invalid
 

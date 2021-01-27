@@ -29,7 +29,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Check - Validate using a 'check' method
 

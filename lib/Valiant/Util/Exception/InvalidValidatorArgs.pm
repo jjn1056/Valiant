@@ -14,7 +14,7 @@ sub _build_message {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Exception::InvalidValidatorArgs - Args passed to a Validator are invalid
 

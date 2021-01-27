@@ -73,7 +73,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 DBIx::Class::Valiant::Validator::ResultSet - Verify a DBIC related resultset 
 

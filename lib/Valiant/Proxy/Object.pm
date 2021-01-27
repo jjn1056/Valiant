@@ -27,7 +27,7 @@ sub AUTOLOAD {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Result::Object - Wrap any object into a validatable result object.
 

@@ -607,7 +607,7 @@ sub _mutate_single_related {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 DBIx::Class::Valiant::Result - Base component to add Valiant functionality
 

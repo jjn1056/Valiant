@@ -339,7 +339,7 @@ sub attributes_for_hash {
   );
 }
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Error - A single error encountered during validation.
 

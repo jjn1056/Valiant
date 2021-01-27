@@ -31,7 +31,7 @@ sub filter {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filter::Each - A Role to create custom validators
 

@@ -33,7 +33,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Boolean - Verify that a value is either true or false
 

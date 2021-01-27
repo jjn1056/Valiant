@@ -43,7 +43,7 @@ sub ancestors {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Ancestors - Detect 'ancestors' of the class (via Roles or Inheritance) 
 

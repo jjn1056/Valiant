@@ -22,7 +22,7 @@ sub filter_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filter::Title - title case a string
 

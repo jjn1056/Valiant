@@ -4,7 +4,7 @@ package DBIx::Class::Valiant;
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 DBIx::Class::Valiant - Glue Valiant validations into DBIx::Class
 

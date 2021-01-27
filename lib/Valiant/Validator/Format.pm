@@ -184,7 +184,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Format - Validate a value based on a regular expression
 

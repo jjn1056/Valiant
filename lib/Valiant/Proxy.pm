@@ -48,7 +48,7 @@ around 'validate', sub {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Proxy - Create a validation ruleset dynamically
 

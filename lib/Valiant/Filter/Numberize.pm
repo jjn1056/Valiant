@@ -19,7 +19,7 @@ sub filter_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filter::Numberize - Force into number context
 

@@ -10,6 +10,7 @@ __PACKAGE__->setup_plugins([qw/
   Session::Store::Cookie
   RedirectTo
   URI
+  Errors
 /]);
 
 __PACKAGE__->config(

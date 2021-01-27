@@ -83,7 +83,7 @@ sub rethrow { die shift }
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Exception - Base exceptions class;
 

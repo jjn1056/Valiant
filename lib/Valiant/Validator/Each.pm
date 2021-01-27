@@ -136,7 +136,7 @@ sub _cb_value {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Each - A Role to create custom validators
 

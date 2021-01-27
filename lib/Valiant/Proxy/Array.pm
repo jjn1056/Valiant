@@ -14,7 +14,7 @@ sub read_attribute_for_validation {
 }
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Proxy::Array - Wrap a hashref in a result object for validation.
 

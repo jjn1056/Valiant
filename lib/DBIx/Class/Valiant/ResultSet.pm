@@ -59,6 +59,9 @@ sub new_result {
   return $result;
 }
 
+1;
+
+=head1 NAME
 
 =head1 DESCRIPTION
 
@@ -88,4 +91,3 @@ the same terms as Perl itself.
 
 =cut
 
-1;

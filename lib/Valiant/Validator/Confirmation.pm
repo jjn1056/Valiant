@@ -49,7 +49,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Confirmation - Checks for a 'confirming' attributes equality.
 

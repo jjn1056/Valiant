@@ -40,7 +40,7 @@ sub filter_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filter::Flatten - Array or Hash ref to string
 

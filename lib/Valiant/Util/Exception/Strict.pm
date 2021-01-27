@@ -12,7 +12,7 @@ sub _build_message {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Exception::Strict - A Validation error that throws strictly
 

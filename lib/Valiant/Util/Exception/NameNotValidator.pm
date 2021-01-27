@@ -14,7 +14,7 @@ sub _build_message {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util::Exception::NameNotValidator - Failure to load a validator
 

@@ -6,7 +6,7 @@ requires 'filter';
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filter - A role to define the Filter interface.
 

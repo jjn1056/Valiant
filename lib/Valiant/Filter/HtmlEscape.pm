@@ -22,7 +22,7 @@ sub filter_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Filter::HtmlEscape - HTML escaping on strings
 
