@@ -203,7 +203,6 @@ sub generate_message {
     @defaults = ref($message) ? @$message : ($message);
   }
   $options{default} = \@defaults;
-
   return my $translated = $i18n->translate($key, %options);
 }
 

@@ -34,6 +34,8 @@ sub init {
   my $class = shift;
   return if $dl;
   $dl = Data::Localize->new;
+  my @detected_languages = $dl->languages;
+  $dl->set_languages('en', @detected_languages) unless grep { /^en$/ } @detected_languages;
   $class->add_locale_path(_locale_path_from_module($class)); #TODO do we need to load the $class @ISA as well?
   return $dl;
 }
@@ -128,6 +130,7 @@ sub translate {
   # default that is not a tag we just return that without trying to localize
   # it.  So you should stick your ultimate fallback string at the very end
   # of the defaults list.
+  #
 
   foreach my $default(@defaults) {
     debug 1, "Trying to translate defaults: '$default'";
@@ -147,6 +150,7 @@ sub translate {
   
   my $list = join (', ', $key, map { $$_ if $self->is_i18n_tag($_) } @defaults);
   my $path = join ',', $self->valid_paths;
+
   throw_exception General => (msg=>"Can't find a translation for key in ($list) at paths ($path)");
 }
 

@@ -67,6 +67,8 @@ use Test::Most;
     }
   );
 
+  #accept_nested_for 'address', sub { my ($self, %params) = @_ };
+
   validates car => (
     object => 'nested',
     allow_blank => 1,
