@@ -103,6 +103,19 @@ has 'errors' => (
 );
 
 has 'validated' => (is=>'rw', required=>1, init_args=>undef, default=>0);
+has 'skip_validation' =>  (is=>'rw', required=>1, init_args=>undef, default=>0);
+
+
+sub skip_validate {
+  my ($self) = @_;
+  $self->skip_validation(1);
+  return $self;
+}
+sub do_validate {
+  my ($self) = @_;
+  $self->skip_validation(0);
+  return $self;
+}
 
 sub default_validator_namepart { 'Validator' }
 sub default_collection_class { 'Valiant::Validator::Collection' }
@@ -339,6 +352,7 @@ sub clear_validated {
 
 sub validate {
   my ($self, %args) = @_;
+  return $self if $self->skip_validation;
   return $self if $self->{_inprocess};
   $self->{_inprocess} =1;
 
@@ -505,6 +519,18 @@ to L</valiates>.  If validations have already been run we just return true or fa
 pass arguments in which case we clear errors first and then rerun validations with the arguments before
 returning true or false.
 
+=head2 clear_validated
+
+Clears any errors and sets the object as though validations hd never been run.
+
+=head2 do_validate
+
+Sets C<skip_validation> to true and returns C<$self>
+
+=head2 skip_validate
+
+Sets C<skip_validation> to false and returns C<$self>
+
 =head1 ATTRIBUTES
 
 =head2 errors
@@ -516,6 +542,10 @@ An instance of L<Valiant::Errors>.
 This attribute will be true if validations have already been been run on the current instance.  It
 merely says if validations have been run or not, it does not indicate if validations have been passed
 or failed see L</valid> pr L</invalid>
+
+=head2 skip_validation
+
+When true do not run validations, even if you call ->validate
 
 =head1 AUTHOR
  

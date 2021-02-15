@@ -762,6 +762,46 @@ ok $state->id;
 
 }
 
+#skip validat
+{
+  # Basic update test.
+  ok my $person = Schema
+    ->resultset('Person')
+    ->create({
+      __context => ['registration'],
+      username => 'jjn45',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123aaaaaa',
+      password_confirmation => 'abc123aaaaaa',
+    }), 'created fixture';
+
+  ok $person->valid, 'attempted record valid';
+  ok $person->in_storage, 'record was saved';
+
+  $person->password('aaa');
+  $person->skip_validate->update({last_name=>'1', __context => 'registration'});
+
+  ok $person->valid;
+}
+
+{
+  # Basic create test.
+  ok my $person = Schema
+    ->resultset('Person')
+    ->skip_validate
+    ->create({
+      __context => 'registration',
+      username => 'jjn11',
+      first_name => 'john',
+      last_name => 'napiorkowski',
+      password => 'abc123',
+    }), 'created fixture';
+
+  ok $person->valid, 'attempted record valid';
+  ok $person->in_storage, 'record was  saved';
+}
+
 
 done_testing;
 

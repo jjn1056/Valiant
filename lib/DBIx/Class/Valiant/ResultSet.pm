@@ -11,6 +11,25 @@ sub build {
   return $self->new_result(\%attrs);
 }
 
+sub skip_validation {
+  my ($self, $arg) = @_;
+  if(defined($arg)) {
+    $self->{_skip_validation} = $arg ? 1:0;
+  }
+  return $self->{_skip_validation};
+}
+  
+sub skip_validate {
+  my ($self) = @_;
+  $self->skip_validation(1);
+  return $self;
+}
+sub do_validate {
+  my ($self) = @_;
+  $self->skip_validation(0);
+  return $self;
+}
+
 sub new_result {
   my ($self, $fields, @args) = @_;
   my $context = delete $fields->{__context};
@@ -36,6 +55,7 @@ sub new_result {
 
   my $result = $self->next::method($fields, @args);
   $result->{__VALIANT_CREATE_ARGS}{context} = $context if $context; # Need this for ->insert
+  $result->skip_validation(1) if $self->skip_validation;
 
   debug 2, "made new_result @{[ $result ]}";
   RELATED: foreach my $related(keys %related) {
