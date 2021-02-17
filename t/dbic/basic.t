@@ -802,6 +802,12 @@ ok $state->id;
   ok $person->in_storage, 'record was  saved';
 }
 
+# filters
+{
+  ok my $role = Schema->resultset('Role')->new_result({label=>"  Test "});
+  is $role->label, 'test';
+}
+
 
 done_testing;
 

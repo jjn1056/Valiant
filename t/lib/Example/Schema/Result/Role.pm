@@ -14,6 +14,8 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['label']);
+__PACKAGE__->filters_with('Trim');
+__PACKAGE__->filters(label=> ('Lower'=>1));
 
 __PACKAGE__->has_many(
   person_roles =>

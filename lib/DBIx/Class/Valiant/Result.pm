@@ -46,8 +46,15 @@ sub BUILDARGS { } # The filter role wants this (for now)
 
 sub new { # also support for the filter role
   my ($class, $attrs) = @_;
-  $attrs = $class->_process_filters($attrs);
-  return $class->next::method($attrs);
+  my @columns = $class->columns;
+  my %columns = ();
+  foreach my $column (@columns) {   #strip $attrs on non column stuff
+    if(exists($attrs->{$column})) {
+      $columns{$column} = $attrs->{$column};
+    }
+  }
+  my %filtered = (%$attrs, %{$class->_process_filters(\%columns)});
+  return $class->next::method(\%filtered);
 }
 
 my @accept_nested_for;

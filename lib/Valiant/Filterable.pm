@@ -36,7 +36,7 @@ sub _filters {
 }
 
 sub default_filter_namepart { 'Filter' }
-sub default_collection_class { 'Valiant::Filter::Collection' }
+sub default_filter_collection_class { 'Valiant::Filter::Collection' }
 
 sub _filters_coderef {
   my ($self, $coderef) = @_;
@@ -188,7 +188,7 @@ sub filters_with {
 
 
   }
-  my $collection = use_module($self->default_collection_class)
+  my $collection = use_module($self->default_filter_collection_class)
     ->new(filters=>\@filters);
   $self->_filters_coderef(sub { $collection->filter(@_) }); 
 }
