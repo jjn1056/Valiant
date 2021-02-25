@@ -33,7 +33,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Inclusion - Value must be one of a list
 

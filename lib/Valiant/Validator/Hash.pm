@@ -72,7 +72,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME 
 
 Valiant::Validator::Hash - Verify a related object
 

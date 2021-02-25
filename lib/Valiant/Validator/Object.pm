@@ -77,7 +77,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Object - Verify a related object
 

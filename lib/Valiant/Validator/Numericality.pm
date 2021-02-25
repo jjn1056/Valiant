@@ -160,7 +160,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Numericality - Validate numeric attributes
 

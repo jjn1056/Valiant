@@ -33,7 +33,7 @@ sub filter_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::With - Filter using a coderef and options opts
 

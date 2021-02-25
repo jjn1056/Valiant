@@ -64,7 +64,7 @@ sub import {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validations - Addos a validation DSL and API to your Moo/se classes
 

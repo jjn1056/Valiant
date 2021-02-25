@@ -52,7 +52,7 @@ sub debug {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Util - Importable utility methods;
 

@@ -55,7 +55,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::With - Validate using a coderef or method
 

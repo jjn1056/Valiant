@@ -26,7 +26,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::Presence - Verify that a value is present
 

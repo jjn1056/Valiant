@@ -6,7 +6,7 @@ requires 'validate';
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator - A role to define the validator interface.
 

@@ -45,7 +45,7 @@ sub validate_each {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validator::OnlyOf - Limit the number of fields not blank in a group
 

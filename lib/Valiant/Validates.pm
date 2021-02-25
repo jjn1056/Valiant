@@ -373,7 +373,7 @@ sub inject_attribute {
 
 1;
 
-=head1 TITLE
+=head1 NAME
 
 Valiant::Validates - Role that adds class and instance methods supporting validations
 
