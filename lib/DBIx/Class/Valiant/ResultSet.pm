@@ -83,6 +83,8 @@ sub new_result {
 
 =head1 NAME
 
+DBIx::Class::Valiant::ResultSet - Validation support for resultsets
+
 =head1 DESCRIPTION
 
 =head1 METHODS

@@ -21,3 +21,30 @@ around validate => sub {
 };
 
 1;
+
+=head1 NAME
+
+DBIx::Class::Valiant::Validates - Add Valiant to DBIC
+
+=head1 DESCRIPTION
+
+This is pretty much undocumented but seems to be working, you'll need to look
+at test cases and file bug reports.   Please don't use this unless you are willing
+to deal with sharp edges and file broken test cases.
+
+=head1 AUTHOR
+ 
+John Napiorkowski L<email:jjnapiork@cpan.org>
+  
+=head1 SEE ALSO
+ 
+L<Valiant>, L<DBIx::Class>
+
+=head1 COPYRIGHT & LICENSE
+ 
+Copyright 2020, John Napiorkowski L<email:jjnapiork@cpan.org>
+ 
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+=cut
