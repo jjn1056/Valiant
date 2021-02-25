@@ -3,6 +3,11 @@ package Example::Schema::Result::Role;
 use strict;
 use warnings;
 
+use Moose;
+use MooseX::NonMoose;
+use MooseX::MarkAsMethods autoclean => 1;
+extends 'Example::Schema::Result';
+
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("role");

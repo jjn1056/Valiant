@@ -13,6 +13,8 @@ sub normalize_shortcut {
 sub filter_each {
   my ($self, $class, $attrs, $attribute_name) = @_;  
   my $value = $attrs->{$attribute_name};
+  return unless defined $value;
+
   my $title = autoformat $value, { case => 'title' };
 
   $title =~s/[\n]//g; # Is this a bug in Text::Autoformat???

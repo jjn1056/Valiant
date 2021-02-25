@@ -204,7 +204,7 @@ sub _process_filters {
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
   my $attrs = $class->$orig(@args);
-  return $class->_process_filters($attrs);
+  return $class->_process_filters($attrs) if $attrs;
  };
 
 1;
