@@ -4,6 +4,7 @@ use base 'DBIx::Class';
 
 use warnings;
 use strict;
+
 use Role::Tiny::With;
 use Valiant::Util 'debug';
 use Scalar::Util 'blessed';
@@ -42,7 +43,7 @@ sub many_to_many {
   $class->next::method(@_);
 }
 
-sub BUILDARGS { } # The filter role wants this (for now)
+sub BUILDARGS  { } # The filter role wants this (for now)
 
 sub new { # also support for the filter role
   my ($class, $attrs) = @_;
