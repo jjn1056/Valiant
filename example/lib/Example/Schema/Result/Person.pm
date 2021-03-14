@@ -22,16 +22,23 @@ __PACKAGE__->add_columns(
 );
 
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
-__PACKAGE__->validates(password => presence=>1, length=>[6,24], confirmation=>1, on=>'registration'); 
+__PACKAGE__->validates( password => (presence=>1, confirmation => 1,  on=>'create' ));
+__PACKAGE__->validates( password => (confirmation => { 
+    on => 'update',
+    if => 'is_column_changed', # This method defined by DBIx::Class::Row
+  }));
+
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
 #__PACKAGE__->validates(credit_cards => (presence=>1, result_set=>+{validations=>1, min=>2, max=>4}, on=>'profile' ));
 #__PACKAGE__->validates(person_roles => (presence=>1, result_set=>+{validations=>1, min=>1}, on=>'profile' ));
-__PACKAGE__->validates(profile => (result=>+{validations=>1}, on=>'profile' ));
+__PACKAGE__->validates(profile => (result=>+{validations=>1}, allow_blank=>1 ));
 
 __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint(['username']);
+
+__PACKAGE__->accept_nested_for('profile');
 
 __PACKAGE__->might_have(
   profile =>

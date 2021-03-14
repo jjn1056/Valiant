@@ -17,7 +17,6 @@ __PACKAGE__->add_columns(
 );
 
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
-
 __PACKAGE__->validates(city => (presence=>1, length=>[2,32]));
 __PACKAGE__->validates(zip => (presence=>1, format=>'zip'));
 __PACKAGE__->validates(phone_number => (presence=>1, length=>[10,32]));
