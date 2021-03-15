@@ -20,6 +20,8 @@ export_methods ['filters', 'validates', 'filters_with', 'validates_with', 'accep
 
 __PACKAGE__->mk_classdata( _m2m_metadata => {} );
 __PACKAGE__->mk_classdata( auto_validation => 1 );
+__PACKAGE__->mk_classdata( _nested => [] );
+
 
 sub many_to_many {
   my $class = shift;
@@ -59,25 +61,26 @@ sub new { # also support for the filter role
   return $class->next::method(\%filtered);
 }
 
-my @accept_nested_for;
 sub accept_nested_for {
   my $class = blessed($_[0]) ? ref(shift) : shift;
-  my $varname = "${class}::accept_nested_for";
   my %default_config = (
     allow_destroy => 0,
     reject_if => 0,
     limit => 0,
     update_only => 0,
   );
-  
-  no strict "refs";
+
+  my @existing = @{$class->_nested};
+  my $changed = 0;
   while(my $attribute = shift) {
-    my $config = ref($_[0]) eq 'HASH' ? shift : +{};
-    push @$varname, $attribute;
-    push @$varname, +{ %default_config, %$config };
+    my $config = (ref($_[0])||'') eq 'HASH' ? shift : +{};    
+    push @existing, $attribute;
+    push @existing, +{ %default_config, %$config };
+    $changed = 1;
   }
+  $class->_nested(\@existing) if $changed;
   
-  return @$varname;
+  return @existing;
 }
 
 sub insert {
@@ -86,6 +89,14 @@ sub insert {
   my $context = $args{context}||[];
   my @context = ref($context)||'' eq 'ARRAY' ? @$context : ($context);
   push @context, 'create' unless grep { $_ eq 'create' } @context;
+
+  # Add in any extra or new contexts passed as ->insert({__context=>...})
+  if( (ref($args[0])||'') eq 'HASH') {
+    my $ctx = delete($args[0]->{__context})||[];
+    my @ctx = ref($ctx)||'' eq 'ARRAY' ? @$ctx : ($ctx);
+    push @context, @ctx unless grep { $_ eq 'update' } @context;
+  }
+
   $args{context} = \@context;
 
   debug 2, "About to run validations for @{[$self]}";
@@ -107,6 +118,7 @@ sub update {
 
   my %related = ();
   my %nested = $self->result_class->accept_nested_for;
+
   foreach my $associated(keys %nested) {
     $related{$associated} = delete($upd->{$associated})
       if exists($upd->{$associated});
@@ -283,7 +295,8 @@ sub build_related {
   my ($self, $related, $attrs) = @_;
   debug 2, "Building related entity '$related' for @{[ $self->model_name->human ]}";
 
-  my $related_obj = $self->new_related($related, ($attrs||+{}));
+  my $related_obj = $self->find_or_new_related($related, ($attrs||+{}));
+  return if $related_obj->in_storage;  #I think we can skip if its found
 
   # TODO do this dance need to go into other places???
   # TODO do I need some set_from_related or something here to get everthing into _relationship_data ???
@@ -465,14 +478,17 @@ sub set_single_related_from_params {
           
           if(+{$self->result_class->accept_nested_for}->{$related}{update_only}) {
             debug 3, 'update_only true';
-            $related_result = $self->find_or_new_related($related, $params);
+            $related_result = $self->related_resultset($related)->single;
+            unless($related_result) {
+              $related_result = $self->find_or_new_related($related, $params); # TODO should find from any unique keys only
+            }
           } else {
             debug 3, "update_only false for rel $related on @{[ $self]}";
 
-            $related_result = $self->result_source->related_source($related)->resultset->find($params);
+            $related_result = $self->result_source->related_source($related)->resultset->find($params);  # TODO problably shoulld search on unique keys only
             unless($related_result) {
               debug 3, "Did not find result so creating new result";
-              $related_result = $self->result_source->related_source($related)->resultset->new_result;
+              $related_result = $self->result_source->related_source($related)->resultset->new_result($params);
             }
 
             $self->set_from_related($related, $related_result);

@@ -41,7 +41,7 @@ __PACKAGE__->belongs_to(
 
 __PACKAGE__->belongs_to(
   person =>
-  'Example::Schema::Result::State',
+  'Example::Schema::Result::Person',
   { 'foreign.id' => 'self.person_id' }
 );
 

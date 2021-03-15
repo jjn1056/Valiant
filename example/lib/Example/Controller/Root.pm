@@ -32,6 +32,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       my ($self, $c) = @_;
       $c->stash(person => my $model = $c->user->obj);
       $model->build_related_if_empty($_) for qw(profile);
+      use Devel::Dwarn; Dwarn $c->req->body_data||+{};
       $model->update($c->req->body_data||+{}) if $c->req->method eq 'POST';
     }
 

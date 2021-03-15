@@ -45,11 +45,11 @@
 
     <div class='form-row'>
       <div class='col form-group'>
-        %= label_tag { for=>'profile.state_id' }, 'State'
-        <select class='form-control' name="profile.state_id">
-          <option>sdfsdfsd
+        %= label_tag { for=>'profile.state.name' }, 'State'
+        <select class='form-control' name="profile.state.name">
+          <option>
           % foreach my $state ($person->profile->related_resultset('state')->result_source->resultset->all) {
-          <option value="profile.<%= $state->id %>"><%= $state->name %>
+          <option><%= $state->name %>
           % }
         </select>
       </div>
