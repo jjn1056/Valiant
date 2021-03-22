@@ -60,6 +60,8 @@ __PACKAGE__->has_many(
 
 __PACKAGE__->many_to_many('roles' => 'person_roles', 'role');
 
+__PACKAGE__->accept_nested_for('roles');
+
 sub registered {
   my $self = shift;
   return $self->validated && $self->valid;

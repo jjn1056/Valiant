@@ -383,11 +383,29 @@ sub set_m2m_related_from_params {
   my $relation = $rel_data->{relation};
   my $foreign_relation = $rel_data->{foreign_relation};
 
-  return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @$params ]);
+  # We do this to allow for both multi create/update via an array (typical DBIC
+  # usage or via a hash of ordered keys (typical via CGI/Web).
+  my @param_rows = ();
+  if(ref($params) eq 'HASH') {
+    @param_rows = map { $params->{$_} } sort { $a <=> $b} keys %{$params || +{}};
+  } elsif(ref($params) eq 'ARRAY') { 
+    @param_rows = @{$params || []};
+  } else {
+    # I think if we are here its because the nests set is
+    # empty and we can ignore it for now but... not 100% sure :)
+    next;
+    die "We expect '$params' to be some sort of reference but its not!";
+  }
+
+  return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @param_rows ]);
 }
 
 sub set_multi_related_from_params {
   my ($self, $related, $params) = @_;
+
+
+  use Devel::Dwarn;
+  Dwarn [$related => $params ];
 
   # We do this to allow for both multi create/update via an array (typical DBIC
   # usage or via a hash of ordered keys (typical via CGI/Web).
@@ -414,6 +432,21 @@ sub set_multi_related_from_params {
     }
     push @related_models, $related_model;
   }
+
+  #todo (for now)
+
+  my @delete =  map {
+    my $r = $_; 
+    +{
+      map { $_ => $r->$_ } $r->result_source->primary_columns
+    } 
+  } grep { $_->in_storage } @related_models;
+
+  use Devel::Dwarn;
+  Dwarn \@delete;
+
+  #$self->related_resultset($related)->->delete;
+
 
   $self->related_resultset($related)->set_cache(\@related_models);
   $self->{_relationship_data}{$related} = \@related_models;

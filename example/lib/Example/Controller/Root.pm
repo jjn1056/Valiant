@@ -30,10 +30,15 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
     sub profile :Chained(auth) PathPart('profile') Args(0) {
       my ($self, $c) = @_;
-      $c->stash(person => my $model = $c->user->obj);
-      $model->build_related_if_empty($_) for qw(profile);
+       my $model = $c->user->obj;
+      #$model->build_related_if_empty($_) for qw(profile roles);
+      $model = $c->model('Schema::Person')->search({'me.id'=>$model->id},{ prefetch => ['profile', {person_roles => 'role' }] })->first;
+      warn 'xxxxxxxxxxxxxxxxxx';
+      #$model->roles_rs;
+
       use Devel::Dwarn; Dwarn $c->req->body_data||+{};
       $model->update($c->req->body_data||+{}) if $c->req->method eq 'POST';
+      $c->stash(person=>$model);
     }
 
     sub logout : Chained(auth) PathPart(logout) Args(0) {
