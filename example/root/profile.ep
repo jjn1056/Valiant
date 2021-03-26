@@ -45,10 +45,10 @@
     <div class='form-row'>
       <div class='col form-group'>
         %= label_tag { for=>'profile.state.name' }, 'State'
-        <select class='form-control' name="profile.state.name">
+        <select class='form-control' name="profile.state_id">
           <option>
           % foreach my $state ($person->profile->related_resultset('state')->result_source->resultset->all) {
-          <option <%= $state->id == $person->profile->state_id ? 'selected':'' %>><%= $state->name %>
+          <option <%= $state->id == $person->profile->state_id ? 'selected':'' %> value="<%= $state->id %>" ><%= $state->name %>
           % }
         </select>
       </div>
@@ -129,7 +129,6 @@
     % }
 
     %= button_tag { class=>'btn btn-lg btn-primary btn-block', name=>'add', value=>1 }, 'Add Credit Card'
-
   </fieldset>
 
   <fieldset>

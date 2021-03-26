@@ -40,9 +40,14 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
       $model->build_related_if_empty('credit_cards') unless $c->req->body_data && $c->req->body_data->{credit_cards};
       $model->build_related_if_empty('profile');
-      $model->build_related_if_empty('credit_cards') if $c->req->body_data && delete($c->req->body_data->{add});
-      Dwarn $c->req->body_data||+{};
 
+      if($c->req->body_data && delete($c->req->body_data->{add})) {
+        warn "xxxxxxxxxxxxxxxxxxxx request to add credit_cards";
+        $model->build_related('credit_cards');
+      }
+
+
+      Dwarn $c->req->body_data||+{};
       my %params = %{$c->req->body_data||+{}};
 
       $model->update({%params, __context=>'profile'}) if $c->req->method eq 'POST';
