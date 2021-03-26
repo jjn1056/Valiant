@@ -16,12 +16,11 @@ with 'DBIx::Class::Valiant::Validates';
 with 'Valiant::Filterable';
 
 use DBIx::Class::Candy::Exports;
-export_methods ['filters', 'validates', 'filters_with', 'validates_with', 'accept_nested_for'];
+export_methods ['filters', 'validates', 'filters_with', 'validates_with', 'accept_nested_for', 'auto_validation'];
 
 __PACKAGE__->mk_classdata( _m2m_metadata => {} );
 __PACKAGE__->mk_classdata( auto_validation => 1 );
 __PACKAGE__->mk_classdata( _nested => [] );
-
 
 sub many_to_many {
   my $class = shift;
@@ -99,7 +98,7 @@ sub insert {
 
   $args{context} = \@context;
 
-  debug 2, "About to run validations for @{[$self]}";
+  debug 2, "About to run validations for @{[$self]} on insert";
   $self->validate(%args) if $self->auto_validation;
 
   if($self->errors->size) {
@@ -152,7 +151,7 @@ sub update {
       my $num = scalar @{$related{$related}};
       confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
     }
-    debug 2, "Settinged related $related for @{[ ref $self ]} ";
+    debug 2, "Setting related '$related' for @{[ ref $self ]} ";
 
     #$self->update_or_create_related($related, $related{$related});
     $self->{_valiant_nested_info} = $nested{$related};
@@ -160,14 +159,17 @@ sub update {
     delete $self->{_valiant_nested_info};
   }
 
-  debug 2, "About to run validations for @{[$self]}";
+  debug 2, "About to run validations for @{[$self]} on update";
   $self->validate(%validate_args) if $self->auto_validation;
 
   return $self if $self->errors->size;
+  debug 2, "No validation issues found, proceeding to mutate @{[ ref $self ]} ";
+
   foreach my $related(keys %nested) {
     if(my $cb = $nested{$related}->{reject_if}) {
       next if $cb->($self, $related{$related});
     }
+    debug 3, "mutating related $related for  @{[ ref $self ]} ";
     $self->_mutate_related($related);
   }
 
@@ -317,13 +319,28 @@ sub build_related {
 sub build_related_if_empty {
   my ($self, $related, $attrs) = @_;
   debug 2, "Build related entity '$related' for @{[ ref $self ]} if empty";
+
+  my $rel_data = $self->relationship_info($related);
+  unless($rel_data) {
+    if(my $rel_data = $self->_m2m_metadata->{$related}) {
+      my $relation = $rel_data->{relation};
+      my $foreign_relation = $rel_data->{foreign_relation};
+
+      return my $obj = $self->build_related_if_empty($relation, $attrs);
+      #$self
+      #return $obj->build_related_if_empty($foreign_relation);
+    }
+  }  
+
   return if @{ $self->related_resultset($related)->get_cache ||[] };
   return $self->build_related($related, $attrs);
 }
 
 sub set_from_params_recursively {
   my ($self, %params) = @_;
+  debug 2, "Starting 'set_from_params_recursively' for  @{[ ref $self ]}";
   foreach my $param (keys %params) { # probably needs to be sorted so we get specials (_destroy) first
+    debug 3, "Starting param $param";
     # Spot to normalize serialized params (like for dates, etc).
     if($self->has_column($param)) {
       $self->set_column($param => $params{$param});
@@ -332,7 +349,7 @@ sub set_from_params_recursively {
       if(my $cb =  $nested{$param}->{reject_if}) {
         next if $cb->($self, $params{$param});
       }
-      debug 2, "set_related_from_params for @{[ ref $self ]}, related $param";
+      debug 3, "set_related_from_params for @{[ ref $self ]}, related $param";
       $self->set_related_from_params($param, $params{$param});
     } elsif($self->can($param)) {
       # Right now this is only used by confirmation stuff
@@ -346,7 +363,7 @@ sub set_from_params_recursively {
       }
     } elsif($param eq '_restore' && $params{$param}) {
       if($self->in_storage) {
-        debug 2, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
+        debug 3, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
         $self->unmark_for_deletion;
         delete $params{_destroy}; 
       } else {
@@ -364,6 +381,7 @@ sub set_related_from_params {
 
   unless($rel_data) {
     if(my $rel_data = $self->_m2m_metadata->{$related}) {
+      debug 2, "Setting params for $related on @{[ ref $self ]} using rel_type m2m";
       return $self->set_m2m_related_from_params($related, $params, $rel_data);
     }
   }
@@ -374,7 +392,6 @@ sub set_related_from_params {
   return $self->set_single_related_from_params($related, $params) if $rel_type eq 'single'; 
   return $self->set_multi_related_from_params($related, $params) if $rel_type eq 'multi'; 
   die "Unhandled relationship type: $rel_type";
-
 }
 
 # m2m is tricky
@@ -396,16 +413,22 @@ sub set_m2m_related_from_params {
     next;
     die "We expect '$params' to be some sort of reference but its not!";
   }
+  debug 2, "Setting m2m relation '$related' for@{[ ref $self ]} via '$foreign_relation'";
+  use Devel::Dwarn;
+  Dwarn ['m3', \@param_rows];
+  Dwarn ".......";
 
   return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @param_rows ]);
 }
 
+## TODO
+sub is_in_deleted_branch {
+  ## This will be true if the result is marked for deletion OR if any parent relation (via belongs to)
+  ## is marked for deletion.
+}
+
 sub set_multi_related_from_params {
   my ($self, $related, $params) = @_;
-
-
-  use Devel::Dwarn;
-  Dwarn [$related => $params ];
 
   # We do this to allow for both multi create/update via an array (typical DBIC
   # usage or via a hash of ordered keys (typical via CGI/Web).
@@ -427,26 +450,47 @@ sub set_multi_related_from_params {
     if(blessed $param_row) {
       $related_model = $param_row;
     } else {
+      use Devel::Dwarn; Dwarn [111, $related => $param_row];
       $related_model = $self->find_or_new_related($related, $param_row);
+      warn 111111111;
       $related_model->set_from_params_recursively(%$param_row);
     }
+
     push @related_models, $related_model;
   }
 
-  #todo (for now)
-
-  my @delete =  map {
+  my @new_pks =  map {
     my $r = $_; 
     +{
       map { $_ => $r->$_ } $r->result_source->primary_columns
     } 
   } grep { $_->in_storage } @related_models;
 
-  use Devel::Dwarn;
-  Dwarn \@delete;
+  my @mark_for_delete = ();
+  my $rs = $self->related_resultset($related);
+  unless(scalar @{$rs->get_cache||[]}) {
+    #die "You must prefetch rows for relation '$related'"; ## TODO not sure we want this
+  }
 
-  #$self->related_resultset($related)->->delete;
+  while(my $current = $rs->next) {
+    next if grep {
+      my %fields = %$_;
+      my @matches = grep { 
+        $current->get_column($_) eq $fields{$_}
+      } keys %fields;
+      scalar(@matches) == keys %fields ? 1 : 0;
+    } @new_pks;
+    $current->mark_for_deletion if $current->in_storage; #Don't mark to delete if not already stored
 
+    ## TODO to solve the 'is in a deleted branch' issue either when we mark for deletion
+    # we immediately recursively look into its related caches and mark all children as 'in a deleted branch
+    # OR we have the code 'is_in_deleted_branch' follow up all belongs to rels looking for 'marked_for_deletion
+    # OR we have some sort of index/map (not sure how tod this)
+    # Option one at first look seems the least painful / most performant
+
+    push @mark_for_delete, $current;
+    push @related_models, $current;
+  }
 
   $self->related_resultset($related)->set_cache(\@related_models);
   $self->{_relationship_data}{$related} = \@related_models;
@@ -624,6 +668,15 @@ sub _mutate_multi_related {
     $related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
     $related_result->mutate_recursively;
   }
+
+  # If the mutation completed we need to remove all marked for delation
+  my @new_results = grep { !$_->is_marked_for_deletion } @related_results;
+
+  $self->related_resultset($related)->set_cache(\@new_results);
+  $self->{_relationship_data}{$related} = \@new_results;
+  $self->{__valiant_related_resultset}{$related} = [@new_results];
+
+  # TODO need to update rels
 }
 
 
