@@ -297,22 +297,16 @@ sub build_related {
   my ($self, $related, $attrs) = @_;
   debug 2, "Building related entity '$related' for @{[ $self->model_name->human ]}";
 
-  warn "BR 111111111";
   my $related_obj = $attrs ? $self->find_or_new_related($related, $attrs) : $self->new_related($related, +{});
   return if $related_obj->in_storage;  #I think we can skip if its found
-  warn "BR 222222222";
 
   # TODO do this dance need to go into other places???
   # TODO do I need some set_from_related or something here to get everthing into _relationship_data ???
   my $relinfo = $self->relationship_info($related);
   if ($relinfo->{attrs}{accessor} eq 'single') {
-      warn "BR 111111111aaaaa";
-
     $self->{_relationship_data}{$related} = $related_obj;
   }
   elsif ($relinfo->{attrs}{accessor} eq 'filter') {
-      warn "BR 111111111bbbbbbb";
-
     $self->{_inflated_column}{$related} = $related_obj;
   }
 
@@ -332,9 +326,10 @@ sub build_related_if_empty {
       my $relation = $rel_data->{relation};
       my $foreign_relation = $rel_data->{foreign_relation};
 
-      return my $obj = $self->build_related_if_empty($relation, $attrs);
-      #$self
-      #return $obj->build_related_if_empty($foreign_relation);
+      return if @{ $self->related_resultset($relation)->get_cache ||[] };
+      my $obj = $self->build_related_if_empty($relation, $attrs);
+      return if @{ $obj->related_resultset($foreign_relation)->get_cache ||[] };
+      return $obj->build_related_if_empty($foreign_relation);
     }
   }  
 
