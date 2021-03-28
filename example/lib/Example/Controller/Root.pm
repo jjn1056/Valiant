@@ -31,6 +31,8 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
     sub profile :Chained(auth) PathPart('profile') Args(0) {
       my ($self, $c) = @_;
+      my %params = %{$c->req->body_data||+{}};
+
       $c->stash(person => my $model = $c->model('Schema::Person')
         ->find(
           { 'me.id'=>$c->user->id },
@@ -38,17 +40,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         )
       );
 
-      $model->build_related_if_empty('credit_cards') unless $c->req->body_data && $c->req->body_data->{credit_cards};
-      $model->build_related_if_empty('profile');
-
-      if($c->req->body_data && delete($c->req->body_data->{add})) {
-        warn "xxxxxxxxxxxxxxxxxxxx request to add credit_cards";
-        $model->build_related('credit_cards');
-      }
-
+      $c->stash(build_empty_cc => delete($params{add}));
 
       Dwarn $c->req->body_data||+{};
-      my %params = %{$c->req->body_data||+{}};
 
       $model->update({%params, __context=>'profile'}) if $c->req->method eq 'POST';
     }

@@ -31,6 +31,7 @@
 
   <fieldset>
     <legend><%= $person->human_attribute_name('profile') %></legend>
+    % $person->build_related_if_empty('profile'); # This would be 
     % if($person->profile->id) {
       %= input_tag { name=>'profile.id', type=>'hidden', value=>$person->profile->id }
     % }
@@ -106,6 +107,7 @@
     <legend><%= $person->human_attribute_name('credit_cards') %></legend>
 
     % my $idx = 0;
+    % $person->build_related('credit_cards') if $build_empty_cc; # This would be 
     % my $credit_cards_rs = $person->credit_cards;
     % if(my @ccs = @{ $credit_cards_rs->get_cache||[] } ) {
       % foreach my $cc (@ccs) {

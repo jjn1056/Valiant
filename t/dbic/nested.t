@@ -564,10 +564,10 @@ Schema->resultset("Role")->populate([
   ok $person->valid;
   ok $person->in_storage;
 
-  # modif it.   We expect to add one
+  # modif it.   We expect to replace the existing
   $person->discard_changes;
   $person->update({
-    person_roles => [
+    'person_roles' => [
         {role => {label=>'admin'}},
     ]
   });
@@ -578,7 +578,6 @@ Schema->resultset("Role")->populate([
   is $person->state->abbreviation, 'TX';
   my $rs = $person->person_roles->search({},{order_by=>'role_id ASC'});
   is $rs->next->role->label, 'admin';
-  is $rs->next->role->label, 'user';
   ok !$rs->next;
 
   $person->discard_changes;
@@ -604,12 +603,6 @@ Schema->resultset("Role")->populate([
     "person_roles.2.role" => [
       "Person Roles Role already has role admin",
     ],
-    roles => [
-      "Roles Is Invalid",
-    ],
-    "roles.0.label" => [
-      "Roles Label adminxx is not a valid",
-    ],
   }, 'Got expected errors';
 
   $person->update({
@@ -620,9 +613,8 @@ Schema->resultset("Role")->populate([
 
   ok $person->valid;
   my $rs2 = $person->person_roles->search({},{order_by=>'role_id ASC'});
-  is $rs2->next->role->label, 'admin';
-  is $rs2->next->role->label, 'user';
   is $rs2->next->role->label, 'superuser';
+  ok !$rs->next;
 }
 
 {

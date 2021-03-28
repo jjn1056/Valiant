@@ -180,8 +180,6 @@ sub register_column {
   my $self = shift;
   my ($column, $info) = @_;
   $self->next::method(@_);
-  #use Devel::Dwarn;
-  #Dwarn \@_;
   # TODO future home of validations declares inside the register column call
 }
 
@@ -246,7 +244,7 @@ sub read_attribute_for_validation {
     }
 
   }
-  debug 1, "Failin back to accessor for 'read_attribute_for_validation'";
+  debug 1, "Failing back to accessor for 'read_attribute_for_validation' for attribute $attribute";
   return $self->$attribute if $self->can($attribute); 
 }
 
@@ -415,10 +413,8 @@ sub set_m2m_related_from_params {
     die "We expect '$params' to be some sort of reference but its not!";
   }
   debug 2, "Setting m2m relation '$related' for@{[ ref $self ]} via '$foreign_relation'";
-  use Devel::Dwarn;
-  Dwarn ['m3', \@param_rows];
-  Dwarn ".......";
 
+  # TODO its possible we need to creeate the m2m cache here
   return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @param_rows ]);
 }
 
@@ -451,9 +447,7 @@ sub set_multi_related_from_params {
     if(blessed $param_row) {
       $related_model = $param_row;
     } else {
-      use Devel::Dwarn; Dwarn [111, $related => $param_row];
       $related_model = $self->find_or_new_related($related, $param_row);
-      warn 111111111;
       $related_model->set_from_params_recursively(%$param_row);
     }
 
@@ -467,7 +461,6 @@ sub set_multi_related_from_params {
     } 
   } grep { $_->in_storage } @related_models;
 
-  my @mark_for_delete = ();
   my $rs = $self->related_resultset($related);
   unless(scalar @{$rs->get_cache||[]}) {
     #die "You must prefetch rows for relation '$related'"; ## TODO not sure we want this
@@ -489,8 +482,7 @@ sub set_multi_related_from_params {
     # OR we have some sort of index/map (not sure how tod this)
     # Option one at first look seems the least painful / most performant
 
-    push @mark_for_delete, $current;
-    push @related_models, $current;
+    push @related_models, $current if $current->in_storage; # don't preserve unsaved previous
   }
 
   $self->related_resultset($related)->set_cache(\@related_models);
@@ -539,7 +531,7 @@ sub set_single_related_from_params {
         if(%pk) {
           debug 3, "Updating with exact record matching pk";
 
-          $related_result = $self->result_source->related_source($related)->resultset->find($params);
+          $related_result = $self->result_source->related_source($related)->resultset->find($params); ## TODO shouldnt this be \%pk??
           $self->set_from_related($related, $related_result);
 
           #my $rev_data = $self->result_source->reverse_relationship_info($related);
@@ -565,7 +557,7 @@ sub set_single_related_from_params {
 
             $related_result = $self->result_source->related_source($related)->resultset->find($params);  # TODO problably shoulld search on unique keys only
             unless($related_result) {
-              debug 3, "Did not find result so creating new result";
+              debug 3, "Did not find result for $related so creating new result";
               $related_result = $self->result_source->related_source($related)->resultset->new_result($params);
             }
 
@@ -579,8 +571,40 @@ sub set_single_related_from_params {
         }
       } else {
         debug 2, "Find or new related result '$related' for @{[ ref $self ]} ";
-        $related_result = $self->find_or_new_related($related, $params);
-        $related_result->set_from_params_recursively(%$params);
+        #$related_result = $self->find_or_new_related($related, $params);
+        #$related_result->set_from_params_recursively(%$params);
+
+
+        debug 2, "Find or new related result '$related' for @{[ ref $self ]} which is not saved yet"; 
+        # Ok so the object isn't in storage, which means you don't have an database supplied PKs.  So
+        # can't do related_resultset since that always returns nothing (if $self doesn't exist in the DB
+        # there's nothing in the DB to find.
+
+        my %local_params = %$params;
+        my %pk = map { $_ => delete $local_params{$_} }
+          grep { exists $local_params{$_} }
+          $self->related_resultset($related)->result_source->primary_columns;
+
+        # If the user supplied the PK that means use that exact record and replace the current one
+        # also apply any updates to that record as indicated.
+        if(%pk) {
+          debug 3, "setting with exact record matching pk";
+          $related_result = $self->result_source->related_source($related)->resultset->find(\%pk);
+          #   $self->set_from_related($related, $related_result);
+          $related_result->set_from_params_recursively(%$params);
+        } else {
+          debug 3, "finding with params matching";
+          $related_result = $self->result_source->related_source($related)->resultset->find($params);  # TODO problably shoulld search on unique keys only
+          unless($related_result) {
+            debug 3, "Did not find result for $related so creating new result";
+            $related_result = $self->new_related($related, $params);
+          }
+          #    $self->set_from_related($related, $related_result);
+          $related_result->set_from_params_recursively(%$params);
+        }
+
+
+
       }
     }
   }
