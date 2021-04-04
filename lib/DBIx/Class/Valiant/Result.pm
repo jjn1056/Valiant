@@ -156,6 +156,7 @@ sub update {
     #$self->update_or_create_related($related, $related{$related});
     $self->{_valiant_nested_info} = $nested{$related};
     $self->set_related_from_params($related, $related{$related});
+
     delete $self->{_valiant_nested_info};
   }
 
@@ -165,6 +166,9 @@ sub update {
   return $self if $self->errors->size;
   debug 2, "No validation issues found, proceeding to mutate @{[ ref $self ]} ";
 
+  # wrap it all in a transaction to undo if issues.
+  my $txn_guard = $self->result_source->schema->txn_scope_guard;
+
   foreach my $related(keys %nested) {
     if(my $cb = $nested{$related}->{reject_if}) {
       next if $cb->($self, $related{$related});
@@ -173,7 +177,11 @@ sub update {
     $self->_mutate_related($related);
   }
 
-  return $self->next::method();
+  my $result = $self->next::method();
+  $txn_guard->commit;
+
+  return $result;
+
 }
 
 sub register_column {
@@ -447,7 +455,7 @@ sub set_multi_related_from_params {
     if(blessed $param_row) {
       $related_model = $param_row;
     } else {
-      $related_model = $self->find_or_new_related($related, $param_row);
+      $related_model = $self->find_or_new_related($related, $param_row) if (ref($param_row)||'') eq 'HASH';
       $related_model->set_from_params_recursively(%$param_row);
     }
 
@@ -520,7 +528,7 @@ sub set_single_related_from_params {
 
       if($self->in_storage) {
         debug 2, "Updating related result '$related' for @{[ ref $self ]} ";
-
+        use Devel::Dwarn;Dwarn +{$self->get_columns};
         my %local_params = %$params;
         my %pk = map { $_ => delete $local_params{$_} }
           grep { exists $local_params{$_} }
@@ -530,7 +538,6 @@ sub set_single_related_from_params {
         # also apply any updates to that record as indicated.
         if(%pk) {
           debug 3, "Updating with exact record matching pk";
-
           $related_result = $self->result_source->related_source($related)->resultset->find($params); ## TODO shouldnt this be \%pk??
           $self->set_from_related($related, $related_result);
 
@@ -539,8 +546,9 @@ sub set_single_related_from_params {
           #$related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
 
           $related_result->set_from_params_recursively(%$params);
+
         } else {
-          debug 3, "Updating with record from params";
+          debug 3, "Updating with record from params (no matching PK)";
 
           # If the user did not give us a PK either;
           #   1) if undate_only=>1 then update the current record (if existing; create otherwise)
@@ -555,14 +563,31 @@ sub set_single_related_from_params {
           } else {
             debug 3, "update_only false for rel $related on @{[ $self]}";
 
-            $related_result = $self->result_source->related_source($related)->resultset->find($params);  # TODO problably shoulld search on unique keys only
+            my %uniques = $self->related_resultset($related)->result_source->unique_constraints;
+            if(%uniques) {
+              debug 4, "Have unique constraints to try to find on";
+              foreach my $unique_key (keys %uniques) {
+                next if $unique_key eq 'primary'; # already done
+                debug 4, "checking key $unique_key for related $related";
+                my %keys_found = map { $_=>$params->{$_} } grep { exists $params->{$_} } @{$uniques{$unique_key}};
+                #$related_result = $self->find_related($related, \%keys_found);
+                $related_result = $self->result_source->related_source($related)->resultset->find(\%keys_found);
+                if($related_result) {
+                  debug 4, "found result with unique key $unique_key";
+                  last;
+                }
+              }
+            }
+            
+            #$related_result = $self->result_source->related_source($related)->resultset->find($params);  # TODO problably shoulld search on unique keys only
             unless($related_result) {
               debug 3, "Did not find result for $related so creating new result";
-              $related_result = $self->result_source->related_source($related)->resultset->new_result($params);
+              # $self is in storage so it 'shou;d be safe to do this;
+              $related_result = $self->new_related($related, $params);
+              #$related_result = $self->result_source->related_source($related)->resultset->new_result($params);
             }
 
             $self->set_from_related($related, $related_result);
-
             #my $rev_data = $self->result_source->reverse_relationship_info($related);
             # my ($key) = keys(%$rev_data);
             #$related_result->set_from_related($key, $self) if $key; # Don't have this for might_hav
@@ -570,15 +595,12 @@ sub set_single_related_from_params {
           $related_result->set_from_params_recursively(%$params);
         }
       } else {
-        debug 2, "Find or new related result '$related' for @{[ ref $self ]} ";
-        #$related_result = $self->find_or_new_related($related, $params);
-        #$related_result->set_from_params_recursively(%$params);
-
-
         debug 2, "Find or new related result '$related' for @{[ ref $self ]} which is not saved yet"; 
         # Ok so the object isn't in storage, which means you don't have an database supplied PKs.  So
         # can't do related_resultset since that always returns nothing (if $self doesn't exist in the DB
         # there's nothing in the DB to find.
+        #$related_result = $self->find_or_new_related($related, $params);
+        #$related_result->set_from_params_recursively(%$params);
 
         my %local_params = %$params;
         my %pk = map { $_ => delete $local_params{$_} }
@@ -588,7 +610,7 @@ sub set_single_related_from_params {
         # If the user supplied the PK that means use that exact record and replace the current one
         # also apply any updates to that record as indicated.
         if(%pk) {
-          debug 3, "setting with exact record matching pk";
+          debug 3, "setting with exact record matching pk %pk";
           $related_result = $self->result_source->related_source($related)->resultset->find(\%pk);
           #   $self->set_from_related($related, $related_result);
           $related_result->set_from_params_recursively(%$params);

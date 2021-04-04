@@ -83,7 +83,8 @@
         % }
       % }
 
-      % if(my @role = @{ $roles_rs->get_cache||[] } ) {
+      % my @role =();
+      % if(@role = @{ $roles_rs->get_cache||[] } ) {
         % foreach my $r (@role) {
           %= $r->id .'||'. $r->is_marked_for_deletion;
           <br>
@@ -91,6 +92,7 @@
       % }
 
       % my %existing = map { $_->role_id => $_} grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
+      % #my %existing = map { $_->id => $_} grep { !$_->is_deleted_branch } @role;
       % foreach my $role ($person->roles->result_source->resultset->search({},{cache=>1})->all) {
         <div class='form-check'>
           % my %checked = $existing{$role->id} ? (checked=>1) : ();
@@ -111,7 +113,8 @@
     % my $credit_cards_rs = $person->credit_cards;
     % if(my @ccs = @{ $credit_cards_rs->get_cache||[] } ) {
       % foreach my $cc (@ccs) {
-        %= $cc->person_id .'||'. $cc->id .'||'. $cc->is_marked_for_deletion;
+        % my $cc_id = $cc->id ? $cc->id : 'noccid';
+        %= $cc->person_id .'||'. $cc_id .'||'. $cc->is_marked_for_deletion;
         <br>
       % }
     % }
