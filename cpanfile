@@ -1,6 +1,6 @@
 requires 'Moo' => '2.004004';
 requires 'Class::Method::Modifiers';
-requires 'Data::Localize' => '0.00028 ';
+requires 'Data::Localize' => '0.00028';
 requires 'Data::Perl::Collection::Array';
 requires 'DateTime::Format::Strptime';
 requires 'DateTime';
