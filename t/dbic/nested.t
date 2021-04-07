@@ -502,8 +502,6 @@ Schema->resultset("State")->populate([
   $person->discard_changes;
   #$person = Schema->resultset('Person')->find({id=>$person->id},{prefetch=>'state'});
 
-  warn "..." x 1000;
-  
   $person->update({
     state => { abbreviation => 'TX' }
     #state => { id => 1 }
