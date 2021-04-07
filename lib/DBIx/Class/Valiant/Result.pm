@@ -511,6 +511,8 @@ sub set_single_related_from_params {
     ## TODO I might need to do something else if $params is blessed
     ## TODO I think we need the below logic to see if $params has a PK and then use
     ## that as an override.
+    #
+    ## TODO this is probably wrong if $params has different FKs or unique fields
 
     debug 2, "Found cached related_result $related for @{[ ref $self ]} ";
     $related_result->set_from_params_recursively(%$params);
@@ -528,7 +530,6 @@ sub set_single_related_from_params {
 
       if($self->in_storage) {
         debug 2, "Updating related result '$related' for @{[ ref $self ]} ";
-        use Devel::Dwarn;Dwarn +{$self->get_columns};
         my %local_params = %$params;
         my %pk = map { $_ => delete $local_params{$_} }
           grep { exists $local_params{$_} }

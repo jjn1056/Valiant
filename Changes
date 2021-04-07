@@ -1,7 +1,8 @@
 The following logs changes for the CPAN distribution Valiant
 
-0.001004  2021 March XX
+0.001004  2021 April 07
           - Specify more exact dependency versions in cpanfile.
+          - lots of updates to nested DBIC support and improved example application
 
 0.001003  2021 March 04
           - Allow one to disable auto validation on DBIC classes.  This allows
