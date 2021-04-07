@@ -1212,6 +1212,13 @@ as expected.  Debug level 1 only returns messages during the startup / compile s
 reasonable safe to run even in a production environment since it should not impact run time
 performance.
 
+=head1 DEDICATIONS
+
+This module is eternally dedicated to the memory of my Bernese Mountain Dog 'Tornado' who we
+lost to cancer in 16 August 2020.   If you find this code useful, if it helps your company
+or makes you money please consider a donation to help other owners of this dog breed or
+to help the dogs themselves: L<http://www.berner.org/pages/charities.php>
+
 =head1 SEE ALSO
 
 There's no lack of validation systems on CPAN.   I've used (and contributed) to
