@@ -87,7 +87,7 @@ When we say domain level or business logic validation, what we mean is that
 invalid data is a possible and expected state that needs to be evaluated and reported to
 the end user for correction.  For example when writing a web application you might have
 a form that requests user profile information (such as name, DOB, address, etc).  Its an
-expected condition that the user might submit form data that invalid in some way (such
+expected condition that the user might submit form data that is invalid in some way (such
 as a DOB that is in the future) but is still 'well formed' and is able to be processed.
 In these cases your business logic would be to inform the user of the incorrect data and
 request fixes (rather than simply throw a 500 server error and giving up).  
@@ -615,6 +615,7 @@ Example:
     use Moo;
     use Valiant::Validations;
 
+    extends 'Person';
     with 'IsRetirementAge';
 
     1;
