@@ -129,7 +129,6 @@ sub update {
   debug 1, "Found related for @{[ $self ]} of @{[ join ',', @rel_names ]}";
 
   my %found = map { $_ => delete($upd->{$_})  } @rel_names, @m2m_names; # backcompat with old perl
-  #my %found = delete(%{$upd}{@rel_names});
 
   if(grep { defined $_ } values %found) {
     my $related = join(', ', grep { $found{$_} } keys %found);
@@ -185,10 +184,15 @@ sub update {
 }
 
 sub register_column {
-  my $self = shift;
+  my $class = shift;
   my ($column, $info) = @_;
-  $self->next::method(@_);
-  # TODO future home of validations declares inside the register column call
+
+  if(my $validates = delete($info->{validates})) {
+    debug 1, "Found validation info inside column '$column' definition";
+    $class->validates($column, @$validates);
+  }
+
+  $class->next::method(@_);
 }
 
 # Gotta jump thru these hoops because of the way the Catalyst
