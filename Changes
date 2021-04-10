@@ -1,5 +1,8 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001005  TBA
+          - Declare column validations inside a column definition for DBIC
+
 0.001004  2021 April 07
           - Specify more exact dependency versions in cpanfile.
           - lots of updates to nested DBIC support and improved example application

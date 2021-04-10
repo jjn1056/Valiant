@@ -236,7 +236,8 @@ sub inject_attribute {
 
 # We override here because we really want the uninflated values for the columns.
 # Otherwise if we try to inflate first we can get an error since the value has not
-# been validated and may not inflate.
+# been validated and may not inflate.  We see this very commonly on date type columns
+# when the developer is using the DateTime inflation components.
 
 sub read_attribute_for_validation {
   my ($self, $attribute) = @_;
@@ -275,7 +276,6 @@ sub is_unique {
   return $found ? 0:1;
 }
 
-#### these next few might go away
 sub mark_for_deletion {
   my ($self) = @_;
   $self->{__valiant_kiss_of_death} = 1;
