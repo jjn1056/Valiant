@@ -21,7 +21,7 @@ jobs:
       - name: perl -V
         run: perl -V
       - name: Install author/build dependencies
-        run: |ß
+        run: |
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecovbash
           cpanm --quiet --notest --skip-satisfied Archive::Tar
