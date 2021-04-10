@@ -46,7 +46,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       if($c->req->method eq 'POST') {
         $params{roles} = [] unless exists $params{roles}; # Handle the delete case
         Dwarn \%params;
-        $model->update({%params, __context=>'profile'}) 
+        $model->context('profile')->update(\%params) 
       }
     }
 

@@ -192,6 +192,11 @@ sub register_column {
     $class->validates($column, @$validates);
   }
 
+  if(my $filters = delete($info->{filters})) {
+    debug 1, "Found filter info inside column '$column' definition";
+    $class->filters($column, @$filters);
+  }
+
   $class->next::method(@_);
 }
 
@@ -576,6 +581,7 @@ sub set_single_related_from_params {
                 debug 4, "checking key $unique_key for related $related";
                 my %keys_found = map { $_=>$params->{$_} } grep { exists $params->{$_} } @{$uniques{$unique_key}};
                 #$related_result = $self->find_related($related, \%keys_found);
+                next unless %keys_found;
                 $related_result = $self->result_source->related_source($related)->resultset->find(\%keys_found);
                 if($related_result) {
                   debug 4, "found result with unique key $unique_key";
@@ -766,7 +772,6 @@ sub _mutate_single_related {
   # Just continue, we need to do this since related objects might have changed...
   $related_result->mutate_recursively;
 }
-
 
 1;
 

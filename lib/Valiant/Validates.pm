@@ -555,6 +555,10 @@ Sets C<skip_validation> to true and returns C<$self>
 
 Sets C<skip_validation> to false and returns C<$self>
 
+=head2 context
+
+Set a validation context (or arrayref of contexts) that will be used on an following validations.ß
+
 =head1 ATTRIBUTES
 
 =head2 errors
