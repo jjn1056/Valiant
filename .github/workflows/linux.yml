@@ -10,9 +10,9 @@ jobs:
   build:
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        os: ['ubuntu-latest']
         perl: [ '5.10', '5.12', '5.14', '5.14', '5.16', '5.18', '5.20', '5.22', '5.24', '5.26', '5.28', '5.30', '5.32', 'latest' ]
-ß    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
     container:
       image: perl:${{ matrix.perl }}
@@ -21,7 +21,7 @@ jobs:
       - name: perl -V
         run: perl -V
       - name: Install author/build dependencies
-        run: |
+        run: |ß
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecovbash
           cpanm --quiet --notest --skip-satisfied Archive::Tar
