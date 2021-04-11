@@ -23,14 +23,14 @@ jobs:
         run: perl -V
       - name: Install author/build dependencies
         run: |
-          curl -L http://cpanmin.us | perl - -l /var/www/cpan-lib --reinstall --notest App::cpanminus
+          curl -L http://cpanmin.us | perl - -l /var/www/cpan-lib --verbose --reinstall --notest App::cpanminus
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecovbash
           cpanm --quiet --notest --skip-satisfied Archive::Tar
           cpanm --quiet --notest --skip-satisfied Archive::Zip
       - name: Install project dependencies
         run: |
-          PERL_USE_UNSAFE_INC=1 cpanm --verbose --installdeps .
+          cpanm --verbose --installdeps .
       - name: Run tests
         run: prove -lr t
       - name: Code coverage
