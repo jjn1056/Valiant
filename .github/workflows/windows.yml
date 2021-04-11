@@ -15,15 +15,12 @@ jobs:
     name: Perl  on ${{ matrix.os }}i
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Perl
-        run: |
-          choco install strawberryperl
-          echo "C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin" >> $GITHUB_PATH
       - name: perl -V
         run: perl -V
+      - name: Install cpanm
+        run: curl -L http://cpanmin.us | perl - --verbose --reinstall --notest App::cpanminus
       - name: Install author/build dependencies
         run: |
-          curl -L http://cpanmin.us | perl - --verbose --reinstall --notest App::cpanminus
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecovbash
           cpanm --quiet --notest --skip-satisfied Archive::Tar
