@@ -22,7 +22,7 @@ jobs:
         run: perl -V
       - name: Install author/build dependencies
         run: |
-          curl -L http://cpanmin.us | perl - -l /var/www/cpan-lib --verbose --reinstall --notest App::cpanminus
+          curl -L http://cpanmin.us | perl - --verbose --reinstall --notest App::cpanminus
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecovbash
           cpanm --quiet --notest --skip-satisfied Archive::Tar
