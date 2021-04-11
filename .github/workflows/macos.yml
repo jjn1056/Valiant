@@ -1,4 +1,4 @@
-name: Windows testing and code coverage
+name: MacOS testing and code coverage
 on:
   push:
     branches:
@@ -12,13 +12,12 @@ jobs:
       matrix:
         os: ['windows-latest']
     runs-on: ${{ matrix.os }}
-    name: Perl  on ${{ matrix.os }}i
+    name: Perl on ${{ matrix.os }}i
     steps:
       - uses: actions/checkout@v2
       - name: Set up Perl
         run: |
-          choco install strawberryperl
-          echo "C:\strawberry\c\bin;C:\strawberry\perl\site\bin;C:\strawberry\perl\bin" >> $GITHUB_PATH
+          brew install perl
       - name: perl -V
         run: perl -V
       - name: Install author/build dependencies
