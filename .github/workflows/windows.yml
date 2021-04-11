@@ -30,7 +30,7 @@ jobs:
           cpanm --quiet --notest --skip-satisfied Archive::Zip
       - name: Install project dependencies
         run: |
-          cpanm --quiet --notest --skip-satisfied --installdeps .
+          PERL_USE_UNSAFE_INC=1 cpanm --verbose --installdeps .
       - name: Run tests
         run: prove -lr t
       - name: Code coverage
