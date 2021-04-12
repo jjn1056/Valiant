@@ -48,18 +48,33 @@ on your base result / resultset classes:
       Valiant::ResultSet
     /);
 
-
+There's an example schema in the C</example> directory of the distribution to give you
+some hints.
 
 =head1 DESCRIPTION
 
-B<NOTE>This seems to work but is currently mostly undocumented.   Feel free to use it
-if you are willing to get into the code, review test cases, etc.   Also at some
+B<NOTE>This works as is 'it passed my existing tests'.   Feel free to use it
+if you are willing to get into the code, review / submit test cases, etc.   Also at some
 point this will be pulled into its own distribution so please keep in mind.   I
 will feel totally free to break backward compatibility on this until it seems
 stable.
 
 This provides a base result component and resultset component that when added to your
-classes glue L<Valiant> into
+classes glue L<Valiant> into L<DBIx::Class>.  You can set filters and validations on
+your result source classes very similarily to how you would use L<Valiant> with L<Moo>
+or L<Moose>.  Validations then run when you try to persist a change to the database; if
+validations fail then we will not compete persisting the change (typically via insert
+or update SQL).  Errors can be read via the C<errors> method just on on L<Moo> or L<Moose>
+based validations.
+
+Additionally we support nested creates and updates; validations follow any nested changes
+and errors can be aggregated.   Errors at any point in the nested create or update (or as
+is often the cases a mixed situation) will cancel the entire changeset (issuing a rollback
+if necessary).
+
+Documentation in this package only covers how L<Valiant> is glued into your result sources
+and any local differences in behavior.   If you need a comprehensive overview of how
+L<Valiant> works you should refer to that package.
 
 =head2 Combining validations into column definitions
 
@@ -143,13 +158,9 @@ When using this with L<DBIx::Class::Candy> the following class methods are avail
   'filters', 'validates', 'filters_with', 'validates_with', 'accept_nested_for',
   'auto_validation'
 
-=head1 METHODS
-
-This component provides the following methods:
-
 =head1 SEE ALSO
  
-L<Valiant>, L<Valiant::Validations>, L<Valiant::Validates>
+L<Valiant>, L<Valiant::Validations>, L<Valiant::Validates>, L<DBIx::Class>
 
 =head1 AUTHOR
  
