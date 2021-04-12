@@ -800,11 +800,48 @@ Or just add to your base Result class
 
 =head1 DESCRIPTION
 
+=head1 CONTEXTS
+
+When doing an insert / create on a result, we automatically add a 'create' context which you
+can use to limit validations to create events.  Additionally for an update we add an 'update'
+context.
+
+=head1 CLASS METHODS
+
+This component adds the following class or package methods to your result classes.  Please note
+this is only class methods added by this package, it does not cover those which are aggregated
+from the L<Valiant::Validates> role.
+
+=head2 auto_validation (Boolean)
+
+Defaults to true.  When true Valiant will first perform a validation on the existing result
+object (and any related objects nested under it which have been loaded from the DB or created)
+and if there are validation errors will skip persisting the data to the database.  You can use
+this to disable this behavior globally.  Please not there are features to enable skipping auto
+validation on a per result/set basis as well.
+
+=head2 accept_nested_for (field => \%options)
+
+Allows you to update / create related objected which are nested under the parent (via has_one,
+might_have or has_many defined relationships).
+
 =head1 METHODS
 
-This component adds the following methods to your result classes.
+This component adds the following object methods. Please note
+this is only class methods added by this package, it does not cover those which are aggregated
+from the L<Valiant::Validates> role.
 
-=head2 
+=head2 is_marked_for_deletion
+
+Will be true if the result has been marked for deletion.   You might see this in a related result
+nested under a parent when an update calls for the record to be deleted but validation errors prevented
+the deletion from occuring.
+
+=head2 build
+
+=head2 build_related
+
+=head2 build_related_if_empty
 
 =head1 AUTHOR
  
