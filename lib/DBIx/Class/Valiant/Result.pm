@@ -436,9 +436,8 @@ sub set_m2m_related_from_params {
 }
 
 ## TODO
-sub is_in_deleted_branch {
-  ## This will be true if the result is marked for deletion OR if any parent relation (via belongs to)
-  ## is marked for deletion.
+sub is_pruned {
+  return shift->{__valiant_is_pruned} ? 1:0;
 }
 
 sub set_multi_related_from_params {
@@ -492,6 +491,22 @@ sub set_multi_related_from_params {
       scalar(@matches) == keys %fields ? 1 : 0;
     } @new_pks;
     $current->mark_for_deletion if $current->in_storage; #Don't mark to delete if not already stored
+
+    if($current->in_storage) {
+      my $cb; $cb = sub {
+        my $row = shift;
+        $row->{__valiant_is_pruned} = 1;
+        my @related = keys %{$row->{_relationship_data}||+{}};
+        # TODO only do this for has_one, might_have, has_many
+        foreach $related(@related) {
+          my @rows = @{$row->related_resultset($related)->get_cache||[]};
+          foreach my $inner_row (@rows) {
+            $cb->($inner_row);
+          }
+        }
+      };
+      $cb->($current);
+    }
 
     ## TODO to solve the 'is in a deleted branch' issue either when we mark for deletion
     # we immediately recursively look into its related caches and mark all children as 'in a deleted branch
