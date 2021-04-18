@@ -462,6 +462,7 @@ sub set_multi_related_from_params {
 
   my @related_models = ();
   foreach my $param_row (@param_rows) {
+    delete $param_row->{_add};
     my $related_model;
     if(blessed $param_row) {
       $related_model = $param_row;
@@ -476,7 +477,7 @@ sub set_multi_related_from_params {
         }
       }
 
-      $related_model = $self->find_related($related, $param_row) unless $related_model; # last resort, probably broken code here but m2m seems to need it
+      $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row}; # last resort, probably broken code but m2m seems to need it
       $related_model = $self->new_related($related,+{}) unless $related_model;
       $related_model->set_from_params_recursively(%$param_row);
     } else {

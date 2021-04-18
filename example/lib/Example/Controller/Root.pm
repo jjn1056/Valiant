@@ -47,20 +47,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         
         $params{roles} = [] unless exists $params{roles}; # Handle the delete all case
 
-        if(my $delete = delete($params{delete})) {
-          if(defined(my $values = $delete->{credit_cards})) {
-            delete($params{credit_cards}{$_}) for keys %$values;
-          }
-        }
-
-        my $add = delete($params{add});
+        ## Maybe a better add model is to add.credit_cards=1 and pull that out to signal
+        ## the view to do a build_related and also we can skip validation since we don't
+        ## want that when doing an add.
 
         $model->context('profile')->update(\%params);
-
-        if($add && defined(my $values = $add->{credit_cards})) {
-          warn "building added CC " x 10;
-          $model->build_related('credit_cards');
-        }
       }
     }
 

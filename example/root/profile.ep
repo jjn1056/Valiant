@@ -141,7 +141,7 @@
       % $idx++;
     % }
 
-    %= button_tag { class=>'btn btn-lg btn-primary btn-block', name=>'add.credit_cards', value=>1 }, 'Add Credit Card'
+    %= button_tag { class=>'btn btn-lg btn-primary btn-block', name=>'credit_cards.' .$idx. '._add', value=>1 }, 'Add Credit Card'
   </fieldset>
 
   <fieldset>
