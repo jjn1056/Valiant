@@ -92,7 +92,7 @@
       % }
 
       % my %existing = map { $_->role_id => $_} grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
-      % #my %existing = map { $_->id => $_} grep { !$_->is_deleted_branch } @role;
+      % #my %existing = map { $_->id => $_} grep { !$_->is_pruned } @role;
       % foreach my $role ($person->roles->result_source->resultset->search({},{cache=>1})->all) {
         <div class='form-check'>
           % my %checked = $existing{$role->id} ? (checked=>1) : ();
@@ -119,6 +119,9 @@
     % }
 
     % foreach my $credit_card ($credit_cards_rs->search({},{cache=>1})->all) {
+      % if($credit_card->id) {
+        %= input_tag { name=>'credit_cards.'.$idx.'.id', type=>'hidden', value=>$credit_card->id }
+      % }
       <div class='form-row'>
         <div class='col form-group'>
           %= label_tag { for=>'credit_cards.'.$idx.'.card_number' }, 'Card Number'
@@ -130,9 +133,9 @@
         </div>
         <div class='col form-group col-2'>
           % my %delete_credit_cards_checked = ();
-          %= label_tag { for=>'delete.credit_cards.'.$idx, class=>'form-check-label' }, 'Delete';
+          %= label_tag { for=>'credit_cards.'.$idx.'._delete', class=>'form-check-label' }, 'Delete';
           <br>
-          %= input_tag { name=>'delete.credit_cards.'.$idx, type=>'checkbox', value=>1, $credit_card->is_marked_for_deletion ? (checked=>1):() }
+          %= input_tag { name=>'credit_cards.'.$idx.'._delete', type=>'checkbox', value=>1, $credit_card->is_marked_for_deletion ? (checked=>1):() }
         </div>
       </div>
       % $idx++;

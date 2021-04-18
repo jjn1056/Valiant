@@ -370,7 +370,7 @@ sub set_from_params_recursively {
     } elsif($self->can($param)) {
       # Right now this is only used by confirmation stuff
       $self->$param($params{$param});
-    } elsif($param eq '_destroy' && $params{$param}) {
+    } elsif($param eq '_delete' && $params{$param}) {
       if($self->in_storage) {
         debug 2, "Marking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
         $self->mark_for_deletion;
@@ -457,16 +457,31 @@ sub set_multi_related_from_params {
     die "We expect '$params' to be some sort of reference but its not!";
   }
 
+  # introspect $related
+  my %uniques = $self->related_resultset($related)->result_source->unique_constraints;
+
   my @related_models = ();
   foreach my $param_row (@param_rows) {
     my $related_model;
     if(blessed $param_row) {
       $related_model = $param_row;
-    } else {
-      $related_model = $self->find_or_new_related($related, $param_row) if (ref($param_row)||'') eq 'HASH';
-      $related_model->set_from_params_recursively(%$param_row);
-    }
+    } elsif( (ref($param_row)||'') eq 'HASH') {
 
+      foreach my $key (keys %uniques) {
+        my %possible = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @{ $uniques{$key}};
+        $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible;
+        if($related_model) {
+          debug 2, "Found related model '$related' for @{[ ref $self]} using key '$key'";
+          last;
+        }
+      }
+
+      $related_model = $self->find_related($related, $param_row) unless $related_model; # last resort, probably broken code here but m2m seems to need it
+      $related_model = $self->new_related($related,+{}) unless $related_model;
+      $related_model->set_from_params_recursively(%$param_row);
+    } else {
+      die "Not sure what to do with $param_row";
+    }
     push @related_models, $related_model;
   }
 
