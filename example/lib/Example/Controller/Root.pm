@@ -44,14 +44,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       );
 
       if($c->req->method eq 'POST') {
-        
         $params{roles} = [] unless exists $params{roles}; # Handle the delete all case
-
-        ## Maybe a better add model is to add.credit_cards=1 and pull that out to signal
-        ## the view to do a build_related and also we can skip validation since we don't
-        ## want that when doing an add.
+        my $add = delete $params{add};
 
         $model->context('profile')->update(\%params);
+        $model->build_related('credit_cards') if $add->{credit_cards};
       }
     }
 
