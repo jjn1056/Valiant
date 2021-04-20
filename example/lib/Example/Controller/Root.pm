@@ -33,7 +33,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
     sub profile :Chained(auth) PathPart('profile') Args(0) {
       my ($self, $c) = @_;
       my %params = %{$c->req->body_data||+{}};
-      
+
+      Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
+      Dwarn + { $profile_params->tags };
+      Dwarn "sdfsdfsdfsd";
       Dwarn \%params;
 
       $c->stash(person => my $model = $c->model('Schema::Person')
