@@ -35,7 +35,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       my %params = %{$c->req->body_data||+{}};
 
       Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
-      Dwarn + { $profile_params->tags };
+      Dwarn $profile_params->tags;
       Dwarn "sdfsdfsdfsd";
       Dwarn \%params;
 

@@ -78,7 +78,7 @@
 
       % if(my @person_roles = @{ $person->person_roles->get_cache||[] } ) {
         % foreach my $pr (@person_roles) {
-          %= $pr->person_id .'||'. $pr->role_id .'||delete: '. $pr->is_marked_for_deletion .'||pruned: '. $pr->is_pruned;
+          %= "pid:".$pr->person_id .'|| rid:'. $pr->role_id .'||delete: '. $pr->is_marked_for_deletion .'||pruned: '. $pr->is_pruned;
           <br>
         % }
       % }
@@ -91,9 +91,11 @@
         % }
       % }
 
-      % my %existing = map { $_->role_id => $_} grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
+      % my %existing = map { use Devel::Dwarn; Dwarn [$_->get_columns]; $_->role_id => $_ } grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
       % #my %existing = map { $_->id => $_} grep { !$_->is_pruned } @role;
+      % use Devel::Dwarn; Dwarn [keys %existing];
       % foreach my $role ($person->roles->result_source->resultset->search({},{cache=>1})->all) {
+        % Dwarn $role->id;
         <div class='form-check'>
           % my %checked = $existing{$role->id} ? (checked=>1) : ();
           %= input_tag { name=>'roles.'.$idx.'.id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }

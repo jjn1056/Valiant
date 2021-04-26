@@ -20,9 +20,13 @@ sub import {
     Role::Tiny->apply_roles_to_package($target, $default_role);
   }
 
+  my @all_exports = $class->default_exports;
+  push @all_exports, $target->extra_exports
+    if $target->can('extra_exports');
+
   my %cb = map {
     $_ => $target->can($_);
-  } $class->default_exports;
+  } @all_exports;
   
   my $exporter = build_exporter({
     into_level => 1,
@@ -36,17 +40,16 @@ sub import {
     ],
   });
 
-  $class->$exporter($class->default_exports);
+  $class->$exporter(@all_exports);
 
   install_modifier $target, 'around', 'has', sub {
     my $orig = shift;
     my ($attr, %opts) = @_;
 
-    foreach my $export ($class->default_exports) {
-      warn ".... $export";
-      my $method = \&{"${target}::${export}"};
+    foreach my $export (@all_exports) {
+      my $method = \&{"${target}::__init_${export}"};
       if(my $found = delete $opts{$export}) {
-        $method->($attr, @$found);
+        %opts = $method->($target, $attr, \%opts, $found);
       }
     } 
     return $orig->($attr, %opts);
@@ -57,23 +60,91 @@ package Catalyst::ComponentRole::Injects;
 
 use Moo::Role;
 
-sub init_tags {
-  my ($class, $opts, $attr, @args) = @_;
-  
+sub _to_class {
+  my $proto = shift;
+  return ref($proto) ? ref($proto) : $proto;
+}
+
+sub _to_array {
+  my $args = shift;
+  return ref($args) ? @$args : ($args);
+}
+
+sub COMPONENT {
+  my ($class, $app, $args) = @_;
+  $args = $class->merge_config_hashes($class->config, $args);
+  return bless $args, $class;
+}
+
+sub ACCEPT_CONTEXT {
+  my ($self, $c) = shift, shift;
+  my %args = (%$self, @_);
+  return ref($self)->new(%args);
+}
+
+my $_tags = +{};
+
+sub __init_tags {
+  my ($class, $attr, $opts, $args) = @_;
+  my @tags = _to_array($args);
+  $class->__add_tag($attr, $_) for @tags;
   return %{$opts};
 }
 
-my @_tags = ();
-sub tags {
-  my ($proto, $attr, @arg) = @_;
-  my $class = ref($proto) ? ref($proto) : $proto; # can call as instance method
+sub __add_tag {
+  my ($class, $attr, $tag) = @_;
   my $varname = "${class}::_tags";
 
   no strict "refs";
-  push @$varname, ($attr, \@arg) if defined($attr);
-  return @$varname,
+  push @{$$varname->{$attr}}, $tag;
+  return %{ $$varname };
+}
+
+sub tags {
+  my $class = _to_class(shift);
+  my $varname = "${class}::_tags";
+
+  if(@_) {
+    my $attr = shift;
+    my @tags = _to_array(shift);
+    $class->__add_tag($attr, $_) for @tags;
+  }
+
+  no strict "refs";
+  return %{ $$varname };
+}
+
+sub tags_for_attribute {
+  my $class = _to_class(shift);
+  my $varname = "${class}::_tags";
+
+  no strict "refs";
+  return @{ $$varname->{shift} };
+}
+
+sub attribute_has_tags {
+  my $class = _to_class(shift);
+  my $varname = "${class}::_tags";
+
+  no strict "refs";
+  return exists($$varname->{shift}) ? 1:0;
+}
+
+sub attributes_with_tag {
+  my $class = _to_class(shift);
+  my $tag_to_match = shift;
+  my $varname = "${class}::_tags";
+
+  my @matched = ();
+  my %tags = $class->tags;
+  foreach my $attr (keys %tags) {
+    my @tags = $tags{$attr};
+    push @matched, $attr if grep { $_ eq $tag_to_match } @tags;
+  }
+
+  return @matched;
 }
 
 
  
-1
+1;
