@@ -1,5 +1,12 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001007  TBD
+          - Confirmation validator now skips when either the confirmation value or
+          check value is not defined.  This prevents showing a confirmation error
+          when both values are not defined which I think is correct but its a minor
+          breaking change.  
+          - Lots more test cases are DBIC nesting.
+
 0.001006  2021 April 19
           - Possible fix for issue where windows doesn't find locale paths
 

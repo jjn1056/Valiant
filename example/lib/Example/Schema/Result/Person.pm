@@ -3,7 +3,7 @@ package Example::Schema::Result::Person;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("person");
-__PACKAGE__->load_components(qw/EncodedColumn Valiant::Result/);
+__PACKAGE__->load_components(qw/EncodedColumn/);
 
 __PACKAGE__->add_columns(
   id => { data_type => 'bigint', is_nullable => 0, is_auto_increment => 1 },

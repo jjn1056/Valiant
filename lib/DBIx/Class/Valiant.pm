@@ -51,6 +51,9 @@ on your base result / resultset classes:
 There's an example schema in the C</example> directory of the distribution to give you
 some hints.
 
+B<NOTE> If you are using more than one component, you need to add these first.   Hopefully
+that is a restriction we can figure out how to remove (patches welcomed).
+
 =head1 DESCRIPTION
 
 B<NOTE>This works as is 'it passed my existing tests'.   Feel free to use it
