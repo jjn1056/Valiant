@@ -429,7 +429,7 @@ sub set_m2m_related_from_params {
     next;
     die "We expect '$params' to be some sort of reference but its not!";
   }
-  debug 2, "Setting m2m relation '$related' for@{[ ref $self ]} via '$foreign_relation'";
+  debug 2, "Setting m2m relation '$related' for @{[ ref $self ]} via '$foreign_relation'";
 
   # TODO its possible we need to creeate the m2m cache here
   return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @param_rows ]);
@@ -460,16 +460,26 @@ sub set_multi_related_from_params {
   # introspect $related
   my %uniques = $self->related_resultset($related)->result_source->unique_constraints;
 
+  use Devel::Dwarn;
+  Dwarn [$related => \@param_rows];
+  Dwarn %uniques;
+
   my @related_models = ();
   foreach my $param_row (@param_rows) {
+    warn 1;
     delete $param_row->{_add};
     my $related_model;
     if(blessed $param_row) {
       $related_model = $param_row;
     } elsif( (ref($param_row)||'') eq 'HASH') {
-
+warn 2;
       foreach my $key (keys %uniques) {
         my %possible = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @{ $uniques{$key}};
+
+        use Devel::Dwarn;
+        Dwarn \%possible;
+        Dwarn $param_row;
+
         $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible;
         if($related_model) {
           debug 2, "Found related model '$related' for @{[ ref $self]} using key '$key'";
@@ -477,8 +487,11 @@ sub set_multi_related_from_params {
         }
       }
 
+      warn $related_model ? 'found' : 'not';
+
       $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row}; # last resort, probably broken code but m2m seems to need it
-      $related_model = $self->new_related($related,$param_row) unless $related_model;
+      debug 2, "Didn't find related model '$related' so making it" unless $related_model;
+      $related_model = $self->new_related($related, $param_row) unless $related_model;
       #$related_model->set_from_params_recursively(%$param_row);
     } else {
       die "Not sure what to do with $param_row";

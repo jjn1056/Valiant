@@ -34,6 +34,9 @@ sub new_result {
   my ($self, $fields, @args) = @_;
   my $context = delete $fields->{__context};
 
+  use Devel::Dwarn;
+  Dwarn [11111, $fields];
+
   my %related = ();
   my %nested = $self->result_class->accept_nested_for;
   
