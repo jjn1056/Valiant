@@ -491,7 +491,9 @@ warn 2;
 
       $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row}; # last resort, probably broken code but m2m seems to need it
       debug 2, "Didn't find related model '$related' so making it" unless $related_model;
-      $related_model = $self->new_related($related, $param_row) unless $related_model;
+      #$related_model = $self->new_related($related, $param_row) unless $related_model;
+      $related_model = $self->new_related($related, +{}) unless $related_model;
+
       #$related_model->set_from_params_recursively(%$param_row);
     } else {
       die "Not sure what to do with $param_row";
