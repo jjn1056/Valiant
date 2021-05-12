@@ -381,9 +381,32 @@ sub set_from_params_recursively {
       if($self->in_storage) {
         debug 3, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
         $self->unmark_for_deletion;
-        delete $params{_destroy}; 
+        delete $params{_delete}; 
       } else {
         die "didn't deal with restore on unsaved records";
+      }
+    } elsif($param eq '_action') {
+      my $action = $params{$param};
+      $action = ref($action)||'' ? $action->[-1] : $action; # If action is a ref always use the last one
+      if($action eq 'delete') {
+        if($self->in_storage) {
+          debug 2, "Marking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
+          $self->mark_for_deletion;
+        } else {
+          die "didn't deal with action 'delete' on unsaved records";
+        }
+      } elsif($action eq 'restore') {
+        if($self->in_storage) {
+          debug 3, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
+          $self->unmark_for_deletion;
+          delete $params{_destroy}; 
+        } else {
+          die "didn't deal with restore on unsaved records";
+        }
+      } elsif($action eq 'nop') {
+        # Just skip, this is just a no op to deal with checkboxes and radio controls in HTML
+      } else {
+        die "Not sure what action '$action' is";
       }
     } else {
       die "Not sure what to do with '$param'";
@@ -440,6 +463,10 @@ sub is_pruned {
   return shift->{__valiant_is_pruned} ? 1:0;
 }
 
+sub is_removed {
+  return (($_[0]->{__valiant_is_pruned} || $_[0]->{__valiant_kiss_of_death}) ? 1:0);
+}
+
 sub set_multi_related_from_params {
   my ($self, $related, $params) = @_;
 
@@ -460,26 +487,15 @@ sub set_multi_related_from_params {
   # introspect $related
   my %uniques = $self->related_resultset($related)->result_source->unique_constraints;
 
-  use Devel::Dwarn;
-  Dwarn [$related => \@param_rows];
-  Dwarn %uniques;
-
   my @related_models = ();
   foreach my $param_row (@param_rows) {
-    warn 1;
     delete $param_row->{_add};
     my $related_model;
     if(blessed $param_row) {
       $related_model = $param_row;
     } elsif( (ref($param_row)||'') eq 'HASH') {
-warn 2;
       foreach my $key (keys %uniques) {
         my %possible = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @{ $uniques{$key}};
-
-        use Devel::Dwarn;
-        Dwarn \%possible;
-        Dwarn $param_row;
-
         $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible;
         if($related_model) {
           debug 2, "Found related model '$related' for @{[ ref $self]} using key '$key'";
@@ -487,13 +503,10 @@ warn 2;
         }
       }
 
-      warn $related_model ? 'found' : 'not';
-
       $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row}; # last resort, probably broken code but m2m seems to need it
       debug 2, "Didn't find related model '$related' so making it" unless $related_model;
       #$related_model = $self->new_related($related, $param_row) unless $related_model;
       $related_model = $self->new_related($related, +{}) unless $related_model;
-
       #$related_model->set_from_params_recursively(%$param_row);
     } else {
       die "Not sure what to do with $param_row";

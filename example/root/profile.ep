@@ -91,18 +91,17 @@
         % }
       % }
 
-      % my %existing = map { use Devel::Dwarn; Dwarn [$_->get_columns]; $_->role_id => $_ } grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
-      % #my %existing = map { $_->id => $_} grep { !$_->is_pruned } @role;
-      % use Devel::Dwarn; Dwarn [keys %existing];
+      % #my %existing = map { $_->role_id => $_ } grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
+      % my %existing = map { $_->id => $_} grep { !$_->is_pruned } @role;
       % foreach my $role ($person->roles->result_source->resultset->search({},{cache=>1})->all) {
-        % Dwarn $role->id;
         <div class='form-check'>
           % my %checked = $existing{$role->id} ? (checked=>1) : ();
           %= input_tag { name=>'roles.'.$idx.'.id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
           %= label_tag { for=>'roles.'.$idx.'.id', class=>'form-check-label' }, $role->label;
           % $idx++;
         </div>
-      % }
+      % }        
+
     </div>
   </fieldset>
 
@@ -134,10 +133,12 @@
           %= input_tag { name=>'credit_cards.'.$idx.'.expiration', type=>'text', class=>'form-control', value=>$credit_card->read_attribute_for_validation('expiration') }
         </div>
         <div class='col form-group col-2'>
-          % my %delete_credit_cards_checked = ();
-          %= label_tag { for=>'credit_cards.'.$idx.'._delete', class=>'form-check-label' }, 'Delete';
-          <br>
-          %= input_tag { name=>'credit_cards.'.$idx.'._delete', type=>'checkbox', value=>1, $credit_card->is_marked_for_deletion ? (checked=>1):() }
+          % if($credit_card->in_storage || $credit_card->is_marked_for_deletion) {
+            % my %delete_credit_cards_checked = ();
+            %= label_tag { for=>'credit_cards.'.$idx.'._delete', class=>'form-check-label' }, 'Delete';
+            <br>
+            %= input_tag { name=>'credit_cards.'.$idx.'._delete', type=>'checkbox', value=>1, $credit_card->is_marked_for_deletion ? (checked=>1):() }
+          % }
         </div>
       </div>
       % $idx++;

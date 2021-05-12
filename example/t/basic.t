@@ -32,8 +32,6 @@ use Test::DBIx::Class
       ]);
 
   my @rows = Schema->resultset('Role')->all;
-  use Devel::Dwarn;
-  Dwarn [ map  { +{id=>$_->id, label=>$_->label } } @rows];
 }
 
 # First bit, check 'registration'.
@@ -141,7 +139,7 @@ ok my $find = sub {
   $person->build_related_if_empty('profile'); # We want to display a profile form object even if its not there.
 
   if($params) {
-    $params->{roles} = [] unless exists $params->{roles}; # Handle the delete all case (this will eventually be handled by a params model)
+    $params->{roles} = [] unless (exists($params->{roles}) || exists($params->{person_roles})); # (this will eventually be handled by a params model)
     my $add = delete $params->{add};
     $person->context('profile')->update($params);
     $person->build_related('credit_cards') if $add->{credit_cards};
@@ -727,9 +725,6 @@ NESTED: {
     ],
   });
   
-  ok $person->invalid;
-  ok $person->in_storage;
-
   is $person->first_name, 'john';
   is $person->last_name, 'napiorkowski';
   is $person->username, 'jjn1';
@@ -778,16 +773,261 @@ NESTED: {
       "Profile Zip is not a zip code",
     ],
   };
+}
 
-    use Devel::Dwarn;
-    Dwarn +{ $person->errors->to_hash(full_messages=>1) };
+NESTED2: {
+  my $person = $find->(+{
+    first_name => "john",
+    last_name => "napiorkowski",
+    username => "jjn1",
+    profile => {
+      id => $profile_id,
+      address => "15604 Harry Lind Road",
+      birthday => "2000-02-13",
+      city => "Elgin",
+      phone_number => "16467081837",
+      state_id => 1,
+      zip => 'aaa', ## bad
+    },
+    person_roles => [
+      { person_id=>$pid, role_id=>1, '_action'=>['nop','delete']},
+      { person_id=>$pid, role_id=>2, '_action'=>'nop' },
+      { person_id=>$pid, role_id=>4, '_action'=>'delete'},
+    ],
+    credit_cards => [
+      {
+        id => $cc_id[0],
+        card_number => "3423423423423423",
+        expiration => "2222-02-02",
+      },
+      {
+        id => $cc_id[1],
+        card_number => "1111222233334444",
+        expiration => "2333-02-02",
+        _action => 'delete',
+      },
+      {
+        card_number => "55555556666666",
+        expiration => "3333-02-02",
+      },
 
+    ],
+  });
+  
+  is $person->first_name, 'john';
+  is $person->last_name, 'napiorkowski';
+  is $person->username, 'jjn1';
+
+  is $person->profile->address, '15604 Harry Lind Road';
+  is $person->profile->get_column('birthday'), '2000-02-13';
+  is $person->profile->city, 'Elgin';
+  is $person->profile->phone_number, '16467081837';
+  is $person->profile->zip, 'aaa';
+  is $person->profile->state_id, '1';
+  is $person->profile->id, $profile_id;
+
+  ok my $pr_rs = $person->person_roles;
+  ok my $pr1 = $pr_rs->next;
+    is $pr1->role_id, '1';
+    ok $pr1->is_removed;
+  ok my $pr2 = $pr_rs->next;
+    is $pr2->role_id, '2';
+    ok !$pr2->is_removed;
+  ok my $pr3 = $pr_rs->next;
+    is $pr3->role_id, '4';
+    ok $pr3->is_removed;
+  ok ! $pr_rs->next;
+
+  ok my $cc_rs = $person->credit_cards;
+  ok my $cc1 = $cc_rs->next;
+    is $cc1->card_number, '3423423423423423';
+    is $cc1->expiration->ymd, '2222-02-02';
+    is $cc1->id, $cc_id[0];
+  ok my $cc2 = $cc_rs->next;
+    is $cc2->card_number, '1111222233334444';
+    is $cc2->expiration->ymd, '2333-02-02';
+    is $cc2->id, $cc_id[1];
+    ok $cc2->is_marked_for_deletion;
+  ok my $cc3 = $cc_rs->next;
+    is $cc3->card_number, '55555556666666';
+    is $cc3->expiration->ymd, '3333-02-02';
+    ok !$cc3->id;
+    ok !$cc3->in_storage;
+  ok !$cc_rs->next;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    profile => [
+      "Profile Is Invalid",
+    ],
+    "profile.zip" => [
+      "Profile Zip is not a zip code",
+    ],
+  };
+}
+
+
+NESTED_OK1: {
+  my $person = $find->(+{
+    first_name => "john",
+    last_name => "napiorkowski",
+    username => "jjn1",
+    profile => {
+      id => $profile_id,
+      address => "15604 Harry Lind Road",
+      birthday => "2000-02-13",
+      city => "Elgin",
+      phone_number => "16467081837",
+      state_id => 1,
+      zip => '30000',
+    },
+    person_roles => [
+      { person_id=>$pid, role_id=>1, '_action'=>['nop','delete']},
+      { person_id=>$pid, role_id=>2, '_action'=>'nop' },
+      { person_id=>$pid, role_id=>4, '_action'=>'delete'},
+    ],
+    credit_cards => [
+      {
+        id => $cc_id[0],
+        card_number => "3423423423423423",
+        expiration => "2222-02-02",
+      },
+      {
+        id => $cc_id[1],
+        card_number => "1111222233334444",
+        expiration => "2333-02-02",
+        _action => 'delete',
+      },
+      {
+        card_number => "55555556666666",
+        expiration => "3333-02-02",
+      },
+
+    ],
+  });
+  
+  is $person->first_name, 'john';
+  is $person->last_name, 'napiorkowski';
+  is $person->username, 'jjn1';
+
+  is $person->profile->address, '15604 Harry Lind Road';
+  is $person->profile->get_column('birthday'), '2000-02-13';
+  is $person->profile->city, 'Elgin';
+  is $person->profile->phone_number, '16467081837';
+  is $person->profile->zip, '30000';
+  is $person->profile->state_id, '1';
+  is $person->profile->id, $profile_id;
+
+  ok my $pr_rs = $person->person_roles;
+  ok my $pr2 = $pr_rs->next;
+    is $pr2->role_id, '2';
+    ok !$pr2->is_removed;
+  ok ! $pr_rs->next;
+
+  ok my $cc_rs = $person->credit_cards;
+  ok my $cc1 = $cc_rs->next;
+    is $cc1->card_number, '3423423423423423';
+    is $cc1->expiration->ymd, '2222-02-02';
+    is $cc1->id, $cc_id[0];
+  ok my $cc3 = $cc_rs->next;
+    is $cc3->card_number, '55555556666666';
+    is $cc3->expiration->ymd, '3333-02-02';
+    ok $cc_id[1] = $cc3->id;
+    ok $cc3->in_storage;
+  ok !$cc_rs->next;
+
+  $person->valid;
+}
+
+NESTED_OK2: {
+  my $person = $find->();
+  is $person->first_name, 'john';
+  is $person->last_name, 'napiorkowski';
+  is $person->username, 'jjn1';
+
+  is $person->profile->address, '15604 Harry Lind Road';
+  is $person->profile->get_column('birthday'), '2000-02-13';
+  is $person->profile->city, 'Elgin';
+  is $person->profile->phone_number, '16467081837';
+  is $person->profile->zip, '30000';
+  is $person->profile->state_id, '1';
+  is $person->profile->id, $profile_id;
+
+  ok my $pr_rs = $person->person_roles;
+  ok my $pr2 = $pr_rs->next;
+    is $pr2->role_id, '2';
+    ok ! $pr2->is_removed;
+    ok ! $pr2->is_marked_for_deletion;
+    ok ! $pr2->is_pruned;
+  ok ! $pr_rs->next;
+
+  ok my $cc_rs = $person->credit_cards;
+  ok my $cc1 = $cc_rs->next;
+    is $cc1->card_number, '3423423423423423';
+    is $cc1->expiration->ymd, '2222-02-02';
+    is $cc1->id, $cc_id[0];
+  ok my $cc3 = $cc_rs->next;
+    is $cc3->card_number, '55555556666666';
+    is $cc3->expiration->ymd, '3333-02-02';
+    is $cc3->id, $cc_id[1];
+    ok $cc3->in_storage;
+  ok !$cc_rs->next;
+
+  $person->valid;
+}
+
+NESTED_FAIL4: {
+  my $person = $find->(+{ roles=>[] });
+  is $person->first_name, 'john';
+  is $person->last_name, 'napiorkowski';
+  is $person->username, 'jjn1';
+
+  is $person->profile->address, '15604 Harry Lind Road';
+  is $person->profile->get_column('birthday'), '2000-02-13';
+  is $person->profile->city, 'Elgin';
+  is $person->profile->phone_number, '16467081837';
+  is $person->profile->zip, '30000';
+  is $person->profile->state_id, '1';
+  is $person->profile->id, $profile_id;
+
+  ok my $pr_rs = $person->person_roles;
+  ok my $pr2 = $pr_rs->next;
+    is $pr2->role_id, '2';
+    ok $pr2->is_removed;
+    ok $pr2->is_marked_for_deletion;
+    ok $pr2->is_pruned;
+  ok ! $pr_rs->next;
+
+  ok my $cc_rs = $person->credit_cards;
+  ok my $cc1 = $cc_rs->next;
+    is $cc1->card_number, '3423423423423423';
+    is $cc1->expiration->ymd, '2222-02-02';
+    is $cc1->id, $cc_id[0];
+  ok my $cc3 = $cc_rs->next;
+    is $cc3->card_number, '55555556666666';
+    is $cc3->expiration->ymd, '3333-02-02';
+    is $cc3->id, $cc_id[1];
+    ok $cc3->in_storage;
+  ok !$cc_rs->next;
+
+  $person->invalid;
+
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    person_roles => [
+      "Person Roles has too few rows (minimum is 1)",
+      ],
+  };
 }
 
 
 done_testing;
 
 __END__
+
+For relationship
+
+if the PK exists we must find the record if UPDATE_ONLY
+otherwise if there's a unique key we first trying to find that, but failing to finds is allowed (unless UPDATE_ONLY)
+if UPDATE_ONLY die if try to make a new record
 
 
     person.person_roles.0.person_id   = 1
