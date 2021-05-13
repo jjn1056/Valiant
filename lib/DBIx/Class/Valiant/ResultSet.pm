@@ -79,6 +79,24 @@ sub new_result {
   return $result;
 }
 
+# Utility methods
+
+# this should cache results betters
+sub contains {
+  my ($self, $row) = @_;
+  my %pk = map { $_ => $row->$_ }
+    $self->result_source->primary_columns;
+  foreach my $item ($self->all) {
+    next if $item->is_removed;
+    my @matches = grep { 
+      $item->get_column($_) eq $pk{$_}
+    } keys %pk;
+    return 1 if scalar(@matches) == keys %pk;
+  }
+  return 0;
+}
+
+
 1;
 
 =head1 NAME
