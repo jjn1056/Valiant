@@ -73,35 +73,16 @@
   <fieldset>
     <legend><%= $person->human_attribute_name('roles') %></legend>
     <div class='form-group'>
-      % my $idx = 0;
       % my $roles_rs = $person->roles;
-
-      % if(my @person_roles = @{ $person->person_roles->get_cache||[] } ) {
-        % foreach my $pr (@person_roles) {
-          %= "pid:".$pr->person_id .'|| rid:'. $pr->role_id .'||delete: '. $pr->is_marked_for_deletion .'||pruned: '. $pr->is_pruned;
-          <br>
-        % }
-      % }
-
-      % my @role =();
-      % if(@role = @{ $roles_rs->get_cache||[] } ) {
-        % foreach my $r (@role) {
-          %= $r->id .'||delete: '. $r->is_marked_for_deletion .'||pruned: '. $r->is_pruned;
-          <br>
-        % }
-      % }
-
-      % #my %existing = map { $_->role_id => $_ } grep { !$_->is_marked_for_deletion } $person->person_roles->search({},{cache=>1})->all;
-      % my %existing = map { $_->id => $_} grep { !$_->is_pruned } @role;
-      % foreach my $role ($person->roles->result_source->resultset->search({},{cache=>1})->all) {
+      % my $idx = 0;
+      % foreach my $role ($c->model('Schema::Role')->all) {
         <div class='form-check'>
-          % my %checked = $existing{$role->id} ? (checked=>1) : ();
+          % my %checked = $roles_rs->contains($role) ? (checked=>1) : ();
           %= input_tag { name=>'roles.'.$idx.'.id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
           %= label_tag { for=>'roles.'.$idx.'.id', class=>'form-check-label' }, $role->label;
           % $idx++;
         </div>
-      % }        
-
+      % }
     </div>
   </fieldset>
 
@@ -111,14 +92,6 @@
 
     % my $idx = 0;
     % my $credit_cards_rs = $person->credit_cards;
-    % if(my @ccs = @{ $credit_cards_rs->get_cache||[] } ) {
-      % foreach my $cc (@ccs) {
-        % my $cc_id = $cc->id ? $cc->id : 'noccid';
-        %= $cc->person_id .'||'. $cc_id .'||'. $cc->is_marked_for_deletion .'||'. $cc->is_pruned;
-        <br>
-      % }
-    % }
-
     % foreach my $credit_card ($credit_cards_rs->search({},{cache=>1})->all) {
       % if($credit_card->id) {
         %= input_tag { name=>'credit_cards.'.$idx.'.id', type=>'hidden', value=>$credit_card->id }
@@ -134,7 +107,6 @@
         </div>
         <div class='col form-group col-2'>
           % if($credit_card->in_storage || $credit_card->is_marked_for_deletion) {
-            % my %delete_credit_cards_checked = ();
             %= label_tag { for=>'credit_cards.'.$idx.'._delete', class=>'form-check-label' }, 'Delete';
             <br>
             %= input_tag { name=>'credit_cards.'.$idx.'._delete', type=>'checkbox', value=>1, $credit_card->is_marked_for_deletion ? (checked=>1):() }
