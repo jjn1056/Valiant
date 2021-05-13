@@ -83,9 +83,6 @@
           % $idx++;
         </div>
       % }
-      % use Devel::Dwarn;
-      % Dwarn [2222222, +{ map { $_->id => 1 } $roles_rs->all } ];
-
     </div>
   </fieldset>
 
