@@ -303,11 +303,6 @@ sub delete_if_in_storage {
 
 ####
 
-sub build {
-  my ($self, %attrs) = @_;
-  return $self->result_source->resultset->new_result(\%attrs);
-}
-
 sub build_related {
   my ($self, $related, $attrs) = @_;
   debug 2, "Building related entity '$related' for @{[ $self->model_name->human ]}";
@@ -883,7 +878,42 @@ validation on a per result/set basis as well.
 =head2 accept_nested_for (field => \%options)
 
 Allows you to update / create related objected which are nested under the parent (via has_one,
-might_have or has_many defined relationships).
+might_have or has_many defined relationships).  Accepts the following hashref of options:
+
+=over 4
+
+=item allow_destroy
+
+By default you cannot delete related (nested) results.  Setting this to true allows that.
+
+=item reject_if
+
+A coderef that will cause a nested result to skip if you return true.   Arguments are the
+parent result and a hashref of the values to be used for the nested build:
+
+    __PACKAGE__->accept_nested_for(
+      might => {
+        reject_if => sub {
+          my ($self, $params) = @_;
+          return ($params->{value}||'') eq 'test14' ? 1:0;
+        },
+      }
+    );
+
+Please note that if you have this on a C<has_many> relationship the code ref will be invoked
+on each result in the collection of related results you are attempted to nest values into.  This
+can impact performance.
+
+=item limit
+
+accepts a scalar which will cause the nested results to fail of the number of items is
+greater than the scalar.
+
+=item update_only
+
+For C<has_one> or C<might_have> relationships will force update the existing nested result (if
+any exists) even if you fail to set the primary key.  Otherwise the current record will be
+deleted and a new one inserted.  Default is false.
 
 =head1 METHODS
 
@@ -897,11 +927,25 @@ Will be true if the result has been marked for deletion.   You might see this in
 nested under a parent when an update calls for the record to be deleted but validation errors prevented
 the deletion from occuring.
 
-=head2 build
+=head2 is_pruned
+
+Will be true if the result is nested under a result which has been C<marked_for_deletion>.  The result
+is not itself marked to be deleted (if validation passes) but it will no longer be attached to the
+parent result under which it is nested.
+
+=head2 is_removed
+
+Is true if C<is_pruned> or C<is_marked_for_deletion> is true.
 
 =head2 build_related
 
 =head2 build_related_if_empty
+
+Builds a related result into the cache. The result is only in memory; it can be used to run validation
+but is not inserted unless specified later.
+
+You might use these methods if you are validating a nested results but the results are not already in
+the database (see C<example> directory for an application that uses this).
 
 =head1 AUTHOR
  

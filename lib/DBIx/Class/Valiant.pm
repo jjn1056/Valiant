@@ -35,8 +35,9 @@ on your base result / resultset classes:
     use base 'DBIx::Class';
 
     __PACKAGE__->load_components(qw/
+      Valiant::Result
       Core
-      Valiant::Result/);
+    /);
 
     package Example::Schema::ResultSet;
 
@@ -60,20 +61,24 @@ B<NOTE>This works as is 'it passed my existing tests'.   Feel free to use it
 if you are willing to get into the code, review / submit test cases, etc.   Also at some
 point this will be pulled into its own distribution so please keep in mind.   I
 will feel totally free to break backward compatibility on this until it seems
-stable.
+stable.  That being said support for validations at the single result level is pretty
+firm and I can't imagine significant changes.  Support for validating nested results
+(results that have has_many or similar relationships) is likely to evolve as bugs are
+reported.
 
 This provides a base result component and resultset component that when added to your
 classes glue L<Valiant> into L<DBIx::Class>.  You can set filters and validations on
 your result source classes very similarily to how you would use L<Valiant> with L<Moo>
 or L<Moose>.  Validations then run when you try to persist a change to the database; if
 validations fail then we will not compete persisting the change (typically via insert
-or update SQL).  Errors can be read via the C<errors> method just on on L<Moo> or L<Moose>
+or update SQL).  Errors can be read via the C<errors> method just as on L<Moo> or L<Moose>
 based validations.
 
 Additionally we support nested creates and updates; validations follow any nested changes
-and errors can be aggregated.   Errors at any point in the nested create or update (or as
+and errors can be aggregated. Errors at any point in the nested create or update (or as
 is often the cases a mixed situation) will cancel the entire changeset (issuing a rollback
-if necessary).
+if necessary).  Please note that as stated above nested support is still considered a beta
+feature and bug reports / test cases (or patches) welcomed.
 
 Documentation in this package only covers how L<Valiant> is glued into your result sources
 and any local differences in behavior.   If you need a comprehensive overview of how
@@ -161,9 +166,13 @@ When using this with L<DBIx::Class::Candy> the following class methods are avail
   'filters', 'validates', 'filters_with', 'validates_with', 'accept_nested_for',
   'auto_validation'
 
+=head1 EXAMPLE
+
+=head1 NESTED VALIDATIONS
+
 =head1 SEE ALSO
  
-L<Valiant>, L<Valiant::Validations>, L<Valiant::Validates>, L<DBIx::Class>
+L<Valiant>, L<DBIx::Class::Valiant::Result>, L<DBIx::Class::Valiant::ResultSet>, L<DBIx::Class>
 
 =head1 AUTHOR
  
