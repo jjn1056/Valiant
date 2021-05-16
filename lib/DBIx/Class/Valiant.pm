@@ -168,7 +168,62 @@ When using this with L<DBIx::Class::Candy> the following class methods are avail
 
 =head1 EXAMPLE
 
+Assuming you have a base result class C<Example::Schema::Result> which uses the L<DBIx::Class::Valiant::Result>
+component and a default resultset class which uses the L<Example::Schema::ResultSet> component:
+
+    package Example::Schema::Result::Person;
+
+    use base 'Example::Schema::Result';
+
+    __PACKAGE__->table("person");
+
+    __PACKAGE__->add_columns(
+      id => { data_type => 'bigint', is_nullable => 0, is_auto_increment => 1 },
+      username => { data_type => 'varchar', is_nullable => 0, size => 48 },
+      first_name => { data_type => 'varchar', is_nullable => 0, size => 24 },
+      last_name => { data_type => 'varchar', is_nullable => 0, size => 48 },
+    );
+
+    __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
+    __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
+    __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
+
+We now have L<Valiant> validations wrapping any method which mutates the database.
+
+    my $person = $schema->resultset('Person')
+      ->create({
+        username => 'jjn',   # for this example we'll say this username is taken in the DB
+        first_name => 'j',   # too short
+        last_name => 'n',    # too short
+      });
+
+In this case since we tried to create a record that is not valid the create will be aborted (not saved
+to the DB and an object will be returned with errors:
+
+    $person->invalid; # true;
+    $person->errors->size; # 3
+    person->errors->full_messages_for('username');  # ['Username is not unique']
+    person->errors->full_messages_for('first_name');  # ['First Name is too short']
+    person->errors->full_messages_for('last_name');  # ['Last Name is too short']
+
+The object will have the invalid values properly populated:
+
+    $person->get_column('username');  # jjn
+
+You might find this useful for building error message responses in for example html forms or other types
+or error responses.
+
+See C<example> directory for web application using L<Catalyst> that uses this for more details.
+
 =head1 NESTED VALIDATIONS
+
+TBD for now see example in C<example> directory of the distribution.
+
+=head1 WARNINGS
+
+Besides the fact that nested is still considered beta code please be aware that you must
+be careful with how you expose a deeply nested interface.   If you simply pass fields from a web
+form you are potentially openning yourself to SQL injection and similar types of attacks.
 
 =head1 SEE ALSO
  
