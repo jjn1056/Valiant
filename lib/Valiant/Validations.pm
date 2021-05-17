@@ -5,7 +5,7 @@ use Class::Method::Modifiers qw(install_modifier);
 use Valiant::Util 'debug';
 use Scalar::Util 'blessed';
 
-require Role::Tiny;
+require Moo::Role;
 
 our @DEFAULT_ROLES = (qw(Valiant::Util::Ancestors Valiant::Validates));
 our @DEFAULT_EXPORTS = (qw(validates validates_with));
@@ -20,7 +20,7 @@ sub import {
   foreach my $default_role ($class->default_roles) {
     next if Role::Tiny::does_role($target, $default_role);
     debug 1, "Applying role '$default_role' to '$target'";
-    Role::Tiny->apply_roles_to_package($target, $default_role);
+    Moo::Role->apply_roles_to_package($target, $default_role);
   }
 
   my %cb = map {

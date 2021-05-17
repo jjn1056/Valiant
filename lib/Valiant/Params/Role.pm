@@ -7,6 +7,8 @@ use namespace::autoclean -also => ['throw_exception', 'debug'];
 
 requires 'ancestors';
 
+has _found_params => (is=>'ro', required=>1);
+
 sub _to_class {
   my $proto = shift;
   return ref($proto) ? ref($proto) : $proto;
@@ -48,6 +50,15 @@ sub param {
   }
 }
 
+sub params {
+  my $class = _to_class(shift);
+  while(@_) {
+    my $next = shift;
+    my @args = ref($_[0])||'' eq 'HASH' ? %{shift @_} : ();
+    $class->__add_param($next, @args);
+  }
+}
+
 sub _normalize_param_value {
   my ($class, $param_info, $value) = @_;
   if($param_info->{multi}) {
@@ -62,7 +73,7 @@ sub _params_from_HASH {
   my ($class, %req) = @_;
   my %args_from_request = ();
   my %params_info = $class->params_info;
-  foreach my $param (keys %params_info) {
+  foreach my $param (sort keys  %params_info) {  # doing sort since we need to enforce an order
     next unless exists $req{ $params_info{$param}{name} };
     my $value = $class->_normalize_param_value($params_info{$param}, $req{$params_info{$param}{name}});
     $args_from_request{$params_info{$param}{name}} = $value;
@@ -92,21 +103,49 @@ sub _params_from_Plack_Request {
   }
 }
 
+sub param_keys { @{shift->_found_params} }
+
+sub param_exists {
+  my ($self, $key_to_check) = @_;
+  return grep { $_ eq $key_to_check } $self->param_keys;
+}
+
+sub get_param {
+  my ($self, $key_to_get) = @_;
+  return unless $self->param_exists($key_to_get);
+  return $self->$key_to_get;
+}
+
+sub params_as_hash {
+  my $self = shift;
+  my %hash = ();
+  foreach my $key($self->param_keys) {
+    next unless $self->param_exists($key);
+    $hash{$key} = $self->get_param($key);
+  }
+  return %hash;
+}
+
+sub params_flattened { # order not the same as input
+  my $self = shift;
+  my @pairs = ();
+  foreach my $key($self->param_keys) {
+    next unless $self->param_exists($key);
+    my $value_proto = $self->get_param($key);
+    my @values = ref($value_proto)||'' eq 'ARRAY' ? @$value_proto : ($value_proto);
+    push @pairs, $key, $_ for @values;
+  }
+  return @pairs;
+}
+
   #query
-
-  # param_keys          key (attribute) names that are marked as params
-  # params_flattened    array when the pairs are flattened out like incoming from form POST
-  # params_as_hashref   
-  # get_param
-  # param_exists
-  # params_each
-  # params_map
-
 
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
   my $attrs = $class->$orig(@args);
   my %params = ();
+
+  # First look in the request object / hash for params
   if(my $request_proto = delete($attrs->{request})) {
     if(ref($request_proto)||'' eq 'HASH') {
       %params = $class->_params_from_HASH(%$request_proto);
@@ -120,10 +159,15 @@ around BUILDARGS => sub {
       die "Can't find params in $request_proto";
     }
   }
-  return +{
+
+  my @found = keys %params;
+  my $new_args = +{
     %params,
     %$attrs,
+    _found_params => \@found,
   };
+
+  return $new_args;
 };
 
 1;

@@ -3,10 +3,10 @@ package Valiant::Params;
 use Sub::Exporter 'build_exporter';
 use Class::Method::Modifiers qw(install_modifier);
 
-require Role::Tiny;
+require Moo::Role;
 
 our @DEFAULT_ROLES = (qw(Valiant::Util::Ancestors Valiant::Params::Role));
-our @DEFAULT_EXPORTS = (qw(param));
+our @DEFAULT_EXPORTS = (qw(param params));
 
 sub default_roles { @DEFAULT_ROLES }
 sub default_exports { @DEFAULT_EXPORTS }
@@ -16,8 +16,8 @@ sub import {
   my $target = caller;
 
   foreach my $default_role ($class->default_roles) {
-    next if Role::Tiny::does_role($target, $default_role);
-    Role::Tiny->apply_roles_to_package($target, $default_role);
+    next if Moo::Role::does_role($target, $default_role);
+    Moo::Role->apply_roles_to_package($target, $default_role);
   }
 
   my @all_exports = $class->default_exports;
@@ -49,6 +49,7 @@ sub import {
     my $method = \&{"${target}::param"};
  
     if(my $options = delete $opts{param}) {
+      $options = [] if $options == 1;
       $method->($attr, @$options);
     }
       
