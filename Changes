@@ -6,6 +6,7 @@ The following logs changes for the CPAN distribution Valiant
           when both values are not defined which I think is correct but its a minor
           breaking change.  
           - Lots more test cases are DBIC nesting.
+          - Valiant::Params proof of concept
 
 0.001006  2021 April 19
           - Possible fix for issue where windows doesn't find locale paths

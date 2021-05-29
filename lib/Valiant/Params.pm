@@ -50,7 +50,8 @@ sub import {
  
     if(my $options = delete $opts{param}) {
       $options = [] if $options == 1;
-      $method->($attr, @$options);
+      @options = ref($options) eq 'ARRAY' ? @$options : %$options;
+      $method->($attr, @options);
     }
       
     return $orig->($attr, %opts);

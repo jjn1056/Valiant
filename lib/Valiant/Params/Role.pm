@@ -8,6 +8,7 @@ use namespace::autoclean -also => ['throw_exception', 'debug'];
 requires 'ancestors';
 
 has _found_params => (is=>'ro', required=>1);
+#has _params_to_attr => (is=>'ro', required=>1);
 
 sub _to_class {
   my $proto = shift;
@@ -18,11 +19,40 @@ my $_params = +{};
 
 sub __add_param {
   my ($class, $attr) = (shift, shift);
+  my %options_proto = @_;
+
+  if(my $multi = $options_proto{multi}) {
+    my %default_multi_options = ( limit => 10000 );
+    my %normalized_multi_options = ();
+    if(ref($multi)||'' eq 'HASH') {
+      %normalized_multi_options = (%default_multi_options, %$multi);
+    } elsif( (ref($multi)||'') eq '' && $multi == 1) {
+      %normalized_multi_options = (%default_multi_options);
+    } else {
+      die "Invalid multi options for param $attr"; 
+    }
+    $options_proto{multi} = \%normalized_multi_options;
+  }
+
+  if(my $expand = $options_proto{expand}) {
+    my %default_expand_options = ( preserve_index => 0 );
+    my %normalized_expand_options = ();
+    if(ref($expand)||'' eq 'HASH') {
+      %normalized_expand_options = (%default_expand_options, %$expand);
+    } elsif( (ref($expand)||'') eq '' && $expand == 1) {
+      %normalized_expand_options = (%default_expand_options);
+    } else {
+      die "Invalid expand options for param $attr"; 
+    }
+    $options_proto{expand} = \%normalized_expand_options;
+  }
+
   my $varname = "${class}::_params";
   my %options = (
     name => $attr,
     multi => 0,
-  @_);
+    expand => +{ preserve_index => 0 },
+    %options_proto);
 
   no strict "refs";
   $$varname->{$attr} = \%options;
@@ -63,8 +93,14 @@ sub _normalize_param_value {
   my ($class, $param_info, $value) = @_;
   if($param_info->{multi}) {
     $value = ref($value)||'' eq 'ARRAY' ? $value : [$value];
+    die "Param '$param_info->{name}' has more than '$param_info->{multi}{limit}' items"
+      if scalar(@$value) > $param_info->{multi}{limit};
   } else {
-    $value = ref($value)||'' eq 'ARRAY' ? $value->[-1] : $value;
+    if(ref $value) {
+      if(ref($value) eq 'ARRAY') {
+        $value = $value->[-1];
+      }
+    }
   }
   return $value;
 }
@@ -76,7 +112,7 @@ sub _params_from_HASH {
   foreach my $param (sort keys  %params_info) {  # doing sort since we need to enforce an order
     next unless exists $req{ $params_info{$param}{name} };
     my $value = $class->_normalize_param_value($params_info{$param}, $req{$params_info{$param}{name}});
-    $args_from_request{$params_info{$param}{name}} = $value;
+    $args_from_request{$param} = $value;
   }
   return %args_from_request;
 }
@@ -88,7 +124,7 @@ sub _params_from_Catalyst_Request {
   foreach my $param (keys %params_info) {
     next unless exists $req->body_parameters->{ $params_info{$param}{name} };
     my $value = $class->_normalize_param_value($params_info{$param}, $req->body_parameters->{ $params_info{$param}{name} });
-    $args_from_request{$params_info{$param}{name}} = $value;
+    $args_from_request{$param} = $value;
   }
 }
 
@@ -99,7 +135,7 @@ sub _params_from_Plack_Request {
   foreach my $param (keys %params_info) {
     next unless exists $req->body_parameters->{ $params_info{$param}{name} };
     my $value = $class->_normalize_param_value($params_info{$param}, $req->body_parameters->{ $params_info{$param}{name} });
-    $args_from_request{$params_info{$param}{name}} = $value;
+    $args_from_request{$param} = $value;
   }
 }
 
@@ -116,12 +152,23 @@ sub get_param {
   return $self->$key_to_get;
 }
 
+sub get_params {
+  my ($self, @keys) = @_;
+  my %gathered = ();
+  foreach my $key (@keys) {
+    next unless $self->param_exists($key);
+    $gathered{$key} = $self->$key;
+  }
+  return %gathered;
+}
+
 sub params_as_hash {
   my $self = shift;
   my %hash = ();
   foreach my $key($self->param_keys) {
     next unless $self->param_exists($key);
-    $hash{$key} = $self->get_param($key);
+    my $value = $self->get_param($key);
+    $hash{$key} = blessed($value) ? +{ $value->params_as_hash } : $value;
   }
   return %hash;
 }
