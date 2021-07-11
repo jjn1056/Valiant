@@ -8,7 +8,6 @@ use namespace::autoclean -also => ['throw_exception', 'debug'];
 requires 'ancestors';
 
 has _found_params => (is=>'ro', required=>1);
-#has _params_to_attr => (is=>'ro', required=>1);
 
 sub _to_class {
   my $proto = shift;
@@ -102,6 +101,11 @@ sub _normalize_param_value {
       }
     }
   }
+
+  if($param_info->{expand}) {
+
+  }
+
   return $value;
 }
 
@@ -115,17 +119,6 @@ sub _params_from_HASH {
     $args_from_request{$param} = $value;
   }
   return %args_from_request;
-}
-
-sub _params_from_Catalyst_Request {
-  my ($class, $req) = @_;
-  my %args_from_request = ();
-  my %params_info = $class->params_info;
-  foreach my $param (keys %params_info) {
-    next unless exists $req->body_parameters->{ $params_info{$param}{name} };
-    my $value = $class->_normalize_param_value($params_info{$param}, $req->body_parameters->{ $params_info{$param}{name} });
-    $args_from_request{$param} = $value;
-  }
 }
 
 sub _params_from_Plack_Request {
@@ -189,11 +182,22 @@ sub params_flattened { # order not the same as input
 
 around BUILDARGS => sub {
   my ( $orig, $class, @args ) = @_;
-  my $attrs = $class->$orig(@args);
-  my %params = ();
+  my $init_args = $class->$orig(@args);
+  my %params_in_request = ();
+
+  if(my $req_proto = delete $init_args->{request}) {
+    my %params_info = $class->params_info;
+    foreach my $param_proto (keys %params_info) {
+      my $param_info = $params_info{$param_proto};
+      my $request_param = $params_info->{name};
+      warn "looking for param $request_param";
+      
+
+    }
+  }
 
   # First look in the request object / hash for params
-  if(my $request_proto = delete($attrs->{request})) {
+  if()) {
     if(ref($request_proto)||'' eq 'HASH') {
       %params = $class->_params_from_HASH(%$request_proto);
     } elsif(my $request_class = blessed($request_proto)) {

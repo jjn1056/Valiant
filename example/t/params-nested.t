@@ -13,15 +13,21 @@ use Test::Most;
 
   use Moo;
   use Valiant::Params;
+  use Module::Runtime;
 
   has formal_name => (is=>'ro', required=>1, param=>[name=>'formal-name']);
   has user_name => (is=>'ro', required=>1, param=>[name=>'user-name']);
- 
+
   has profile => (
     is=>'ro',
-    param => { expand => 1 },
-    coerce => sub { ref($_[0])||'' eq 'HASH' ? Local::Profile->new(request=>$_[0]) : $_[0] },
+    lazy=>1,
+    param => { name=>'profile', expand => 1 },
   );
+
+  sub profile_from_params {
+    my ($class, $ctx, $params) = @_;
+    return Module::Runtime::load_module('Local::Profile')->new(request => $params);
+  }
 
 }
 
@@ -38,11 +44,16 @@ ok my $person = Local::Person->new(request=>\%request);
 
 use Devel::Dwarn;
 Dwarn $person;
-Dwarn $person->profile->params_as_hash;
+Dwarn +{ $person->profile->params_as_hash };
+Dwarn +{ $person->params_as_hash };
 
 is_deeply +{ $person->params_as_hash },{
-    formal_name => 'John Napiorkowski',
-    user_name => 'jjn',
+    profile => {
+      age => 52,
+      email => "jjn\@gmail.com",
+    },
+    formal_name => "John Napiorkowski",
+    user_name => "jjn",
   };
 
 done_testing;

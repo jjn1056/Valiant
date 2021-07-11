@@ -20,7 +20,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
   sub register :Chained(root) PathPart('register') Args(0) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
-    $c->stash(person => my $model = $c->model('Schema::Person')->new_result($c->req->body_data||+{}));
+    $c->stash(person => my $model = $c->model('Schema::Person')->new_result($c->req->body_data||+{}));  # dont do this
     $model->insert if $c->req->method eq 'POST';
     return $c->redirect_to_action('login') if $model->in_storage;
   }
