@@ -46,6 +46,8 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         )
       );
 
+      $model->namespace('Example');
+
       if($c->req->method eq 'POST') {
         $params{roles} = [] unless exists $params{roles}; # Handle the delete all case
         my $add = delete $params{add};

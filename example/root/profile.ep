@@ -4,6 +4,41 @@
   <style></style>
 % end
 
+%= form_for $person => +{ style=>'width:27em; margin:auto' }, begin
+  <fieldset>
+    <legend><%= $person->model_name->human %></legend>
+    
+    <div class='form-group'>
+      %= model_errors +{class=>'alert alert-danger', role=>'alert', default_msg=>'Please fix validation errors'}
+      % if($person->validated && !$person->has_errors) {
+        <div class='alert alert-success' role='alert'>
+          Successfully Updated
+        </div>
+      % }
+    </div>
+
+    <div class='form-group'>
+      %= label 'first_name'
+      %= input 'first_name', +{ class=>'form-control' }
+      %= errors_for 'first_name'
+    </div>
+    <div class='form-group'>
+      %= label 'last_name'
+      %= input 'last_name', +{ class=>'form-control' }
+      %= errors_for 'last_name'
+    </div>
+    <div class='form-group'>
+      %= label 'username'
+      %= input 'username', +{ class=>'form-control' }
+      %= errors_for 'username'
+    </div>
+
+  </fieldset>
+
+%= end
+
+<hr>
+
 %= form_tag { method_attr 'POST', style_attr 'width:27em; margin:auto', id=>'person', name=>'person'}, begin
 
   <div class='form-group'>
