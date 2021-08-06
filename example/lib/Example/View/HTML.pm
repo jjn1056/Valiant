@@ -12,23 +12,29 @@ __PACKAGE__->config(
     attr => \&attr,
     method_attr => \&method_attr,
     style_attr => \&style_attr,
+    errors_box => \&errors_box,
 
+    # simple tag helpers
     tag => \&tag,
     form_tag => \&form_tag,
     label_tag => \&label_tag,
     input_tag => \&input_tag,
     button_tag => \&button_tag,
+    option_tag => \&option_tag,
+    select_tag => \&select_tag,
+    options_for_select => \&options_for_select,
 
-    errors_box => \&errors_box,
-
+    # tag helpers with an underlying model
     form_for => \&form_for,
     label => \&label,
     input => \&input,
     errors_for => \&errors_for,
     model_errors => \&model_errors,
-    # fields_for => \&fields_for,
-    #  tag_options => \&tag_options,
-    # text_field_tag => \&text_field_tag,
+    human_model_name => \&human_model_name,
+    model => \&model,
+    fields_for => \&fields_for,
+    zelect => \&zelect,
+    select_from_collection => \&select_from_collection,
   },
 );
 
@@ -96,7 +102,8 @@ sub tag {
   return b "$tag/>" unless $content;
 
   $c->stash->{'valiant.view.current_tag'} = $name;
-  $tag .= ">" . $content->() . "</${name}>";
+  my $content_expanded = $content->() || '';
+  $tag .= ">" . $content_expanded . "</${name}>";
   delete $c->stash->{'valiant.view.current_tag'};
   return b $tag;
 }
@@ -121,7 +128,83 @@ sub button_tag {
   return $self->tag($c, 'button', @proto);
 }
 
+sub select_tag {
+  my ($self, $c, @proto) = @_;
+  return $self->tag($c, 'select', @proto);
+}
+
+sub option_tag {
+  my ($self, $c, @proto) = @_;
+  return $self->tag($c, 'option', @proto);
+}
+
+# options_for_select( [ [ 'Content', 'value', ?\%attrs], ... ], %attrs)
+sub options_for_select {
+  my ($self, $c, $options, $global_attrs) = @_;
+  my %global_attrs = $global_attrs ? %$global_attrs : ();
+  my $selected_value = exists($global_attrs{selected}) ? delete($global_attrs{selected}) : undef;
+
+  my $content = '';
+  foreach my $option (@$options) {
+    if( (ref($option)||'') eq 'ARRAY') {
+      my %merged_attrs = (%global_attrs, value=>$option->[1]);
+      %merged_attrs = (%merged_attrs, %{$option->[2]}) if scalar(@$option) == 3;
+      $merged_attrs{selected} = 1 if $merged_attrs{value} eq $selected_value;
+      $content .= $self->option_tag($c, \%merged_attrs, $option->[0]);
+    } else {
+      my %merged_attrs = (%global_attrs, value=>$option);
+      $merged_attrs{selected} = 1 if $merged_attrs{value} eq $selected_value;
+      $content .= $self->option_tag($c, \%merged_attrs, $option);
+    }
+  }
+  return $content;
+}
+
+# %= options_from_collection_for_select $states, +{option_value=>'id', option_label=>'name', ... }
+sub options_from_collection_for_select {
+  my ($self, $c, $options_collection, $global_attrs) = @_;
+  my %global_attrs = $global_attrs ? %$global_attrs : ();
+  my $value = exists($global_attrs{option_value}) ? delete($global_attrs{option_value}) : 'value';
+  my $label = exists($global_attrs{option_label}) ? delete($global_attrs{option_label}) : 'label';
+  my @options = map {[ $_->$label => $_->$value ]} $options_collection->all;
+  return $self->options_for_select($c, \@options, $global_attrs);
+}
+
 # ====
+
+# %= zelect 'state_id', [map {[ $_->name, $_->id ]} $states->all], +{ class=>'form-control' }
+# %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
+
+sub select_from_collection {
+  my ($self, $c, $field, $options, $attrs) = @_;
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  $attrs->{class} .= ' is-invalid' if $model->errors->messages_for($field) ;
+
+  if(ref($options) eq 'ARRAY') {
+    $attrs->{option_value} = $options->[1];
+    $attrs->{option_label} = $options->[2];
+    $options = $options->[0];
+  }
+
+  $attrs->{id} ||= join '_', (@namespace, $field);
+  $attrs->{name} ||= join '.', (@namespace, $field);
+
+  return $self->select_tag($c, $attrs, $self->options_from_collection_for_select($c, $options, +{%$attrs, selected=>$model->read_attribute_for_validation($field)}));
+}
+
+# %= zelect 'state_id', [map {[ $_->name, $_->id ]} $states->all], +{ class=>'form-control' }
+sub zelect {
+  my ($self, $c, $field, $options, $attrs) = @_;
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  $attrs->{id} ||= join '_', (@namespace, $field);
+  $attrs->{name} ||= join '.', (@namespace, $field);
+
+  return $self->select_tag($c, $attrs, $self->options_for_select($c, $options, +{selected=>$model->read_attribute_for_validation($field)}));
+}
 
 sub form_for {
   my ($self, $c, $model, @proto) = @_;
@@ -172,9 +255,12 @@ sub input {
   $attrs{class} .= ' is-invalid' if @errors;
 
   return $self->input_tag($c, \%attrs, $content);
+}
 
-  #push @content, $self->tag('div', +{class=>'invalid-feedback'}, $errors[0]) if @errors;
-
+sub hidden {
+  my ($self, $c, $field , @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  return $self->input($c, $field, +{%attrs, type=>'hidden'}, $content);
 }
 
 sub errors_for {
@@ -215,6 +301,54 @@ sub model_errors {
 
   return $self->tag($c, 'div', \%attrs, $errors);
 }
+
+sub human_model_name {
+  my ($self, $c, @proto) = @_;
+  return $c->stash->{'valiant.view.form.model'}->model_name->human;
+}
+
+sub model {
+  my ($self, $c,) = @_;
+  return  $c->stash->{'valiant.view.form.model'};
+}
+
+sub fields_for {
+  my ($self, $c, $related, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+
+  # This next bit is DBIC specific.   It would be more ideal to isolate this
+  # behind an abtraction.
+  die "No relation '$related' for model $model" unless $model->has_relationship($related);
+
+  my $rel_data = $model->relationship_info($related);
+  my $rel_type = $rel_data->{attrs}{accessor};
+
+  if( $rel_type eq 'single') {
+    my $result = $model->related_resultset($related)->first;
+    return '' unless $result;  # not sure this is correct
+
+    local $c->stash->{'valiant.view.form.model'} = $result;
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related];
+
+    my $content_expanded = $content->();
+
+    if($result->in_storage) {
+      my @primary_columns = $result->result_source->primary_columns;
+      foreach my $primary_column (@primary_columns) {
+        next unless my $value = $result->get_column($primary_column);
+        $content_expanded .= $self->hidden($c, $primary_column);
+      }
+    }
+
+    return b $content_expanded;
+  }
+}
+    
+
+
 
 __PACKAGE__->meta->make_immutable;
 

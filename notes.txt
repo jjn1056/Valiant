@@ -1,0 +1,13 @@
+nesting notes
+
+belongs_to
+  - does not allow nesting to create or update  only find  
+  - find by FK or unique key  is allowed
+
+has_one, might have
+  - if PK is present then always update
+  - if no PK then always create  or replace (delete than create) UNLESS 'update_only' which means create if not found / update if found
+
+has_many
+  - if PK is present than find and update or die not found
+  - 

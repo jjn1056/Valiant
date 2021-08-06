@@ -204,15 +204,15 @@ sub register_column {
 # DBIC model messes with the result namespace but not the schema
 # namespace
 
-#sub namespace {
-#  my $self = shift;  
-#  my $class = ref($self) ? ref($self) : $self; 
-#  $class =~s/::${source_name}$//;
+sub namespace {
+  my $self = shift;  
+  return '' unless ref $self;
 
-# Rest of this is to deal with Catalyst wrapper (for later)
-#  my $source_name = $class->new->result_source->source_name#;
-#  return unless $source_name; # Trouble... somewhere $self is a# package
-#}
+  my $class = ref($self) ? ref($self) : $self; 
+  my $source_name = $self->result_source->source_name;
+  $class =~s/::${source_name}$//;
+  return $class;
+}
 
 # Trouble here is you can only inject one attribute per model.  Will be an
 # issue if you have more than one confirmation validation on the model. Should be an easy

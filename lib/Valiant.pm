@@ -291,7 +291,7 @@ We can rewrite the last class as follows:
     }
 
     sub check_age_lower_limit {
-      my ($self, $opts) = @_;
+      my ($self, $attribute, $value, $opts) = @_;
       $self->errors->add($attribute => "can't be lower than $opts->{min}", $opts) if $value < $opts->{min};
     }
 

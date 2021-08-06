@@ -5,18 +5,14 @@
 % end
 
 %= form_for $person => +{ style=>'width:27em; margin:auto' }, begin
+  % if($person->validated && !$person->has_errors) {
+    <div class='alert alert-success' role='alert'>Successfully Updated</div>
+  % }
   <fieldset>
-    <legend><%= $person->model_name->human %></legend>
-    
+    <legend><%= human_model_name %></legend>
     <div class='form-group'>
       %= model_errors +{class=>'alert alert-danger', role=>'alert', default_msg=>'Please fix validation errors'}
-      % if($person->validated && !$person->has_errors) {
-        <div class='alert alert-success' role='alert'>
-          Successfully Updated
-        </div>
-      % }
     </div>
-
     <div class='form-group'>
       %= label 'first_name'
       %= input 'first_name', +{ class=>'form-control' }
@@ -32,8 +28,50 @@
       %= input 'username', +{ class=>'form-control' }
       %= errors_for 'username'
     </div>
-
   </fieldset>
+  
+  % $person->build_related_if_empty('profile');
+  %= fields_for 'profile', begin
+    <fieldset>
+      <legend><%= human_model_name %></legend>
+      <div class='form-group'>
+        %= label 'address'
+        %= input 'address', +{ class=>'form-control' }
+        %= errors_for 'address'
+      </div>
+      <div class='form-group'>
+        %= label 'city'
+        %= input 'city', +{ class=>'form-control' }
+        %= errors_for 'city'
+      </div>
+      <div class='form-row'>
+        <div class='col form-group'>
+          %= label 'state_id'
+          %= select_from_collection 'state_id', [$states, id=>'name'], +{ class=>'form-control' }
+          %= errors_for 'state_id'
+        </div>
+        <div class='col form-group'>
+          %= label 'zip'
+          %= input 'zip', +{ class=>'form-control' }
+          %= errors_for 'zip'
+        </div>
+      </div>
+      <div class='form-row'>
+        <div class='col form-group'>
+          %= label 'phone_number'
+          %= input 'phone_number', +{ class=>'form-control' }
+          %= errors_for 'phone_number'
+        </div>
+        <div class='col form-group'>
+          %= label 'birthday'
+          %= input 'birthday', +{ class=>'form-control' }
+          %= errors_for 'birthday'
+        </div>
+      </div>
+
+
+    </fieldset>
+  %= end
 
 %= end
 

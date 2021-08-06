@@ -39,6 +39,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       Dwarn "sdfsdfsdfsd";
       Dwarn \%params;
 
+      $c->stash(states => $c->model('Schema::State'));
       $c->stash(person => my $model = $c->model('Schema::Person')
         ->find(
           { 'me.id'=>$c->user->id },
