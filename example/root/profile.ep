@@ -35,6 +35,9 @@
     <fieldset>
       <legend><%= human_model_name %></legend>
       <div class='form-group'>
+        %= model_errors +{class=>'alert alert-danger', role=>'alert'}
+      </div>
+      <div class='form-group'>
         %= label 'address'
         %= input 'address', +{ class=>'form-control' }
         %= errors_for 'address'
@@ -68,13 +71,38 @@
           %= errors_for 'birthday'
         </div>
       </div>
-
-
     </fieldset>
   %= end
 
+  <fieldset>
+    <legend><%= $person->human_attribute_name('roles')  %></legend>
+    <div class='form-group'>
+      % my $person_roles_rs = $person->person_roles;
+      % my @existing_role_ids = map { $_->role_id } grep { !$_->is_removed }  $person_roles_rs->all;
+      %= join ', ', @existing_role_ids;
+      <br>
+
+      % my $idx = 0;
+      <div class='is-invalid'>
+      % foreach my $role ($c->model('Schema::Role')->all) {
+        <div class='form-check'>
+          % my %checked = scalar(grep { $_ eq $role->id } @existing_role_ids)  ? (checked=>1) : ();
+          %= input_tag { name=>'person.person_roles.'.$idx.'.role_id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
+          %= label_tag { for=>'person.person_roles.'.$idx.'.role_id', class=>'form-check-label' }, $role->label;
+          % $idx++;
+        </div>
+      % }
+      </div>
+      %= errors_for 'person_roles'
+    </div>
+  </fieldset>
+
+  <fieldset>
+    %= button_tag { class=>'btn btn-lg btn-primary btn-block' }, 'Update Profile'
+  </fieldset>
 %= end
 
+<hr>
 <hr>
 
 %= form_tag { method_attr 'POST', style_attr 'width:27em; margin:auto', id=>'person', name=>'person'}, begin

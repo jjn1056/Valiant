@@ -44,6 +44,7 @@ REGISTRATION: {
     my $person = Schema->resultset('Person')->new_result(\%posted);
     is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{};
     $person->insert;
+
     is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
       first_name => [
         "First Name can't be blank",
@@ -977,6 +978,14 @@ NESTED_OK2: {
 
 NESTED_FAIL4: {
   my $person = $find->(+{ roles=>[] });
+
+  ok $person->invalid;
+  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+    person_roles => [
+      "Person Roles has too few rows (minimum is 1)",
+      ],
+  };
+
   is $person->first_name, 'john';
   is $person->last_name, 'napiorkowski';
   is $person->username, 'jjn1';
@@ -1009,13 +1018,6 @@ NESTED_FAIL4: {
     ok $cc3->in_storage;
   ok !$cc_rs->next;
 
-  $person->invalid;
-
-  is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
-    person_roles => [
-      "Person Roles has too few rows (minimum is 1)",
-      ],
-  };
 }
 
 

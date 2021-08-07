@@ -32,7 +32,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
     sub profile :Chained(auth) PathPart('profile') Args(0) {
       my ($self, $c) = @_;
+      
       my %params = %{$c->req->body_data||+{}};
+      %params = %{$params{person}} if exists $params{person};
 
       Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
       Dwarn $profile_params->tags;
@@ -50,7 +52,12 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $model->namespace('Example');
 
       if($c->req->method eq 'POST') {
-        $params{roles} = [] unless exists $params{roles}; # Handle the delete all case
+        $params{roles} = [] unless exists($params{roles}) || exists($c->req->body_data->{person}) ; # Handle the delete all case
+
+        if(exists($c->req->body_data->{person})) {
+          $params{person_roles} = [] unless exists($params{person_roles});
+        }
+
         my $add = delete $params{add};
 
         $model->context('profile')->update(\%params);
