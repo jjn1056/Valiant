@@ -23,6 +23,7 @@ __PACKAGE__->config(
     option_tag => \&option_tag,
     select_tag => \&select_tag,
     options_for_select => \&options_for_select,
+    checkboxes_from => \&checkboxes_from,
 
     # tag helpers with an underlying model
     form_for => \&form_for,
@@ -170,11 +171,47 @@ sub options_from_collection_for_select {
   return $self->options_for_select($c, \@options, $global_attrs);
 }
 
+# %= checkboxes_from [ name => value, checked, +{ %extra_attrs } ], ... ], \%attrs
+sub checkboxes_from {
+  my ($self, $c, $collection, @proto) = @_;
+  my ($template, %global_attrs) = _parse_proto(@proto);
+
+  use Devel::Dwarn;
+  Dwarn $collection;
+  my $content = '';
+  foreach my $item (@$collection) {
+    my %attrs = (%$item, %global_attrs);
+    my %label_attrs = exists($attrs{label_attrs}) ? delete $attrs{label_attrs} : ();
+    my $label = exists($attrs{label}) ? delete $attrs{label} : '';
+    $content .= $self->input_tag($c, +{type=>'checkbox', %attrs});
+    $content .= $self->label_tag($c, +{for=>$attrs{id}, %label_attrs }, $label);
+  }
+  return b $content;
+}
+
+
 # ====
 
-# %= zelect 'state_id', [map {[ $_->name, $_->id ]} $states->all], +{ class=>'form-control' }
-# %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
+# %= checkboxes_from [ name => label, +{ %extra_attrs } ], ... ], \%attrs
+# %= checkboxes_from [  ]
+# %= input_tag { name=>'person.person_roles.'.$idx.'.role_id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
 
+# %= checkboxes_from_collection 'person_roles', [$roles_rs, id=>label], 
+# collection_check_boxes(object, method, collection, value_method, text_method, options = {}, html_options = {}, &block) public
+ 
+#sub checkboxes_from_collection {
+#  my ($self, $c, $field, $collection, @proto) = @_;
+#  my ($content, %attrs) = _parse_proto(@proto);
+#  my $model = $c->stash->{'valiant.view.form.model'};
+#  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+#  my $field_rs = $model->$field;
+#  my @existing_role_ids = map { $_->role_id } grep { !$_->is_removed }  $person_roles_rs->all;
+#}
+
+# %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
+# %= select_from_collection 'state_id', [$states, id=>'name'], +{ class=>'form-control' }
+#
 sub select_from_collection {
   my ($self, $c, $field, $options, $attrs) = @_;
   my $model = $c->stash->{'valiant.view.form.model'};
@@ -358,6 +395,18 @@ __PACKAGE__->meta->make_immutable;
 
 
 __END__
+
+
+      %= input_group 'address', begin
+        <div class='form-group'>
+          %= label current_field
+          %= input current_field, +{ class=>'form-control' }
+          %= errors_for current_field
+        </div>        
+      %= end
+
+    %= input_group 'address', +{ class=>'form-control', div_attrs=>{ class=>'form-group'}  }
+
 
 sub model_errors_for {
    my ($self, $c, $attribute, %attrs) = @_;

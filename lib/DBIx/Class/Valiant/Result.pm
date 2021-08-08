@@ -39,6 +39,22 @@ sub many_to_many {
     set_method => "set_${meth_name}",
     remove_method => "remove_from_${meth_name}",
   };
+
+  my $pk_meth = qq[
+    package $class;
+
+    sub ${meth_name}_pks {
+      my \$self = shift;
+      my \@pks = \$self->related_resultset("${link}")->related_resultset("${far_side}")->result_source->primary_columns;
+      return map {
+        my \$row = \$_;
+        +{ map { \$_ => \$row->\$_ } \@pks };
+      } \$self->\$meth_name->all;
+    }
+  ];
+
+  eval $pk_meth;
+  die $@ if $@;
  
   #inheritable data workaround
   $class->_m2m_metadata({ $meth_name => $attrs, %$store});
@@ -138,6 +154,7 @@ sub update {
   my %validate_args = (context => \@context) if @context;
 
   $self->set_inflated_columns($upd) if $upd;
+
   foreach my $related(keys %related) {
 
     if(my $cb = $nested{$related}->{reject_if}) {
@@ -180,7 +197,6 @@ sub update {
   $txn_guard->commit;
 
   return $result;
-
 }
 
 sub register_column {
@@ -447,7 +463,7 @@ sub set_m2m_related_from_params {
     next;
     die "We expect '$params' to be some sort of reference but its not!";
   }
-  debug 2, "Setting m2m relation '$related' for @{[ ref $self ]} via '$foreign_relation'";
+  debug 2, "Setting m2m relation '$related' for @{[ ref $self ]} via '$relation' => '$foreign_relation'";
 
   # TODO its possible we need to creeate the m2m cache here
   return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @param_rows ]);
@@ -480,6 +496,7 @@ sub set_multi_related_from_params {
   }
 
   # introspect $related
+  debug 2, "looking for uniques for $related";
   my %uniques = $self->related_resultset($related)->result_source->unique_constraints;
 
   my @related_models = ();
@@ -506,6 +523,7 @@ sub set_multi_related_from_params {
     } else {
       die "Not sure what to do with $param_row";
     }
+    debug 2, "About to set_from_params_recursively for @{[ ref $related_model ]}";
     $related_model->set_from_params_recursively(%$param_row) unless blessed $param_row;
     push @related_models, $related_model;
   }
@@ -520,7 +538,7 @@ sub set_multi_related_from_params {
   my $rs = $self->related_resultset($related);
   unless(scalar @{$rs->get_cache||[]}) {
     #die "You must prefetch rows for relation '$related'"; ## TODO not sure we want this
-  }
+  } 
 
   while(my $current = $rs->next) {
     next if grep {
@@ -530,6 +548,7 @@ sub set_multi_related_from_params {
       } keys %fields;
       scalar(@matches) == keys %fields ? 1 : 0;
     } @new_pks;
+
     $current->mark_for_deletion if $current->in_storage; #Don't mark to delete if not already stored
 
     if($current->in_storage) {
@@ -556,6 +575,8 @@ sub set_multi_related_from_params {
 
     push @related_models, $current if $current->in_storage; # don't preserve unsaved previous
   }
+
+  debug 3, "About to save cache for @{[ ref $self ]} related resultset $related; has @{[ scalar @related_models ]} models to cache";
 
   $self->related_resultset($related)->set_cache(\@related_models);
   $self->{_relationship_data}{$related} = \@related_models;

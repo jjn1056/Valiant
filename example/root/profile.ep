@@ -82,19 +82,35 @@
       %= join ', ', @existing_role_ids;
       <br>
 
+      <div class='form-group is-invalid'>
+        % $i=0;
+        <%= checkboxes_from [
+          map {
+             my $data = +{
+              name => 'person.person_roles.'.$i.'.role_id',
+              id => 'person.person_roles.'. $i. '.role_id',
+              value => $_->id,
+              label => $_->label,
+            };
+            $i++;
+            $data;
+          } $c->model('Schema::Role')->all
+        ], +{class=>'form-check-input'} %>
+
       % my $idx = 0;
-      <div class='is-invalid'>
       % foreach my $role ($c->model('Schema::Role')->all) {
         <div class='form-check'>
           % my %checked = scalar(grep { $_ eq $role->id } @existing_role_ids)  ? (checked=>1) : ();
           %= input_tag { name=>'person.person_roles.'.$idx.'.role_id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
-          %= label_tag { for=>'person.person_roles.'.$idx.'.role_id', class=>'form-check-label' }, $role->label;
+          %= label_tag { for=>'person.person_roles.'.$idx.'.role_id', class=>'form-check-label' }, $role->label
           % $idx++;
         </div>
       % }
       </div>
       %= errors_for 'person_roles'
     </div>
+
+
   </fieldset>
 
   <fieldset>
