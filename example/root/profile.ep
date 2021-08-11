@@ -76,41 +76,17 @@
 
   <fieldset>
     <legend><%= $person->human_attribute_name('roles')  %></legend>
+    %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
     <div class='form-group'>
-      % my $person_roles_rs = $person->person_roles;
-      % my @existing_role_ids = map { $_->role_id } grep { !$_->is_removed }  $person_roles_rs->all;
-      %= join ', ', @existing_role_ids;
-      <br>
-
-      <div class='form-group is-invalid'>
-        % $i=0;
-        <%= checkboxes_from [
-          map {
-             my $data = +{
-              name => 'person.person_roles.'.$i.'.role_id',
-              id => 'person.person_roles.'. $i. '.role_id',
-              value => $_->id,
-              label => $_->label,
-            };
-            $i++;
-            $data;
-          } $c->model('Schema::Role')->all
-        ], +{class=>'form-check-input'} %>
-
-      % my $idx = 0;
-      % foreach my $role ($c->model('Schema::Role')->all) {
-        <div class='form-check'>
-          % my %checked = scalar(grep { $_ eq $role->id } @existing_role_ids)  ? (checked=>1) : ();
-          %= input_tag { name=>'person.person_roles.'.$idx.'.role_id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
-          %= label_tag { for=>'person.person_roles.'.$idx.'.role_id', class=>'form-check-label' }, $role->label
-          % $idx++;
-        </div>
-      % }
-      </div>
-      %= errors_for 'person_roles'
+      %= checkboxes_from_collection 'person_roles.role', $c->model('Schema::Role'), +{value_field=>'id', label_field=>'label'}
     </div>
-
-
+  </fieldset>
+  <fieldset>
+    <legend><%= $person->human_attribute_name('roles')  %></legend>
+    %= model_errors_for 'roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
+    <div class='form-group'>
+      %= checkboxes_from_collection 'roles', $c->model('Schema::Role'), +{value_field=>'id', label_field=>'label'}
+    </div>
   </fieldset>
 
   <fieldset>

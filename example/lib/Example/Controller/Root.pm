@@ -39,7 +39,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
       Dwarn $profile_params->tags;
       Dwarn "sdfsdfsdfsd";
-      Dwarn \%params;
+
 
       $c->stash(states => $c->model('Schema::State'));
       $c->stash(person => my $model = $c->model('Schema::Person')
@@ -59,7 +59,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         }
 
         my $add = delete $params{add};
-
+      Dwarn \%params;
         $model->context('profile')->update(\%params);
         $model->build_related('credit_cards') if $add->{credit_cards};
       }

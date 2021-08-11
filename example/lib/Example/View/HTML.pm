@@ -23,7 +23,8 @@ __PACKAGE__->config(
     option_tag => \&option_tag,
     select_tag => \&select_tag,
     options_for_select => \&options_for_select,
-    checkboxes_from => \&checkboxes_from,
+    checkboxes_from_collection => \&checkboxes_from_collection,
+    model_errors_for => \&model_errors_for,
 
     # tag helpers with an underlying model
     form_for => \&form_for,
@@ -171,43 +172,52 @@ sub options_from_collection_for_select {
   return $self->options_for_select($c, \@options, $global_attrs);
 }
 
-# %= checkboxes_from [ name => value, checked, +{ %extra_attrs } ], ... ], \%attrs
-sub checkboxes_from {
-  my ($self, $c, $collection, @proto) = @_;
-  my ($template, %global_attrs) = _parse_proto(@proto);
 
-  use Devel::Dwarn;
-  Dwarn $collection;
-  my $content = '';
-  foreach my $item (@$collection) {
-    my %attrs = (%$item, %global_attrs);
-    my %label_attrs = exists($attrs{label_attrs}) ? delete $attrs{label_attrs} : ();
-    my $label = exists($attrs{label}) ? delete $attrs{label} : '';
-    $content .= $self->input_tag($c, +{type=>'checkbox', %attrs});
-    $content .= $self->label_tag($c, +{for=>$attrs{id}, %label_attrs }, $label);
+# %= checkboxes_from_collection 'person_roles.role', $roles, +{value_field=>'id', label_field=>'name', ... }
+sub checkboxes_from_collection {
+  my ($self, $c, $field_proto, $collection, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+  
+  my $value = exists($attrs{value_field}) ? delete($attrs{value_field}) : 'id';
+  my $label = exists($attrs{label_field}) ? delete($attrs{label_field}) : 'label';
+
+  my $key = '';
+  my $field_model = $model;
+  my @field_path = split('\.', $field_proto);
+  foreach my $part (@field_path) {
+    my $info = $field_model->result_source->relationship_info($part);
+
+    if($info) {
+      ($key) = keys %{$info->{attrs}{fk_columns}};
+      $field_model = $field_model->related_resultset($part);
+    } elsif($info = $field_model->_m2m_metadata->{$part}) {
+      my $rs_method = $info->{rs_method};
+      $field_model = $field_model->$rs_method;
+      ($key) = $field_model->result_source->primary_columns;
+    }
   }
-  return b $content;
+
+  my $idx = 0;
+  my @tags = ();
+  my $related_part = shift @field_path;
+  foreach my $item($collection->all) {
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related_part, $idx];
+    local $c->stash->{'valiant.view.form.model'} = $item;
+
+    my %checked = $field_model->contains($item) ? (checked=>1) : ();
+
+    push @tags, b "<div class='form-check'>";
+    push @tags, $self->input($c, $key, +{type=>'checkbox', value=>$item->$value, class=>'form-check-input', %checked});
+    push @tags, $self->label($c, $key, +{class=>'form-check-label'}, sub { $item->$label } );
+    push @tags, b "</div>";
+
+    $idx++;
+  }
+
+  return b @tags;
 }
-
-
-# ====
-
-# %= checkboxes_from [ name => label, +{ %extra_attrs } ], ... ], \%attrs
-# %= checkboxes_from [  ]
-# %= input_tag { name=>'person.person_roles.'.$idx.'.role_id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
-
-# %= checkboxes_from_collection 'person_roles', [$roles_rs, id=>label], 
-# collection_check_boxes(object, method, collection, value_method, text_method, options = {}, html_options = {}, &block) public
- 
-#sub checkboxes_from_collection {
-#  my ($self, $c, $field, $collection, @proto) = @_;
-#  my ($content, %attrs) = _parse_proto(@proto);
-#  my $model = $c->stash->{'valiant.view.form.model'};
-#  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-
-#  my $field_rs = $model->$field;
-#  my @existing_role_ids = map { $_->role_id } grep { !$_->is_removed }  $person_roles_rs->all;
-#}
 
 # %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
 # %= select_from_collection 'state_id', [$states, id=>'name'], +{ class=>'form-control' }
@@ -320,6 +330,20 @@ sub errors_for {
   return $self->tag($c, 'div', \%attrs, $errors);
 }
 
+sub model_errors_for {
+   my ($self, $c, $attribute, %attrs) = @_;
+   my $model = $c->stash->{'valiant.view.form.model'};
+
+   if(my @errors = $model->errors->full_messages_for($attribute)) {
+     my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
+     my $errors = join ', ', @errors[0..($max_errors-1)];
+     my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
+     return b("<div $attrs/>$errors</div>");
+   } else {
+     return '';
+   }
+}
+
 sub model_errors {
   my ($self, $c, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
@@ -379,14 +403,10 @@ sub fields_for {
         $content_expanded .= $self->hidden($c, $primary_column);
       }
     }
-
     return b $content_expanded;
   }
 }
     
-
-
-
 __PACKAGE__->meta->make_immutable;
 
 
