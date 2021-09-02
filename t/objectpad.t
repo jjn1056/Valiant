@@ -1,8 +1,7 @@
 use Test::Most;
 use Test::Lib;
-use OP::Person;
 
-ok 1;
+eval "use OP::Person; 1" || do { plan skip_all => "Can;'t run Object::Pad tests"};
 
 ok my $p = OP::Person->new(
   name=>'B',
@@ -10,10 +9,16 @@ ok my $p = OP::Person->new(
   retirement_date=>'2020');
 
 ok $p->invalid;
-#is_deeply +{ $p->errors->to_hash(full_messages=>1) },
-
-use Devel::Dwarn;
-Dwarn  $p->errors->to_hash(full_messages=>1);
-##clone
+is_deeply +{ $p->errors->to_hash(full_messages=>1) }, +{
+  "age" => [
+    "Age Too Young",
+  ],
+  "name" => [
+    "Name Too Short 100",
+  ],
+  "*" => [
+    "Just Bad",
+  ],
+};
 
 done_testing;
