@@ -24,6 +24,7 @@ on test => sub {
   requires 'Test::Most' => '0.34';
   requires 'Type::Tiny' => '1.012001';
   requires 'MooseX::NonMoose' => '0.26';
+  requires 'MooseX::MarkAsMethods' => '0.15',
   requires 'DateTime::Format::Strptime';
   requires 'DateTime';
   requires 'Moo' => '2.004004';

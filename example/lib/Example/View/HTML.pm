@@ -190,12 +190,12 @@ sub checkboxes_from_collection {
     my $info = $field_model->result_source->relationship_info($part);
 
     if($info) {
-      ($key) = keys %{$info->{attrs}{fk_columns}};
+      ($key) = keys %{$info->{attrs}{fk_columns}};  # only works with a single field PK for now
       $field_model = $field_model->related_resultset($part);
     } elsif($info = $field_model->_m2m_metadata->{$part}) {
       my $rs_method = $info->{rs_method};
       $field_model = $field_model->$rs_method;
-      ($key) = $field_model->result_source->primary_columns;
+      ($key) = $field_model->result_source->primary_columns;  # only works with a single field FK for now
     }
   }
 
