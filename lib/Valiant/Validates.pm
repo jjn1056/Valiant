@@ -6,36 +6,13 @@ use String::CamelCase 'camelize';
 use Scalar::Util 'blessed';
 use Valiant::Util 'throw_exception', 'debug';
 use namespace::autoclean -also => ['throw_exception', 'debug'];
+use Valiant::Validations ();
 
 with 'Valiant::Translation';
 
 requires 'ancestors';
 
 has _instance_validations => (is=>'rw', init_arg=>undef);
-
-my %Meta_Data;
-sub _add_metadata {
-  my ($target, $type, @add) = @_;
-  warn $target;
-  my $store = $Meta_Data{$target}{$type} ||= do {
-    my @data;
-
-    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
-      $target->can('around')->("${type}_metadata", sub {
-        my ($orig, $self) = (shift, shift);
-        ($self->$orig(@_), @data);
-      });
-    } else {
-      require Sub::Util;
-      my $method = Sub::Util::set_subname "${target}::${type}_metadata}" => sub { @data };
-      no strict 'refs';
-      *{"${target}::${type}_metadata"} = $method;
-    }
-    \@data;
-  };
-  push @$store, @add;
-  return;
-}
 
 sub validations_metadata_for_instancesXXX {
   my ($self) = @_;
@@ -49,6 +26,8 @@ sub validations_metadata_for_instancesXXX {
 
 sub validations {
   my ($class_or_self, $arg) = @_;
+
+  warn $class_or_self;
   my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
 
   if(defined($arg)) {
@@ -56,10 +35,12 @@ sub validations {
     #     my @existing = @{ $class_or_self->_instance_validations||[] };
     #   $class_or_self->_instance_validations([$arg, @existing]);
     #    } else {
-      $class_or_self->_add_metadata('validations', $arg);
+      Valiant::Validations::_add_metadata($class_or_self, 'validations', $arg);
       # }
   }
 
+  use Devel::Dwarn;
+  #Dwarn \%Meta_Data;
   return $class_or_self->validations_metadata if $class_or_self->can('validations_metadata');
 }
 

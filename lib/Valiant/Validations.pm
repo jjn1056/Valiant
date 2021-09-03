@@ -1,5 +1,8 @@
 package Valiant::Validations;
 
+use warnings;
+use strict;
+
 use Class::Method::Modifiers;
 use Valiant::Util 'debug';
 use Scalar::Util;
@@ -12,6 +15,29 @@ our @DEFAULT_EXPORTS = (qw(validates validates_with));
 
 sub default_roles { @DEFAULT_ROLES }
 sub default_exports { @DEFAULT_EXPORTS }
+
+our %Meta_Data;
+sub _add_metadata {
+  my ($target, $type, @add) = @_;
+  warn $target;
+  my $store = $Meta_Data{$target}{$type} ||= do {
+    my @data;
+    if ( $target->can("${type}_metadata")) {
+      $target->can('around')->("${type}_metadata", sub {
+        my ($orig, $self) = (shift, shift);
+        ($self->$orig(@_), @data);
+      });
+    } else {
+      require Sub::Util;
+      my $method = Sub::Util::set_subname "${target}::${type}_metadata}" => sub { @data };
+      no strict 'refs';
+      *{"${target}::${type}_metadata"} = $method;
+    }
+    \@data;
+  };
+  push @$store, @add;
+  return;
+}
 
 sub import {
   my $class = shift;
