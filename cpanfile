@@ -10,7 +10,6 @@ requires 'Module::Runtime';
 requires 'Role::Tiny::With';
 requires 'Scalar::Util' => '1.55';
 requires 'String::CamelCase';
-requires 'Sub::Exporter';
 requires 'File::Spec';
 requires 'Text::Autoformat';
 requires 'Carp';

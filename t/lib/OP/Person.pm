@@ -1,7 +1,7 @@
 use v5.26;
 use Object::Pad;
- 
-class OP::Person :repr(HASH)  {
+
+class OP::Person isa OP::Base :repr(HASH) {
 
   use Valiant::Validations;
 
@@ -20,4 +20,7 @@ class OP::Person :repr(HASH)  {
   method is_nok {
     $self->errors->add(undef, 'Just Bad', +{ details=>'This always fails'});
   }
+
+    use namespace::clean 'validates_with';
+
 }

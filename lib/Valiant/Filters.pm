@@ -1,8 +1,9 @@
 package Valiant::Filters;
 
-use Sub::Exporter 'build_exporter';
-use Class::Method::Modifiers qw(install_modifier);
+use Class::Method::Modifiers;
 use Valiant::Util 'debug';
+use Scalar::Util;
+use Moo::_Utils;
 
 require Moo::Role;
 
@@ -25,22 +26,19 @@ sub import {
   my %cb = map {
     $_ => $target->can($_);
   } $class->default_exports;
-  
-  my $exporter = build_exporter({
-    into_level => 1,
-    exports => [
-      map {
-        my $key = $_; 
-        $key => sub {
-          sub { return $cb{$key}->($target, @_) };
-        }
-      } keys %cb,
-    ],
-  });
 
-  $class->$exporter($class->default_exports);
+  foreach my $exported_method (keys %cb) {
+    my $sub = sub {
+      if(Scalar::Util::blessed($_[0])) {
+        return $cb{$exported_method}->(@_);
+      } else {
+        return $cb{$exported_method}->($target, @_);
+      }
+    };
+    Moo::_Utils::_install_tracked($target, $exported_method, $sub);
+  }
 
-  install_modifier $target, 'around', 'has', sub {
+  Class::Method::Modifiers::install_modifier $target, 'around', 'has', sub {
     my $orig = shift;
     my ($attr, %opts) = @_;
 
