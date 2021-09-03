@@ -29,8 +29,6 @@ sub _add_metadata {
   return;
 }
 
-sub validations_metadata { return () }
-
 sub validations_metadata_for_instancesXXX {
   my ($self) = @_;
   my $class = ref($self) ? ref($self) : $self;
@@ -54,7 +52,7 @@ sub validations {
       # }
   }
 
-  return $class_or_self->validations_metadata;
+  return $class_or_self->validations_metadata if $class_or_self->can('validations_metadata');
 }
 
 =over

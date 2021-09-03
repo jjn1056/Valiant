@@ -22,4 +22,7 @@ sub is_nok {
   $self->errors->add(undef, _t('bad'), +{ details=>'This always fails'});
 }
 
+sub validations_metadata { return () }
+
+
 1;
