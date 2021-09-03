@@ -1,6 +1,5 @@
 use v5.26;
 use Object::Pad;
-
 class OP::Base :repr(HASH) {
   
   use Valiant::Validations;
@@ -13,7 +12,6 @@ class OP::Base :repr(HASH) {
     }
   );
 
-  use namespace::clean 'validates_with';
-  
+  use namespace::clean;
 }
 

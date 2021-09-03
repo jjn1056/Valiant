@@ -26,22 +26,20 @@ sub validations_metadata_for_instancesXXX {
 
 sub validations {
   my ($class_or_self, $arg) = @_;
-
-  warn $class_or_self;
   my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
 
+  my @existing = ();
   if(defined($arg)) {
-    # if(ref($class_or_self)) { # its $self
-    #     my @existing = @{ $class_or_self->_instance_validations||[] };
-    #   $class_or_self->_instance_validations([$arg, @existing]);
-    #    } else {
+    if(ref($class_or_self)) { # its $self
+      my @existing = @{ $class_or_self->_instance_validations||[] };
+      $class_or_self->_instance_validations([$arg, @existing]);
+    } else {
       Valiant::Validations::_add_metadata($class_or_self, 'validations', $arg);
-      # }
+    }
   }
-
-  use Devel::Dwarn;
-  #Dwarn \%Meta_Data;
-  return $class_or_self->validations_metadata if $class_or_self->can('validations_metadata');
+  @existing = @{ $class_or_self->_instance_validations||[] } if ref $class_or_self;
+  my @validations = $class_or_self->validations_metadata if $class_or_self->can('validations_metadata');
+  return @existing, @validations;
 }
 
 =over
@@ -475,7 +473,7 @@ arguments for the validate set as a whole:
       \&must_be_unique,
     );
 
-    valiates age => (
+    validates age => (
       Int->where('$_ >= 65'), +{
         message => 'A retiree must be at least 65 years old,
       },
@@ -567,7 +565,7 @@ context.  All other arguments will be passed down to the C<$opts> hashref.
 
 Return true or false depending on if the current object state is valid or not.  If you call this method and
 validations have not been run (via C<validate>) then we will first run validations and pass any arguments
-to L</valiates>.  If validations have already been run we just return true or false directly UNLESS you
+to L</validates>.  If validations have already been run we just return true or false directly UNLESS you
 pass arguments in which case we clear errors first and then rerun validations with the arguments before
 returning true or false.
 

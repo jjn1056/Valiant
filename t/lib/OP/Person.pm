@@ -1,10 +1,8 @@
 use v5.26;
 use Object::Pad;
-
 class OP::Person isa OP::Base :repr(HASH) {
 
   use Valiant::Validations;
-
   has $name :reader :param;
   has $age :reader :param;
 
@@ -21,6 +19,5 @@ class OP::Person isa OP::Base :repr(HASH) {
     $self->errors->add(undef, 'Just Bad', +{ details=>'This always fails'});
   }
 
-    use namespace::clean 'validates_with';
-
+  use namespace::clean;
 }

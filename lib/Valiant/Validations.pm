@@ -22,7 +22,7 @@ sub _add_metadata {
   warn $target;
   my $store = $Meta_Data{$target}{$type} ||= do {
     my @data;
-    if ( $target->can("${type}_metadata")) {
+    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
       $target->can('around')->("${type}_metadata", sub {
         my ($orig, $self) = (shift, shift);
         ($self->$orig(@_), @data);
@@ -52,7 +52,8 @@ sub import {
         my $method = Sub::Util::set_subname "${target}::validations_metadata" => sub { @data };
         no strict 'refs';
         *{"${target}::validations_metadata"} = $method;
-      }  
+      }
+      &$orig;
     });
   } 
 
