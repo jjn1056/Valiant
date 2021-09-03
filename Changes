@@ -1,12 +1,19 @@
 The following logs changes for the CPAN distribution Valiant
 
 0.001007  TBD
+          - !!! Totally changed the way we aggregate validations and filters from subclasses
+          and roles.   All the same validations with run but the run order is likely 
+          different.  THIS COULD BE A BREAKING CHANGE for you if you have code that is
+          validation order dependent (could be in your test cases for example).  I did warn you
+          that validation order was subject to change :)  On a positive note after working thru
+          this with mst I think order is a lot more firmed up.  I still consider it subject to
+          change but I will now only change it if I need to in order to address critical design
+          or secure or performance issues.
           - Confirmation validator now skips when either the confirmation value or
           check value is not defined.  This prevents showing a confirmation error
           when both values are not defined which I think is correct but its a minor
           breaking change.  
           - Lots more test cases are DBIC nesting.
-          - Valiant::Params proof of concept
 
 0.001006  2021 April 19
           - Possible fix for issue where windows doesn't find locale paths

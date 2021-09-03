@@ -10,19 +10,7 @@ use Valiant::Validations ();
 
 with 'Valiant::Translation';
 
-requires 'ancestors';
-
 has _instance_validations => (is=>'rw', init_arg=>undef);
-
-sub validations_metadata_for_instancesXXX {
-  my ($self) = @_;
-  my $class = ref($self) ? ref($self) : $self;
-  my @existing = ();
-  if(ref $self) {
-    push @existing, @{ $self->_instance_validations||[] };
-  }
-  return @existing;
-}
 
 sub validations {
   my ($class_or_self, $arg) = @_;
@@ -39,36 +27,10 @@ sub validations {
   }
   @existing = @{ $class_or_self->_instance_validations||[] } if ref $class_or_self;
   my @validations = $class_or_self->validations_metadata if $class_or_self->can('validations_metadata');
-  return @existing, @validations;
+  return @validations, @existing;
 }
 
-=over
-
-my @validations;
-sub validations {
-  my ($class_or_self, $arg) = @_;
-  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
-  my $varname = "${class}::validations";
-
-  no strict "refs";
-  if(defined($arg)) {
-    if(ref($class_or_self)) { # its $self
-      my @existing = @{ $class_or_self->_instance_validations||[] };
-      $class_or_self->_instance_validations([$arg, @existing]);
-    } else {
-      push @$varname, $arg;
-    }
-  }
-
-  return @{ ref($class_or_self) ? $class_or_self->_instance_validations||[] : [] },
-    @$varname,
-    map { $_->validations } 
-    grep { $_->can('validations') }
-      $class->ancestors;
-}
-
-=cut
-
+# These bits are experimental
 my $named_validators;
 my $attribute_valiators;
 sub named_validators {

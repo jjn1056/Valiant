@@ -11,8 +11,9 @@ ok $retiree->invalid;
 
 is_deeply +{ $retiree->errors->to_hash(full_messages=>1) },
   {
-    '*' => [
+    "*" => [
       "Just Bad",
+      "Failed Retiree validation",
       "Failed TestRole",
     ],
     age => [
@@ -21,16 +22,17 @@ is_deeply +{ $retiree->errors->to_hash(full_messages=>1) },
     ],
     name => [
       "Name Too Short 100",
-      "Name Is Invalid",
-      "Name Just Bad",
       "Name Too Custom: 123",
+      "Name bad retiree name",
       "Name Logged a B",
       "Name is too short (minimum is 3 characters)",
       "Name just weird name",
+      "Name Is Invalid",
+      "Name Just Bad",
     ],
     retirement_date => [
       "Retires On Failed Retiree",
-    ],     
+    ],
   };
 
 done_testing;

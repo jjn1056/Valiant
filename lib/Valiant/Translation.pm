@@ -3,7 +3,7 @@ package Valiant::Translation;
 use Moo::Role;
 use Text::Autoformat 'autoformat';
 
-with 'Valiant::Naming';
+with 'Valiant::Util::Ancestors', 'Valiant::Naming';
 
 sub i18n_class { 'Valiant::I18N' }
 

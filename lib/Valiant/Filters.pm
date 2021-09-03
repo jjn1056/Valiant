@@ -6,9 +6,11 @@ use Scalar::Util;
 use Moo::_Utils;
 
 require Moo::Role;
+require Sub::Util;
 
-our @DEFAULT_ROLES = (qw(Valiant::Util::Ancestors Valiant::Filterable));
+our @DEFAULT_ROLES = (qw(Valiant::Filterable));
 our @DEFAULT_EXPORTS = (qw(filters filters_with));
+our %Meta_Data = ();
 
 sub default_roles { @DEFAULT_ROLES }
 sub default_exports { @DEFAULT_EXPORTS }
@@ -16,6 +18,19 @@ sub default_exports { @DEFAULT_EXPORTS }
 sub import {
   my $class = shift;
   my $target = caller;
+
+  unless (Moo::Role->is_role($target)) {
+    my $orig = $target->can('with');
+    Moo::_Utils::_install_tracked($target, 'with', sub {
+      unless ($target->can('filters_metadata')) {
+        $Meta_Data{$target}{'filters'} = \my @data;
+        my $method = Sub::Util::set_subname "${target}::filters_metadata" => sub { @data };
+        no strict 'refs';
+        *{"${target}::filters_metadata"} = $method;
+      }
+      &$orig;
+    });
+  } 
 
   foreach my $default_role ($class->default_roles) {
     next if Role::Tiny::does_role($target, $default_role);
@@ -52,6 +67,27 @@ sub import {
     return $orig->($attr, %opts);
   } if $target->can('has');
 } 
+
+sub _add_metadata {
+  my ($target, $type, @add) = @_;
+  my $store = $Meta_Data{$target}{$type} ||= do {
+    my @data;
+    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
+      $target->can('around')->("${type}_metadata", sub {
+        my ($orig, $self) = (shift, shift);
+        ($self->$orig(@_), @data);
+      });
+    } else {
+      require Sub::Util;
+      my $method = Sub::Util::set_subname "${target}::${type}_metadata" => sub { @data };
+      no strict 'refs';
+      *{"${target}::${type}_metadata"} = $method;
+    }
+    \@data;
+  };
+  push @$store, @add;
+  return;
+}
 
 1;
 

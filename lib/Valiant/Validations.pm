@@ -7,38 +7,16 @@ use Class::Method::Modifiers;
 use Valiant::Util 'debug';
 use Scalar::Util;
 use Moo::_Utils;
-#use namespace::clean ();
 
 require Moo::Role;
+require Sub::Util;
 
-our @DEFAULT_ROLES = (qw(Valiant::Util::Ancestors Valiant::Validates));
+our @DEFAULT_ROLES = (qw(Valiant::Validates));
 our @DEFAULT_EXPORTS = (qw(validates validates_with));
+our %Meta_Data = ();
 
 sub default_roles { @DEFAULT_ROLES }
 sub default_exports { @DEFAULT_EXPORTS }
-
-our %Meta_Data;
-sub _add_metadata {
-  my ($target, $type, @add) = @_;
-  warn $target;
-  my $store = $Meta_Data{$target}{$type} ||= do {
-    my @data;
-    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
-      $target->can('around')->("${type}_metadata", sub {
-        my ($orig, $self) = (shift, shift);
-        ($self->$orig(@_), @data);
-      });
-    } else {
-      require Sub::Util;
-      my $method = Sub::Util::set_subname "${target}::${type}_metadata" => sub { @data };
-      no strict 'refs';
-      *{"${target}::${type}_metadata"} = $method;
-    }
-    \@data;
-  };
-  push @$store, @add;
-  return;
-}
 
 sub import {
   my $class = shift;
@@ -49,7 +27,6 @@ sub import {
     Moo::_Utils::_install_tracked($target, 'with', sub {
       unless ($target->can('validations_metadata')) {
         $Meta_Data{$target}{'validations'} = \my @data;
-        require Sub::Util;
         my $method = Sub::Util::set_subname "${target}::validations_metadata" => sub { @data };
         no strict 'refs';
         *{"${target}::validations_metadata"} = $method;
@@ -79,8 +56,6 @@ sub import {
     Moo::_Utils::_install_tracked($target, $exported_method, $sub);
   }
 
-  #namespace::clean->clean_subroutines($target, $class->default_exports);
-
   Class::Method::Modifiers::install_modifier $target, 'around', 'has', sub {
     my $orig = shift;
     my ($attr, %opts) = @_;
@@ -96,6 +71,26 @@ sub import {
   } if $target->can('has');
 } 
 
+sub _add_metadata {
+  my ($target, $type, @add) = @_;
+  my $store = $Meta_Data{$target}{$type} ||= do {
+    my @data;
+    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
+      $target->can('around')->("${type}_metadata", sub {
+        my ($orig, $self) = (shift, shift);
+        ($self->$orig(@_), @data);
+      });
+    } else {
+      require Sub::Util;
+      my $method = Sub::Util::set_subname "${target}::${type}_metadata" => sub { @data };
+      no strict 'refs';
+      *{"${target}::${type}_metadata"} = $method;
+    }
+    \@data;
+  };
+  push @$store,  @add;
+  return;
+}
 
 
 1;

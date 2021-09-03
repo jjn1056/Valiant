@@ -18,6 +18,7 @@ requires 'Data::Dumper';
 requires 'namespace::autoclean';
 requires 'overload';
 requires 'DBIx::Class';
+requires 'Sub::Util';
 
 on test => sub {
   requires 'Test::Most' => '0.34';
