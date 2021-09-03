@@ -9,6 +9,9 @@ The following logs changes for the CPAN distribution Valiant
           this with mst I think order is a lot more firmed up.  I still consider it subject to
           change but I will now only change it if I need to in order to address critical design
           or secure or performance issues.
+          - !!! Removed for now some experimental introspection code.   It wasn't documented
+          and if you used it your code is now broken.  Contact me with your use case so I can
+          plan a sane API for this.
           - Confirmation validator now skips when either the confirmation value or
           check value is not defined.  This prevents showing a confirmation error
           when both values are not defined which I think is correct but its a minor
@@ -46,4 +49,4 @@ The following logs changes for the CPAN distribution Valiant
           - First Post!  Please only use this if you are ready to help
           file bug reports and read all the docs carefully.
           - This release is dedicated to my dog Tornado who we lost to
-          cancer in August of 2020.
+          cancer on 18 August 2020.

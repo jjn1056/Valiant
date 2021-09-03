@@ -30,60 +30,6 @@ sub validations {
   return @validations, @existing;
 }
 
-# These bits are experimental
-my $named_validators;
-my $attribute_valiators;
-sub named_validators {
-  my $class = shift;
-  $class = ref($class) if ref($class);
-  my $varname = "${class}::named_validators";
-
-  no strict "refs";
-  return %$varname,
-    map { $_->named_validators } 
-    grep { $_->can('named_validators') }
-      $class->ancestors;
-}
-
-sub attribute_valiators {
-  my $class = shift;
-  $class = ref($class) if ref($class);
-  my $varname = "${class}::attribute_valiators";
-
-  no strict "refs";
-  return %$varname,
-    map { $_->attribute_valiators } 
-    grep { $_->can('attribute_valiators') }
-      $class->ancestors;
-}
-
-sub attribute_valiators_for {
-  my ($class, $attr) = @_;
-  my %validators = $class->attribute_valiators;
-  return $validators{$attr} ||+{};
-}
-
-sub has_validator_for_attribute {
-  my ($class, $validator_name, $attr) = @_;
-  my %validators = $class->attribute_valiators;
-  return @{ $validators{$attr}{$validator_name}||[] };
-}
-
-sub _push_named_validators {
-  my ($class, $name, $validator) = @_;
-  $class = ref($class) if ref($class);
-  my $named_validators = "${class}::named_validators";
-  my $attribute_valiators = "${class}::attribute_valiators";
-
-  if(defined $validator) {
-    no strict "refs";
-    push @{$named_validators->{$name}}, $validator;
-    foreach my $attr ( @{ $validator->attributes||[] }) {
-      push @{$attribute_valiators->{$attr}{$name}}, $validator;
-    }
-  }
-}
-
 sub errors_class { 'Valiant::Errors' }
 
 has 'errors' => (
@@ -268,7 +214,6 @@ sub validates {
 
     my $new_validator = $self->_create_validator($validator_package, $args);
     push @validators, $new_validator;
-    $self->_push_named_validators($package_part, $new_validator);
   }
   my $coderef = sub { $_->validate(@_) foreach @validators };
   $self->_validates_coderef($coderef, %global_options); 
