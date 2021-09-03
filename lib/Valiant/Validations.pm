@@ -29,7 +29,7 @@ sub _add_metadata {
       });
     } else {
       require Sub::Util;
-      my $method = Sub::Util::set_subname "${target}::${type}_metadata}" => sub { @data };
+      my $method = Sub::Util::set_subname "${target}::${type}_metadata" => sub { @data };
       no strict 'refs';
       *{"${target}::${type}_metadata"} = $method;
     }
@@ -49,7 +49,7 @@ sub import {
       unless ($target->can('validations_metadata')) {
         $Meta_Data{$target}{'validations'} = \my @data;
         require Sub::Util;
-        my $method = Sub::Util::set_subname "${target}::validations_metadata}" => sub { @data };
+        my $method = Sub::Util::set_subname "${target}::validations_metadata" => sub { @data };
         no strict 'refs';
         *{"${target}::validations_metadata"} = $method;
       }  
