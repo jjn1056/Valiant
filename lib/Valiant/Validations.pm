@@ -7,6 +7,7 @@ use Class::Method::Modifiers;
 use Valiant::Util 'debug';
 use Scalar::Util;
 use Moo::_Utils;
+#use namespace::clean ();
 
 require Moo::Role;
 
@@ -77,6 +78,8 @@ sub import {
     };
     Moo::_Utils::_install_tracked($target, $exported_method, $sub);
   }
+
+  #namespace::clean->clean_subroutines($target, $class->default_exports);
 
   Class::Method::Modifiers::install_modifier $target, 'around', 'has', sub {
     my $orig = shift;

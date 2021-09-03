@@ -3,6 +3,7 @@ use Object::Pad;
 class OP::Base :repr(HASH) {
   
   use Valiant::Validations;
+  use namespace::clean 'validates';
 
   has $alive :reader :param;
 
@@ -11,7 +12,5 @@ class OP::Base :repr(HASH) {
       state => 0,
     }
   );
-
-  use namespace::clean;
 }
 
