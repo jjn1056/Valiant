@@ -17,6 +17,19 @@ sub import {
   my $class = shift;
   my $target = caller;
 
+  unless (Moo::Role->is_role($target)) {
+    my $orig = $target->can('with');
+    Moo::_Utils::_install_tracked($target, 'with', sub {
+      unless ($target->can('validations_metadata')) {
+        $Meta_Data{$target}{'validations'} = \my @data;
+        require Sub::Util;
+        my $method = Sub::Util::set_subname "${target}::validations_metadata}" => sub { @data };
+        no strict 'refs';
+        *{"${target}::validations_metadata"} = $method;
+      }  
+    });
+  } 
+
   foreach my $default_role ($class->default_roles) {
     next if Role::Tiny::does_role($target, $default_role);
     debug 1, "Applying role '$default_role' to '$target'";

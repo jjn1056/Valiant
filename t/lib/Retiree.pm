@@ -2,6 +2,7 @@ package Retiree;
 
 use Moo;
 use Valiant::Validations;
+use Valiant::I18N;
 
 extends 'Person';
 with 'TestRole';

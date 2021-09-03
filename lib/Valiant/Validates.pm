@@ -19,10 +19,18 @@ sub _add_metadata {
   warn $target;
   my $store = $Meta_Data{$target}{$type} ||= do {
     my @data;
-    $target->can('around')->("${type}_metadata", sub {
-      my ($orig, $self) = (shift, shift);
-      ($self->$orig(@_), @data);
-    });
+
+    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
+      $target->can('around')->("${type}_metadata", sub {
+        my ($orig, $self) = (shift, shift);
+        ($self->$orig(@_), @data);
+      });
+    } else {
+      require Sub::Util;
+      my $method = Sub::Util::set_subname "${target}::${type}_metadata}" => sub { @data };
+      no strict 'refs';
+      *{"${target}::${type}_metadata"} = $method;
+    }
     \@data;
   };
   push @$store, @add;
