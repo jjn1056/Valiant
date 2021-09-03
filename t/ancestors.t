@@ -8,6 +8,10 @@ ok my $retiree = Retiree->new(
   retirement_date=>'2020');
 
 ok $retiree->invalid;
+
+use Devel::Dwarn;
+Dwarn +{ $retiree->errors->to_hash(full_messages=>1) };
+
 is_deeply +{ $retiree->errors->to_hash(full_messages=>1) },
   {
     '*' => [

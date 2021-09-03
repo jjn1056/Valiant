@@ -13,6 +13,50 @@ requires 'ancestors';
 
 has _instance_validations => (is=>'rw', init_arg=>undef);
 
+my %Meta_Data;
+sub _add_metadata {
+  my ($target, $type, @add) = @_;
+  warn $target;
+  my $store = $Meta_Data{$target}{$type} ||= do {
+    my @data;
+    $target->can('around')->("${type}_metadata", sub {
+      my ($orig, $self) = (shift, shift);
+      ($self->$orig(@_), @data);
+    });
+    \@data;
+  };
+  push @$store, @add;
+  return;
+}
+
+sub validations_metadata {
+  my ($self) = @_;
+  my $class = ref($self) ? ref($self) : $self;
+  my @existing = ();
+  if(ref $self) {
+    push @existing, @{ $self->_instance_validations||[] };
+  }
+  return @existing;
+}
+
+sub validations {
+  my ($class_or_self, $arg) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+
+  if(defined($arg)) {
+    if(ref($class_or_self)) { # its $self
+      my @existing = @{ $class_or_self->_instance_validations||[] };
+      $class_or_self->_instance_validations([$arg, @existing]);
+    } else {
+      $class_or_self->_add_metadata('validations', $arg);
+    }
+  }
+
+  return $class_or_self->validations_metadata;
+}
+
+=over
+
 my @validations;
 sub validations {
   my ($class_or_self, $arg) = @_;
@@ -36,9 +80,10 @@ sub validations {
       $class->ancestors;
 }
 
+=cut
+
 my $named_validators;
 my $attribute_valiators;
-
 sub named_validators {
   my $class = shift;
   $class = ref($class) if ref($class);
