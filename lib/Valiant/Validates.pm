@@ -29,7 +29,9 @@ sub _add_metadata {
   return;
 }
 
-sub validations_metadata {
+sub validations_metadata { return () }
+
+sub validations_metadata_for_instancesXXX {
   my ($self) = @_;
   my $class = ref($self) ? ref($self) : $self;
   my @existing = ();
@@ -44,12 +46,12 @@ sub validations {
   my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
 
   if(defined($arg)) {
-    if(ref($class_or_self)) { # its $self
-      my @existing = @{ $class_or_self->_instance_validations||[] };
-      $class_or_self->_instance_validations([$arg, @existing]);
-    } else {
+    # if(ref($class_or_self)) { # its $self
+    #     my @existing = @{ $class_or_self->_instance_validations||[] };
+    #   $class_or_self->_instance_validations([$arg, @existing]);
+    #    } else {
       $class_or_self->_add_metadata('validations', $arg);
-    }
+      # }
   }
 
   return $class_or_self->validations_metadata;
