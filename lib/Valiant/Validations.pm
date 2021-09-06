@@ -88,7 +88,7 @@ sub _add_metadata {
     }
     \@data;
   };
-  push @$store,  @add;
+  push @$store, @add;
   return;
 }
 

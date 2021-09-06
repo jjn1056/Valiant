@@ -106,15 +106,15 @@ sub full_message {
     if($namespace) {
       @defaults = map {
         my $class = $_;
-        "${attributes_scope}.${\$class->i18n_key}/${namespace}.attributes.${attribute_name}.format",
-        "${attributes_scope}.${\$class->i18n_key}/${namespace}.format";      
-      } grep { $_->can('i18n_key') } $object->ancestors;
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.attributes.${attribute_name}.format",
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.format";      
+      } grep { $_->model_name->can('i18n_key') } $object->i18n_lookup;
     } else {
       @defaults = map {
         my $class = $_;
-        "${attributes_scope}.${\$class->i18n_key}.attributes.${attribute_name}.format",
-        "${attributes_scope}.${\$class->i18n_key}.format";    
-      } grep { $_->can('i18n_key') } $object->ancestors;
+        "${attributes_scope}.${\$class->model_name->i18n_key}.attributes.${attribute_name}.format",
+        "${attributes_scope}.${\$class->model_name->i18n_key}.format";    
+      } grep { $_->model_name->can('i18n_key') } $object->i18n_lookup;
     }
   }
 
@@ -186,9 +186,11 @@ sub generate_message {
 
     @defaults = map {
       my $class = $_;
-      (defined($local_attribute) ? "${i18n_scope}.errors.models.${\$class->i18n_key}.attributes.${local_attribute}.${$type}" : ()),
-      "${i18n_scope}.errors.models.${\$class->i18n_key}.${$type}";      
-    } grep { $_->can('i18n_key') } $object->ancestors;
+      (defined($local_attribute) ? "${i18n_scope}.errors.models.${\$class->model_name->i18n_key}.attributes.${local_attribute}.${$type}" : ()),
+      "${i18n_scope}.errors.models.${\$class->model_name->i18n_key}.${$type}";      
+    } grep {
+      $_->model_name->can('i18n_key')
+    } $object->i18n_lookup if $object->can('i18n_lookup');
     push @defaults, "${i18n_scope}.errors.messages.${$type}";
   }
 

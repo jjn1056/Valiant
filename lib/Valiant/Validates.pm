@@ -12,6 +12,14 @@ with 'Valiant::Translation';
 
 has _instance_validations => (is=>'rw', init_arg=>undef);
 
+sub i18n_lookup { 
+  my ($class_or_self, $arg) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  no strict "refs";
+  my @proposed = @{"${class}::ISA"};
+  return grep { $_->can('model_name') } ($class, @proposed);
+}
+
 sub validations {
   my ($class_or_self, $arg) = @_;
   my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
@@ -43,12 +51,14 @@ has 'errors' => (
 );
 
 sub has_errors {
-  shift->errors->size ? 1:0; 
+  return shift->errors->size ? 1:0; 
 }
 
 has 'validated' => (is=>'rw', required=>1, init_args=>undef, default=>0);
 has 'skip_validation' =>  (is=>'rw', required=>1, init_args=>undef, default=>0);
 has '_context' => (is=>'rw', required=>0, predicate=>'has_context');
+
+sub get_context { shift->_context }
 
 sub context {
   my ($self, $args) = @_;

@@ -11,7 +11,6 @@ use Scalar::Util 'blessed';
 use Carp;
 use namespace::autoclean -also => ['debug'];
 
-with 'Valiant::Util::Ancestors';
 with 'DBIx::Class::Valiant::Validates';
 with 'Valiant::Filterable';
 
