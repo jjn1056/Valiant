@@ -12,11 +12,19 @@ with 'Valiant::Translation';
 
 has _instance_validations => (is=>'rw', init_arg=>undef);
 
+sub push_to_i18n_lookup {
+  my ($class_or_self, @args) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  @args = $class unless @args;
+  Valiant::Validations::_add_metadata($class, 'i18n', @args);
+}
+
 sub i18n_lookup { 
   my ($class_or_self, $arg) = @_;
   my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
   no strict "refs";
   my @proposed = @{"${class}::ISA"};
+  push @proposed, $class_or_self->i18n_metadata if $class_or_self->can('i18n_metadata');
   return grep { $_->can('model_name') } ($class, @proposed);
 }
 

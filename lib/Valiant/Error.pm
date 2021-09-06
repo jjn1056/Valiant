@@ -120,8 +120,8 @@ sub full_message {
 
   @defaults = map { $i18n->make_tag($_) } @defaults;
 
+  push @defaults, $i18n->make_tag("errors.format.attributes.${attribute}"); # This isn't in Rails but I find it useful
   push @defaults, $i18n->make_tag("errors.format");
-  push @defaults, $i18n->make_tag("errors.${attribute}.format"); # This isn't in Rails but I find it useful
 
   # This last one 
   push @defaults, $self->default_format;

@@ -31,8 +31,10 @@ is_deeply +{ $retiree->errors->to_hash(full_messages=>1) },
       "Name Just Bad",
     ],
     retirement_date => [
-      "Retires On Failed Retiree",
+      "Retirement Date Failed Retiree",
     ],
   };
+
+is_deeply [$retiree->i18n_lookup], [qw/Retiree Person TestRole/];
 
 done_testing;

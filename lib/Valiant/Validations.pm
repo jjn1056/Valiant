@@ -12,7 +12,7 @@ require Moo::Role;
 require Sub::Util;
 
 our @DEFAULT_ROLES = (qw(Valiant::Validates));
-our @DEFAULT_EXPORTS = (qw(validates validates_with));
+our @DEFAULT_EXPORTS = (qw(validates validates_with push_to_i18n_lookup));
 our %Meta_Data = ();
 
 sub default_roles { @DEFAULT_ROLES }
@@ -30,6 +30,12 @@ sub import {
         my $method = Sub::Util::set_subname "${target}::validations_metadata" => sub { @data };
         no strict 'refs';
         *{"${target}::validations_metadata"} = $method;
+      }
+      unless ($target->can('i18n_metadata')) {
+        $Meta_Data{$target}{'i18n'} = \my @data;
+        my $method = Sub::Util::set_subname "${target}::i18n_metadata" => sub { @data };
+        no strict 'refs';
+        *{"${target}::i18n_metadata"} = $method;
       }
       &$orig;
     });
