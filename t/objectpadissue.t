@@ -18,6 +18,8 @@ use Test::Lib;
   use Moo;
   use OP::Issue::Importer;
 
+  extends 'Base';
+
   Test::Most::is_deeply test(2), ["Person", 2];
 }
 
