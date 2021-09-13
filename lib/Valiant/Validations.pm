@@ -42,13 +42,13 @@ sub import {
   } 
 
   foreach my $default_role ($class->default_roles) {
-    next if Role::Tiny::does_role($target, $default_role);
+    #next if Role::Tiny::does_role($target, $default_role);
     debug 1, "Applying role '$default_role' to '$target'";
     Moo::Role->apply_roles_to_package($target, $default_role);
   }
 
   my %cb = map {
-    $_ => $target->can($_);
+    $_ => defined &{"${target}::$_"} ? \&{"${target}::$_"} : undef;
   } $class->default_exports;
 
   foreach my $exported_method (keys %cb) {
