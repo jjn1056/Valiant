@@ -5,24 +5,17 @@ use strict;
 use Moo::_Utils;
 
 require Moo::Role;
-require Sub::Util;
 
 sub import {
-  my $class = shift;
-  my $target = caller;
+  my ($class, $target) = (shift, caller);
 
-  Moo::Role->apply_roles_to_package($target, 'MooRole')
-    unless Role::Tiny::does_role($target, 'MooRole');
-
-  if(my $test = $target->can('test_for_exporter')) {
-    my $sub = sub {
-      return $test->($target, @_);
-    };
-    Moo::_Utils::_install_tracked($target, 'test', $sub)
+  unless(Role::Tiny::does_role($target, 'MooRole')) {
+    Moo::Role->apply_roles_to_package($target, 'MooRole');
+    Moo::_Utils::_install_tracked($target, '__test_for_exporter', \&{"${target}::test"});
   }
+
+  my $test = $target->can('__test_for_exporter');
+  Moo::_Utils::_install_tracked($target, 'test', sub { $test->($target, @_) });
 } 
 
 1;
-
-
-
