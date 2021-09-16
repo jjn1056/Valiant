@@ -36,9 +36,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       my %params = %{$c->req->body_data||+{}};
       %params = %{$params{person}} if exists $params{person};
 
-      Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
-      Dwarn $profile_params->tags;
-      Dwarn "sdfsdfsdfsd";
+      #Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
+      #Dwarn $profile_params->tags;
+      #Dwarn "sdfsdfsdfsd";
 
 
       $c->stash(states => $c->model('Schema::State'));
@@ -52,15 +52,20 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $model->namespace('Example');
 
       if($c->req->method eq 'POST') {
-        $params{roles} = [] unless exists($params{roles}) || exists($c->req->body_data->{person}) ; # Handle the delete all case
 
         if(exists($c->req->body_data->{person})) {
-          $params{person_roles} = [] unless exists($params{person_roles});
+          $params{roles} = [] unless exists($params{roles});
+          #$params{person_roles} = [] unless exists($params{person_roles});
         }
 
         my $add = delete $params{add};
-      Dwarn \%params;
+        Dwarn \%params;
         $model->context('profile')->update(\%params);
+
+        if($model->invalid) {
+          Dwarn +{ $model->errors->to_hash(full_messages=>1) };
+        }
+
         $model->build_related('credit_cards') if $add->{credit_cards};
       }
     }

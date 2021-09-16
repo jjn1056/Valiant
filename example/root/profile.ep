@@ -74,6 +74,7 @@
     </fieldset>
   %= end
 
+<!--
   <fieldset>
     <legend><%= $person->human_attribute_name('roles')  %></legend>
     %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
@@ -81,6 +82,8 @@
       %= checkboxes_from_collection 'person_roles.role', $c->model('Schema::Role'), +{value_field=>'id', label_field=>'label'}
     </div>
   </fieldset>
+-->
+
   <fieldset>
     <legend><%= $person->human_attribute_name('roles')  %></legend>
     %= model_errors_for 'roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
