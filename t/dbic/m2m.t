@@ -233,6 +233,73 @@ Schema->resultset("Role")->populate([
       is $next->label, $new;
     }
   }
+
+  {
+    $person->discard_changes;
+    $person->context('min')->update({
+      roles => [],
+    });
+
+    is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
+      person_roles => [
+        "Person Roles has too few rows (minimum is 1)",
+      ],
+      roles => [
+        "Roles has too few rows (minimum is 1)",
+      ],
+    }, 'Got expected errors';
+  }
+
+  warn "xxxxxxx" x100;
+
+  {
+    ok my $new_person = Schema->resultset('Person')->find(
+      { 'me.id'=>$person->id },
+      { prefetch => [{person_roles => 'role' }] }
+    );
+    
+    warn 11111;
+    $new_person->context('min')->update({
+      roles => [],
+    });
+    warn 22222;
+
+    {
+      is scalar @{$new_person->person_roles->get_cache||[]}, 1;
+      ok my $rs = $new_person->person_roles;
+      {
+        ok my $row = $rs->next;
+        is $row->role->label, 'superuser';
+        ok $row->is_marked_for_deletion;
+      }
+      ok ! $rs->next;
+    }
+
+    {
+      is scalar @{$new_person->roles()->get_cache||[]}, 1;
+      ok my $rs = $new_person->roles;
+      {
+        ok my $row = $rs->next;
+        is $row->label, 'superuser';
+        ok $row->is_pruned;
+      }
+      ok ! $rs->next;
+    }
+
+    is_deeply +{$new_person->errors->to_hash(full_messages=>1)}, +{
+      person_roles => [
+        "Person Roles has too few rows (minimum is 1)",
+      ],
+      roles => [
+        "Roles has too few rows (minimum is 1)",
+      ],
+    }, 'Got expected errors';
+
+
+    use Devel::Dwarn;
+    Dwarn +{$new_person->errors->to_hash(full_messages=>1)};
+
+  }
 }
 
 done_testing;

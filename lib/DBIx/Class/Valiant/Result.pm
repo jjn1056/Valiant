@@ -710,9 +710,6 @@ sub set_single_related_from_params {
           #    $self->set_from_related($related, $related_result);
           $related_result->set_from_params_recursively(%$params);
         }
-
-
-
       }
     }
   }

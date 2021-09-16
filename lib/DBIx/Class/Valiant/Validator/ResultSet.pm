@@ -31,7 +31,7 @@ sub validate_each {
   my @rows;
   foreach my $row ( @{$value->get_cache||[]} ) {
   #foreach my $row ( $value->all ) {
-    push @rows, $row unless $row->is_marked_for_deletion;
+    push @rows, $row unless $row->is_pruned;
   }
 
   #my @rows = grep { not $_->is_marked_for_deletion } $value->all;
