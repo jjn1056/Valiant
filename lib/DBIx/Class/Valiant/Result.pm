@@ -362,6 +362,14 @@ sub build_related_if_empty {
   return $self->build_related($related, $attrs);
 }
 
+# When this param is an array we only use the last value, this is to support
+# how checkboxes in HTML work (unchecked submits no value).
+sub _param_is_delete {
+  my ($value_proto) = shift;
+  my $value = ref($value_proto) ? $value_proto->[-1] : $value_proto;
+  return $value ? 1:0;
+}
+
 sub set_from_params_recursively {
   my ($self, %params) = @_;
   debug 2, "Starting 'set_from_params_recursively' for  @{[ ref $self ]}";
@@ -380,12 +388,15 @@ sub set_from_params_recursively {
     } elsif($self->can($param)) {
       # Right now this is only used by confirmation stuff
       $self->$param($params{$param});
-    } elsif($param eq '_delete' && $params{$param}) {
-      if($self->in_storage) {
-        debug 2, "Marking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
-        $self->mark_for_deletion;
-      } else {
-        die "didn't deal with destroy on unsaved records";
+    } elsif( $param eq '_delete') {
+      if( _param_is_delete($params{$param}) ) {
+        if($self->in_storage) {
+          debug 2, "Marking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
+          $self->mark_for_deletion;
+        } else {
+          debug 2, "Marking unsaved record @{[ ref $self ]}, id @{[ $self->id ]} for deletion (wil be NOP)";
+          $self->mark_for_deletion;
+        }
       }
     } elsif($param eq '_restore' && $params{$param}) {
       if($self->in_storage) {
@@ -501,14 +512,22 @@ sub set_multi_related_from_params {
         debug 2, "Looking for related model '$related' for @{[ ref $self]} using key '$key";
         my %possible = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @{ $uniques{$key}};
 
-        #{
-          #my $rs = $self->related_resultset($related);
-          #my @rows = @{$rs->get_cache||[]};
+        {
+          my $rs = $self->related_resultset($related);
+          my @rows = @{$rs->get_cache||[]};
 
-          #warn 333;
-          # }
+          warn 111;
 
-        $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible;
+          use Devel::Dwarn;
+          Dwarn [$key => \%possible];
+          Dwarn [map { +{$_->get_columns} } @rows];
+          Dwarn [map { $_ } $self->result_source->primary_columns];
+
+          warn 222;
+
+         }
+
+        warn 333; $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible; warn 444;
         if($related_model) {
           debug 2, "Found related model '$related' for @{[ ref $self]} using key '$key'";
           last;

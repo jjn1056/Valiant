@@ -41,25 +41,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         )
       );
 
-
       $model->namespace('Example');
-
-      my $p = +{
-        _checked => {
-          person_roles => [0,2],
-        },
-        first_name => "john",
-        last_name => "nap",
-        person_roles => {
-          _checked => [0,2],
-          0 => {
-            role_id => 1,
-          },
-          2 => {
-            role_id => 3,
-          },
-        },
-      }
 
       if(
         ($c->req->method eq 'POST') && 

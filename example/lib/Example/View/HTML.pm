@@ -61,7 +61,7 @@ sub errors_box {
 sub _stringify_attrs {
   my %attrs = @_;
   return unless %attrs;
-  return my $attrs =  join ' ', map { "$_='@{[ $attrs{$_}||'' ]}'"} keys %attrs;
+  return my $attrs =  join ' ', map { "$_='@{[ defined($attrs{$_}) ? $attrs{$_} : '' ]}'"} keys %attrs;
 }
 
 sub _parse_proto {
@@ -201,13 +201,19 @@ sub checkboxes_from_collection {
       @each;
     my %checked = $checked ? (checked=>1) : ();
 
-    if($checked && $checked->in_storage) {
-      my %keys = map { $_ => $checked->get_column($_) } @primary_columns;
-      use Devel::Dwarn; Dwarn \%keys;
-    }
 
     push @tags, b "<div class='form-check'>";
-    push @tags, $self->input($c, $key, +{type=>'checkbox', value=>$item->$value, class=>'form-check-input', %checked});
+
+    if($checked && $checked->in_storage) {
+      foreach my $primary_column (@primary_columns) {
+        push @tags, $self->hidden($c, "$primary_column", +{ value=> $checked->get_column($primary_column) });
+      }
+    } else {
+      push @tags, $self->hidden($c, "$key", +{value=>$item->$value});
+    }
+
+    push @tags, $self->hidden($c, "_delete", +{value=>'1'});
+    push @tags, $self->input($c, '_delete', +{type=>'checkbox', value=>'0', class=>'form-check-input', %checked});
     push @tags, $self->label($c, $key, +{class=>'form-check-label'}, sub { $item->$label } );
     push @tags, b "</div>";
 
