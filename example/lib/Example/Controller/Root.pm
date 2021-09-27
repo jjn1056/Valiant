@@ -33,14 +33,6 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
     sub profile :Chained(auth) PathPart('profile') Args(0) {
       my ($self, $c) = @_;
       
-      my %params = %{$c->req->body_data||+{}};
-      %params = %{$params{person}} if exists $params{person};
-
-      #Dwarn my $profile_params = $c->model('ProfileParams', a=>1);
-      #Dwarn $profile_params->tags;
-      #Dwarn "sdfsdfsdfsd";
-
-
       $c->stash(states => $c->model('Schema::State'));
       $c->stash(person => my $model = $c->model('Schema::Person')
         ->find(
@@ -49,24 +41,42 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         )
       );
 
+
       $model->namespace('Example');
 
-      if($c->req->method eq 'POST') {
+      my $p = +{
+        _checked => {
+          person_roles => [0,2],
+        },
+        first_name => "john",
+        last_name => "nap",
+        person_roles => {
+          _checked => [0,2],
+          0 => {
+            role_id => 1,
+          },
+          2 => {
+            role_id => 3,
+          },
+        },
+      }
 
-        if(exists($c->req->body_data->{person})) {
-          $params{roles} = [] unless exists($params{roles});
-          #$params{person_roles} = [] unless exists($params{person_roles});
-        }
+      if(
+        ($c->req->method eq 'POST') && 
+        (my %params = %{ $c->req->body_data->{person}||+{} })
+      ) {
 
         my $add = delete $params{add};
-        Dwarn \%params;
+        $params{person_roles} = [] unless exists($params{person_roles});
+
+        Dwarn ['params' => \%params];
+
         $model->context('profile')->update(\%params);
+        
+        Dwarn ['errors' => +{ $model->errors->to_hash(full_messages=>1) }] if $model->invalid;
 
-        if($model->invalid) {
-          Dwarn +{ $model->errors->to_hash(full_messages=>1) };
-        }
-
-        $model->build_related('credit_cards') if $add->{credit_cards};
+        $model->build_related_if_empty('profile');
+        $model->build_related('credit_cards') if $add->{credit_cards}; # Doing this here means we don't trigger the 'too many' constraint :(
       }
     }
 

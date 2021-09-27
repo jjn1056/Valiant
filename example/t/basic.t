@@ -839,6 +839,11 @@ NESTED2: {
     ok $pr3->is_removed;
   ok ! $pr_rs->next;
 
+  {
+    ok my $rs = $person->roles;
+    use Devel::Dwarn; Dwarn [ map { +{$_->get_columns} }  $rs->all ];  
+  }
+
   ok my $cc_rs = $person->credit_cards;
   ok my $cc1 = $cc_rs->next;
     is $cc1->card_number, '3423423423423423';
@@ -936,7 +941,7 @@ NESTED_OK1: {
     ok $cc3->in_storage;
   ok !$cc_rs->next;
 
-  $person->valid;
+  ok $person->valid;
 }
 
 NESTED_OK2: {
@@ -973,7 +978,7 @@ NESTED_OK2: {
     ok $cc3->in_storage;
   ok !$cc_rs->next;
 
-  $person->valid;
+  ok $person->valid;
 }
 
 NESTED_FAIL4: {

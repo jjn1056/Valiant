@@ -30,7 +30,6 @@
     </div>
   </fieldset>
   
-  % $person->build_related_if_empty('profile');
   %= fields_for 'profile', begin
     <fieldset>
       <legend><%= human_model_name %></legend>
@@ -74,111 +73,11 @@
     </fieldset>
   %= end
 
-<!--
   <fieldset>
     <legend><%= $person->human_attribute_name('roles')  %></legend>
     %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
     <div class='form-group'>
-      %= checkboxes_from_collection 'person_roles.role', $c->model('Schema::Role'), +{value_field=>'id', label_field=>'label'}
-    </div>
-  </fieldset>
--->
-
-  <fieldset>
-    <legend><%= $person->human_attribute_name('roles')  %></legend>
-    %= model_errors_for 'roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
-    <div class='form-group'>
-      %= checkboxes_from_collection 'roles', $c->model('Schema::Role'), +{value_field=>'id', label_field=>'label'}
-    </div>
-  </fieldset>
-
-  <fieldset>
-    %= button_tag { class=>'btn btn-lg btn-primary btn-block' }, 'Update Profile'
-  </fieldset>
-%= end
-
-<hr>
-<hr>
-
-%= form_tag { method_attr 'POST', style_attr 'width:27em; margin:auto', id=>'person', name=>'person'}, begin
-
-  <div class='form-group'>
-    %= errors_box $person, class=>'alert alert-danger', style=>'margin: 16px 0 0 0', role=>'alert';
-    % if($person->validated && !$person->has_errors) {
-      %= errors_box 'Successfully Updated', class=>'alert alert-success', style=>'margin: 16px 0 0 0', role=>'alert';
-    % }
-  </div>
-
-  <fieldset>
-    <legend><%= $person->model_name->human %></legend>
-    <div class='form-group'>
-      %= label_tag { for=>'first_name' }, 'First Name'
-      %= input_tag { name=>'first_name', type=>'text', class=>'form-control', value=>$person->first_name }
-    </div>
-    <div class='form-group'>
-      %= label_tag { for=>'last_name' }, 'Last Name'
-      %= input_tag { name=>'last_name', type=>'text', class=>'form-control', value=>$person->last_name }
-    </div>
-    <div class='form-group'>
-      %= label_tag { for=>'username' }, 'User Name'
-      %= input_tag { name=>'username', type=>'text', class=>'form-control', value=>$person->username }
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend><%= $person->human_attribute_name('profile') %></legend>
-    % $person->build_related_if_empty('profile'); # This would be 
-    % if($person->profile->id) {
-      %= input_tag { name=>'profile.id', type=>'hidden', value=>$person->profile->id }
-    % }
-    <div class='form-group'>
-      %= label_tag { for=>'profile.address' }, 'Address'
-      %= input_tag { name=>'profile.address', type=>'text', class=>'form-control', value=>$person->profile->address }
-    </div>
-    <div class='form-group'>
-      %= label_tag { for=>'profile.city' }, 'City'
-      %= input_tag { name=>'profile.city', type=>'text', class=>'form-control', value=>$person->profile->city }
-    </div>
-    <div class='form-row'>
-      <div class='col form-group'>
-        %= label_tag { for=>'profile.state.name' }, 'State'
-        <select class='form-control' name="profile.state_id">
-          <option>
-          % foreach my $state ($person->profile->related_resultset('state')->result_source->resultset->all) {
-          <option <%= $state->id == $person->profile->state_id ? 'selected':'' %> value="<%= $state->id %>" ><%= $state->name %>
-          % }
-        </select>
-      </div>
-      <div class='col form-group'>
-      %= label_tag { for=>'profile.zip' }, 'Zip'
-      %= input_tag { name=>'profile.zip', type=>'text', class=>'form-control', value=>$person->profile->zip }
-      </div>
-    </div>
-    <div class='form-row'>
-      <div class='col form-group'>
-        %= label_tag { for=>'profile.phone_number' }, 'Phone Number'
-        %= input_tag { name=>'profile.phone_number', type=>'text', class=>'form-control', value=>$person->profile->phone_number }
-      </div>
-      <div class='col form-group'>
-        %= label_tag { for=>'profile.birthday' }, 'Birthday'
-        %= input_tag { name=>'profile.birthday', type=>'text', class=>'form-control', value=>$person->profile->read_attribute_for_validation('birthday') }
-      </div>
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend><%= $person->human_attribute_name('roles') %></legend>
-    <div class='form-group'>
-      % my $roles_rs = $person->roles;
-      % my $idx = 0;
-      % foreach my $role ($c->model('Schema::Role')->all) {
-        <div class='form-check'>
-          % my %checked = $roles_rs->contains($role) ? (checked=>1) : ();
-          %= input_tag { name=>'roles.'.$idx.'.id', type=>'checkbox', class=>'form-check-input', value=>$role->id, %checked }
-          %= label_tag { for=>'roles.'.$idx.'.id', class=>'form-check-label' }, $role->label;
-          % $idx++;
-        </div>
-      % }
+      %= checkboxes_from_collection 'person_roles', +{role_id => 'id'}, $c->model('Schema::Role'), +{value_field=>'id', label_field=>'label'}
     </div>
   </fieldset>
 
@@ -218,4 +117,5 @@
   <fieldset>
     %= button_tag { class=>'btn btn-lg btn-primary btn-block' }, 'Update Profile'
   </fieldset>
-% end
+%= end
+

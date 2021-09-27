@@ -405,14 +405,6 @@ sub set_from_params_recursively {
         } else {
           die "didn't deal with action 'delete' on unsaved records";
         }
-      } elsif($action eq 'restore') {
-        if($self->in_storage) {
-          debug 3, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
-          $self->unmark_for_deletion;
-          delete $params{_destroy}; 
-        } else {
-          die "didn't deal with restore on unsaved records";
-        }
       } elsif($action eq 'nop') {
         # Just skip, this is just a no op to deal with checkboxes and radio controls in HTML
       } else {
@@ -506,7 +498,16 @@ sub set_multi_related_from_params {
       $related_model = $param_row;
     } elsif( (ref($param_row)||'') eq 'HASH') {
       foreach my $key (keys %uniques) {
+        debug 2, "Looking for related model '$related' for @{[ ref $self]} using key '$key";
         my %possible = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @{ $uniques{$key}};
+
+        #{
+          #my $rs = $self->related_resultset($related);
+          #my @rows = @{$rs->get_cache||[]};
+
+          #warn 333;
+          # }
+
         $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible;
         if($related_model) {
           debug 2, "Found related model '$related' for @{[ ref $self]} using key '$key'";

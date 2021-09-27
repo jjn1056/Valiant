@@ -175,7 +175,7 @@ sub options_from_collection_for_select {
 
 # %= checkboxes_from_collection 'person_roles.role', $roles, +{value_field=>'id', label_field=>'name', ... }
 sub checkboxes_from_collection {
-  my ($self, $c, $field_proto, $collection, @proto) = @_;
+  my ($self, $c, $field_proto, $bridge, $collection, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
   my $model = $c->stash->{'valiant.view.form.model'};
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
@@ -183,30 +183,28 @@ sub checkboxes_from_collection {
   my $value = exists($attrs{value_field}) ? delete($attrs{value_field}) : 'id';
   my $label = exists($attrs{label_field}) ? delete($attrs{label_field}) : 'label';
 
-  my $key = '';
-  my $field_model = $model;
-  my @field_path = split('\.', $field_proto);
-  foreach my $part (@field_path) {
-    my $info = $field_model->result_source->relationship_info($part);
-
-    if($info) {
-      ($key) = keys %{$info->{attrs}{fk_columns}};  # only works with a single field PK for now
-      $field_model = $field_model->related_resultset($part);
-    } elsif($info = $field_model->_m2m_metadata->{$part}) {
-      my $rs_method = $info->{rs_method};
-      $field_model = $field_model->$rs_method;
-      ($key) = $field_model->result_source->primary_columns;  # only works with a single field FK for now
-    }
-  }
+  my $field_model_rs = $model->$field_proto;
+  my ($key, $target) = %$bridge;
 
   my $idx = 0;
   my @tags = ();
-  my $related_part = shift @field_path;
+  my @each = $field_model_rs->all;
+  my @primary_columns = $field_model_rs->result_source->primary_columns;
+
   foreach my $item($collection->all) {
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related_part, $idx];
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $field_proto, $idx];
     local $c->stash->{'valiant.view.form.model'} = $item;
 
-    my %checked = $field_model->contains($item) ? (checked=>1) : ();
+    my ($checked) = grep { $_ }
+      map { $_->$key eq $item->$target ? $_ : undef } 
+      grep { !$_->is_removed }
+      @each;
+    my %checked = $checked ? (checked=>1) : ();
+
+    if($checked && $checked->in_storage) {
+      my %keys = map { $_ => $checked->get_column($_) } @primary_columns;
+      use Devel::Dwarn; Dwarn \%keys;
+    }
 
     push @tags, b "<div class='form-check'>";
     push @tags, $self->input($c, $key, +{type=>'checkbox', value=>$item->$value, class=>'form-check-input', %checked});
@@ -215,7 +213,6 @@ sub checkboxes_from_collection {
 
     $idx++;
   }
-
   return b @tags;
 }
 

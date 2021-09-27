@@ -32,7 +32,7 @@ __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
 __PACKAGE__->validates(credit_cards => (result_set=>+{validations=>1, min=>2, max=>4}, on=>'profile' ));
-__PACKAGE__->validates(roles => (presence=>1, result_set=>+{validations=>1, min=>1}, on=>'profile' ));
+#__PACKAGE__->validates(roles => (presence=>1, result_set=>+{validations=>1, min=>1}, on=>'profile' ));
 __PACKAGE__->validates(person_roles => (result_set=>+{validations=>1, min=>1}, on=>'profile' ));
 
 
