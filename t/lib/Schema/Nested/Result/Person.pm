@@ -43,7 +43,7 @@ __PACKAGE__->validates(roles => (presence=>1, ResultSet=>+{validations=>1, min=>
 
 
 __PACKAGE__->accept_nested_for('person_roles');
-__PACKAGE__->accept_nested_for('roles');
+__PACKAGE__->accept_nested_for('roles', +{find_with_uniques=>1});
 
 sub default_roles {
   my ($self, $attribute_name, $record, $opts) = @_;

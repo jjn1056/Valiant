@@ -250,19 +250,15 @@ Schema->resultset("Role")->populate([
     }, 'Got expected errors';
   }
 
-  warn "xxxxxxx" x100;
-
   {
     ok my $new_person = Schema->resultset('Person')->find(
       { 'me.id'=>$person->id },
       { prefetch => [{person_roles => 'role' }] }
     );
     
-    warn 11111;
     $new_person->context('min')->update({
       roles => [],
     });
-    warn 22222;
 
     {
       is scalar @{$new_person->person_roles->get_cache||[]}, 1;
@@ -294,11 +290,6 @@ Schema->resultset("Role")->populate([
         "Roles has too few rows (minimum is 1)",
       ],
     }, 'Got expected errors';
-
-
-    use Devel::Dwarn;
-    Dwarn +{$new_person->errors->to_hash(full_messages=>1)};
-
   }
 }
 

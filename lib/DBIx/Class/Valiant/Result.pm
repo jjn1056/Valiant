@@ -273,12 +273,15 @@ sub read_attribute_for_validation {
     } elsif($rel_type eq 'multi') {
       return $self->related_resultset($attribute);
     } else {
-      die "Can't read_attribute_for_validation for '$attribute' of rel_type '$rel_type' in @{[ref $self]}";
+      die "Cannot read_attribute_for_validation for '$attribute' of rel_type '$rel_type' in @{[ref $self]}";
     }
 
   }
-  debug 1, "Failing back to accessor for 'read_attribute_for_validation' for attribute $attribute";
-  return $self->$attribute if $self->can($attribute); 
+  debug 1, "Failing back to accessor for 'read_attribute_for_validation' for object @{[ ref $self ]} attribute $attribute";
+  debug 2, "Failing back @{[ $self->can($attribute) ? 'succeeds':'failed' ]}";
+
+  my $value = $self->$attribute if $self->can($attribute); 
+  return $value;
 }
 
 # Provide basic uniqueness checking for columns.  This is basically a dumb DB lookup.  
@@ -468,6 +471,8 @@ sub set_m2m_related_from_params {
   debug 2, "Setting m2m relation '$related' for @{[ ref $self ]} via '$relation' => '$foreign_relation'";
 
   # TODO its possible we need to creeate the m2m cache here
+  # TODO We need to add PK columens to the @params_rows if we have them
+
   return $self->set_multi_related_from_params($relation, [ map { +{ $foreign_relation => $_ } } @param_rows ]);
 }
 
@@ -497,53 +502,97 @@ sub set_multi_related_from_params {
     die "We expect '$params' to be some sort of reference but its not!";
   }
 
-  # introspect $related
-  debug 2, "looking for uniques for $related";
-  my %uniques = $self->related_resultset($related)->result_source->unique_constraints;
+  # Queue up some meta data here just once.  We get existing rows ans
+  # unqiue key info (including PK info)
 
+  debug 2, "looking for uniques for $related";
+  my @existing_rows = @{ $self->$related->get_cache||[] };   #$self->related_resultset($related)->result_source->unique_constraints;
+  my @primary_columns = $self->$related->result_source->primary_columns;
+
+  my %uniques = $self->$related->result_source->unique_constraints;
+  my @search_sets = ('primary');
+  my %nested = $self->result_class->accept_nested_for;
+
+  # Generally we alow finding the row via the PK only but the user can allow finding
+  # by any unique if that's what they really want.
+  if($nested{$related}{find_with_uniques}) {
+    push @search_sets, grep { $_ ne 'primary' } keys %uniques;
+  }
+
+  # Ok now build up the new rows
   my @related_models = ();
   foreach my $param_row (@param_rows) {
     delete $param_row->{_add};
     my $related_model;
     if(blessed $param_row) {
+      debug 1, "params are an object";
       $related_model = $param_row;
     } elsif( (ref($param_row)||'') eq 'HASH') {
-      foreach my $key (keys %uniques) {
-        debug 2, "Looking for related model '$related' for @{[ ref $self]} using key '$key";
-        my %possible = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @{ $uniques{$key}};
 
-        {
-          my $rs = $self->related_resultset($related);
-          my @rows = @{$rs->get_cache||[]};
+      # The first thing to do is to see if we can find a row either in the existing cache
+      # or in the DB, matched on the Primary key and (if enabled) unique keys.
+      my %keys_used_to_find = ();
+      SEARCH_UNIQUE_KEYS: foreach my $key (@search_sets) {
+        debug 2, "trying to find a row for $related using key $key";
 
-          warn 111;
+        my @key_columns = @{$uniques{$key}};
+        my %matching = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @key_columns;
 
-          use Devel::Dwarn;
-          Dwarn [$key => \%possible];
-          Dwarn [map { +{$_->get_columns} } @rows];
-          Dwarn [map { $_ } $self->result_source->primary_columns];
+        next unless scalar(@key_columns) == scalar(keys(%matching)); # only match when its a full key match
+        debug 2, "key $key exists in params";
 
-          warn 222;
+        # Find matching if they exist in the cache
+        foreach my $row (@existing_rows) {
+          my %unique_fields = map { $_ => $row->get_column($_) } @key_columns;
+          my $a = join "", map { $_, $unique_fields{$_} } sort keys(%unique_fields);
+          my $b = join "", map { $_, $matching{$_} } sort keys(%matching);
+          if($a eq $b) {
+            $related_model = $row;
+            if($related_model) {
+              debug 2, "found related model for $related with $key in cache";
+              %keys_used_to_find = %matching;
+              last SEARCH_UNIQUE_KEYS
+            }
+          }
+        }
 
-         }
-
-        warn 333; $related_model = $self->find_related($related, \%possible, {key=>$key}) if %possible; warn 444;
-        if($related_model) {
-          debug 2, "Found related model '$related' for @{[ ref $self]} using key '$key'";
-          last;
+        # If it doesn't match in the cache then we have to find it in the DB
+        unless($related_model) {
+          debug 2, "Trying to find $related in DB with key $key";
+          $related_model = $self->$related->find(\%matching, +{key=>$key});
+          if($related_model) {
+            debug 2, "found related model for $related with $key in DB";
+            %keys_used_to_find = %matching;
+            last SEARCH_UNIQUE_KEYS
+          }
         }
       }
 
-      $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row}; # last resort, probably broken code but m2m seems to need it
-      debug 2, "Didn't find related model '$related' so making it" unless $related_model;
-      #$related_model = $self->new_related($related, $param_row) unless $related_model;
-      $related_model = $self->new_related($related, +{}) unless $related_model;
-      #$related_model->set_from_params_recursively(%$param_row);
+      # Ok so if we get here and there's no $related model that means the user did not give us
+      # enough info in $param_rows to find it either in the cache or in the DB (they didn't give us
+      # any uniques or PKs. But its now impossible they gave us enough info to find the row anyway.
+      # Sometimes you can find it if they gave you a relationship that was identifying or some combo
+      # of a relationship and when $self is in storage and has a PK that is FK to $related and part of
+      # a unique key.  Mostly we see this in m2m bridge style relationships.  For now we have this hack
+
+      $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row};
+ 
+      # OK so we didnt find it via keys either in the cache or in the DB so that means
+      # we need to just create it.
+      unless($related_model) {
+        debug 2, "Didn't find related model '$related' so making it";
+        $related_model = $self->new_related($related, +{});
+      }
+      debug 2, "About to set_from_params_recursively for @{[ ref $related_model ]}";
+      
+      # Don't set params for the found keys (waste of time, no change)
+      my %params_for_recursive = %$param_row;
+      delete %params_for_recursive{ keys %keys_used_to_find} if %keys_used_to_find;
+      $related_model->set_from_params_recursively(%params_for_recursive);
+
     } else {
       die "Not sure what to do with $param_row";
     }
-    debug 2, "About to set_from_params_recursively for @{[ ref $related_model ]}";
-    $related_model->set_from_params_recursively(%$param_row) unless blessed $param_row;
     push @related_models, $related_model;
   }
 
