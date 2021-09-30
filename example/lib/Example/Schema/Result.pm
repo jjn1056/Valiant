@@ -18,7 +18,7 @@ sub debug {
 
 sub debug_off {
   my ($self) = @_;
-  $self->result_source->schema->debug;
+  $self->result_source->schema->debug_off;
   return $self;
 }
 1;
