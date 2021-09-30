@@ -511,12 +511,17 @@ sub set_multi_related_from_params {
   }
 
   # Queue up some meta data here just once.  We get existing rows ans
-  # unqiue key info (including PK info)
-
+  # uniqiue key info (including PK info)
+  debug 2, "looking for $related cached or existing rows";
+  my @existing_rows = @{ $self->$related->get_cache||[] };
+  unless(@existing_rows) {
+    debug 2, "cache was empty so going to check DB"; ## TODO this is to support ->discard_changes but maybe not needed
+    @existing_rows = $self->$related->all;
+  }
+  debug 2, "Found @{[ scalar @existing_rows ]} existing rows for $related";
+  
   debug 2, "looking for uniques for $related";
-  my @existing_rows = @{ $self->$related->get_cache||[] };   #$self->related_resultset($related)->result_source->unique_constraints;
   my @primary_columns = $self->$related->result_source->primary_columns;
-
   my %uniques = $self->$related->result_source->unique_constraints;
   my @search_sets = ('primary');
   my %nested = $self->result_class->accept_nested_for;
@@ -547,11 +552,6 @@ sub set_multi_related_from_params {
 
         my @key_columns = @{$uniques{$key}};
         my %matching = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @key_columns;
-
-        use Devel::Dwarn;
-        Dwarn $param_row;
-        Dwarn \@key_columns;
-        Dwarn \%matching;
 
         next unless scalar(@key_columns) == scalar(keys(%matching)); # only match when its a full key match
         debug 2, "key $key exists in params";
@@ -591,9 +591,7 @@ sub set_multi_related_from_params {
       # a unique key.  Mostly we see this in m2m bridge style relationships.  For now we have this hack
 
       debug 2, "Falling back to default find_related for $related using full param_row";
-      use Devel::Dwarn; Dwarn $param_row;
-      $related_model = $self->debug->find_related($related, $param_row) unless $related_model || !%{$param_row};
-      $self->debug_off;
+      $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row};
 
       # OK so we didnt find it via keys either in the cache or in the DB so that means
       # we need to just create it.
@@ -607,16 +605,18 @@ sub set_multi_related_from_params {
       my %params_for_recursive = %$param_row;
       delete %params_for_recursive{ keys %keys_used_to_find} if %keys_used_to_find;
       $related_model->set_from_params_recursively(%params_for_recursive);
+
+      # Ok, so after set_from_params_recursively if the $related_model is not in storage
+      # we 'might' have enough info to actually load it.
+      if(!$related_model->in_storage) {
+        my $copy = $related_model->get_from_storage(); # If we now have the full PK we can find it
+        $related_model = $copy if $copy;
+      }
     } else {
       die "Not sure what to do with $param_row";
     }
     push @related_models, $related_model;
   }
-
-  use Devel::Dwarn;
-  warn "state of related_models";
-  Dwarn [map { +{$_->get_columns} } @related_models];
-  Dwarn [map { $_->in_storage } @related_models];
 
   my @new_pks =  map {
     my $r = $_; 
@@ -626,7 +626,7 @@ sub set_multi_related_from_params {
   } grep { $_->in_storage } @related_models;
 
   debug 1, "Reviewing existing rows for relation $related (total @{[ scalar @existing_rows ]}) for deletion";
-
+  
   foreach my $current (@existing_rows) {
     next if grep {
       my %fields = %$_;
@@ -646,11 +646,15 @@ sub set_multi_related_from_params {
       # Mark its children as pruned, recursively
       my $cb; $cb = sub {
         my $row = shift;
+        debug 3, "marking $row to be pruned";
         $row->{__valiant_is_pruned} = 1;
         my @related = keys %{$row->{_relationship_data}||+{}};
         # TODO only do this for has_one, might_have, has_many
+        debug 3, "$row has related data to prune @{[ join ',', @related ]}";
         foreach $related(@related) {
+          debug 3, "checking $related for possible pruning";
           my @rows = @{$row->related_resultset($related)->get_cache||[]};
+          debug 3, "found @{[ scalar @rows ]} to be pruned";
           foreach my $inner_row (@rows) {
             $cb->($inner_row);
           }

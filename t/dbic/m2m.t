@@ -252,13 +252,22 @@ Schema->resultset("Role")->populate([
     ok !$person->is_changed;
     $person->discard_changes;
 
+    $person = Schema->resultset('Person')->find({ 'me.id'=>$person->id }, { prefetch => [{person_roles => 'role' }] });
+
     $person->context('min')->update({
       roles => [],
     });
 
     ok $person->invalid;
-    is scalar($person->person_roles->all), 0;
-
+    {
+      my $rs = $person->person_roles;
+      ok my $row = $rs->next;
+      is $row->role->label, 'superuser';
+      ok $row->is_marked_for_deletion;
+      ok $row->role->is_pruned;
+      ok !$rs->next;
+    }
+    
     is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
       person_roles => [
         "Person Roles has too few rows (minimum is 1)",
