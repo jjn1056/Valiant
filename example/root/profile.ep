@@ -84,33 +84,28 @@
   <fieldset>
     <div class='form-group'>
     <legend><%= $person->human_attribute_name('credit_cards') %></legend>
-
-    % my $idx = 0;
-    % my $credit_cards_rs = $person->credit_cards;
-    % foreach my $credit_card ($credit_cards_rs->search({},{cache=>1})->all) {
-      % if($credit_card->id) {
-        %= input_tag { name=>'credit_cards.'.$idx.'.id', type=>'hidden', value=>$credit_card->id }
-      % }
+    %= model_errors_for 'credit_cards', max_errors=>1, class=>'alert alert-danger', role=>'alert';
+    %= fields_for 'credit_cards', begin
       <div class='form-row'>
         <div class='col form-group'>
-          %= label_tag { for=>'credit_cards.'.$idx.'.card_number' }, 'Card Number'
-          %= input_tag { name=>'credit_cards.'.$idx.'.card_number', type=>'text', class=>'form-control', value=>$credit_card->card_number }
+          %= label 'card_number'
+          %= input 'card_number', +{ class=>'form-control' }
+          %= errors_for 'card_number'
         </div>
         <div class='col form-group col-4'>
-          %= label_tag { for=>'credit_cards.'.$idx.'.expiration' }, 'Expiration'
-          %= input_tag { name=>'credit_cards.'.$idx.'.expiration', type=>'text', class=>'form-control', value=>$credit_card->read_attribute_for_validation('expiration') }
+          %= label 'expiration'
+          %= input 'expiration', +{ class=>'form-control' }
+          %= errors_for 'expiration'
         </div>
         <div class='col form-group col-2'>
-          % if($credit_card->in_storage || $credit_card->is_marked_for_deletion) {
-            %= label_tag { for=>'credit_cards.'.$idx.'._delete', class=>'form-check-label' }, 'Delete';
+          % if(model->in_storage || model->is_marked_for_deletion) {
+            %= label '_delete' 
             <br>
-            %= input_tag { name=>'credit_cards.'.$idx.'._delete', type=>'checkbox', value=>1, $credit_card->is_marked_for_deletion ? (checked=>1):() }
-          % }
+            %= input '_delete', +{ type=>'checkbox', value=>1,  checked=>model->is_marked_for_deletion }
+          % }     
         </div>
       </div>
-      % $idx++;
-    % }
-
+    %= end
     %= button_tag { class=>'btn btn-lg btn-primary btn-block', name=>'add.credit_cards', value=>1 }, 'Add Credit Card'
   </fieldset>
 
@@ -118,4 +113,3 @@
     %= button_tag { class=>'btn btn-lg btn-primary btn-block' }, 'Update Profile'
   </fieldset>
 %= end
-

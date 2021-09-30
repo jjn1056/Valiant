@@ -569,6 +569,14 @@ Schema->resultset("Role")->populate([
 
   # modif it.   We expect to replace the existing
   $person->discard_changes;
+
+  # Again seems like some issue with discard_chagnes and how the
+  # caches are set.  I have to do a hard reload with the prefetch
+  # since discard_changes doesnt touch the caches and they are not
+  # in proper state I think.
+
+  $person = Schema->resultset('Person')->find({'me.id'=>$person->id},{prefetch=>{person_roles=>'role'}});
+  
   $person->update({
     'person_roles' => [
         {role => {label=>'admin'}},
@@ -583,16 +591,33 @@ Schema->resultset("Role")->populate([
   is $rs->next->role->label, 'admin';
   ok !$rs->next;
 
-  $person->discard_changes;
-  $person->update({
+  # reload from teh DB directly
+  $person = Schema->resultset('Person')->find({'me.id'=>$person->id},{prefetch=>{person_roles=>'role'}});
+
+  {
+    is $person->username, 'jjn3';
+    is $person->state->abbreviation, 'TX';
+    my $rs = $person->person_roles->search({},{order_by=>'role_id ASC'});
+    is $rs->next->role->label, 'admin';
+    ok !$rs->next;
+  } 
+
+  use Devel::Dwarn;
+  Dwarn [ map { +{$_->get_columns} } $person->person_roles->all ];
+
+  ok $person->update({
     person_roles => [
         {role => {label=>'adminxx'}},
         {role => {label=>'superuser'}},
         {role => {label=>'admin'}},
     ]
-  });
+  }), "Completed three row role setup (one bad)";
+
+  use Devel::Dwarn;
+  Dwarn [ map { +{$_->get_columns} } $person->person_roles->all ];
 
   ok $person->invalid;
+
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     person_roles => [
       "Person Roles Is Invalid",
@@ -606,7 +631,40 @@ Schema->resultset("Role")->populate([
     "person_roles.2.role" => [
       "Person Roles Role already has role admin",
     ],
+    roles => [
+      "Roles Is Invalid",
+    ],
+    "roles.0.label" => [
+      "Roles Label adminxx is not a valid",
+    ],
   }, 'Got expected errors';
+
+  {
+    my $rs = $person->person_roles;
+    {
+      my $row = $rs->next->role;
+      is $row->label, 'adminxx';
+      ok !$row->in_storage;
+    }
+    {
+      my $row = $rs->next;
+      ok !$row->in_storage;
+
+      my $role = $row->role;
+      is $role->label, 'superuser';
+      ok $role->in_storage;
+    }
+    {
+      my $row = $rs->next;
+      #ok !$row->in_storage;
+
+      my $role = $row->role;  
+      is $role->label, 'admin';
+      ok $role->in_storage;
+
+    }
+    ok !$rs->next;
+  }
 
   $person->update({
     person_roles => [
@@ -614,7 +672,18 @@ Schema->resultset("Role")->populate([
     ]
   });
 
+  {
+    my $rs = $person->person_roles;
+    {
+      my $row = $rs->next->role;
+      is $row->label, 'superuser';
+    }
+    ok !$rs->next;
+  }
+
   ok $person->valid;
+  ok $person->in_storage;
+
   my $rs2 = $person->person_roles->search({},{order_by=>'role_id ASC'});
   is $rs2->next->role->label, 'superuser';
   ok !$rs->next;

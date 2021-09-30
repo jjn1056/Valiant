@@ -25,11 +25,16 @@ __PACKAGE__->config(
     options_for_select => \&options_for_select,
     checkboxes_from_collection => \&checkboxes_from_collection,
     model_errors_for => \&model_errors_for,
+    namespace => \&namespace,
+    namespace_id_with => \&namespace_id_with,
+    namespace_name_with => \&namespace_name_with,
+
 
     # tag helpers with an underlying model
     form_for => \&form_for,
     label => \&label,
     input => \&input,
+    hidden => \&hidden,
     errors_for => \&errors_for,
     model_errors => \&model_errors,
     human_model_name => \&human_model_name,
@@ -201,7 +206,6 @@ sub checkboxes_from_collection {
       @each;
     my %checked = $checked ? (checked=>1) : ();
 
-
     push @tags, b "<div class='form-check'>";
 
     if($checked && $checked->in_storage) {
@@ -212,9 +216,9 @@ sub checkboxes_from_collection {
       push @tags, $self->hidden($c, "$key", +{value=>$item->$value});
     }
 
-    push @tags, $self->hidden($c, "_delete", +{value=>'1'});
+    push @tags, $self->hidden($c, "_delete", +{value=>'1', id=>$self->namespace_id_with($c, 'hidden') });
     push @tags, $self->input($c, '_delete', +{type=>'checkbox', value=>'0', class=>'form-check-input', %checked});
-    push @tags, $self->label($c, $key, +{class=>'form-check-label'}, sub { $item->$label } );
+    push @tags, $self->label($c, '_delete', +{class=>'form-check-label'}, sub { $item->$label } );
     push @tags, b "</div>";
 
     $idx++;
@@ -304,6 +308,8 @@ sub input {
   $attrs{value} = ($model->read_attribute_for_validation($field) || '') unless defined($attrs{value});
   $attrs{class} .= ' is-invalid' if @errors;
 
+  delete $attrs{checked} if exists($attrs{checked}) && !$attrs{checked};
+
   return $self->input_tag($c, \%attrs, $content);
 }
 
@@ -376,6 +382,23 @@ sub model {
   return  $c->stash->{'valiant.view.form.model'};
 }
 
+sub namespace {
+  my ($self, $c,) = @_;
+  return  $c->stash->{'valiant.view.form.namespace'};
+}
+
+sub namespace_name_with {
+  my ($self, $c, @with) = @_;
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+  return join '.', @namespace, @with;
+
+}
+sub namespace_id_with {
+  my ($self, $c, @with) = @_;
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+  return join '_', @namespace, @with;
+}
+
 sub fields_for {
   my ($self, $c, $related, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
@@ -407,113 +430,31 @@ sub fields_for {
       }
     }
     return b $content_expanded;
+  } else {
+    my $idx = 0;
+    my $resultset = $model->related_resultset($related);
+    warn "Doing firest for $related .............";
+    warn scalar @{ $resultset->get_cache };
+    warn $resultset->{all_cache_position};
+    my $content_expanded = '';
+    while(my $result = $resultset->next) {
+      warn "a index $idx";
+      local $c->stash->{'valiant.view.form.model'} = $result;
+      local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx];
+
+      $content_expanded .= $content->();
+
+      if($result->in_storage) {
+        my @primary_columns = $result->result_source->primary_columns;
+        foreach my $primary_column (@primary_columns) {
+          next unless my $value = $result->get_column($primary_column);
+          $content_expanded .= $self->hidden($c, $primary_column);
+        }
+      }
+      $idx++
+    }
+    return b $content_expanded;
   }
 }
     
 __PACKAGE__->meta->make_immutable;
-
-
-
-
-
-
-__END__
-
-
-      %= input_group 'address', begin
-        <div class='form-group'>
-          %= label current_field
-          %= input current_field, +{ class=>'form-control' }
-          %= errors_for current_field
-        </div>        
-      %= end
-
-    %= input_group 'address', +{ class=>'form-control', div_attrs=>{ class=>'form-group'}  }
-
-
-sub model_errors_for {
-   my ($self, $c, $attribute, %attrs) = @_;
-   my $model = $c->stash->{'valiant.view.form.model'};
-
-   if(my @errors = $model->errors->full_messages_for($attribute)) {
-     my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
-     my $errors = join ', ', @errors[0..($max_errors-1)];
-     my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
-     return b("<div $attrs/>$errors</div>");
-   } else {
-     return '';
-   }
-}
-sub form_tag {
-  my ($self, $c, $url, @proto) = @_;
-  my ($content, %attrs) = _parse_proto(@proto);
-  
-  # $attr{action} ||= $c->uri_for()...
-
-  my $out = $self->tag($c, 'form', \%attrs);
-  if($content) {
-    $out .= $content->();
-    $out .= "</form>";
-    $out = b $out;
-  }
-
-  return $out;
-}
-
-
-
-
-
-
-
-
-sub form_for {
-  my ($self, $c, $model, @proto) = @_;
-  my ($content, %attrs) = _parse_proto(@proto);
-
-  if($model->can('in_storage') && $model->in_storage) {
-    my $value = $model->model_name->param_key . '_edit';
-    $attrs{id} ||= $value;
-    $attrs{class} ||= $value;
-  } else {
-    my $value = $model->model_name->param_key . '_new';
-    $attrs{id} ||= $value;
-    $attrs{class} ||= $value;
-  }
-  $attrs{method} ||= 'POST';
-
-  return $self->form_tag($c, '', %attrs, $content);
-}
-
-
-sub fields_for {
-  my ($self, $c, $model, @proto) = @_;
-  my ($content, %attrs) = _parse_proto(@proto);
-
-  local $c->stash->{'valiant.view.form.model'} = $model;
-  local $c->stash->{'valiant.view.form.namespace'}[0] = $model->model_name->param_key;
-
-  $attrs{id} ||= $model->model_name->param_key;
-  $attrs{method} ||= 'POST';
-
-  my $attrs = _stringify_attrs(%attrs);
-
-
-
-}
-
-
-
-
-
-sub text_field_tag {
-  my ($self, $c, $name, $value, $options) = @_;
-  $options ||= +{};
-  $options->{type} ||= 'text';
-  $options->{name} ||= $name;
-  $options->{id} ||= do { $name=~tr/\./_/; $name };
-  $options->{value} ||= $value;
-  return $self->tag($c, 'input', $options);
-}
-
-1;

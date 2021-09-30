@@ -48,10 +48,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         (my %params = %{ $c->req->body_data->{person}||+{} })
       ) {
 
-        my $add = delete $params{add};
+        my $add = delete $c->req->body_data->{add};
         $params{person_roles} = [] unless exists($params{person_roles});
 
         Dwarn ['params' => \%params];
+        Dwarn ['add' => $add||'None'];
 
         $model->context('profile')->update(\%params);
         

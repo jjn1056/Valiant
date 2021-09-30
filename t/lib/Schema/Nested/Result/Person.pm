@@ -42,7 +42,7 @@ __PACKAGE__->validates(person_roles => (presence=>1, ResultSet=>+{validations=>1
 __PACKAGE__->validates(roles => (presence=>1, ResultSet=>+{validations=>1, min=>1}), on=>'min');
 
 
-__PACKAGE__->accept_nested_for('person_roles');
+__PACKAGE__->accept_nested_for('person_roles', +{find_with_uniques=>1});
 __PACKAGE__->accept_nested_for('roles', +{find_with_uniques=>1});
 
 sub default_roles {

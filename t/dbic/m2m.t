@@ -200,15 +200,28 @@ Schema->resultset("Role")->populate([
 
   $person->person_roles->delete;
   $person->update({ roles => [{  label => 'user' }] });
+  ok $person->valid;
   $person->discard_changes;
 
   {
-    my $new = 'superuser';
-    $person->update({
+    # there may be a problem with discard changes and how all this works
+    # I'm worried about that.
+    $person = Schema
+      ->resultset('Person')
+      ->find(
+        {'me.id'=>$person->id},
+        {prefetch=>{person_roles=>'role'}}
+      );
+
+    ok my $new = 'superuser';
+    is scalar($person->roles->all), 1, "One role only";
+    ok $person->update({
       roles => [{  label => $new }], 
-    });
+    }), 'Did update to role superuser';
 
     ok $person->valid;
+    ok $person->in_storage;
+    is scalar($person->roles->all), 1, "One role only";
     
     {
       is scalar @{$person->person_roles->get_cache||[]}, 1;
@@ -235,10 +248,16 @@ Schema->resultset("Role")->populate([
   }
 
   {
+    ok $person->in_storage;
+    ok !$person->is_changed;
     $person->discard_changes;
+
     $person->context('min')->update({
       roles => [],
     });
+
+    ok $person->invalid;
+    is scalar($person->person_roles->all), 0;
 
     is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
       person_roles => [
@@ -255,7 +274,7 @@ Schema->resultset("Role")->populate([
       { 'me.id'=>$person->id },
       { prefetch => [{person_roles => 'role' }] }
     );
-    
+
     $new_person->context('min')->update({
       roles => [],
     });
