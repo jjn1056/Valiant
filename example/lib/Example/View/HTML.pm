@@ -16,6 +16,7 @@ __PACKAGE__->config(
 
     # simple tag helpers
     tag => \&tag,
+    div_tag => \&div_tag,
     form_tag => \&form_tag,
     label_tag => \&label_tag,
     input_tag => \&input_tag,
@@ -44,24 +45,6 @@ __PACKAGE__->config(
     select_from_collection => \&select_from_collection,
   },
 );
-
-sub errors_box {
-  my ($self, $c, $model, %attrs) = @_;
-  my @errors = ();
-  if(blessed $model) {
-    @errors = $model->errors->full_messages;
-  } elsif($model) {
-    @errors = ($model);
-  }
-  if(@errors) {
-    my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
-    my $errors = join '', map { "<li>$_" } @errors[0..($max_errors-1)];
-    my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
-    return b("<div $attrs/>$errors</div>");
-  } else {
-    return '';
-  } 
-}
 
 sub _stringify_attrs {
   my %attrs = @_;
@@ -99,7 +82,6 @@ sub style_attr {
   return $self->attr($c, 'style', $attr, @_);
 }
 
-
 sub tag {
   my ($self, $c, $name, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
@@ -113,6 +95,11 @@ sub tag {
   $tag .= ">" . $content_expanded . "</${name}>";
   delete $c->stash->{'valiant.view.current_tag'};
   return b $tag;
+}
+
+sub div_tag {
+  my ($self, $c, @proto) = @_;
+  return $self->tag($c, 'div', @proto);
 }
 
 sub form_tag {
@@ -328,14 +315,19 @@ sub errors_for {
 
   return '' unless @errors;
 
+  my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
+  @errors =  @errors[0..($max_errors-1)];
+
+  return $content->(\%attrs, @errors) if $content;
+  return $c->stash->{'view.content'}->{errors_for_block}->(\%attrs, @errors) if $c->stash->{'view.content'}->{errors_for_block};
+
+  # Otherwise just make some sane sort of response.
   my $class = $attrs{class}||'';
   $class .= ' invalid-feedback';
   $attrs{class} = $class;
 
-  my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
   my $divider = $max_errors > 1 ? '<li>' : '';
-  my $errors = join '', map { "${divider}$_" } @errors[0..($max_errors-1)];
-
+  my $errors = join '', map { "${divider}$_" } @errors;
   return $self->tag($c, 'div', \%attrs, $errors);
 }
 
@@ -372,6 +364,39 @@ sub model_errors {
   return $self->tag($c, 'div', \%attrs, $errors);
 }
 
+sub fields_for {
+  my ($self, $c, $related, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  die "No relation '$related' for model $model" unless $model->has_relationship($related);
+
+  my $idx = 0;
+  my $content_expanded = '';
+  my $resultset = $model->related_resultset($related);
+  my $namespace = $model->relationship_info($related)->{attrs}{accessor} eq 'single' ?
+    sub { [@namespace, $related] }
+    : sub { [@namespace, $related, $idx] };
+
+  while(my $result = $resultset->next) {
+    local $c->stash->{'valiant.view.form.model'} = $result;
+    local $c->stash->{'valiant.view.form.namespace'} = $namespace->();
+
+    $content_expanded .= $content->();
+
+    if($result->in_storage) {
+      my @primary_columns = $result->result_source->primary_columns;
+      foreach my $primary_column (@primary_columns) {
+        next unless my $value = $result->get_column($primary_column);
+        $content_expanded .= $self->hidden($c, $primary_column);
+      }
+    }
+    $idx++
+  }
+  return b $content_expanded;
+}
+
 sub human_model_name {
   my ($self, $c, @proto) = @_;
   return $c->stash->{'valiant.view.form.model'}->model_name->human;
@@ -399,62 +424,23 @@ sub namespace_id_with {
   return join '_', @namespace, @with;
 }
 
-sub fields_for {
-  my ($self, $c, $related, @proto) = @_;
-  my ($content, %attrs) = _parse_proto(@proto);
-  my $model = $c->stash->{'valiant.view.form.model'};
-  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-
-
-  # This next bit is DBIC specific.   It would be more ideal to isolate this
-  # behind an abtraction.
-  die "No relation '$related' for model $model" unless $model->has_relationship($related);
-
-  my $rel_data = $model->relationship_info($related);
-  my $rel_type = $rel_data->{attrs}{accessor};
-
-  if( $rel_type eq 'single') {
-    my $result = $model->related_resultset($related)->first;
-    return '' unless $result;  # not sure this is correct
-
-    local $c->stash->{'valiant.view.form.model'} = $result;
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related];
-
-    my $content_expanded = $content->();
-
-    if($result->in_storage) {
-      my @primary_columns = $result->result_source->primary_columns;
-      foreach my $primary_column (@primary_columns) {
-        next unless my $value = $result->get_column($primary_column);
-        $content_expanded .= $self->hidden($c, $primary_column);
-      }
-    }
-    return b $content_expanded;
-  } else {
-    my $idx = 0;
-    my $resultset = $model->related_resultset($related);
-    warn "Doing firest for $related .............";
-    warn scalar @{ $resultset->get_cache };
-    warn $resultset->{all_cache_position};
-    my $content_expanded = '';
-    while(my $result = $resultset->next) {
-      warn "a index $idx";
-      local $c->stash->{'valiant.view.form.model'} = $result;
-      local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $related, $idx];
-
-      $content_expanded .= $content->();
-
-      if($result->in_storage) {
-        my @primary_columns = $result->result_source->primary_columns;
-        foreach my $primary_column (@primary_columns) {
-          next unless my $value = $result->get_column($primary_column);
-          $content_expanded .= $self->hidden($c, $primary_column);
-        }
-      }
-      $idx++
-    }
-    return b $content_expanded;
+sub errors_box {
+  my ($self, $c, $model, %attrs) = @_;
+  my @errors = ();
+  if(blessed $model) {
+    @errors = $model->errors->full_messages;
+  } elsif($model) {
+    @errors = ($model);
   }
+  if(@errors) {
+    my $max_errors = $attrs{max_errors} ? delete($attrs{max_errors}) : scalar(@errors);
+    my $errors = join '', map { "<li>$_" } @errors[0..($max_errors-1)];
+    my $attrs =  join ' ', map { "$_='$attrs{$_}'"} keys %attrs;
+    return b("<div $attrs/>$errors</div>");
+  } else {
+    return '';
+  } 
 }
+
     
 __PACKAGE__->meta->make_immutable;

@@ -52,7 +52,6 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         $params{person_roles} = [] unless exists($params{person_roles});
 
         Dwarn ['params' => \%params];
-        Dwarn ['add' => $add||'None'];
 
         $model->context('profile')->update(\%params);
         
