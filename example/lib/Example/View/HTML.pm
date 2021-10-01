@@ -277,9 +277,9 @@ sub label {
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
 
   $attrs{for} ||= join '_', (@namespace, $field);
-  $content ||= sub { $model->human_attribute_name($field) };
-  
-  return $self->label_tag($c, \%attrs, $content);
+  my $inner_content = $content ? $content->($field, $model, \%attrs) : $model->human_attribute_name($field);
+
+  return $self->label_tag($c, \%attrs, $inner_content);
 }
 
 sub input {
@@ -289,11 +289,16 @@ sub input {
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
   my @errors = $model->errors->messages_for($field);
 
+  my @errors_classes = ();
+  if(my $errors_classes_proto = delete($attrs{errors_classes})) {
+    push @errors_classes, ref($errors_classes_proto) ? @$errors_classes_proto : ($errors_classes_proto);
+  }
+
   $attrs{type} ||= 'text';
   $attrs{id} ||= join '_', (@namespace, $field);
   $attrs{name} ||= join '.', (@namespace, $field);
   $attrs{value} = ($model->read_attribute_for_validation($field) || '') unless defined($attrs{value});
-  $attrs{class} .= ' is-invalid' if @errors;
+  $attrs{class} .= " @{[ join ' ', @errors_classes ]}" if @errors;
 
   delete $attrs{checked} if exists($attrs{checked}) && !$attrs{checked};
 
@@ -319,17 +324,16 @@ sub errors_for {
   @errors =  @errors[0..($max_errors-1)];
 
   return $content->(\%attrs, @errors) if $content;
-  return $c->stash->{'view.content'}->{errors_for_block}->(\%attrs, @errors) if $c->stash->{'view.content'}->{errors_for_block};
-
-  # Otherwise just make some sane sort of response.
-  my $class = $attrs{class}||'';
-  $class .= ' invalid-feedback';
-  $attrs{class} = $class;
-
-  my $divider = $max_errors > 1 ? '<li>' : '';
-  my $errors = join '', map { "${divider}$_" } @errors;
-  return $self->tag($c, 'div', \%attrs, $errors);
+  return $c->stash->{'view.content'}->{errors_for_response}->(\%attrs, @errors) if $c->stash->{'view.content'}->{errors_for_response};
+  return $self->errors_for_response($c, \%attrs, @errors);
 }
+
+  sub errors_for_response {
+    my ($self, $c, $attrs, @errors) = @_;
+    my $divider = scalar(@errors) > 1 ? '<li>' : '';
+    my $errors = join '', map { "${divider}$_" } @errors;
+    return $self->tag($c, 'div', $attrs, $errors);
+  }
 
 sub model_errors_for {
    my ($self, $c, $attribute, %attrs) = @_;
