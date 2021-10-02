@@ -42,6 +42,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       );
 
       $model->namespace('Example');
+      $model->build_related_if_empty('profile');
 
       if(
         ($c->req->method eq 'POST') && 
@@ -49,15 +50,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       ) {
 
         my $add = delete $c->req->body_data->{add};
-        $params{person_roles} = [] unless exists($params{person_roles});
 
         Dwarn ['params' => \%params];
-
         $model->context('profile')->update(\%params);
-        
         Dwarn ['errors' => +{ $model->errors->to_hash(full_messages=>1) }] if $model->invalid;
 
-        $model->build_related_if_empty('profile');
         $model->build_related('credit_cards') if $add->{credit_cards}; # Doing this here means we don't trigger the 'too many' constraint :(
       }
     }

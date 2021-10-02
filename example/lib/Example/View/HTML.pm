@@ -210,6 +210,7 @@ sub checkboxes_from_collection {
 
     $idx++;
   }
+  push @tags,  $self->hidden($c, "_nop", +{value=>'1', namespace=>[@namespace, $field_proto, $idx] });
   return b @tags;
 }
 
@@ -286,7 +287,7 @@ sub input {
   my ($self, $c, $field, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
   my $model = $c->stash->{'valiant.view.form.model'};
-  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+  my @namespace = $attrs{namespace} ? @{delete $attrs{namespace}} : @{$c->stash->{'valiant.view.form.namespace'}||[]};
   my @errors = $model->errors->messages_for($field);
 
   my @errors_classes = ();
