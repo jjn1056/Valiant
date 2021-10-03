@@ -120,6 +120,11 @@ sub insert {
     debug 2, "Skipping insert for @{[$self]} because its invalid";
     return $self;
   }
+
+  if($self->{__valiant_donot_insert}) {
+    debug 2, "Skipping insert for @{[$self]} because its probably and _add";
+    return $self;
+  }
   ## delete $self->{__VALIANT_CREATE_ARGS};  We might need this at some point
   return $self->next::method(@args);
 }
@@ -141,7 +146,7 @@ sub update {
   # Remove any relationed keys we didn't find with the allows nested
   my @rel_names = $self->result_source->relationships();
   my @m2m_names = keys  %{ $self->result_class->_m2m_metadata ||+{} };
-  debug 1, "Found related for @{[ $self ]} of @{[ join ',', @rel_names ]}";
+  debug 1, "Found related for @{[ ref $self ]} of @{[ join ',', @rel_names ]}";
 
   my %found = map { $_ => delete($upd->{$_})  } @rel_names, @m2m_names; # backcompat with old perl
 
@@ -400,6 +405,11 @@ sub set_from_params_recursively {
           $self->mark_for_deletion;
         }
       }
+    } elsif( $param eq '_nop') {
+        if($params{$param}) {
+          debug 3, "Found _nop";
+          delete $params{$param};
+        }
     } elsif($param eq '_restore' && $params{$param}) {
       if($self->in_storage) {
         debug 3, "Unmarking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
@@ -411,6 +421,7 @@ sub set_from_params_recursively {
     } elsif($param eq '_action') {
       my $action = $params{$param};
       $action = ref($action)||'' ? $action->[-1] : $action; # If action is a ref always use the last one
+      debug 3, "Found _action param with value $action";
       if($action eq 'delete') {
         if($self->in_storage) {
           debug 2, "Marking record @{[ ref $self ]}, id @{[ $self->id ]} for deletion";
@@ -537,7 +548,11 @@ sub set_multi_related_from_params {
   debug 2, "starting loop to update/create related $related (total @{[ scalar @param_rows ]} rows in loop)";
   foreach my $param_row (@param_rows) {
     debug 3, "top of new loop on param_rows";
-    delete $param_row->{_add};
+    if($param_row->{_nop}) {
+      debug 3, "Is a NOP row, so skipping";
+      next;
+    }
+    my $was_add = delete $param_row->{_add};
     my $related_model;
     if(blessed $param_row) {
       debug 1, "params are an object";
@@ -547,6 +562,8 @@ sub set_multi_related_from_params {
       # The first thing to do is to see if we can find a row either in the existing cache
       # or in the DB, matched on the Primary key and (if enabled) unique keys.
       my %keys_used_to_find = ();
+      use Devel::Dwarn; Dwarn $param_row;
+
       SEARCH_UNIQUE_KEYS: foreach my $key (@search_sets) {
         debug 2, "trying to find a row for $related using key $key";
 
@@ -589,6 +606,10 @@ sub set_multi_related_from_params {
       # Sometimes you can find it if they gave you a relationship that was identifying or some combo
       # of a relationship and when $self is in storage and has a PK that is FK to $related and part of
       # a unique key.  Mostly we see this in m2m bridge style relationships.  For now we have this hack
+      #
+      # TODO We really need to figure out how to get rid of this fallback or at least limit it since its
+      # making a lot of noise on the DB.  I think at the very least we can skip this if none of the keys
+      # in $param_row are relationships.
 
       debug 2, "Falling back to default find_related for $related using full param_row";
       $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row};
@@ -600,6 +621,12 @@ sub set_multi_related_from_params {
         $related_model = $self->new_related($related, +{});
       }
       debug 2, "About to set_from_params_recursively for @{[ ref $related_model ]}";
+
+      if($was_add) {
+        debug 3, "Since @{[ ref $related_model]} was an _add we won't validate since its empty";
+        $related_model->skip_validate;
+        $related_model->{__valiant_donot_insert} = 1;
+      }
       
       # Don't set params for the found keys (waste of time, no change)
       my %params_for_recursive = %$param_row;
@@ -609,6 +636,7 @@ sub set_multi_related_from_params {
       # Ok, so after set_from_params_recursively if the $related_model is not in storage
       # we 'might' have enough info to actually load it.
       if(!$related_model->in_storage) {
+        # TODO: We should skip this if we've already tried a full PK
         my $copy = $related_model->get_from_storage(); # If we now have the full PK we can find it
         $related_model = $copy if $copy;
       }

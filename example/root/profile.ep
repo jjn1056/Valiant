@@ -17,7 +17,6 @@
       %= errors_for 'first_name', +{ class=>'invalid-feedback' }
     </div>
     <div class='form-group'>
-      
       %= label 'last_name'
       %= input 'last_name', +{ class=>'form-control', errors_classes=>'is-invalid'  }
       %= errors_for 'last_name', +{ class=>'invalid-feedback' }
@@ -98,13 +97,14 @@
           % if(model->in_storage || model->is_marked_for_deletion) {
             %= label '_delete' 
             <br>
-            %= input '_delete', +{ type=>'checkbox', value=>1,  checked=>model->is_marked_for_deletion }
+            %= checkbox '_delete', +{ value=>1,  checked=>model->is_marked_for_deletion }
           % }     
         </div>
       </div>
+    %= end, begin
+        %= button '_add', +{ class=>'btn btn-lg btn-primary btn-block', value=>1 }, 'Add Credit Card'
     %= end
-    %= button_tag { class=>'btn btn-lg btn-primary btn-block', name=>'add.credit_cards', value=>1 }, 'Add Credit Card'
-  </fieldset>
+      </fieldset>
 
   <fieldset>
     %= button_tag { class=>'btn btn-lg btn-primary btn-block' }, 'Update Profile'

@@ -35,7 +35,9 @@ __PACKAGE__->config(
     form_for => \&form_for,
     label => \&label,
     input => \&input,
+    button => \&button,
     hidden => \&hidden,
+    checkbox => \&checkbox,
     errors_for => \&errors_for,
     model_errors => \&model_errors,
     human_model_name => \&human_model_name,
@@ -54,16 +56,24 @@ sub _stringify_attrs {
 
 sub _parse_proto {
   my @proto = @_;
-  my $content = undef;
-  if(@proto && (ref($proto[-1]) eq 'CODE')) {
-    $content = pop @proto;
-  } elsif(@proto && (ref(\$proto[-1] ||'') eq 'SCALAR')) {
-    my $text = pop @proto;
-    $content = sub { $text };
+  my @content_blocks = ();
+  while(@proto) {
+    if(ref($proto[-1]) eq 'CODE') {
+      unshift @content_blocks, pop @proto;
+    } elsif( ref(\$proto[-1] ||'') eq 'SCALAR') {
+      my $text = pop @proto;
+      unshift @content_blocks, sub { $text };
+    } else {
+      last;
+    }
   }
+
+  my $content = scalar(@content_blocks) > 1 ? \@content_blocks : $content_blocks[0];
+
   return ($content) unless @proto;
   my %attrs = ref($proto[0])||'' eq 'HASH' ? %{$proto[0]}:  @proto;
   return ($content, %attrs);
+
 }
 
 sub attr {
@@ -210,7 +220,7 @@ sub checkboxes_from_collection {
 
     $idx++;
   }
-  push @tags,  $self->hidden($c, "_nop", +{value=>'1', namespace=>[@namespace, $field_proto, $idx] });
+  # push @tags,  $self->hidden($c, "_nop", +{value=>'1', namespace=>[@namespace, $field_proto, $idx] });
   return b @tags;
 }
 
@@ -306,10 +316,29 @@ sub input {
   return $self->input_tag($c, \%attrs, $content);
 }
 
+sub button {
+  my ($self, $c, $field, @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = $attrs{namespace} ? @{delete $attrs{namespace}} : @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  $attrs{id} ||= join '_', (@namespace, $field);
+  $attrs{name} ||= join '.', (@namespace, $field);
+  $attrs{value} = ($model->read_attribute_for_validation($field) || '') unless defined($attrs{value});
+
+  return $self->button_tag($c, \%attrs, $content);
+}
+
 sub hidden {
   my ($self, $c, $field , @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
   return $self->input($c, $field, +{%attrs, type=>'hidden'}, $content);
+}
+
+sub checkbox {
+  my ($self, $c, $field , @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  return $self->input($c, $field, +{%attrs, type=>'checkbox'}, $content);
 }
 
 sub errors_for {
@@ -375,6 +404,9 @@ sub fields_for {
   my $model = $c->stash->{'valiant.view.form.model'};
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
 
+  my $item_block = ((ref($content)||'') eq 'ARRAY') ? $content->[0] : $content;
+  my $finally_block = ((ref($content)||'') eq 'ARRAY') ? $content->[1] : undef;
+
   die "No relation '$related' for model $model" unless $model->has_relationship($related);
 
   my $idx = 0;
@@ -384,11 +416,13 @@ sub fields_for {
     sub { [@namespace, $related] }
     : sub { [@namespace, $related, $idx] };
 
-  while(my $result = $resultset->next) {
+  my @results = $resultset->all;
+  my $last_index =$#results;
+  foreach my $result (@results) {
     local $c->stash->{'valiant.view.form.model'} = $result;
     local $c->stash->{'valiant.view.form.namespace'} = $namespace->();
 
-    $content_expanded .= $content->();
+    $content_expanded .= $item_block->($idx, $last_index);
 
     if($result->in_storage) {
       my @primary_columns = $result->result_source->primary_columns;
@@ -399,6 +433,12 @@ sub fields_for {
     }
     $idx++
   }
+
+  if($finally_block) {
+    local $c->stash->{'valiant.view.form.namespace'} = $namespace->();
+    $content_expanded .= $finally_block->($idx, $last_index);
+  }
+
   return b $content_expanded;
 }
 
