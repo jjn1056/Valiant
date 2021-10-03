@@ -34,6 +34,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       my ($self, $c) = @_;
       
       $c->stash(states => $c->model('Schema::State'));
+      $c->stash(roles => $c->model('Schema::Roles'));
       $c->stash(person => my $model = $c->model('Schema::Person')
         ->find(
           { 'me.id'=>$c->user->id },
@@ -41,21 +42,16 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         )
       );
 
-      $model->namespace('Example');
       $model->build_related_if_empty('profile');
+      $model->namespace('Example');
 
       if(
         ($c->req->method eq 'POST') && 
         (my %params = %{ $c->req->body_data->{person}||+{} })
       ) {
-
-        my $add = delete $c->req->body_data->{add};
-
-        Dwarn ['params' => \%params];
         $model->context('profile')->update(\%params);
+        Dwarn ['params' => \%params];
         Dwarn ['errors' => +{ $model->errors->to_hash(full_messages=>1) }] if $model->invalid;
-
-        $model->build_related('credit_cards') if $add->{credit_cards}; # Doing this here means we don't trigger the 'too many' constraint :(
       }
     }
 
