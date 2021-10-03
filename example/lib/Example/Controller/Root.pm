@@ -34,7 +34,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       my ($self, $c) = @_;
       
       $c->stash(states => $c->model('Schema::State'));
-      $c->stash(roles => $c->model('Schema::Roles'));
+      $c->stash(roles => $c->model('Schema::Role'));
       $c->stash(person => my $model = $c->model('Schema::Person')
         ->find(
           { 'me.id'=>$c->user->id },
@@ -43,7 +43,6 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       );
 
       $model->build_related_if_empty('profile');
-      $model->namespace('Example');
 
       if(
         ($c->req->method eq 'POST') && 
