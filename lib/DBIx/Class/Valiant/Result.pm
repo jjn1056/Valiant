@@ -537,6 +537,12 @@ sub set_multi_related_from_params {
   my @search_sets = ('primary');
   my %nested = $self->result_class->accept_nested_for;
 
+  # Gather the list of fields which are single type rels
+  my @single_rels =  grep {
+    my $rel_data = $self->$related->result_source->relationship_info($_);
+    ($rel_data && ($rel_data->{attrs}{accessor} eq 'single')) ? 1:0;
+  }  $self->$related->result_source->relationships;
+
   # Generally we alow finding the row via the PK only but the user can allow finding
   # by any unique if that's what they really want.
   if($nested{$related}{find_with_uniques}) {
@@ -562,13 +568,12 @@ sub set_multi_related_from_params {
       # The first thing to do is to see if we can find a row either in the existing cache
       # or in the DB, matched on the Primary key and (if enabled) unique keys.
       my %keys_used_to_find = ();
-      use Devel::Dwarn; Dwarn $param_row;
-
       SEARCH_UNIQUE_KEYS: foreach my $key (@search_sets) {
         debug 2, "trying to find a row for $related using key $key";
 
         my @key_columns = @{$uniques{$key}};
         my %matching = map { $_ => $param_row->{$_} } grep { exists $param_row->{$_} } @key_columns;
+
 
         next unless scalar(@key_columns) == scalar(keys(%matching)); # only match when its a full key match
         debug 2, "key $key exists in params";
@@ -582,37 +587,34 @@ sub set_multi_related_from_params {
             $related_model = $row;
             if($related_model) {
               debug 2, "found related model for $related with $key in cache";
-              %keys_used_to_find = %matching;
+              %keys_used_to_find = (%keys_used_to_find, %matching);
               last SEARCH_UNIQUE_KEYS
             }
           }
         }
 
-        # If it doesn't match in the cache then we have to find it in the DB
+        # If it doesn't match in the cache then we have to find it in the DB. TODO I'm skipping this
+        # lookup for now since I don't think we need it unless the user failed to properly prefetch.
         unless($related_model) {
           debug 2, "Trying to find $related in DB with key $key";
-          $related_model = $self->find_related($related, \%matching, +{key=>$key});
+          #$related_model = $self->find_related($related, \%matching, +{key=>$key});
           if($related_model) {
             debug 2, "found related model for $related with $key in DB";
-            %keys_used_to_find = %matching;
+            %keys_used_to_find = (%keys_used_to_find, %matching);
             last SEARCH_UNIQUE_KEYS
           }
         }
       }
 
-      # Ok so if we get here and there's no $related model that means the user did not give us
-      # enough info in $param_rows to find it either in the cache or in the DB (they didn't give us
-      # any uniques or PKs. But its now impossible they gave us enough info to find the row anyway.
-      # Sometimes you can find it if they gave you a relationship that was identifying or some combo
-      # of a relationship and when $self is in storage and has a PK that is FK to $related and part of
-      # a unique key.  Mostly we see this in m2m bridge style relationships.  For now we have this hack
-      #
-      # TODO We really need to figure out how to get rid of this fallback or at least limit it since its
-      # making a lot of noise on the DB.  I think at the very least we can skip this if none of the keys
-      # in $param_row are relationships.
+      # If we get here its possible there's a single type relation we can use to complete 
+      # the lookup.  TODO: Not sure if this should be a param setting in the nested_for data 
+      # (it probably should be).  Also not sure if we should limit the ->find_related to 
+      # just the FK rel.
 
-      debug 2, "Falling back to default find_related for $related using full param_row";
-      $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row};
+      if(grep {$param_row->{$_}} @single_rels) {
+        debug 2, "Falling back to default find_related for $related using full param_row";
+        $related_model = $self->find_related($related, $param_row) unless $related_model || !%{$param_row};
+      }
 
       # OK so we didnt find it via keys either in the cache or in the DB so that means
       # we need to just create it.
@@ -634,8 +636,8 @@ sub set_multi_related_from_params {
       $related_model->set_from_params_recursively(%params_for_recursive);
 
       # Ok, so after set_from_params_recursively if the $related_model is not in storage
-      # we 'might' have enough info to actually load it.
-      if(!$related_model->in_storage) {
+      # we 'might' have enough info to actually load it now.
+      if(!$related_model->in_storage && !$related_model->is_marked_for_deletion) {
         # TODO: We should skip this if we've already tried a full PK
         my $copy = $related_model->get_from_storage(); # If we now have the full PK we can find it
         $related_model = $copy if $copy;
