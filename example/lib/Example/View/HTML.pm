@@ -266,11 +266,11 @@ sub form_for {
   $attrs{method} ||= 'POST';
 
   if($model->can('in_storage') && $model->in_storage) {
-    my $value = $model->model_name->param_key . '_edit';
+    my $value = $attrs{id} . '_edit';
     $attrs{id} ||= $value;
     $attrs{class} ||= $value;
   } else {
-    my $value = $model->model_name->param_key . '_new';
+    my $value = $attrs{id} . '_new';
     $attrs{id} ||= $value;
     $attrs{class} ||= $value;
   }

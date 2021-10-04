@@ -94,11 +94,9 @@
           %= errors_for 'expiration', +{ class=>'invalid-feedback' }
         </div>
         <div class='col form-group col-2'>
-          % if(model->in_storage || model->is_marked_for_deletion) {
             %= label '_delete' 
             <br>
             %= checkbox '_delete', +{ value=>1,  checked=>model->is_marked_for_deletion }
-          % }     
         </div>
       </div>
     %= end, begin

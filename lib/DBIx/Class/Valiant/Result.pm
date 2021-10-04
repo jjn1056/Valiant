@@ -225,12 +225,13 @@ sub register_column {
 # namespace
 
 sub namespace {
-  my $self = shift;  
+  my $self = shift;
   return '' unless ref $self;
 
   my $class = ref($self) ? ref($self) : $self; 
   my $source_name = $self->result_source->source_name;
   $class =~s/::${source_name}$//;
+
   return $class;
 }
 
@@ -327,7 +328,7 @@ sub delete_if_in_storage {
 
 sub build_related {
   my ($self, $related, $attrs) = @_;
-  debug 2, "Building related entity '$related' for @{[ $self->model_name->human ]}";
+  debug 2, "Building related entity '$related' for @{[ ref $self ]}";
 
   my $related_obj = $attrs ? $self->find_or_new_related($related, $attrs) : $self->new_related($related, +{});
   return if $related_obj->in_storage;  #I think we can skip if its found
