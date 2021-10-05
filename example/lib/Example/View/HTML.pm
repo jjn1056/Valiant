@@ -24,7 +24,7 @@ __PACKAGE__->config(
     option_tag => \&option_tag,
     select_tag => \&select_tag,
     options_for_select => \&options_for_select,
-    checkboxes_from_collection => \&checkboxes_from_collection,
+    checkbox_list_from_collection => \&checkbox_list_from_collection,
     model_errors_for => \&model_errors_for,
     namespace => \&namespace,
     namespace_id_with => \&namespace_id_with,
@@ -174,9 +174,42 @@ sub options_from_collection_for_select {
   return $self->options_for_select($c, \@options, $global_attrs);
 }
 
+# %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
+# %= select_from_collection 'state_id', [$states, id=>'name'], +{ class=>'form-control' }
+#
+sub select_from_collection {
+  my ($self, $c, $field, $options, $attrs) = @_;
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  $attrs->{class} .= ' is-invalid' if $model->errors->messages_for($field) ;
+
+  if(ref($options) eq 'ARRAY') {
+    $attrs->{option_value} = $options->[1];
+    $attrs->{option_label} = $options->[2];
+    $options = $options->[0];
+  }
+
+  $attrs->{id} ||= join '_', (@namespace, $field);
+  $attrs->{name} ||= join '.', (@namespace, $field);
+
+  return $self->select_tag($c, $attrs, $self->options_from_collection_for_select($c, $options, +{%$attrs, selected=>$model->read_attribute_for_validation($field)}));
+}
+
+# %= zelect 'state_id', [map {[ $_->name, $_->id ]} $states->all], +{ class=>'form-control' }
+sub zelect {
+  my ($self, $c, $field, $options, $attrs) = @_;
+  my $model = $c->stash->{'valiant.view.form.model'};
+  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
+
+  $attrs->{id} ||= join '_', (@namespace, $field);
+  $attrs->{name} ||= join '.', (@namespace, $field);
+
+  return $self->select_tag($c, $attrs, $self->options_for_select($c, $options, +{selected=>$model->read_attribute_for_validation($field)}));
+}
 
 # %= checkboxes_from_collection 'person_roles.role', $roles, +{value_field=>'id', label_field=>'name', ... }
-sub checkboxes_from_collection {
+sub checkbox_list_from_collection {
   my ($self, $c, $field_proto, $bridge, $collection, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
   my $model = $c->stash->{'valiant.view.form.model'};
@@ -222,40 +255,6 @@ sub checkboxes_from_collection {
   }
   # push @tags,  $self->hidden($c, "_nop", +{value=>'1', namespace=>[@namespace, $field_proto, $idx] });
   return b @tags;
-}
-
-# %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
-# %= select_from_collection 'state_id', [$states, id=>'name'], +{ class=>'form-control' }
-#
-sub select_from_collection {
-  my ($self, $c, $field, $options, $attrs) = @_;
-  my $model = $c->stash->{'valiant.view.form.model'};
-  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-
-  $attrs->{class} .= ' is-invalid' if $model->errors->messages_for($field) ;
-
-  if(ref($options) eq 'ARRAY') {
-    $attrs->{option_value} = $options->[1];
-    $attrs->{option_label} = $options->[2];
-    $options = $options->[0];
-  }
-
-  $attrs->{id} ||= join '_', (@namespace, $field);
-  $attrs->{name} ||= join '.', (@namespace, $field);
-
-  return $self->select_tag($c, $attrs, $self->options_from_collection_for_select($c, $options, +{%$attrs, selected=>$model->read_attribute_for_validation($field)}));
-}
-
-# %= zelect 'state_id', [map {[ $_->name, $_->id ]} $states->all], +{ class=>'form-control' }
-sub zelect {
-  my ($self, $c, $field, $options, $attrs) = @_;
-  my $model = $c->stash->{'valiant.view.form.model'};
-  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-
-  $attrs->{id} ||= join '_', (@namespace, $field);
-  $attrs->{name} ||= join '.', (@namespace, $field);
-
-  return $self->select_tag($c, $attrs, $self->options_for_select($c, $options, +{selected=>$model->read_attribute_for_validation($field)}));
 }
 
 sub form_for {
