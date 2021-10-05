@@ -20,7 +20,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
   sub register :Chained(root) PathPart('register') Args(0) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
-    $c->stash(person => my $model = $c->model('Schema::Person')->new_result($c->req->body_data||+{}));  # dont do this
+    $c->stash(person => my $model = $c->model('Schema::Person')->new_result($c->req->body_data->{person}||+{}));  # dont do this
     $model->insert if $c->req->method eq 'POST';
     return $c->redirect_to_action('login') if $model->in_storage;
   }
@@ -42,7 +42,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         )
       );
 
-      $model->build_related_if_empty('profile');
+      $model->build_related_if_empty('profile'); # Needed since the relationsip is optional
 
       if(
         ($c->req->method eq 'POST') && 
@@ -62,14 +62,15 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
   sub login : Chained(root) PathPart(login) Args(0) {
     my ($self, $c) = @_;
-    $c->stash(error => '');
+    my $error = '';
     if($c->req->method eq 'POST') {
       $c->redirect_to_action('home') if $c->authenticate({
           username=>$c->req->body_data->{username},
           password=>$c->req->body_data->{password},
         });
-      $c->stash(error => 'User not found!');
+      $error = 'User not found!';
     }
+    $c->stash(error => $error);
 }
 
 sub end : ActionClass('RenderView') {}

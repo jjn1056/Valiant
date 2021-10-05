@@ -1,7 +1,8 @@
 % layout 'layout.ep';
 % content title => 'Sign In';
 % content css => begin
-<style></style>
+<style>
+</style>
 % end
 
 %= form_tag { method_attr 'POST', style_attr 'width:20em; margin:auto' }, begin
