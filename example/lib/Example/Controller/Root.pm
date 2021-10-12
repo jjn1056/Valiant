@@ -37,7 +37,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $c->res->body('logged in! See <a href="/profile">Profile</a> or <a href="/logout">Logout</a>');  
     }
 
-    sub profile :Chained(auth) PathPart('profile') Args(0) {
+    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) {
       my ($self, $c) = @_;
       
       $c->stash(states => $c->model('Schema::State'));
@@ -50,22 +50,21 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       );
 
       $model->build_related_if_empty('profile'); # Needed since the relationsip is optional
+    }
 
-      if($c->req->method eq 'POST') {
+      sub GET_profile :Action {}
+
+      sub POST_profile :Action {
+        my ($self, $c) = @_;
         my %params = $c->strong_body(
-          ['person'], 
-          'username', 'first_name', 'last_name', 
+          ['person'], 'username', 'first_name', 'last_name', 
           'profile' => [qw/id address city state_id zip phone_number birthday/],
           +{'person_roles' =>[qw/person_id role_id _delete/] },
           +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
         )->to_hash;
 
-        use Devel::Dwarn;
-        Dwarn \%params;
-
-        $model->context('profile')->update(\%params);
+        $c->stash->{person}->update(\%params);
       }
-    }
 
     sub logout : Chained(auth) PathPart(logout) Args(0) {
       my ($self, $c) = @_;
