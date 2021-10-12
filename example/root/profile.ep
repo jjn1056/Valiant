@@ -4,7 +4,7 @@
   <style></style>
 % end
 
-%= form_for $person => +{ style=>'width:27em; margin:auto' }, begin
+%= form_for $person => +{ style=>'width:27em; margin:auto'  }, begin
   % if($person->validated && !$person->has_errors) {
     <div class='alert alert-success' role='alert'>Successfully Updated</div>
   % }

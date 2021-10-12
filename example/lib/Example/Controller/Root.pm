@@ -20,7 +20,14 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
   sub register :Chained(root) PathPart('register') Args(0) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
-    $c->stash(person => my $model = $c->model('Schema::Person')->new_result($c->req->body_data->{person}||+{}));  # dont do this
+
+    my %params = $c->strong_body(
+      ['person'], 
+      'username', 'first_name', 'last_name', 
+      'password', 'password_confirmation'
+    )->to_hash;
+    
+    $c->stash(person => my $model = $c->model('Schema::Person')->new_result(\%params));
     $model->insert if $c->req->method eq 'POST';
     return $c->redirect_to_action('login') if $model->in_storage;
   }
@@ -37,19 +44,26 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $c->stash(roles => $c->model('Schema::Role'));
       $c->stash(person => my $model = $c->model('Schema::Person')
         ->find(
-          { 'me.id'=>$c->user->id },
+          { 'me.id' => $c->user->id },
           { prefetch => ['profile', 'credit_cards', {person_roles => 'role' }] }
         )
       );
 
       $model->build_related_if_empty('profile'); # Needed since the relationsip is optional
 
-      if(
-        ($c->req->method eq 'POST') && 
-        (my %params = %{ $c->req->body_data->{person}||+{} })
-      ) {
-        $model->context('profile')->update(\%params);
+      if($c->req->method eq 'POST') {
+        my %params = $c->strong_body(
+          ['person'], 
+          'username', 'first_name', 'last_name', 
+          'profile' => [qw/address city state_id zip phone_number birthday/],
+          +{'person_roles' =>[qw/person_id role_id _delete/] },
+          +{'credit_cards' => [qw/card_number expiration _delete/]},
+        )->to_hash;
+
         Dwarn ['params' => \%params];
+        Dwarn $c->req->body_parameters;
+
+        $model->context('profile')->update(\%params);
         Dwarn ['errors' => +{ $model->errors->to_hash(full_messages=>1) }] if $model->invalid;
       }
     }
@@ -64,9 +78,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
     my ($self, $c) = @_;
     my $error = '';
     if($c->req->method eq 'POST') {
+      my %params = $c->strong_body('username', 'password')->to_hash;
       $c->redirect_to_action('home') if $c->authenticate({
-          username=>$c->req->body_data->{username},
-          password=>$c->req->body_data->{password},
+          username=>$params{username},
+          password=>$params{password},
         });
       $error = 'User not found!';
     }

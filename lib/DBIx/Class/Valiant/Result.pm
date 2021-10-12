@@ -230,6 +230,11 @@ sub namespace {
 
   my $class = ref($self) ? ref($self) : $self; 
   my $source_name = $self->result_source->source_name;
+
+
+  warn "namespace clas $class";
+  warn "namespace src $source_name";
+  
   $class =~s/::${source_name}$//;
 
   return $class;

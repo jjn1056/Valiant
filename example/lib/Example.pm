@@ -11,6 +11,7 @@ __PACKAGE__->setup_plugins([qw/
   RedirectTo
   URI
   Errors
+  StrongParameters
 /]);
 
 __PACKAGE__->config(

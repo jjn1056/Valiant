@@ -43,7 +43,6 @@ __PACKAGE__->config(
     human_model_name => \&human_model_name,
     model => \&model,
     fields_for => \&fields_for,
-    zelect => \&zelect,
     select_from_collection => \&select_from_collection,
   },
 );
@@ -176,13 +175,10 @@ sub options_from_collection_for_select {
 
 # %= select_from_collection 'state_id', $states,  +{ class=>'form-control' }
 # %= select_from_collection 'state_id', [$states, id=>'name'], +{ class=>'form-control' }
-#
 sub select_from_collection {
   my ($self, $c, $field, $options, $attrs) = @_;
   my $model = $c->stash->{'valiant.view.form.model'};
   my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-
-  $attrs->{class} .= ' is-invalid' if $model->errors->messages_for($field) ;
 
   if(ref($options) eq 'ARRAY') {
     $attrs->{option_value} = $options->[1];
@@ -190,22 +186,18 @@ sub select_from_collection {
     $options = $options->[0];
   }
 
+  if(my @errors = $model->errors->messages_for($field)) {
+    my @errors_classes = ();
+    if(my $errors_classes_proto = delete($attrs->{errors_classes})) {
+      push @errors_classes, ref($errors_classes_proto) ? @$errors_classes_proto : ($errors_classes_proto);
+    }
+    $attrs->{class} .= " @{[ join ' ', @errors_classes ]}" if @errors;
+  }
+  
   $attrs->{id} ||= join '_', (@namespace, $field);
   $attrs->{name} ||= join '.', (@namespace, $field);
 
   return $self->select_tag($c, $attrs, $self->options_from_collection_for_select($c, $options, +{%$attrs, selected=>$model->read_attribute_for_validation($field)}));
-}
-
-# %= zelect 'state_id', [map {[ $_->name, $_->id ]} $states->all], +{ class=>'form-control' }
-sub zelect {
-  my ($self, $c, $field, $options, $attrs) = @_;
-  my $model = $c->stash->{'valiant.view.form.model'};
-  my @namespace = @{$c->stash->{'valiant.view.form.namespace'}||[]};
-
-  $attrs->{id} ||= join '_', (@namespace, $field);
-  $attrs->{name} ||= join '.', (@namespace, $field);
-
-  return $self->select_tag($c, $attrs, $self->options_for_select($c, $options, +{selected=>$model->read_attribute_for_validation($field)}));
 }
 
 # %= checkboxes_from_collection 'person_roles.role', $roles, +{value_field=>'id', label_field=>'name', ... }
@@ -227,7 +219,7 @@ sub checkbox_list_from_collection {
   my @primary_columns = $field_model_rs->result_source->primary_columns;
 
   foreach my $item($collection->all) {
-    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, $field_proto, $idx];
+    local $c->stash->{'valiant.view.form.namespace'} = [@namespace, "${field_proto}[${idx}]"];
     local $c->stash->{'valiant.view.form.model'} = $item;
 
     my ($checked) = grep { $_ }
@@ -413,7 +405,7 @@ sub fields_for {
   my $resultset = $model->related_resultset($related);
   my $namespace = $model->relationship_info($related)->{attrs}{accessor} eq 'single' ?
     sub { [@namespace, $related] }
-    : sub { [@namespace, $related, $idx] };
+    : sub { [@namespace, "${related}[${idx}]" ] };
 
   my @results = $resultset->all;
   my $last_index =$#results;
