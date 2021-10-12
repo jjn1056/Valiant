@@ -8,7 +8,7 @@ requires 'Catalyst::Plugin::URI';
 requires 'Catalyst::View::MojoTemplate';
 requires 'Catalyst::Plugin::Session';
 requires 'Catalyst::Action::RenderView';
-requires 'Catalyst::TraitFor::Request::StrongParameters';
+requires 'Catalyst::TraitFor::Request::StrongParameters', '0.002';
 
 requires 'DBIx::Class', '0.082840';
 requires 'DBIx::Class::Helpers', '2.033003';

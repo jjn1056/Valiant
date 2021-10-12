@@ -55,16 +55,15 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
         my %params = $c->strong_body(
           ['person'], 
           'username', 'first_name', 'last_name', 
-          'profile' => [qw/address city state_id zip phone_number birthday/],
+          'profile' => [qw/id address city state_id zip phone_number birthday/],
           +{'person_roles' =>[qw/person_id role_id _delete/] },
-          +{'credit_cards' => [qw/card_number expiration _delete/]},
+          +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
         )->to_hash;
 
-        Dwarn ['params' => \%params];
-        Dwarn $c->req->body_parameters;
+        use Devel::Dwarn;
+        Dwarn \%params;
 
         $model->context('profile')->update(\%params);
-        Dwarn ['errors' => +{ $model->errors->to_hash(full_messages=>1) }] if $model->invalid;
       }
     }
 
@@ -76,6 +75,8 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
   sub login : Chained(root) PathPart(login) Args(0) {
     my ($self, $c) = @_;
+    $c->redirect_to_action('home') if $c->user_exists;
+
     my $error = '';
     if($c->req->method eq 'POST') {
       my %params = $c->strong_body('username', 'password')->to_hash;

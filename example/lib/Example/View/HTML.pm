@@ -253,7 +253,7 @@ sub form_for {
   my ($self, $c, $model, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
 
-  $attrs{id} ||= $model->model_name->param_key;
+  $attrs{id} ||= $model->model_name->param_key;  # This seems to be trouble when the Schema is under Catalyst...
   $attrs{method} ||= 'POST';
 
   if($model->can('in_storage') && $model->in_storage) {
@@ -269,7 +269,17 @@ sub form_for {
   local $c->stash->{'valiant.view.form.model'} = $model;
   local $c->stash->{'valiant.view.form.namespace'}[0] = $attrs{id};
 
-  return $self->form_tag($c, \%attrs, $content);
+  my $content_expanded .= $content->($self, $model);
+
+  if($model->in_storage) {
+    my @primary_columns = $model->result_source->primary_columns;
+    foreach my $primary_column (@primary_columns) {
+      next unless my $value = $model->get_column($primary_column);
+      $content_expanded .= $self->hidden($c, $primary_column);
+    }
+  }
+
+  return $self->form_tag($c, \%attrs, $content_expanded);
 }
 
 sub label {
