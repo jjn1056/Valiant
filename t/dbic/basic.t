@@ -114,7 +114,6 @@ ok $state->id;
 
   ok $person->invalid, 'attempted record invalid multi context';
   ok !$person->in_storage, 'record was not saved';
-
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     credit_cards => [
       "Credit Cards has too few rows (minimum is 2)",
@@ -297,6 +296,7 @@ ok $state->id;
   ok ! $person_invalid->in_storage, 'record has not been saved 4';
   is_deeply +{$person_invalid->errors->to_hash(full_messages=>1)}, +{
     credit_cards => [
+      "Credit Cards has too few rows (minimum is 2)",
       "Credit Cards Is Invalid",
     ],
     "credit_cards.1.expiration" => [
@@ -541,6 +541,7 @@ ok $state->id;
 
   is_deeply +{ $person->errors->to_hash }, +{
     credit_cards => [
+      'has too few rows (minimum is 2)',
       "Is Invalid",
     ],
     "credit_cards.0.card_number" => [
@@ -829,13 +830,3 @@ ok $state->id;
 }
 
 done_testing;
-
-__END__
-
-Deleting
-proper control over nested with
-deal with many to many.....
-docs :(
-
-step back and write out ll the test cases
-

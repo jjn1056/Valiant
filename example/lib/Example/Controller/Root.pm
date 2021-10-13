@@ -17,20 +17,27 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
     $c->detach;
   }
 
-  sub register :Chained(root) PathPart('register') Args(0) {
+  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
-
-    my %params = $c->strong_body(
-      ['person'], 
-      'username', 'first_name', 'last_name', 
-      'password', 'password_confirmation'
-    )->to_hash;
-    
-    $c->stash(person => my $model = $c->model('Schema::Person')->new_result(\%params));
-    $model->insert if $c->req->method eq 'POST';
-    return $c->redirect_to_action('login') if $model->in_storage;
   }
+  
+    sub GET_register :Action {
+      my ($self, $c) = @_;
+      $c->stash(person => $c->model('Schema::Person')->new_result(+{}));
+    }
+
+    sub POST_register :Action {
+      my ($self, $c) = @_;
+      my %params = $c->strong_body(
+        ['person'], 
+        'username', 'first_name', 'last_name', 
+        'password', 'password_confirmation'
+      )->to_hash;
+    
+      $c->stash(person => my $model = $c->model('Schema::Person')->create(\%params));
+      $c->redirect_to_action('login') if $model->valid;
+    }
 
     sub home :Chained(auth) PathPart('home') Args(0) {
       my ($self, $c) = @_;
@@ -39,7 +46,6 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
     sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) {
       my ($self, $c) = @_;
-      
       $c->stash(states => $c->model('Schema::State'));
       $c->stash(roles => $c->model('Schema::Role'));
       $c->stash(person => my $model = $c->model('Schema::Person')
@@ -48,8 +54,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
           { prefetch => ['profile', 'credit_cards', {person_roles => 'role' }] }
         )
       );
-
-      $model->build_related_if_empty('profile'); # Needed since the relationsip is optional
+      $model->build_related_if_empty('profile'); # Needed since the relationship is optional
     }
 
       sub GET_profile :Action {}
@@ -63,7 +68,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
           +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
         )->to_hash;
 
-        $c->stash->{person}->update(\%params);
+        $c->stash->{person}->context('profile')->update(\%params);
       }
 
     sub logout : Chained(auth) PathPart(logout) Args(0) {
@@ -72,21 +77,19 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $c->redirect_to_action('login');
     }
 
-  sub login : Chained(root) PathPart(login) Args(0) {
+  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
+  }
 
-    my $error = '';
-    if($c->req->method eq 'POST') {
+    sub GET_login :Action { $_[1]->stash(error => '') }
+
+    sub POST_login :Action {
+      my ($self, $c) = @_;
       my %params = $c->strong_body('username', 'password')->to_hash;
-      $c->redirect_to_action('home') if $c->authenticate({
-          username=>$params{username},
-          password=>$params{password},
-        });
-      $error = 'User not found!';
+      return $c->redirect_to_action('home') if $c->authenticate(\%params);
+      $c->stash(error => 'User Not Found!');
     }
-    $c->stash(error => $error);
-}
 
 sub end : ActionClass('RenderView') {}
 
