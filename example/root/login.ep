@@ -1,11 +1,6 @@
-% layout 'layout.ep';
-% content title => 'Sign In';
-% content css => begin
-<style>
-</style>
-% end
+% layout 'layout.ep', title => 'Sign In';
 
-%= form_tag { method_attr 'POST', style_attr 'width:20em; margin:auto' }, begin
+%= form_tag { method=>'POST', style=>'width:20em; margin:auto' }, begin
   <fieldset>
     <legend>
       Sign In

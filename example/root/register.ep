@@ -1,8 +1,5 @@
-% layout 'layout.ep';
-% content title => 'Register';
-% content css => begin
-  <style></style>
-% end
+% layout 'layout.ep', title => 'Register';
+
 
 %= form_for $person => +{ style=>'width:27em; margin:auto' }, begin
   <fieldset>

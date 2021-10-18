@@ -1,8 +1,4 @@
-% layout 'layout.ep';
-% content title => 'Update Profile';
-% content css => begin
-  <style></style>
-% end
+% layout 'layout.ep', title => 'Update Profile';
 
 %= form_for $person => +{ style=>'width:27em; margin:auto'  }, begin
   % if($person->validated && !$person->has_errors) {

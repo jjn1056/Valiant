@@ -2,11 +2,10 @@ package Example::Controller::Root;
 
 use Moose;
 use MooseX::MethodAttributes;
-use Devel::Dwarn; 
 
 extends 'Catalyst::Controller';
 
-sub root :Chained(/) PathPart('') CaptureArgs(0) { } 
+sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { } 
 
   sub not_found :Chained(root) PathPart('') Args { $_[1]->detach_error(404) }
   
@@ -29,7 +28,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
     sub POST_register :Action {
       my ($self, $c) = @_;
-      my %params = $c->strong_body(
+      my %params = $c->structured_body(
         ['person'], 
         'username', 'first_name', 'last_name', 
         'password', 'password_confirmation'
@@ -41,10 +40,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
 
     sub home :Chained(auth) PathPart('home') Args(0) {
       my ($self, $c) = @_;
-      $c->res->body('logged in! See <a href="/profile">Profile</a> or <a href="/logout">Logout</a>');  
     }
 
-    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) {
+    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,POST) {
       my ($self, $c) = @_;
       $c->stash(states => $c->model('Schema::State'));
       $c->stash(roles => $c->model('Schema::Role'));
@@ -57,11 +55,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $model->build_related_if_empty('profile'); # Needed since the relationship is optional
     }
 
-      sub GET_profile :Action {}
-
       sub POST_profile :Action {
         my ($self, $c) = @_;
-        my %params = $c->strong_body(
+        my %params = $c->structured_body(
           ['person'], 'username', 'first_name', 'last_name', 
           'profile' => [qw/id address city state_id zip phone_number birthday/],
           +{'person_roles' =>[qw/person_id role_id _delete/] },
@@ -77,21 +73,20 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
       $c->redirect_to_action('login');
     }
 
-  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) {
+  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Allow(GET,POST) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
+    $c->stash(error => '') 
   }
-
-    sub GET_login :Action { $_[1]->stash(error => '') }
 
     sub POST_login :Action {
       my ($self, $c) = @_;
-      my %params = $c->strong_body('username', 'password')->to_hash;
+      my %params = $c->structured_body('username', 'password')->to_hash;
       return $c->redirect_to_action('home') if $c->authenticate(\%params);
       $c->stash(error => 'User Not Found!');
     }
 
-sub end : ActionClass('RenderView') {}
+sub end : Action Does(RenderView) Does(RenderErrors) {}
 
 __PACKAGE__->config(namespace=>'');
 __PACKAGE__->meta->make_immutable;

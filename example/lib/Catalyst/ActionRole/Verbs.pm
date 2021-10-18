@@ -1,6 +1,30 @@
 package Catalyst::ActionRole::Verbs;
 
+{
+  package Catalyst::ActionRole::Verbs::Utils::MethodNotAllowed;
+   
+  use Moose;
+  use namespace::clean -except => 'meta';
+    
+  extends 'CatalystX::Utils::HttpException';
+  
+  has resource => (is=>'ro', required=>1);
+  has allowed_methods => (is=>'ro', isa=>'ArrayRef[Str]', required=>1);
+  has attempted_method => (is=>'ro', isa=>'Str', required=>1);
+
+  has '+status' => (is=>'ro', init_arg=>undef, default=>sub {405});
+  has '+errors' => (
+    is=>'ro',
+    init_arg=>undef, 
+    default=>sub { ["HTTP Method '@{[ $_[0]->attempted_method ]}' not permitted for resource '@{[ $_[0]->resource ]}'.  Can only be: @{[ join ', ', @{$_[0]->allowed_methods||[]} ]}"] },
+  );
+   
+  __PACKAGE__->meta->make_immutable;
+}
+
 use Moose::Role;
+use Catalyst::ActionRole::Verbs::Utils::MethodNotAllowed;
+use Catalyst::Utils;
 
 requires 'attributes';
 
@@ -14,111 +38,83 @@ has allowed_verbs => (
   builder => '_build_allowed_verbs' );
 
   sub _build_allowed_verbs {
-    my $self = shift;   
+    my $self = shift;
+    my @core_allowed = $self->can('allowed_http_methods') ? $self->allowed_http_methods : ();
+    my %allow = map { $_=~s/^\s+|\s+$//g; $_=>1  } map { split(',',$_) } (@{$self->attributes->{Allow} || []}, @core_allowed);
     my @verbs =
       grep { 
         $self->class->can("${_}_${\$self->name}")
-        || $self->class->can($_);
+        || $self->class->can($_)
+        || $allow{$_};
       } @VERBS;
     return \@verbs;
   }
 
-around 'dispatch', sub {
-  my ($orig, $self, $ctx, @args) = @_;
-  my $return = $self->$orig($ctx, @args);
-  my $method = $ctx->req->method;
-  return $self->_dispatch_to_verb($ctx, $method);
-};
+has verb_action_handlers => (
+  is => 'ro',
+  required => 1,
+  lazy => 1,
+  builder => '_build_verb_action_handlers' );
+
+  sub _build_verb_action_handlers {
+    my $self = shift;
+    my %handler_map = ();
+    foreach my $verb (@{$self->allowed_verbs||[]}) {
+      if($self->class->can("${verb}_${\$self->name}")) {
+        $handler_map{$verb} = "${verb}_${\$self->name}";
+      } elsif($self->class->can($_)) {
+        $handler_map{$verb} = $_;
+      }
+    }
+    return \%handler_map;
+  }
 
 around 'list_extra_info' => sub {
   my ($orig, $self, @args) = @_;
   my @allowed_methods = sort @{$self->allowed_verbs||[]};
-  return +{
-    %{ $self->$orig(@args) }, 
-    HTTP_METHODS => \@allowed_methods,
-  };
+  my %info = %{$self->$orig(@args)||+{}};
+  if(exists $info{HTTP_METHODS}) {
+    push @{$info{HTTP_METHODS}}, @allowed_methods;
+  } else {
+    $info{HTTP_METHODS} = \@allowed_methods;
+  }
+  return \%info;
+};
+
+around 'execute', sub {
+  my ($orig, $self, $controller, $ctx, @args) = @_;
+  my $method = $ctx->req->method;
+  my @allowed = @{$self->allowed_verbs||[]};
+  $ctx->response->header( 'Allow' => \@allowed );
+
+  return Catalyst::ActionRole::Verbs::Utils::MethodNotAllowed->throw(attempted_method=>$method, allowed_methods=>\@allowed, resource=>$ctx->req->uri)
+    unless grep { $_ eq $method } @allowed; # TODO need to thow not allowed exception
+
+  my @return = $self->$orig($controller, $ctx, @args);
+  $ctx->stash->{__execute} = \@return;
+  return @return;
+};
+
+around 'dispatch', sub {
+  my ($orig, $self, $ctx, @args) = @_;
+  my $ret = $self->$orig($ctx, @args);
+  my $method = $ctx->req->method;
+  my @return = @{ delete $ctx->stash->{__execute}||[] };
+
+  return $ret unless my $action_handler = $self->verb_action_handlers->{$method};
+  return $self->_dispatch_to_verb($ctx, $action_handler, @return);
 };
 
 sub _dispatch_to_verb {
-  my ($self, $ctx, $method) = @_;
-  my $controller = $ctx->component($self->class);
-  my $name = $self->name;
-  my ($code, $method_name);
-
-  foreach my $target ("${method}_${name}", "${method}") {
-    if (my $action = $controller->action_for($target)) {
-      return $ctx->forward( $action,  $ctx->req->args ); # Forward to get_foo if it's an action
-    } elsif ($code = $controller->can($target)) {
-      $method_name = $target;
-    }
-  }
-
-  # If we got here, either there's no matching action to dispatch to OR we
-  # matched a method not an action. Handle the 'no matching action' case first.
-
-  if (!$code) {
-    my $code_action = {
-      HEAD => sub {
-        $self->_dispatch_to_verb($ctx, 'GET');
-      },
-      OPTIONS => sub {
-        $method_name = 'options';
-        $code = sub { $self->_return_options($self->name, @_) };
-      },
-      default => sub {
-        if($code = $controller->can("method_not_allowed_${name}")) {
-          $method_name = "method_not_allowed_${name}";
-        } elsif($code = $controller->can("method_not_allowed")) {
-          $method_name = "method_not_allowed";
-        } else {
-          $method_name = "method_not_allowed";
-          $code = sub { $self->_return_method_not_allowed($self->name, @_) };
-        };
-      },
-    };
-    my $respond = ($code_action->{$method} || $code_action->{default})->();
-    return $respond unless $code;
-  }
-
-  # localise stuff so we can dispatch the action 'as normal, but get
-  # different stats shown, and different code run.
-  # Also get the full path for the action, and make it look like a forward
-
-  local $self->{code} = $code;
-  my @name = split m{/}, $self->reverse;
-  $name[-1] = $method_name;
-  local $self->{reverse} = "-> " . join('/', @name);
-  
-  $ctx->execute( $self->class, $self, @{ $ctx->req->args } );
-}
-
-sub _return_options {
-  my ( $self, $method_name, $controller, $c) = @_;
-  my @allowed = @{$self->allowed_verbs||[]};
-  $c->response->content_type('text/plain');
-  $c->response->status(200);
-  $c->response->header( 'Allow' => \@allowed );
-  $c->response->body(q{});
-}
- 
-sub _return_method_not_allowed {
-  my ( $self, $method_name, $controller, $c ) = @_;
-  my @allowed = @{$self->allowed_verbs||[]};
-  $c->response->content_type('text/plain');
-  $c->response->status(405);
-  $c->response->header( 'Allow' => \@allowed );
-  $c->response->body( "Method "
-    . $c->request->method
-    . " not allowed for "
-    . $c->uri_for( $method_name ) );
-  $c->detach;
+  my ($self, $ctx, $action_handler, @return) = @_;
+  return $ctx->forward($action_handler, [@{$ctx->req->args}, @return]);
 }
 
 1;
 
 =head1 NAME
 
-Catalyst::ActionRole::Vers - Dispatch by HTTP Verbs
+Catalyst::ActionRole::Verbs - Dispatch by HTTP Verbs
 
 =head1 SYNOPSIS
 
