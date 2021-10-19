@@ -2,32 +2,29 @@ package Example::Controller::Root;
 
 use Moose;
 use MooseX::MethodAttributes;
+use Example::Base;
 
 extends 'Catalyst::Controller';
 
 sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { } 
 
-  sub not_found :Chained(root) PathPart('') Args { $_[1]->detach_error(404) }
+  sub not_found :Chained(root) PathPart('') Args ($self, $c, @args) { $c->detach_error(404) }
   
-  sub auth: Chained(root) PathPart('') CaptureArgs() {
-    my ($self, $c) = @_;
+  sub auth: Chained(root) PathPart('') CaptureArgs() ($self, $c) {
     return if $c->user;
     $c->redirect_to_action('login');
     $c->detach;
   }
 
-  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) {
-    my ($self, $c) = @_;
+  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) ($self, $c) {
     $c->redirect_to_action('home') if $c->user;
   }
   
-    sub GET_register :Action {
-      my ($self, $c) = @_;
+    sub GET_register :Action ($self, $c) {
       $c->stash(person => $c->model('Schema::Person')->new_result(+{}));
     }
 
-    sub POST_register :Action {
-      my ($self, $c) = @_;
+    sub POST_register :Action ($self, $c) {
       my %params = $c->structured_body(
         ['person'], 
         'username', 'first_name', 'last_name', 
@@ -38,12 +35,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
       $c->redirect_to_action('login') if $model->valid;
     }
 
-    sub home :Chained(auth) PathPart('home') Args(0) {
-      my ($self, $c) = @_;
-    }
+    sub home :Chained(auth) PathPart('home') Args(0) ($self, $c) { }
 
-    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,POST) {
-      my ($self, $c) = @_;
+    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,POST) ($self, $c) {
       $c->stash(states => $c->model('Schema::State'));
       $c->stash(roles => $c->model('Schema::Role'));
       $c->stash(person => my $model = $c->model('Schema::Person')
@@ -55,8 +49,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
       $model->build_related_if_empty('profile'); # Needed since the relationship is optional
     }
 
-      sub POST_profile :Action {
-        my ($self, $c) = @_;
+      sub POST_profile :Action ($self, $c) {
         my %params = $c->structured_body(
           ['person'], 'username', 'first_name', 'last_name', 
           'profile' => [qw/id address city state_id zip phone_number birthday/],
@@ -67,36 +60,31 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         $c->stash->{person}->context('profile')->update(\%params);
       }
 
-    sub logout : Chained(auth) PathPart(logout) Args(0) {
-      my ($self, $c) = @_;
-      delete $c->session->{user_id};
+    sub logout : Chained(auth) PathPart(logout) Args(0) ($self, $c) {
+      $c->logout;
       $c->redirect_to_action('login');
     }
 
-  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Allow(GET,POST) {
-    my ($self, $c) = @_;
-    $c->redirect_to_action('home') if $c->user;
+  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Allow(GET,POST) ($self, $c) {
+    $c->redirect_to_action('home') if $c->user; # Don't bother if already logged in
   }
 
     # Might seem silly to use an empty model for such a small form but its better
-    # to be consistent since its the pattern used the same for more complex stuff
+    # to be consistent since its the pattern used for more complex stuff
 
-    sub GET_login :Action {
-      my ($self, $c) = @_;
+    sub GET_login :Action ($self, $c) {
       $c->stash(person => $c->model('Schema::Person')->new_result(+{})); 
     }
 
-    sub POST_login :Action {
-      my ($self, $c) = @_;
+    sub POST_login :Action ($self, $c) {
       my ($username, $password) = $c
         ->structured_body('username', 'password')
         ->get('username', 'password');
 
-      $c->stash(person => my $person = $c->model('Schema::Person')->authenticate($username, $password));
+      $c->stash(person => my $person = $c->authenticate($username, $password));
 
-      return if $person->has_errors;
+      return if $person->has_errors; # The model did not authenticate
       
-      $c->session->{user_id} = $person->id;
       $c->redirect_to_action('home');
     }
 

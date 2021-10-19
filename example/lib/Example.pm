@@ -2,7 +2,7 @@ package Example;
 
 use Catalyst;
 use Valiant::I18N;
-use feature ':5.16';
+use Example::Base;
 
 __PACKAGE__->setup_plugins([qw/
   Session
@@ -28,12 +28,19 @@ __PACKAGE__->config(
 
 __PACKAGE__->setup();
 
-sub user {
-  my ($c) = @_;
-  return $c->{__user} ||= do {
-    my $id = $c->session->{user_id} // return;
-    my $person = $c->model('Schema::Person')->find({id=>$id}) // return;
+sub authenticate($self, $username='', $password='') {
+  my $user = $self->model('Schema::Person')->authenticate($username, $password);
+  $self->session->{user_id} = $user->id unless $user->has_errors;
+  return $user; 
+}
+
+sub user($self) {
+  return $self->{_user} ||= do {
+    my $id = $self->session->{user_id} // return;
+    my $person = $self->model('Schema::Person')->find({id=>$id}) // return;
   };
 }
+
+sub logout($self) { delete $self->session->{user_id} }
 
 __PACKAGE__->meta->make_immutable();

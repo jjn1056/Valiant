@@ -1,6 +1,7 @@
 package Example::Schema::ResultSet::Person;
 
-use Example::Schema::ResultSetClass;
+use Example::Base;
+use base 'Example::Schema::ResultSet';
 
 sub authenticate($self, $username='', $password='') {
   my $user = $self->find_or_new({username=>$username});

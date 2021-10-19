@@ -90,9 +90,13 @@ around 'execute', sub {
   return Catalyst::ActionRole::Verbs::Utils::MethodNotAllowed->throw(attempted_method=>$method, allowed_methods=>\@allowed, resource=>$ctx->req->uri)
     unless grep { $_ eq $method } @allowed; # TODO need to thow not allowed exception
 
-  my @return = $self->$orig($controller, $ctx, @args);
-  $ctx->stash->{__execute} = \@return;
-  return @return;
+  my ($first, @return) = $self->$orig($controller, $ctx, @args);
+  if($first) {
+    $ctx->stash->{__execute} = [$first, @return];
+  } else {
+    $ctx->stash->{__execute} = [];
+  }
+  return $first, @return;
 };
 
 around 'dispatch', sub {
@@ -107,6 +111,8 @@ around 'dispatch', sub {
 
 sub _dispatch_to_verb {
   my ($self, $ctx, $action_handler, @return) = @_;
+
+  ## TODO @return seems to contain undef when it really means empty.
   return $ctx->forward($action_handler, [@{$ctx->req->args}, @return]);
 }
 
