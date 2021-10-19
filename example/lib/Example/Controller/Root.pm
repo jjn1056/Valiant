@@ -11,14 +11,14 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
   
   sub auth: Chained(root) PathPart('') CaptureArgs() {
     my ($self, $c) = @_;
-    return if $c->user_exists;
+    return if $c->user;
     $c->redirect_to_action('login');
     $c->detach;
   }
 
   sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) {
     my ($self, $c) = @_;
-    $c->redirect_to_action('home') if $c->user_exists;
+    $c->redirect_to_action('home') if $c->user;
   }
   
     sub GET_register :Action {
@@ -69,14 +69,17 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
 
     sub logout : Chained(auth) PathPart(logout) Args(0) {
       my ($self, $c) = @_;
-      $c->logout;
+      delete $c->session->{user_id};
       $c->redirect_to_action('login');
     }
 
   sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Allow(GET,POST) {
     my ($self, $c) = @_;
-    $c->redirect_to_action('home') if $c->user_exists;
+    $c->redirect_to_action('home') if $c->user;
   }
+
+    # Might seem silly to use an empty model for such a small form but its better
+    # to be consistent since its the pattern used the same for more complex stuff
 
     sub GET_login :Action {
       my ($self, $c) = @_;
@@ -90,11 +93,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         ->get('username', 'password');
 
       $c->stash(person => my $person = $c->model('Schema::Person')->authenticate($username, $password));
-      if(!$person->has_errors) {
-        $c->authenticate(+{username=>$username, password=>$password});
-        $c->redirect_to_action('home')
-      }
 
+      return if $person->has_errors;
+      
+      $c->session->{user_id} = $person->id;
+      $c->redirect_to_action('home');
     }
 
 sub end : Action Does(RenderView) Does(RenderErrors) {}
