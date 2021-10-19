@@ -76,14 +76,25 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
   sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Allow(GET,POST) {
     my ($self, $c) = @_;
     $c->redirect_to_action('home') if $c->user_exists;
-    $c->stash(error => '') 
   }
+
+    sub GET_login :Action {
+      my ($self, $c) = @_;
+      $c->stash(person => $c->model('Schema::Person')->new_result(+{})); 
+    }
 
     sub POST_login :Action {
       my ($self, $c) = @_;
-      my %params = $c->structured_body('username', 'password')->to_hash;
-      return $c->redirect_to_action('home') if $c->authenticate(\%params);
-      $c->stash(error => 'User Not Found!');
+      my ($username, $password) = $c
+        ->structured_body('username', 'password')
+        ->get('username', 'password');
+
+      $c->stash(person => my $person = $c->model('Schema::Person')->authenticate($username, $password));
+      if(!$person->has_errors) {
+        $c->authenticate(+{username=>$username, password=>$password});
+        $c->redirect_to_action('home')
+      }
+
     }
 
 sub end : Action Does(RenderView) Does(RenderErrors) {}

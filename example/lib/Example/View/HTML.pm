@@ -384,7 +384,7 @@ sub model_errors {
   my ($self, $c, @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
   my $model = $c->stash->{'valiant.view.form.model'};
-  my @errors = $model->errors->model_errors;
+  my @errors = $model->errors->model_messages;
 
   if($model->has_errors && !@errors) {
     push @errors, delete $attrs{default_msg} if exists $attrs{default_msg};

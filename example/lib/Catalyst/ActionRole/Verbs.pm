@@ -62,8 +62,8 @@ has verb_action_handlers => (
     foreach my $verb (@{$self->allowed_verbs||[]}) {
       if($self->class->can("${verb}_${\$self->name}")) {
         $handler_map{$verb} = "${verb}_${\$self->name}";
-      } elsif($self->class->can($_)) {
-        $handler_map{$verb} = $_;
+      } elsif($self->class->can($verb)) {
+        $handler_map{$verb} = $verb;
       }
     }
     return \%handler_map;
