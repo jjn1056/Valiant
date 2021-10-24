@@ -37,6 +37,7 @@ __PACKAGE__->config(
     input => \&input,
     button => \&button,
     hidden => \&hidden,
+    password => \&password,
     checkbox => \&checkbox,
     errors_for => \&errors_for,
     model_errors => \&model_errors,
@@ -334,6 +335,12 @@ sub hidden {
   my ($self, $c, $field , @proto) = @_;
   my ($content, %attrs) = _parse_proto(@proto);
   return $self->input($c, $field, +{%attrs, type=>'hidden'}, $content);
+}
+
+sub password {
+  my ($self, $c, $field , @proto) = @_;
+  my ($content, %attrs) = _parse_proto(@proto);
+  return $self->input($c, $field, +{%attrs, type=>'password', value=>''}, $content);
 }
 
 sub checkbox {

@@ -1,5 +1,8 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001010 TBD
+          - New Validator: "Scalar".
+
 0.001009 2021 October 01
           - A lot of little bugfixes to the DBIC glue code, expecially when using nested
           validations.  If you are using nested DBIC validations its not impossible stuff
@@ -55,16 +58,14 @@ The following logs changes for the CPAN distribution Valiant
           - lots of updates to nested DBIC support and improved example application
 
 0.001003  2021 March 04
-          - Allow one to disable auto validation on DBIC classes.  This allows
-          you to insert or update rows that are invalid.
-          - Added some test cases for strict mode validations and allowed one a
-          bit more control over strict mode messaging.
+          - Allow one to disable auto validation on DBIC classes.  This allows you to insert or
+          update rows that are invalid.
+          - Added some test cases for strict mode validations and allowed one a bit more control
+          over strict mode messaging.
 
 0.001002  2021 February 25
-          - quick followup that just fixes POD issues
+          - quick followup that just fixes POD issues.
 
 0.001001  2021 February 25
-          - First Post!  Please only use this if you are ready to help
-          file bug reports and read all the docs carefully.
-          - This release is dedicated to my dog Tornado who we lost to
-          cancer on 18 August 2020.
+          - This initial release is dedicated to my dog 'Tornado', who we lost to cancer on 
+          18 August 2020.  Please see 'DEDICATIONS' in the main POD for more.

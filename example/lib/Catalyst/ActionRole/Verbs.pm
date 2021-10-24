@@ -351,6 +351,3 @@ Copyright (c) 2006-2015 the above named AUTHOR and CONTRIBUTORS
 You may distribute this code under the same terms as Perl itself.
  
 =cut
-
-
-=cut

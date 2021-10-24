@@ -1,9 +1,9 @@
 package Example::Schema::Result::Person;
 
+use Example::Base;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("person");
-__PACKAGE__->load_components(qw/EncodedColumn/);
 
 __PACKAGE__->add_columns(
   id => { data_type => 'bigint', is_nullable => 0, is_auto_increment => 1 },
@@ -14,10 +14,7 @@ __PACKAGE__->add_columns(
     data_type => 'varchar',
     is_nullable => 0,
     size => 64,
-    #    encode_column => 1,
-    #    encode_class  => 'Digest',
-    #    encode_args   => { algorithm => 'MD5', format => 'base64' },
-    #    encode_check_method => 'check_password',
+    bcrypt => 1,
   },
 );
 
@@ -65,6 +62,7 @@ __PACKAGE__->many_to_many('roles' => 'person_roles', 'role');
 
 __PACKAGE__->accept_nested_for('roles');
 
+# TODO: I think these can be removed
 sub registered {
   my $self = shift;
   return $self->validated && $self->valid;

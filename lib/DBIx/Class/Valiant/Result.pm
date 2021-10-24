@@ -125,7 +125,6 @@ sub insert {
     debug 2, "Skipping insert for @{[$self]} because its probably and _add";
     return $self;
   }
-  ## delete $self->{__VALIANT_CREATE_ARGS};  We might need this at some point
   return $self->next::method(@args);
 }
 
@@ -226,15 +225,35 @@ sub register_column {
 
 sub namespace {
   my $self = shift;
+
+  warn "........... I;'d like to try and find a NS for $self";
+
+  unless(ref $self) {
+    warn "doh, I'm a class $self";
+    #$self = $self->
+    #$self =~s/::${source_name}$//;
+
+    use Carp;
+    confess "doh";
+  }
+  
   return '' unless ref $self;
 
-  my $class = ref($self) ? ref($self) : $self; 
-  my $source_name = $self->result_source->source_name;
+  warn "..........ABOUT TO DO THE NAMESPACE THING";
 
-  #warn "namespace clas $class";
-  #warn "namespace src $source_name";
+  my $class = ref($self) ? ref($self) : $self; 
+
+  my $source_name = $self->result_source->source_name;
+ 
+  warn "..........I THINK MY class is $class and source is $source_name";
+
   
   $class =~s/::${source_name}$//;
+
+  warn "..........Decided my NS is $class";
+  use Devel::Dwarn;
+  Dwarn [@class::ISA];
+
   return $class;
 }
 
@@ -696,12 +715,6 @@ sub set_multi_related_from_params {
       };
       $cb->($current);
     }
-
-    ## TODO to solve the 'is in a deleted branch' issue either when we mark for deletion
-    # we immediately recursively look into its related caches and mark all children as 'in a deleted branch
-    # OR we have the code 'is_in_deleted_branch' follow up all belongs to rels looking for 'marked_for_deletion
-    # OR we have some sort of index/map (not sure how tod this)
-    # Option one at first look seems the least painful / most performant
 
     push @related_models, $current if $current->in_storage; # don't preserve unsaved previous
   }
