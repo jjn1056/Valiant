@@ -29,7 +29,6 @@ has 'unnamespaced' => (
     return unless $self->has_namespace;
     my $class = $self->class;
     my $ns = $self->namespace;
-    warn "Found ns in $self for unnamespaced of $ns on class $class";
     $class =~s/^${ns}:://;
     return $class;
     return lc decamelize($class);
@@ -161,12 +160,8 @@ sub model_name {
   my ($self) = @_;
   my $class = ref($self) || $self;
 
-  warn "getting model_name info for class $class";
-
   return $_model_name{$class} ||= do {
     my %args = $self->prepare_model_name_args;
-    use Devel::Dwarn;
-    Dwarn [NNNNNNameClassArgs => $class => \%args];
     Module::Runtime::use_module($self->name_class)->new(%args);
   };
 }
@@ -177,7 +172,6 @@ sub prepare_model_name_args {
   my %args = (class => $class);
   if($self->can('namespace')) {
     $args{namespace} = $self->namespace;
-    warn "Found namespace value of $args{namespace} for $self";
   }
 
   return %args;

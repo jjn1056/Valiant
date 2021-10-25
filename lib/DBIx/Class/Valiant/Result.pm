@@ -20,6 +20,8 @@ export_methods ['filters', 'validates', 'filters_with', 'validates_with', 'accep
 __PACKAGE__->mk_classdata( _m2m_metadata => {} );
 __PACKAGE__->mk_classdata( auto_validation => 1 );
 __PACKAGE__->mk_classdata( _nested => [] );
+__PACKAGE__->mk_classdata( _src_info => '' );
+
 
 sub many_to_many {
   my $class = shift;
@@ -72,7 +74,8 @@ sub new { # also support for the filter role
     }
   }
   my %filtered = (%$attrs, %{$class->_process_filters(\%columns)});
-  return $class->next::method(\%filtered);
+  my $self = $class->next::method(\%filtered);
+  return $self;
 }
 
 sub accept_nested_for {
@@ -225,36 +228,9 @@ sub register_column {
 
 sub namespace {
   my $self = shift;
-
-  warn "........... I;'d like to try and find a NS for $self";
-
-  unless(ref $self) {
-    warn "doh, I'm a class $self";
-    #$self = $self->
-    #$self =~s/::${source_name}$//;
-
-    use Carp;
-    confess "doh";
-  }
-  
-  return '' unless ref $self;
-
-  warn "..........ABOUT TO DO THE NAMESPACE THING";
-
   my $class = ref($self) ? ref($self) : $self; 
-
-  my $source_name = $self->result_source->source_name;
- 
-  warn "..........I THINK MY class is $class and source is $source_name";
-
-  
-  $class =~s/::${source_name}$//;
-
-  warn "..........Decided my NS is $class";
-  use Devel::Dwarn;
-  Dwarn [@class::ISA];
-
-  return $class;
+  my ($ns) = ($class =~m/^(.+)::.+$/);
+  return $ns;
 }
 
 # Trouble here is you can only inject one attribute per model.  Will be an

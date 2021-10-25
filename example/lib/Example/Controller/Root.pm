@@ -16,12 +16,12 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
     $c->detach;
   }
 
-  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) ($self, $c) {
+  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) Does(CurrentModel) Model(Schema::Person) ($self, $c) {
     $c->redirect_to_action('home') if $c->user;
   }
-  
+
     sub GET_register :Action ($self, $c) {
-      $c->stash(person => $c->model('Schema::Person')->new_result(+{}));
+      $c->stash(person => $c->model->new_result(+{}));
     }
 
     sub POST_register :Action ($self, $c) {
@@ -31,7 +31,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         'password', 'password_confirmation'
       )->to_hash;
     
-      $c->stash(person => my $model = $c->model('Schema::Person')->create(\%params));
+      $c->stash(person => my $model = $c->model->create(\%params));
       $c->redirect_to_action('login') if $model->valid;
     }
 
@@ -47,6 +47,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         )
       );
       $model->build_related_if_empty('profile'); # Needed since the relationship is optional
+      return;
     }
 
       sub POST_profile :Action ($self, $c) {

@@ -9,7 +9,7 @@ requires 'Catalyst::View::MojoTemplate', '0.004';
 requires 'Catalyst::Plugin::Session';
 requires 'Catalyst::Action::RenderView';
 requires 'Catalyst::TraitFor::Request::StructuredParameters', '0.006';
-requires 'Catalyst::ActionRole::CurrentView';
+requires 'Catalyst::Plugin::CurrentComponents', '0.009';
 
 requires 'DBIx::Class', '0.082840';
 requires 'DBIx::Class::Helpers', '2.033003';
