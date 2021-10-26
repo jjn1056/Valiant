@@ -615,9 +615,10 @@ Schema->resultset("Role")->populate([
       ok my $row = $rs->next;
       is $row->role->label, 'admin';
     }
-    ok !$rs->next;
+    my $row = $rs->next;
+    ok !$row;
   }
-  
+
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     person_roles => [
       "Person Roles Is Invalid",

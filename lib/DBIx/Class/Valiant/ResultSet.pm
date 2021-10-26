@@ -5,6 +5,7 @@ use strict;
 use Carp;
 use Valiant::Util 'debug';
 use namespace::autoclean -also => ['debug'];
+use DBIx::Class::Valiant::Util::Exception::TooManyRows;
 
 sub skip_validation {
   my ($self, $arg) = @_;
@@ -65,7 +66,14 @@ sub new_result {
         $limit_proto->($self) :
         $limit_proto;
       my $num = scalar @{$related{$related}};
-      confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
+
+      DBIx::Class::Valiant::Util::Exception::TooManyRows
+        ->throw(
+          limit=>$limit,
+          attempted=>$num,
+          related=>$related,
+          me=>$self->result_source->name,
+        ) if $num > $limit;     
     }
 
     $result->set_related_from_params($related, $related{$related});

@@ -10,6 +10,7 @@ use Valiant::Util 'debug';
 use Scalar::Util 'blessed';
 use Carp;
 use namespace::autoclean -also => ['debug'];
+use DBIx::Class::Valiant::Util::Exception::TooManyRows;
 
 with 'DBIx::Class::Valiant::Validates';
 with 'Valiant::Filterable';
@@ -171,7 +172,15 @@ sub update {
         $limit_proto->($self) :
         $limit_proto;
       my $num = scalar @{$related{$related}};
-      confess "Relationship $related can't create more than $limit rows at once" if $num > $limit;      
+
+      DBIx::Class::Valiant::Util::Exception::TooManyRows
+        ->throw(
+          limit=>$limit,
+          attempted=>$num,
+          related=>$related,
+          me=>$self->result_source->name,
+        ) if $num > $limit;
+     
     }
     debug 2, "Setting related '$related' for @{[ ref $self ]} ";
 
@@ -704,6 +713,7 @@ sub set_multi_related_from_params {
 
 sub set_single_related_from_params {
   my ($self, $related, $params) = @_;
+  my %nested = $self->result_class->accept_nested_for;
 
   # Is there an existing related object in the cache?  If so then we
   # will merge params with existing rather than create a new one or
@@ -821,8 +831,25 @@ sub set_single_related_from_params {
           #   $self->set_from_related($related, $related_result);
           $related_result->set_from_params_recursively(%$params);
         } else {
-          debug 3, "finding with params matching";
-          $related_result = $self->result_source->related_source($related)->resultset->find($params);  # TODO problably shoulld search on unique keys only
+          debug 3, "No PK for $related, lets see if there's other ways to find it";
+          if($nested{$related}{find_with_uniques}) {
+            debug 3, "finding $related for $self with find_with_uniques matching";
+            my %uniques = $self->result_source->related_source($related)->unique_constraints;
+            foreach my $unique (keys %uniques) {
+              next if $unique eq 'primary'; # already done
+              my @key_columns = @{$uniques{$unique}};
+              my %matching = map { $_ => $params->{$_} } grep { exists $params->{$_} } @key_columns;
+
+              next unless scalar(@key_columns) == scalar(keys(%matching)); # only match when its a full key match
+              debug 2, "key $unique exists in params";
+              $related_result = $self->result_source->related_source($related)->resultset->find(\%matching);
+              if($related_result) {
+                debug 3, "Found result via unique keys";
+                last;  
+              }
+            }
+          }
+
           unless($related_result) {
             debug 3, "Did not find result for $related so creating new result";
             $related_result = $self->new_related($related, $params);

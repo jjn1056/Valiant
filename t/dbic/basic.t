@@ -759,12 +759,13 @@ ok $state->id;
       ],
     });
   } || do {
-    ok $@=~/Relationship credit_cards can't create more than 2 rows at once/, 'expected error';
+    ok $@->isa('DBIx::Class::Valiant::Util::Exception::TooManyRows');
+    ok $@=~/Relationship credit_cards on person can't create more that 2 rows; attempted 3/, 'expected error';
   };
 
 }
 
-#skip validat
+#skip validation
 {
   # Basic update test.
   ok my $person = Schema
