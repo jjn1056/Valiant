@@ -1,7 +1,9 @@
 The following logs changes for the CPAN distribution Valiant
 
-0.001010 TBD
+0.001010 2021 October 26
           - New Validator: "Scalar".
+          - lots of improvements to the example application
+          - lots and lots of bugfixs to the DBIC glue code, mostly around nested validations
 
 0.001009 2021 October 01
           - A lot of little bugfixes to the DBIC glue code, expecially when using nested

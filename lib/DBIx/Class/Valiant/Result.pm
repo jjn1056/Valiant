@@ -1079,6 +1079,11 @@ For C<has_one> or C<might_have> relationships will force update the existing nes
 any exists) even if you fail to set the primary key.  Otherwise the current record will be
 deleted and a new one inserted.  Default is false.
 
+=item find_with_uniques
+
+Generally we only try to find a matching row in the DB if a primary key is given.   If you set 
+this to true then we also try to match using and unique keys establish for the related row.
+
 =head1 METHODS
 
 This component adds the following object methods. Please note
