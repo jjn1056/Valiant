@@ -1,4 +1,5 @@
-package Catalyst::ActionRole::RenderView;
+package # Hide
+Catalyst::ActionRole::RenderView;
 
 {
   package Catalyst::ActionRole::RenderView::Utils::NoView;

@@ -1,4 +1,5 @@
-package Catalyst::ActionRole::Verbs;
+package # hide
+Catalyst::ActionRole::Verbs;
 
 {
   package Catalyst::ActionRole::Verbs::Utils::MethodNotAllowed;
