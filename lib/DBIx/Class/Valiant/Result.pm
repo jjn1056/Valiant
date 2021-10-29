@@ -132,6 +132,33 @@ sub insert {
   return $self->next::method(@args);
 }
 
+sub _nested_info_for_related {
+  my ($self, $related) = @_;
+  my %nested = $self->result_class->accept_nested_for;
+  my %info = %{ $nested{$related}||+{} };  
+  return %info;
+}
+
+sub _related_allow_destroy {
+  my ($self, $related) = @_;
+  my %info = $self->_nested_info_for_related($related);
+  if(my $proto = $info{allow_destroy}) {
+    my $allow_or_not = (ref($proto)||'' eq 'CODE') ? $proto->($self) : $proto;
+    return $allow_or_not;
+  }
+  return 0;
+}
+
+sub _related_limit {
+  my ($self, $related) = @_;
+  my %info = $self->_nested_info_for_related($related);
+  if(my $limit_proto = $info{limit}) {
+    my $limit = (ref($limit_proto)||'' eq 'CODE') ? $limit_proto->($self) : $limit_proto;
+    return 1, $limit;
+  }
+  return 0, undef;
+}
+
 sub update {
   my ($self, $upd) = @_;
   my $context = delete($upd->{__context})||[];
@@ -167,12 +194,10 @@ sub update {
     if(my $cb = $nested{$related}->{reject_if}) {
       next if $cb->($self, $related{$related});
     }
-    if(my $limit_proto = $nested{$related}->{limit}) {
-      my $limit = (ref($limit_proto)||'' eq 'CODE') ?
-        $limit_proto->($self) :
-        $limit_proto;
-      my $num = scalar @{$related{$related}};
 
+    my ($has_limit, $limit) = $self->_related_limit($related);
+    if($has_limit) {
+      my $num = scalar @{$related{$related}};
       DBIx::Class::Valiant::Util::Exception::TooManyRows
         ->throw(
           limit=>$limit,
@@ -180,8 +205,8 @@ sub update {
           related=>$related,
           me=>$self->result_source->name,
         ) if $num > $limit;
-     
     }
+
     debug 2, "Setting related '$related' for @{[ ref $self ]} ";
 
     #$self->update_or_create_related($related, $related{$related});
@@ -313,6 +338,7 @@ sub is_unique {
 
 sub mark_for_deletion {
   my ($self) = @_;
+  return unless $self->{__valiant_allow_destroy};
   $self->{__valiant_kiss_of_death} = 1;
 }
 
@@ -529,6 +555,8 @@ sub set_multi_related_from_params {
     die "We expect '$params' to be some sort of reference but its not!";
   }
 
+  my $allow_destroy = $self->_related_allow_destroy($related);
+
   # Queue up some meta data here just once.  We get existing rows ans
   # uniqiue key info (including PK info)
   debug 2, "looking for $related cached or existing rows";
@@ -637,6 +665,10 @@ sub set_multi_related_from_params {
         $related_model->skip_validate;
         $related_model->{__valiant_donot_insert} = 1;
       }
+
+      if($allow_destroy) {
+          $related_model->{__valiant_allow_destroy} = 1;
+      }
       
       # Don't set params for the found keys (waste of time, no change)
       my %params_for_recursive = %$param_row;
@@ -679,6 +711,7 @@ sub set_multi_related_from_params {
     # Only mark for deletion if its actually in store.
     if($current->in_storage) {
       debug 2, "Marking $current for deletion";
+      $current->{__valiant_allow_destroy} = 1 if $allow_destroy;
       $current->mark_for_deletion;
 
       # Mark its children as pruned, recursively
@@ -698,7 +731,7 @@ sub set_multi_related_from_params {
           }
         }
       };
-      $cb->($current);
+      $cb->($current) if $current->is_marked_for_deletion; # We check because 'mark_for_deletion' will skip unless 'allow_destroy' is set
     }
 
     push @related_models, $current if $current->in_storage; # don't preserve unsaved previous
@@ -714,6 +747,7 @@ sub set_multi_related_from_params {
 sub set_single_related_from_params {
   my ($self, $related, $params) = @_;
   my %nested = $self->result_class->accept_nested_for;
+  my $allow_destroy = $nested{allow_destroy};
 
   # Is there an existing related object in the cache?  If so then we
   # will merge params with existing rather than create a new one or
@@ -729,6 +763,7 @@ sub set_single_related_from_params {
     ## TODO this is probably wrong if $params has different FKs or unique fields
 
     debug 2, "Found cached related_result $related for @{[ ref $self ]} ";
+    $related_result->{__valiant_allow_destroy} = 1 if $allow_destroy;
     $related_result->set_from_params_recursively(%$params);
   } else {
     debug 2, "No cached related_result $related for @{[ ref $self ]} ";
@@ -759,9 +794,8 @@ sub set_single_related_from_params {
           #my $rev_data = $self->result_source->reverse_relationship_info($related);
           #my ($reverse_related) = keys %$rev_data;
           #$related_result->set_from_related($reverse_related, $self) if $reverse_related; # Don't have this for might_have
-
+          $related_result->{__valiant_allow_destroy} = 1 if $allow_destroy;
           $related_result->set_from_params_recursively(%$params);
-
         } else {
           debug 3, "Updating with record from params (no matching PK)";
 
@@ -808,6 +842,7 @@ sub set_single_related_from_params {
             # my ($key) = keys(%$rev_data);
             #$related_result->set_from_related($key, $self) if $key; # Don't have this for might_hav
           }
+          $related_result->{__valiant_allow_destroy} = 1 if $allow_destroy;
           $related_result->set_from_params_recursively(%$params);
         }
       } else {
@@ -829,6 +864,7 @@ sub set_single_related_from_params {
           debug 3, "setting with exact record matching pk %pk";
           $related_result = $self->result_source->related_source($related)->resultset->find(\%pk);
           #   $self->set_from_related($related, $related_result);
+          $related_result->{__valiant_allow_destroy} = 1 if $allow_destroy;
           $related_result->set_from_params_recursively(%$params);
         } else {
           debug 3, "No PK for $related, lets see if there's other ways to find it";
@@ -855,6 +891,7 @@ sub set_single_related_from_params {
             $related_result = $self->new_related($related, $params);
           }
           $self->set_from_related($related, $related_result) unless $self->in_storage;
+          $related_result->{__valiant_allow_destroy} = 1 if $allow_destroy;
           $related_result->set_from_params_recursively(%$params);
         }
       }

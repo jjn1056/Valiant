@@ -26,6 +26,23 @@ sub do_validate {
   return $self;
 }
 
+sub _nested_info_for_related {
+  my ($self, $related) = @_;
+  my %nested = $self->result_class->accept_nested_for;
+  my %info = %{ $nested{$related}||+{} };
+  return %info;
+}
+
+sub _related_limit {
+  my ($self, $related) = @_;
+  my %info = $self->_nested_info_for_related($related);
+  if(my $limit_proto = $info{limit}) {
+    my $limit = (ref($limit_proto)||'' eq 'CODE') ? $limit_proto->($self) : $limit_proto;
+    return 1, $limit;
+  }
+  return 0, undef;
+}
+
 sub new_result {
   my ($self, $fields, @args) = @_;
   my $context = delete $fields->{__context};
@@ -61,19 +78,16 @@ sub new_result {
       next RELATED if $response;
     }
 
-    if(my $limit_proto = $nested{$related}->{limit}) {
-      my $limit = (ref($limit_proto)||'' eq 'CODE') ?
-        $limit_proto->($self) :
-        $limit_proto;
+    my ($has_limit, $limit) = $self->_related_limit($related);
+    if($has_limit) {
       my $num = scalar @{$related{$related}};
-
       DBIx::Class::Valiant::Util::Exception::TooManyRows
         ->throw(
           limit=>$limit,
           attempted=>$num,
           related=>$related,
           me=>$self->result_source->name,
-        ) if $num > $limit;     
+        ) if $num > $limit;
     }
 
     $result->set_related_from_params($related, $related{$related});
