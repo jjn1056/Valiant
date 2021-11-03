@@ -1063,7 +1063,8 @@ NESTED_FAIL4: {
   ok $person1->valid;
   ok $person1->in_storage;
   ok my $profile_id = $person1->profile->id;
-  
+  ok my $cc_id = $person1->credit_cards->next->id;
+
   eval { Schema->resultset('Person')
     ->create(+{
     first_name => "john",
@@ -1134,6 +1135,82 @@ NESTED_FAIL4: {
       ],
     });
   } || do { ok $@, 'some sort of error' };
+
+
+    eval { Schema->resultset('Person')
+      ->create(+{
+      first_name => "john",
+      last_name => "nap",
+      username => "jjn11134",
+      password => 'aaaaaaa',
+      password_confirmation => 'aaaaaaa',
+      profile => {
+        address => "15604 Harry Lind Road",
+        birthday => "2001-02-13",
+        city => "Elgin",
+        phone_number => "16467081837",
+        state_id => 2,
+        zip => '20000'
+      },
+      roles => [   
+        { id => 1 },
+        { id => 2 },
+        { id => 4 },
+      ],
+      credit_cards => [
+        {
+          person_id => $person1->id,
+          card_number => "3423423423423423",
+          expiration => "2222-02-02",
+        },
+        {
+          card_number => "1111222233334444",
+          expiration => "2333-02-02",
+        },
+      ],
+    }) } || do { ok $@->isa('DBIx::Class::Valiant::Util::Exception::BadParameterFK') };
+
+     my $p3 = Schema->resultset('Person')
+      ->create(+{
+      first_name => "john",
+      last_name => "nap",
+      username => "jjn11135",
+      password => 'aaaaaaa',
+      password_confirmation => 'aaaaaaa',
+      profile => {
+        address => "15604 Harry Lind Road",
+        birthday => "2001-02-13",
+        city => "Elgin",
+        phone_number => "16467081837",
+        state_id => 2,
+        zip => '20000'
+      },
+      person_roles => [   
+        { role_id => 1 },
+        { role_id => 2 },
+      ],
+      credit_cards => [
+        {
+          id=>$cc_id,
+          card_number => "00000111110000111",
+        },
+        {
+          card_number => "9999988888887777777",
+          expiration => "2333-02-02",
+        },
+      ],
+    });
+
+  # Make sure we didn't hijack the CC
+  my @ccs = $p3->credit_cards->all;
+  is scalar(@ccs), 1;
+  is $ccs[0]->card_number, '9999988888887777777';
+
+  {
+    ok my $hijackcheck = Schema->resultset('CreditCard')->find({id=>$cc_id});
+    is $hijackcheck->card_number, '3423423423423423';
+  }
+
 
 }
 

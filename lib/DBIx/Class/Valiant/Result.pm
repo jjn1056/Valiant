@@ -11,6 +11,8 @@ use Scalar::Util 'blessed';
 use Carp;
 use namespace::autoclean -also => ['debug'];
 use DBIx::Class::Valiant::Util::Exception::TooManyRows;
+use DBIx::Class::Valiant::Util::Exception::BadParameterFK;
+use DBIx::Class::Valiant::Util::Exception::BadParameters;
 
 with 'DBIx::Class::Valiant::Validates';
 with 'Valiant::Filterable';
@@ -123,6 +125,8 @@ sub insert {
   if($self->errors->size) {
     debug 2, "Skipping insert for @{[$self]} because its invalid";
     return $self;
+  } else {
+    debug 2, "proceeding to insert  @{[$self]} because its valid";
   }
 
   if($self->{__valiant_donot_insert}) {
@@ -219,7 +223,11 @@ sub update {
   debug 2, "About to run validations for @{[$self]} on update";
   $self->validate(%validate_args) if $self->auto_validation;
 
-  return $self if $self->errors->size;
+
+  if($self->has_errors) {
+    debug 2, "Validation errors found, skipping mutate for @{[ ref $self ]} ";
+    return $self;
+  }
   debug 2, "No validation issues found, proceeding to mutate @{[ ref $self ]} ";
 
   # wrap it all in a transaction to undo if issues.
@@ -563,7 +571,7 @@ sub set_multi_related_from_params {
   my @existing_rows = @{ $self->$related->get_cache||[] };
   unless(@existing_rows) {
     debug 2, "cache was empty so going to check DB"; ## TODO this is to support ->discard_changes but maybe not needed
-    @existing_rows = $self->$related->all;
+    @existing_rows = $self->$related->all if $self->in_storage;
   }
   debug 2, "Found @{[ scalar @existing_rows ]} existing rows for $related";
   
@@ -594,6 +602,48 @@ sub set_multi_related_from_params {
       debug 3, "Is a NOP row, so skipping";
       next;
     }
+
+    # Ok so if $self is in storage we expect any $related FKs to match whatever is $self $PK.  If that
+    # FK is empty we add it.   If its there but has an unexpected value, that's an error (and probably
+    # a hacking attempt
+    if($self->in_storage) {
+      my %cond = %{$self->result_source->relationship_info($related)->{cond}};
+      foreach my $fk_proto (keys %cond) {
+        my $pk_proto = $cond{$fk_proto};
+        my ($pk) = ($pk_proto=~m/^self\.(.+)$/); 
+        my ($fk) = ($fk_proto=~m/^foreign\.(.+)$/);
+
+        if(exists $param_row->{$fk}) {
+          unless($param_row->{$fk} eq $self->get_column($pk)) {
+            DBIx::Class::Valiant::Util::Exception::BadParameterFK->throw(
+              fk_field=>$fk, fk_value=>$param_row->{$fk}, 
+              pk_field=>$pk, pk_value=>$self->get_column($pk), 
+              related=>$related, me=>$self);
+          }
+        } else {
+          $param_row->{$fk} = $self->get_column($pk); # set it since that should help with the lookups
+        }
+      }
+    } else {
+      # Now if $self is not in storage we expect the related FK to be empty.  If not throw error since
+      # its possible a hacking attempt
+      my %cond = %{$self->result_source->relationship_info($related)->{cond}};
+      foreach my $fk_proto (keys %cond) {
+        my $pk_proto = $cond{$fk_proto};
+        my ($pk) = ($pk_proto=~m/^self\.(.+)$/); 
+        my ($fk) = ($fk_proto=~m/^foreign\.(.+)$/);
+
+        if(exists $param_row->{$fk}) {
+          unless(!defined($param_row->{$fk})) {
+            DBIx::Class::Valiant::Util::Exception::BadParameterFK->throw(
+              fk_field=>$fk, fk_value=>$param_row->{$fk}, 
+              pk_field=>$pk, pk_value=>'undef', 
+              related=>$related, me=>$self);
+          }
+        }
+      }
+    }
+
     my $was_add = delete $param_row->{_add};
     my $related_model;
     if(blessed $param_row) {
@@ -679,8 +729,16 @@ sub set_multi_related_from_params {
       # we 'might' have enough info to actually load it now.
       if(!$related_model->in_storage && !$related_model->is_marked_for_deletion) {
         # TODO: We should skip this if we've already tried a full PK
-        my $copy = $related_model->get_from_storage(); # If we now have the full PK we can find it
-        $related_model = $copy if $copy;
+        my %ident = %{ $related_model->_storage_ident_condition ||+{} };
+        my $fully_id = 1;
+        foreach my $ident(keys %ident) {
+          next if defined($related_model->get_column($ident)); # can't try to load from DB if the PK isn't fully found
+          $fully_id = 0;
+        }
+        if($fully_id) {
+          my $copy = $related_model->get_from_storage(); # If we now have the full PK we can find it
+          $related_model = $copy if $copy;
+        }
       }
     } else {
       die "Not sure what to do with $param_row";
@@ -717,8 +775,8 @@ sub set_multi_related_from_params {
       # Mark its children as pruned, recursively
       my $cb; $cb = sub {
         my $row = shift;
-        debug 3, "marking $row to be pruned";
-        $row->{__valiant_is_pruned} = 1;
+        debug 3, "marking $row to be pruned" unless $row->is_marked_for_deletion;
+        $row->{__valiant_is_pruned} = 1; # unless $row->is_marked_for_deletion;
         my @related = keys %{$row->{_relationship_data}||+{}};
         # TODO only do this for has_one, might_have, has_many
         debug 3, "$row has related data to prune @{[ join ',', @related ]}";
@@ -778,8 +836,28 @@ sub set_single_related_from_params {
       # rel with a new one (find_or_new).
 
       if($self->in_storage) {
-        debug 2, "Updating related result '$related' for @{[ ref $self ]} ";
         my %local_params = %$params;
+        my %cond = %{$self->result_source->relationship_info($related)->{cond}};
+        my @pks = $self->result_source->primary_columns;
+        foreach my $fk_proto (keys %cond) {
+          my $pk_proto = $cond{$fk_proto};
+          my ($pk) = ($pk_proto=~m/^self\.(.+)$/); 
+          my ($fk) = ($fk_proto=~m/^foreign\.(.+)$/);
+          next unless grep { $_ eq $pk } @pks;;
+
+          if(exists $local_params{$fk}) {
+            unless($local_params{$fk} eq $self->get_column($pk)) {
+              DBIx::Class::Valiant::Util::Exception::BadParameterFK->throw(
+                fk_field=>$fk, fk_value=>$local_params{$fk}, 
+                pk_field=>$pk, pk_value=>$self->get_column($pk), 
+                related=>$related, me=>$self);
+            }
+          } else {
+            #$local_params{$fk} = $self->get_column($pk); # set it since that should help with the lookups
+          }
+        }
+
+        debug 2, "Updating related result '$related' for @{[ ref $self ]} ";
         my %pk = map { $_ => delete $local_params{$_} }
           grep { exists $local_params{$_} }
           $self->related_resultset($related)->result_source->primary_columns;
@@ -788,7 +866,10 @@ sub set_single_related_from_params {
         # also apply any updates to that record as indicated.
         if(%pk) {
           debug 3, "Updating with exact record matching pk";
+
           $related_result = $self->result_source->related_source($related)->resultset->find($params); ## TODO shouldnt this be \%pk??
+          $related_result = $self->result_source->related_source($related)->resultset->find(\%pk); ## TODO shouldnt this be \%pk??
+
           $self->set_from_related($related, $related_result);
 
           #my $rev_data = $self->result_source->reverse_relationship_info($related);
@@ -807,7 +888,9 @@ sub set_single_related_from_params {
             debug 3, 'update_only true';
             $related_result = $self->related_resultset($related)->single;
             unless($related_result) {
-              $related_result = $self->find_or_new_related($related, $params); # TODO should find from any unique keys only
+              #$related_result = $self->find_or_new_related($related, $params); # TODO should find from any unique keys on
+              # If one doesn't already exist that means 'make a new one'
+              $related_result = $self->new_related($related, $params);
             }
           } else {
             debug 3, "update_only false for rel $related on @{[ $self]}";
@@ -852,8 +935,25 @@ sub set_single_related_from_params {
         # there's nothing in the DB to find.
         #$related_result = $self->find_or_new_related($related, $params);
         #$related_result->set_from_params_recursively(%$params);
-
         my %local_params = %$params;
+
+        my %cond = %{$self->result_source->relationship_info($related)->{cond}};
+        my @pks = $self->result_source->primary_columns;
+
+        my $flag = 0;
+        foreach my $fk_proto (keys %cond) {
+          my $pk_proto = $cond{$fk_proto};
+          my ($pk) = ($pk_proto=~m/^self\.(.+)$/); 
+          my ($fk) = ($fk_proto=~m/^foreign\.(.+)$/);
+          next unless grep { $_ eq $pk } @pks; 
+          next unless exists $local_params{$fk};
+          $flag++ if defined($local_params{$fk});
+        }
+
+        if($flag == scalar(@pks)) {
+          DBIx::Class::Valiant::Util::Exception::BadParameters->throw(related=>$related, me=>$self);
+        }
+
         my %pk = map { $_ => delete $local_params{$_} }
           grep { exists $local_params{$_} }
           $self->related_resultset($related)->result_source->primary_columns;
