@@ -1022,7 +1022,125 @@ NESTED_FAIL4: {
     is $cc3->id, $cc_id[1];
     ok $cc3->in_storage;
   ok !$cc_rs->next;
+}
+
+## Some security tests.   Create a A person and then try to create
+# a second person but hijack the first persons profile
+
+{
+  my $person1 = Schema->resultset('Person')
+    ->create(+{
+    first_name => "john",
+    last_name => "nap",
+    username => "jjn11111",
+    password => 'aaaaaaa',
+    password_confirmation => 'aaaaaaa',
+    profile => {
+      address => "15604 Harry Lind Road",
+      birthday => "2000-02-13",
+      city => "Elgin",
+      phone_number => "16467081837",
+      state_id => 2,
+      zip => '10000'
+    },
+    roles => [   
+      { id => 1 },
+      { id => 2 },
+      { id => 4 },
+    ],
+    credit_cards => [
+      {
+        card_number => "3423423423423423",
+        expiration => "2222-02-02",
+      },
+      {
+        card_number => "1111222233334444",
+        expiration => "2333-02-02",
+      },
+    ],
+  });
+
+  ok $person1->valid;
+  ok $person1->in_storage;
+  ok my $profile_id = $person1->profile->id;
+  
+  eval { Schema->resultset('Person')
+    ->create(+{
+    first_name => "john",
+    last_name => "nap",
+    username => "jjn111112",
+    password => 'aaaaaaa',
+    password_confirmation => 'aaaaaaa',
+    profile => {
+      #id => $profile_id,
+      person_id => $person1->id,
+      address => "15604 Harry Lind Road",
+      birthday => "2001-02-13",
+      city => "Elgin",
+      phone_number => "16467081837",
+      state_id => 2,
+      zip => '20000'
+    },
+    roles => [   
+      { id => 1 },
+      { id => 2 },
+      { id => 4 },
+    ],
+    credit_cards => [
+      {
+        card_number => "3423423423423423",
+        expiration => "2222-02-02",
+      },
+      {
+        card_number => "1111222233334444",
+        expiration => "2333-02-02",
+      },
+    ],
+  }) } || do {
+    ok $@->isa('DBIx::Class::Valiant::Util::Exception::BadParameters');
+  };
+
+  eval {
+    Schema->resultset('Person')
+      ->create(+{
+      first_name => "john",
+      last_name => "nap",
+      username => "jjn111112",
+      password => 'aaaaaaa',
+      password_confirmation => 'aaaaaaa',
+      profile => {
+        id => $profile_id, # try to hijack someone's profile.  Really this should be, its a bad DB design
+        address => "15604 Harry Lind Road",
+        birthday => "2001-02-13",
+        city => "Elgin",
+        phone_number => "16467081837",
+        state_id => 2,
+        zip => '20000'
+      },
+      roles => [   
+        { id => 1 },
+        { id => 2 },
+        { id => 4 },
+      ],
+      credit_cards => [
+        {
+          card_number => "3423423423423423",
+          expiration => "2222-02-02",
+        },
+        {
+          card_number => "1111222233334444",
+          expiration => "2333-02-02",
+        },
+      ],
+    });
+  } || do { ok $@, 'some sort of error' };
 
 }
 
 done_testing;
+
+__END__
+
+  use Devel::Dwarn;
+  Dwarn +{$person->errors->to_hash(full_messages=>1)};
+
