@@ -570,8 +570,12 @@ sub set_multi_related_from_params {
   debug 2, "looking for $related cached or existing rows";
   my @existing_rows = @{ $self->$related->get_cache||[] };
   unless(@existing_rows) {
-    debug 2, "cache was empty so going to check DB"; ## TODO this is to support ->discard_changes but maybe not needed
-    @existing_rows = $self->$related->all if $self->in_storage;
+    debug 3, "cache was empty so going to check DB"; ## TODO this is to support ->discard_changes but maybe not need
+    if($self->in_storage) {
+      @existing_rows = $self->$related->all;
+    } else {
+      debug 3, "record not in storage, so no point in looking for related rows";
+    }
   }
   debug 2, "Found @{[ scalar @existing_rows ]} existing rows for $related";
   
@@ -681,9 +685,10 @@ sub set_multi_related_from_params {
 
         # If it doesn't match in the cache then we have to find it in the DB. TODO I'm skipping this
         # lookup for now since I don't think we need it unless the user failed to properly prefetch.
+        # Its pointless to do this unless $self is in storage anyway
         unless($related_model) {
-          debug 2, "Trying to find $related in DB with key $key";
-          #$related_model = $self->find_related($related, \%matching, +{key=>$key});
+          debug 2, "Trying to find $related in DB with key $key (SKIPPING)";
+          #$related_model = $self->find_related($related, \%matching, +{key=>$key}) if $self->in_storage;
           if($related_model) {
             debug 2, "found related model for $related with $key in DB";
             %keys_used_to_find = (%keys_used_to_find, %matching);

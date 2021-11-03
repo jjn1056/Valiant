@@ -1211,6 +1211,49 @@ NESTED_FAIL4: {
     is $hijackcheck->card_number, '3423423423423423';
   }
 
+  {
+    my $p3_new = Schema->resultset('Person')->find(
+      { 'me.id'=>$p3->id },
+      { prefetch => ['profile', 'credit_cards', {person_roles => 'role' }] }
+    );
+    $p3_new->build_related_if_empty('profile'); # We want to display a profile form object even if its not there. 
+
+    # Ok now try to hijack a credicard again
+    $p3_new->update({
+      username=>'jjn444444',
+      credit_cards=>[
+          {
+            id=>$cc_id,
+            card_number => "00000111110000111",
+          },
+          {
+            card_number => "11999988888887777777",
+            expiration => "3333-02-02",
+          },
+          {
+            card_number => "9999988888887777777",
+            expiration => "2333-02-02",
+          },
+        ]
+      });
+
+    # I'd prefer this threw and error but I will settle for it not hijakcking
+    # Not sure how to detect this case and throw an err.
+
+    ok $p3_new->valid;
+    # Make sure we didn't hijack the CC
+    my @ccs = $p3_new->credit_cards->all;
+    is scalar(@ccs), 2;
+    is $ccs[0]->card_number, '11999988888887777777';
+    is $ccs[1]->card_number, '9999988888887777777';
+
+    {
+      ok my $hijackcheck = Schema->resultset('CreditCard')->find({id=>$cc_id});
+      is $hijackcheck->card_number, '3423423423423423';
+    }
+
+  }
+
 
 }
 
