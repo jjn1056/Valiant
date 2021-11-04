@@ -1,5 +1,16 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001011 2021 November 03
+          - Improved documentation for DBIx::Class::Valiant
+          - supported deletion of nested results in DBIx::Class::Valiant
+          - lots of security related test cases for nested data and DBIx::Class::Valiant
+          - Some code optimization for DBIx::Class::Valiant (sensing a theme?)
+          - DBIx::Class::Valiant is getting pretty close to the point where I want to pull
+            it into its own distribution.  The core Valiant code is starting to look like
+            its rather stable adn DBIx::Class::Valiant has enough basic docs and test cases
+            that its starting to seem not scary.  If you're using DBIx::Class::Valiant you should
+            keep an eye out for this pending separation.
+
 0.001010 2021 October 26
           - New Validator: "Scalar".
           - lots of improvements to the example application

@@ -22,6 +22,11 @@ jobs:
         run: perl -V
       - name: Install cpanm
         run: curl -L http://cpanmin.us | perl - --verbose --reinstall --notest App::cpanminus
+        run: |
+          pwd
+          env
+          which brew
+          which cpanm
       - name: Install author/build dependencies
         run: |
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
