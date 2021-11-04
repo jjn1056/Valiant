@@ -15,31 +15,26 @@ jobs:
     name: Perl on ${{ matrix.os }}i
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Perl
-        run: |
-          brew install perl
+      - uses: shogo82148/actions-setup-perl@v1
+        with:
+          perl-version: '5.34'
+          install-modules-with: cpanm
+          install-modules-args: --with-develop --with-configure
       - name: perl -V
         run: perl -V
-      - name: Install cpanm
-        run: curl -L http://cpanmin.us | perl - --verbose --reinstall --notest App::cpanminus
       - name: check ENV
         run: |
-          pwd
-          env
-          which brew
-          eval "$(brew shellenv)"
+          which perl
           which cpanm
           which prove
       - name: Install author/build dependencies
         run: |
-          eval "$(brew shellenv)"
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecov
           cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Codecovbash
           cpanm --quiet --notest --skip-satisfied Archive::Tar
           cpanm --quiet --notest --skip-satisfied Archive::Zip
       - name: Install project dependencies
         run: |
-          eval "$(brew shellenv)"
           cpanm --verbose --installdeps .
       - name: Run tests
         run: prove -lr t
@@ -47,7 +42,6 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          eval "$(brew shellenv)"
           PERL5OPT=-MDevel::Cover=+ignore,^t,prove$  prove -j9 -lr t
           cover -report codecovbash
           curl -s https://codecov.io/bash | bash
