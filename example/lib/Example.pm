@@ -1,8 +1,17 @@
 package Example;
 
 use Catalyst;
+use Moose;
 use Valiant::I18N;
 use Example::Base;
+
+has user => (
+  is => 'rw',
+  required => 0,
+  lazy => 1,
+  builder => 'get_user_from_store',
+  clearer => 'clear_user',
+);
 
 __PACKAGE__->setup_plugins([qw/
   Session
@@ -28,19 +37,30 @@ __PACKAGE__->config(
 
 __PACKAGE__->setup();
 
+sub get_user_from_store($self) {
+  my $id = $self->session->{user_id} // return;
+  my $person = $self->model('Schema::Person')->find({id=>$id}) // return;
+  return $person;
+}
+
 sub authenticate($self, $username='', $password='') {
   my $user = $self->model('Schema::Person')->authenticate($username, $password);
-  $self->session->{user_id} = $user->id unless $user->has_errors;
+  $self->persist_user_to_session($user) unless $user->has_errors;
   return $user; 
 }
 
-sub user($self) {
-  return $self->{_user} ||= do {
-    my $id = $self->session->{user_id} // return;
-    my $person = $self->model('Schema::Person')->find({id=>$id}) // return;
-  };
+sub persist_user_to_session ($self, $user) {
+  $self->session->{user_id} = $user->id;
+  $self->user($user);
 }
 
-sub logout($self) { delete $self->session->{user_id} }
+sub logout($self) {
+  $self->clear_user;
+  $self->remove_user_from_session;
+}
+
+sub remove_user_from_session($self) {
+  delete $self->session->{user_id};
+}
 
 __PACKAGE__->meta->make_immutable();
