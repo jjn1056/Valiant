@@ -244,9 +244,8 @@ sub message {
     );
     delete @options{@CALLBACKS_OPTIONS, @MESSAGE_OPTIONS};
 
-    # TODO this has an error when $args{$1} is 0 Change to TT::String I guess
     my $translated = $$type;
-    $translated =~ s/\{\{([^}]+)\}\}/ $options{$1} || '' /gex;
+    $translated =~ s/\{\{([^}]+)\}\}/ defined($options{$1}) ? $options{$1} : '' /gex;
     return $translated;
   } else {
     # Its just a plain string
