@@ -5,14 +5,6 @@ use Moose;
 use Valiant::I18N;
 use Example::Base;
 
-has user => (
-  is => 'rw',
-  required => 0,
-  lazy => 1,
-  builder => 'get_user_from_store',
-  clearer => 'clear_user',
-);
-
 __PACKAGE__->setup_plugins([qw/
   Session
   Session::State::Cookie
@@ -36,6 +28,13 @@ __PACKAGE__->config(
 );
 
 __PACKAGE__->setup();
+
+has user => (
+  is => 'rw',
+  lazy => 1,
+  builder => 'get_user_from_store',
+  clearer => 'clear_user',
+);
 
 sub get_user_from_store($self) {
   my $id = $self->session->{user_id} // return;
