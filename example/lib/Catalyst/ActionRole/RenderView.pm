@@ -1,4 +1,4 @@
-package # Hide
+package # hide from PAUSE
   Catalyst::ActionRole::RenderView;
 
 {
@@ -21,6 +21,8 @@ package # Hide
 
 use Moose::Role;
 use Catalyst::ActionRole::RenderView::Utils::NoView;
+
+requires 'execute';
 
 around 'execute', sub {
   my ($orig, $self, $controller, $c, @args) = @_;

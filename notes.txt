@@ -51,6 +51,8 @@ package Local::User;
 use Moose;
 use Valiant::Validations;
 use Valiant::Nested;  # applies Valiant::Nestable
+use Valiant::Nested
+  -related => '::CreditCards
 
 has profile => (
   is => 'ro',
@@ -65,9 +67,9 @@ has credit_cards => (
 
 accept_nested_for 'credit_cards', 
   type => 'Local::CreditCard', # or 'CreditCard[]' for simple array
-  array => 1,  # or +{ limit => Int||Coderef }
   reject_if => sub { my ($self, $value) = @_; ... }, # When array is applied to each item in array, if not just on the entire value
-  coerce_via => sub { my ($self, $value) = @_;  ... },  
+  builder => sub { my ($self, $value) = @_;  ... }, 
+  builder => 1, # default  basically _build_credit_cards
 ;
 
 validates 'credit_cards', Array => +{ validations=>1, max_length=>10 };  # you need to be explicit if you want the validations aggregated
