@@ -51,9 +51,37 @@ warn submit_tag 'Save', +{name=>'person'};
 warn select_tag "people", raw("<option>David</option>");
 warn select_tag "people", raw("<option>David</option>"), +{include_blank=>1};
 warn select_tag "people", raw("<option>David</option>"), +{include_blank=>'empty'};
-warn select_tag "prompt", raw("<option>David-prompt</option>"), +{prompt=>'empty-prompt'};
+warn select_tag "prompt", raw("<option>David-prompt</option>"), +{prompt=>'empty-prompt', class=>'foo'};
 
+warn options_for_select(['A','B','C'])->to_string;
+warn options_for_select([['A'=>'aa',+{id=>'fff'}],['B' =>'bb'],['C',{class=>['a','b']}]])->to_string;
+warn select_tag "state", options_for_select(['A','B','C'], 'A'), +{include_blank=>1};
+warn select_tag "state", options_for_select([ ['A'=>'aaa'],'B','C'], ['aaa','C']);
 
+{
+  package Local::Test::Length;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has name => (is=>'ro');
+
+  validates name => (
+    length => {
+      maximum => 10,
+      minimum => 3,
+    }
+  );
+
+  validates name => (length => [4,9]); 
+}
+
+my $person = Local::Test::Length->new(name=>'John');
+
+warn form_for($person, sub {
+  my $fb = shift;
+
+});
 
 done_testing;
 

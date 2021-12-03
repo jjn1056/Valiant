@@ -2,14 +2,22 @@ package Valiant::Util::Formbuilder;
 
 {
   package Valiant::Util::Formbuilder::raw;
-  use overload
-    bool => sub {1}, 
-    # '""' => sub { ${$_[0]} }, 
-    '.'  => sub {
-        my ($self, $target) = @_;
-        return bless \"${$self}${$target}", 'Valiant::Util::Formbuilder::raw';
-    },
-    fallback => 1;
+  #use overload
+    # bool => sub {1}, 
+    # '""' => \&to_strong, 
+    # '.'  => \&concat,
+    # fallback => 1;
+
+    sub concat {
+      my $self = shift;
+      my $target = join '', map { $$_ } @_;
+      return bless \"${$self}${target}", 'Valiant::Util::Formbuilder::raw';
+    }
+
+    sub to_string {
+      my $self = shift;
+      return $$self;
+    }
 }
 
 
@@ -23,6 +31,7 @@ our @EXPORT_OK = qw(
   file_field_tag hidden_field_tag button_tag checkbox_tag fieldset_tag form_tag label_tag
   radio_button_tag month_field_tag number_field_tag password_field_tag range_field_tag search_field_tag
   week_field_tag url_field_tag time_field_tag text_area_tag submit_tag select_tag options_for_select
+  form_for
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
@@ -31,6 +40,15 @@ sub CONTENT_ARGS_KEY { $CONTENT_ARGS_KEY }
 
 our $DEFAULT_SUBMIT_TAG_VALUE = 'Save changes';
 sub DEFAULT_SUBMIT_TAG_VALUE { return $DEFAULT_SUBMIT_TAG_VALUE }
+
+our $DEFAULT_OPTIONS_DELIM = "";
+sub DEFAULT_OPTIONS_DELIM { return $DEFAULT_OPTIONS_DELIM }
+
+our $DEFAULT_FORMBUILDER = 'Valiant::Util::Formbuilder';
+sub DEFAULT_FORMBUILDER { return $DEFAULT_FORMBUILDER }
+
+our $DEFAULT_ID_DELIM = '_';
+sub DEFAULT_ID_DELIM { return $DEFAULT_ID_DELIM } 
 
 our @ATTRIBUTES_NEEDING_ESCAPING = qw(value);
 sub _normalize_attrs {
@@ -45,6 +63,10 @@ sub _normalize_attrs {
   if( (ref($attrs{class})||'') eq 'ARRAY') {
     my @classes = @{delete $attrs{class}};
     $attrs{class} = join ' ', @classes;
+  }
+  if( (ref($attrs{id})||'') eq 'ARRAY') {
+    my @id = @{delete $attrs{id}};
+    $attrs{id} = join '_', @id;
   }
 
   foreach my $attr (@ATTRIBUTES_NEEDING_ESCAPING) {
@@ -85,6 +107,12 @@ sub _merge_attrs {
       my $class2 = exists($attrs2->{$key}) ? $attrs2->{$key} : [];
       $class2 = [$class2] unless ref $class2;
       $attrs1->{$key} = [ @$class1, @$class2 ];
+    } elsif($key eq 'id') {
+      my $id1 = exists($attrs1->{$key}) ? $attrs1->{$key} : [];
+      $id1 = [$id1] unless ref $id1;
+      my $id2 = exists($attrs2->{$key}) ? $attrs2->{$key} : [];
+      $id2 = [$id2] unless ref $id2;
+      $attrs1->{$key} = [ @$id1, @$id2 ];
     } else {
       $attrs1->{$key} = $attrs2->{$key};
     }
@@ -138,7 +166,7 @@ sub _tag_with_body {
   my @content_args = exists($attrs{CONTENT_ARGS_KEY}) ? @{delete $attrs{CONTENT_ARGS_KEY}} : ();
   my $body = $content->(@content_args);
   my $open_tag = %attrs ? "$tag @{[ _stringify_attrs(%attrs) ]}" : "$tag";
-  return "<$open_tag>$body</$tag>";
+  return "<$open_tag>@{[ defined $body ? $body : '' ]}</$tag>";
 }
 
 ## GENERNIC FORM TAGS
@@ -313,6 +341,7 @@ sub _process_form_attrs {
   my $uri_for = delete $attrs->{uri_for};
   $attrs->{action} ||= $uri_for ? $uri_for->($url_options) : $url_options;
   $attrs->{method} ||= 'POST';
+  $attrs->{'accept-charset'} ||= 'UTF-8';
   return $attrs;
 }
 
@@ -399,37 +428,138 @@ sub select_tag {
       $include_blank = '';
       $options_for_blank_options_tag->{label} = ' ';
     }
-    $option_tags = raw(content_tag('option', $include_blank, $options_for_blank_options_tag)) . $option_tags;
+    $option_tags = raw(content_tag('option', $include_blank, $options_for_blank_options_tag))->concat($option_tags);
   }
   if(my $prompt = delete $attrs->{prompt}) {
-      $option_tags = raw(content_tag('option', $prompt, +{value=>''})) . $option_tags;
+      $option_tags = raw(content_tag('option', $prompt, +{value=>''}))->concat($option_tags);
   }
 
   $attrs = _merge_attrs(+{ name=>$html_name, id=>"@{[ _sanitize_name_to_id($name) ]}" }, $attrs);
   return content_tag('select', $option_tags, $attrs);
 }
 
-# options_for_select( [ [ 'Content', 'value', ?\%attrs], ... ], %attrs)
-sub options_for_select {
-  my ($self, $c, $options, $global_attrs) = @_;
-  my %global_attrs = $global_attrs ? %$global_attrs : ();
-  my $selected_value = exists($global_attrs{selected}) ? delete($global_attrs{selected}) : undef;
+# options_for_select [$value1, $value2, ...], $selected_value
+# options_for_select [$value1, $value2, ...], +{ selected => $selected_value, %global_options_attributes }
+# options_for_select [ [$label, $value], [$label, $value, \%attrs], ...]
 
-  my $content = '';
-  foreach my $option (@$options) {
-    if( (ref($option)||'') eq 'ARRAY') {
-      my %merged_attrs = (%global_attrs, value=>$option->[1]);
-      %merged_attrs = (%merged_attrs, %{$option->[2]}) if scalar(@$option) == 3;
-      $merged_attrs{selected} = 1 if $merged_attrs{value} eq $selected_value;
-      $content .= $self->option_tag($c, \%merged_attrs, $option->[0]);
-    } else {
-      my %merged_attrs = (%global_attrs, value=>$option);
-      $merged_attrs{selected} = 1 if $merged_attrs{value} eq $selected_value;
-      $content .= $self->option_tag($c, \%merged_attrs, $option);
-    }
-  }
-  return $content;
+sub options_for_select {
+  my $options_proto = shift @_;
+  return $options_proto unless( (ref($options_proto)||'') eq 'ARRAY');
+  my $attrs_proto = $_[0] ? shift(@_) : [];
+  my @selected = (ref($attrs_proto)||'' eq 'ARRAY') ? @$attrs_proto : ($attrs_proto);
+  my @options = _normalize_options_for_select($options_proto);
+  my $options_string = join DEFAULT_OPTIONS_DELIM,
+    map {
+      my %attrs = (value=>$_->[1], %{$_->[2]});
+      $attrs{selected} = 'selected' if grep { $_ eq $attrs{value} } @selected;
+      content_tag('option', $_->[0], \%attrs);
+    } @options;
+
+  return  raw($options_string);
 }
+
+sub _normalize_options_for_select {
+  my $options_proto = shift;
+  my @options = map {
+    push @$_, +{} unless (ref($_->[-1])||'') eq 'HASH';
+    unshift @$_, $_->[0] unless scalar(@$_) == 3;
+    $_;
+  } map {
+    (ref($_)||'') eq 'ARRAY' ? $_ : [$_, $_, +{}];
+  } @$options_proto;
+  return @options;
+}
+
+# $builder->form($model, \%option, \&content_block)
+# $builder->form($model, \&content_block)
+
+sub form_for {
+  my $model = shift; # required; at the start
+  my $content_block_coderef = pop; # required; at the end
+  my $options = @_ ? shift : +{};
+  my $model_name = exists $options->{as} ? $options->{as} : _model_name_from($model)->param_key;
+  
+  _apply_form_for_options($model, $options);
+  my $html_options = $options->{html};
+
+  $html_options->{method} = $options->{method} if exists $options->{method};
+  $html_options->{data} = $options->{data} if exists $options->{data};
+
+  my $builder = _instantiate_builder($model_name, $model, $options);
+  push @{$html_options->{CONTENT_ARGS_KEY}}, $builder;
+  
+  return form_tag '', $html_options, $content_block_coderef;
+}
+
+# This exists to give you a safety value when you need to use models that don't
+# do the complete model interface.   This way you can wrap any non compliant models
+# in a proxy interface.
+
+sub _model_name_from {
+  my $proto = shift;
+  my $model = $proto->can('to_model') ? $proto->to_model : $proto;
+  return $model->model_name;
+}
+
+sub _apply_form_for_options {
+  my ($model, $options) = @_;
+  $model = $model->to_model if $model->can('to_model');
+
+  my $as = exists $options->{as} ? $options->{as} : undef;
+  my $namespace = exists $options->{namespace} ? $options->{namespace} : undef;
+  my ($action, $method) = @{ $model->can('in_storage') && $model->in_storage ? ['edit', 'patch']:['new', 'post'] };
+
+  $options->{html} = _merge_attrs(
+    ($options->{html} || +{}),
+    +{
+      class => $as ? "${action}_${as}" : _dom_class($model, $action),
+      id => ( $as ? [ grep { defined $_ } $namespace, $action, $as ] : join('_', grep { defined $_ } ($namespace, _dom_id($model, $action))) ),
+      method => $method,
+    },
+  );
+}
+
+sub _dom_class {
+  my ($model, $prefix) = @_;
+  my $singular = _model_name_from($model)->param_key;
+  return $prefix ? "${prefix}@{[ DEFAULT_ID_DELIM ]}${singular}" : $singular;
+}
+
+sub _dom_id {
+  my ($model, $prefix) = @_;
+  if(my $model_id = _model_id_for_dom_id($model)) {
+    return "@{[ _dom_class($model, $prefix) ]}@{[ DEFAULT_ID_DELIM ]}${model_id}";
+  } else {
+    $prefix ||= 'new';
+    return _dom_class($model, $prefix)
+  }
+}
+
+sub _model_id_for_dom_id {
+  my $model = shift;
+  return unless $model->can('id');
+  return join '_', ($model->id);
+}
+
+sub _instantiate_builder {
+  my ($model_name, $model, $options) = @_;
+  my $builder_class = delete $options->{builder} || DEFAULT_FORMBUILDER;
+  return $builder_class->new(model_name=>$model_name, model=>$model, options=>$options);
+}
+
+has model => (
+  is => 'ro',
+  required => 1,
+  isa => sub {
+    my $model = shift;
+    return 1;
+    #return $model->can('as_param_key');
+  },
+);
+
+has model_name => ( is => 'ro', required => 1 );
+has options => ( is => 'ro', required => 1 );
+
 
 1;
 

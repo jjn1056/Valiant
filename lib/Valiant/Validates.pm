@@ -102,6 +102,17 @@ sub _validates_coderef {
   return $self;
 }
 
+## OK SOME OF THIS API will likely move to a package that is specifically aimed to
+## encapsulate HTML Form building
+
+sub as_param_key { return shift->model_name->param_key }
+
+sub model_to_form_attrs {
+  #  my ($self, 
+}
+
+## END HTML Form API
+
 sub _is_reserved_option_key {
   my ($key) = @_;
   return 1 if $key eq 'if' || $key eq 'unless' || $key eq 'on'
