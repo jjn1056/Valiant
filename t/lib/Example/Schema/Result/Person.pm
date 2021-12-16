@@ -30,7 +30,9 @@ __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
 __PACKAGE__->validates(
   credit_cards => (
-    result_set=>+{validations=>1, skip_if_empty=>1, min=>2, max=>4}, 
+    set_size => +{skip_if_empty=>1, min=>2, max=>4},
+    result_set => +{validations=>1},
+
   )
 );
 

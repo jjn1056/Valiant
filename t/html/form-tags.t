@@ -1,17 +1,22 @@
 use Test::Most;
-use Valiant::Util::Formbuilder ':all';
+use Valiant::HTML::FormTags ':all';
 
 ok 1;
 
-warn Valiant::Util::Formbuilder::_sanitize_name_to_id('a-n%$#s.sSS!1:1_1');
+warn Valiant::HTML::FormTags::_sanitize_name_to_id('a-n%$#s.sSS!1:1_1');
 
 warn tag input => +{ data=>+{aaa=>1, bbb=>2}, id=>'mytag' };
+warn tag 'input', +{ value=>'<a href>aa</a>'};
+warn tag 'input', +{ value=>raw('<a href>aa</a>')};
+warn tag input => +{ class=>'ok', class=>'form', id=>'mytag' };
 
 warn content_tag 'button', 'Press Here';
 warn content_tag 'button', +{ class=>['fff', '111'] }, sub { 'Press Here' };
+warn content_tag 'div', +{ class=>'divclass', id=>'one' }, sub { 'test content <a href>aa</a>' };
 
 warn input_tag 'username', undef, +{class=>'aaa'};
 warn input_tag +{class=>'aaa'};
+warn input_tag 'test', 'holiday <a href>aa</a>', class=>'form-input';
 
 warn button_tag 'hello';
 warn button_tag 'hello' => {id=>123123};
@@ -58,44 +63,4 @@ warn options_for_select([['A'=>'aa',+{id=>'fff'}],['B' =>'bb'],['C',{class=>['a'
 warn select_tag "state", options_for_select(['A','B','C'], 'A'), +{include_blank=>1};
 warn select_tag "state", options_for_select([ ['A'=>'aaa'],'B','C'], ['aaa','C']);
 
-{
-  package Local::Test::Length;
-
-  use Moo;
-  use Valiant::Validations;
-
-  has name => (is=>'ro');
-
-  validates name => (
-    length => {
-      maximum => 10,
-      minimum => 3,
-    }
-  );
-
-  validates name => (length => [4,9]); 
-}
-
-my $person = Local::Test::Length->new(name=>'John');
-
-warn form_for($person, sub {
-  my $fb = shift;
-
-});
-
 done_testing;
-
-__END__
-
-
-warn tag input => +{ class=>'ok', class=>'form', id=>'mytag' };
-
-
-warn tag 'input', class=>'ok', class=>'form', id=>'mytag', name=>'my-tag', data=>{nameProto=>1,b=>2}, data=>{EndGame=>3}, value=>'<a href>aa</a>';
-
-warn tag 'div', class=>'divclass', id=>'one', sub { 'test content' };
-
-warn input_tag 'test', 'holiday', class=>'form-input';
-warn input_tag 'test', undef, class=>['form-input', 'aa'], id=>'over', class=>'dd';
-
-

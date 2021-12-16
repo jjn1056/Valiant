@@ -1,17 +1,12 @@
-package Valiant::Util::Formbuilder;
+package Valiant::HTML::FormTags;
 
 {
-  package Valiant::Util::Formbuilder::raw;
-  #use overload
-    # bool => sub {1}, 
-    # '""' => \&to_strong, 
-    # '.'  => \&concat,
-    # fallback => 1;
+  package Valiant::HTML::FormTags::raw;
 
     sub concat {
       my $self = shift;
       my $target = join '', map { $$_ } @_;
-      return bless \"${$self}${target}", 'Valiant::Util::Formbuilder::raw';
+      return bless \"${$self}${target}", 'Valiant::HTML::FormTags::raw';
     }
 
     sub to_string {
@@ -20,18 +15,19 @@ package Valiant::Util::Formbuilder;
     }
 }
 
-
-use Moo;
+use warnings;
+use strict;
 use Exporter 'import'; # gives you Exporter's import() method directly
 use String::CamelCase qw(decamelize wordsplit);
 use HTML::Escape 'escape_html';
+use Module::Runtime 'use_module';
 
 our @EXPORT_OK = qw(
   tag content_tag raw input_tag color_input_tag date_input_tag datetime_input_tag email_input_tag
   file_field_tag hidden_field_tag button_tag checkbox_tag fieldset_tag form_tag label_tag
   radio_button_tag month_field_tag number_field_tag password_field_tag range_field_tag search_field_tag
   week_field_tag url_field_tag time_field_tag text_area_tag submit_tag select_tag options_for_select
-  form_for
+  form_for _merge_attrs CONTENT_ARGS_KEY _e
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
@@ -44,7 +40,7 @@ sub DEFAULT_SUBMIT_TAG_VALUE { return $DEFAULT_SUBMIT_TAG_VALUE }
 our $DEFAULT_OPTIONS_DELIM = "";
 sub DEFAULT_OPTIONS_DELIM { return $DEFAULT_OPTIONS_DELIM }
 
-our $DEFAULT_FORMBUILDER = 'Valiant::Util::Formbuilder';
+our $DEFAULT_FORMBUILDER = 'Valiant::HTML::FormBuilder';
 sub DEFAULT_FORMBUILDER { return $DEFAULT_FORMBUILDER }
 
 our $DEFAULT_ID_DELIM = '_';
@@ -70,7 +66,7 @@ sub _normalize_attrs {
   }
 
   foreach my $attr (@ATTRIBUTES_NEEDING_ESCAPING) {
-    $attrs{$attr} = _e(escape_html($attrs{$attr})) if exists $attrs{$attr};
+    $attrs{$attr} = _e($attrs{$attr}) if exists $attrs{$attr};
   }
 
   return %attrs;
@@ -122,18 +118,17 @@ sub _merge_attrs {
 
 sub _e {
   my $value = shift;
-  return ref($value)||'' eq 'Valiant::Util::Formbuilder::raw' ? $$value : escape_html($value);
+  return ref($value)||'' eq 'Valiant::HTML::FormTags::raw' ? $$value : escape_html($value);
 }
 
 # raw $string
 sub raw {
   my $value = shift;
-  return bless \$value, 'Valiant::Util::Formbuilder::raw';
+  return bless \$value, 'Valiant::HTML::FormTags::raw';
 }
 
-
 # tag 'div';
-# tag 'div', +{ class=>'container', i=>'content' }
+# tag 'div', +{ class=>'container', id=>'content' }
 sub tag {
   my $tag = shift;
   my %attrs = _normalize_attrs(@_);
@@ -164,10 +159,15 @@ sub content_tag {
 sub _tag_with_body {
   my ($tag, $content, %attrs) = @_;
   my @content_args = exists($attrs{CONTENT_ARGS_KEY}) ? @{delete $attrs{CONTENT_ARGS_KEY}} : ();
-  my $body = $content->(@content_args);
+  my $body = _flattened_content($content->(@content_args));
   my $open_tag = %attrs ? "$tag @{[ _stringify_attrs(%attrs) ]}" : "$tag";
   return "<$open_tag>@{[ defined $body ? $body : '' ]}</$tag>";
 }
+
+sub _flattened_content {
+  return join '', @_;
+}
+
 
 ## GENERNIC FORM TAGS
 
@@ -397,7 +397,6 @@ sub text_area_tag {
   return content_tag('textarea', $content, $attrs);
 }
 
-
 # submit_tag
 # submit_tag $value
 # submit_tag \%attrs
@@ -470,8 +469,7 @@ sub _normalize_options_for_select {
   return @options;
 }
 
-# $builder->form($model, \%option, \&content_block)
-# $builder->form($model, \&content_block)
+# Formbuilder stuff
 
 sub form_for {
   my $model = shift; # required; at the start
@@ -491,10 +489,7 @@ sub form_for {
   return form_tag '', $html_options, $content_block_coderef;
 }
 
-# This exists to give you a safety value when you need to use models that don't
-# do the complete model interface.   This way you can wrap any non compliant models
-# in a proxy interface.
-
+# TODO I think this needs to support nested forms
 sub _model_name_from {
   my $proto = shift;
   my $model = $proto->can('to_model') ? $proto->to_model : $proto;
@@ -544,30 +539,15 @@ sub _model_id_for_dom_id {
 sub _instantiate_builder {
   my ($model_name, $model, $options) = @_;
   my $builder_class = delete $options->{builder} || DEFAULT_FORMBUILDER;
-  return $builder_class->new(model_name=>$model_name, model=>$model, options=>$options);
+  return use_module($builder_class)->new(model_name=>$model_name, model=>$model, options=>$options);
 }
-
-has model => (
-  is => 'ro',
-  required => 1,
-  isa => sub {
-    my $model = shift;
-    return 1;
-    #return $model->can('as_param_key');
-  },
-);
-
-has model_name => ( is => 'ro', required => 1 );
-has options => ( is => 'ro', required => 1 );
-
 
 1;
 
-__END__
 
 =head1 NAME
 
-DBIx::Class::Valiant::Util::Formbuilder - HTML Forms
+DBIx::Class::Valiant::HTML::FormTags - HTML Form Tags
 
 =head1 SYNOPSIS
 
