@@ -343,13 +343,24 @@ sub validate {
   $self->{_inprocess} =1;
 
   $self->clear_validated if $self->validated;
+  $self->_run_validations(%args);
+  $self->_run_post_validations(%args);
+  $self->validated(1);
+  delete $self->{_inprocess};
+  return $self;
+}
+
+sub _run_validations {
+  my ($self, %args) = @_;
   foreach my $validation ($self->validations) {
     my %validation_args = (%{$validation->[1]}, %args);
     $validation->[0]($self, \%validation_args);
   }
-  $self->validated(1);
-  delete $self->{_inprocess};
-  return $self;
+}
+
+sub _run_post_validations {
+  my ($self, %args) = @_;
+  return;
 }
 
 sub inject_attribute {

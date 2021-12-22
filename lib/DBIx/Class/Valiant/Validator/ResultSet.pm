@@ -37,18 +37,13 @@ sub validate_each {
   if($self->validations) {
     my $rowidx = 0;
     foreach my $row (@rows) {
-      if($row->errors->size) {
-        my $errors = $row->errors;
-        $errors->each(sub {
-          my ($index, $message) = @_;
-          $record->errors->add("${attribute}.${rowidx}.${index}", $message);
-        });
+      foreach my $importable_error ($row->errors->errors->all) {
+        my $local_attribute = "${attribute}.${rowidx}.@{[ $importable_error->attribute||'*' ]}";
+        $record->errors->import_error($importable_error, +{attribute=>$local_attribute});
       }
       $rowidx++;
     }
   }
-
-
 
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $found_errors;
 }

@@ -18,6 +18,18 @@ __PACKAGE__->belongs_to(
   { 'foreign.middle_id' => 'self.middle_id' },
 );
 
-__PACKAGE__->validates(bottom_value => (presence=>1, length=>[4,48]));
+__PACKAGE__->has_many(
+  children =>
+  'Schema::Nested::Result::XChild',
+  { 'foreign.bottom_id' => 'self.bottom_id' },
+);
 
+__PACKAGE__->validates( children => ( set_size => {min=>3}, result_set => +{ validations=>1 } ));
+__PACKAGE__->validates( bottom_value => (presence => 1, length => [4,48] ));
+__PACKAGE__->validates_with(sub {
+    my ($self, $opts) = @_;
+    $self->errors->add(undef, 'No CCC') if (($self->bottom_value||'') eq 'ccc');
+  });
+
+__PACKAGE__->accept_nested_for('children');
 1;

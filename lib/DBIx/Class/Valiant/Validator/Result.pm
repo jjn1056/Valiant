@@ -40,10 +40,14 @@ sub validate_each {
   $record->errors->add($attribute, $self->invalid_msg, $opts) if $result->errors->size;
 
   # Not sure if this should be default behavior or not...
-  $result->errors->each(sub {
-    my ($attr, $message) = @_;
-    $record->errors->add("${attribute}.${attr}", $message);
-  });
+  #$result->errors->each(sub {
+  #  my ($attr, $message) = @_;
+  #  $record->errors->add("${attribute}.${attr}", $message);
+  #});
+
+  foreach my $importable_error ($result->errors->errors->all) {
+    $record->errors->import_error($importable_error, +{attribute=>"${attribute}.@{[ $importable_error->attribute||'*' ]}"});
+  }
 }
 
 1;

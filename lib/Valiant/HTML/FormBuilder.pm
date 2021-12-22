@@ -121,6 +121,41 @@ sub _default_errors_for_content {
   }
 }
 
+# $fb->model_errors()
+# $fb->model_errors(\%options)
+# $fb->model_errors(\%options, \&template)
+# $fb->model_errors(\&template)
+
+sub model_errors {
+  my ($self) = shift;
+  my ($options, $content) = (+{}, $self->_default_model_errors_content);
+  while(my $arg = shift) {
+    $options = $arg if (ref($arg)||'') eq 'HASH';
+    $content = $arg if (ref($arg)||'') eq 'CODE';
+  }
+
+  
+
+  my @errors = $self->model->errors->model_errors;
+  my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
+  @errors = @errors[0..($max_errors-1)] if($max_errors);
+
+  merge_classes_into($options, DEFAULT_ERROR_CONTAINER_CLASS);
+  
+  return $content->($options, @errors);
+}
+
+sub _default_model_errors_content {
+  return sub {
+    my ($options, @errors) = @_;
+    if( scalar(@errors) == 1 ) {
+      content_tag 'div', $errors[0], $options;
+    } else {
+      content_tag 'ol', $options, sub { join '', map { content_tag('li', $_) } @errors };
+    }
+  }
+}
+
 sub content {
   my ($self, @content) = @_;
   return map { _e $_ } @content;

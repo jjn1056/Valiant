@@ -77,8 +77,9 @@ sub import_error {
   my ($self, $error, $options) = @_;
   $self->errors->push(
     Valiant::NestedError->new(
-      object => $self->object,
       inner_error => $error,
+      object => $error->object,
+      attribute => $error->attribute,
       %{ $options||+{} },
     )
   );
@@ -435,7 +436,7 @@ Iterates through each error key, value pair in the error messages hash.
 Yields the attribute and the error for that attribute. If the attribute
 has more than one error message, yields once for each error message.
 
-    $object->errors->each*(sub {
+    $object->errors->each(sub {
       my ($attribute, $message) = @_;
     });
 
