@@ -228,16 +228,7 @@ sub add {
   }
   $options ||= +{};
   ($attribute, $type, $options) = $self->_normalize_arguments($attribute, $type, $options);
-
-  my $error = $self->error_class
-    ->new(
-      object => $self->object,
-      attribute => $attribute,
-      type => $type,
-      i18n => $self->i18n,
-      options => $options,
-    );
-
+  my $error = $self->build_error($attribute, $type, $options);
   if(my $exception = $options->{strict}) {
     my $message = $error->full_message;
     throw_exception('Strict' => (msg=>$message)) if $exception =~m/^\d+$/ && $exception == 1;
@@ -248,6 +239,18 @@ sub add {
  
   $self->errors->push($error);
   return $error;
+}
+
+sub build_error {
+  my ($self, $attribute, $type, $options) = @_;
+  return my $error = $self->error_class
+    ->new(
+      object => $self->object,
+      attribute => $attribute,
+      type => $type,
+      i18n => $self->i18n,
+      options => $options,
+    );
 }
 
 # Returns +true+ if an error on the attribute with the given message is

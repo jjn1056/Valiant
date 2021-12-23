@@ -114,7 +114,7 @@ sub insert {
   if( (ref($args[0])||'') eq 'HASH') {
     my $ctx = delete($args[0]->{__context})||[];
     my @ctx = ref($ctx)||'' eq 'ARRAY' ? @$ctx : ($ctx);
-    push @context, @ctx unless grep { $_ eq 'update' } @context;
+    push @context, @ctx unless grep { $_ eq 'update' } @context;  ## ?? IS this a bug?  Why update
   }
 
   $args{context} = \@context;
@@ -133,7 +133,9 @@ sub insert {
     debug 2, "Skipping insert for @{[$self]} because its probably and _add";
     return $self;
   }
-  return $self->next::method(@args);
+  $self->next::method(@args);
+  # TODO could probably do the merge errors from related here
+  return;
 }
 
 sub _nested_info_for_related {

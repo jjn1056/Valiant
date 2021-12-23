@@ -1,6 +1,7 @@
 package Valiant::HTML::FormBuilder;
 
 use Moo;
+use Valiant::I18N;
 use Valiant::HTML::FormTags 'CONTENT_ARGS_KEY', 'input_tag', 'label_tag', 'tag', 'content_tag', '_e';
 
 our $DEFAULT_INPUT_ERROR_CLASS = 'is_invalid';
@@ -65,6 +66,13 @@ sub input_name {
 sub input_value {
   my ($self, $attribute) = @_;
   return $self->model->read_attribute_for_validation($attribute) || '';
+}
+
+sub password {
+  my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
+  $options->{type} = 'password';
+  $options->{value} = '';
+  return $self->input($attribute, $options);
 }
 
 # $fb->label($attribute)
@@ -133,16 +141,37 @@ sub model_errors {
     $options = $arg if (ref($arg)||'') eq 'HASH';
     $content = $arg if (ref($arg)||'') eq 'CODE';
   }
+  my @errors = $self->model->errors->model_messages;
 
-  
+  if(
+    $self->model->has_errors &&
+    (my $tag = delete $options->{always_show_message})
+  ) {
+    # Ok so sometimes you just want to display a 'form has errors' global message
+    # even if there's no explcit model errors (although there' might be, this logic
+    # works either way).  Like if you have attribute errors or nested errors.   This
+    # is common in a UI since you might have errors offscreen that you need to prompt
+    # the user about.
+    unshift @errors, $self->_generate_default_model_error($tag);
+  }
 
-  my @errors = $self->model->errors->model_errors;
   my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
   @errors = @errors[0..($max_errors-1)] if($max_errors);
 
   merge_classes_into($options, DEFAULT_ERROR_CONTAINER_CLASS);
-  
   return $content->($options, @errors);
+}
+
+sub _generate_default_model_error {
+  my ($self, $tag) = @_;
+  $tag = _t('invalid_form') if $tag eq '1';
+  return $tag unless ref $tag;
+  return "Your form has errors" unless $self->model->can('i18n');
+  return $self->model->i18n->translate(
+      $tag,
+      scope=>'valiant.html.errors.messages',
+      default=>[ _t("errors.messages.$tag"), _t("messages.$tag") ],
+    );
 }
 
 sub _default_model_errors_content {

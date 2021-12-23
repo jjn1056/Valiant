@@ -25,8 +25,11 @@ $person->validate;
 
 warn form_for($person, sub {
   my $fb = shift;
-  return $fb->label('name', +{data=>{a=>1}}),
+  return
+    $fb->model_errors(+{always_show_message=>1}),
+    $fb->label('name', +{data=>{a=>1}}),
     $fb->input('name', +{class=>'ddd'}),
+    $fb->password('name', +{class=>'password'}),
     $fb->label('name', sub {
       my ($content, $options) = @_;
       return $fb->content("111 $content 222", "<a href=''>aaa</a>"),
