@@ -2,8 +2,7 @@ package Example;
 
 use Catalyst;
 use Moose;
-use Valiant::I18N;
-use Example::Base;
+use Example::Syntax;
 
 __PACKAGE__->setup_plugins([qw/
   Session
@@ -32,34 +31,38 @@ __PACKAGE__->setup();
 has user => (
   is => 'rw',
   lazy => 1,
-  builder => 'get_user_from_store',
+  builder => 'get_user_from_session',
   clearer => 'clear_user',
 );
 
-sub get_user_from_store($self) {
+sub get_user_from_session($self) {
   my $id = $self->session->{user_id} // return;
-  my $person = $self->model('Schema::Person')->find({id=>$id}) // return;
+  my $person = $self->model('Schema::Person')->find_by_id($id) // return;
   return $person;
-}
-
-sub authenticate($self, $username='', $password='') {
-  my $user = $self->model('Schema::Person')->authenticate($username, $password);
-  $self->persist_user_to_session($user) unless $user->has_errors;
-  return $user; 
 }
 
 sub persist_user_to_session ($self, $user) {
   $self->session->{user_id} = $user->id;
+}
+
+sub remove_user_from_session($self) {
+  delete $self->session->{user_id};
+}
+
+sub authenticate($self, $username='', $password='') {
+  my $user = $self->model('Schema::Person')->authenticate($username, $password);
+  $self->set_user($user) if $user->no_errors;
+  return $user; 
+}
+
+sub set_user ($self, $user) {
+  $self->persist_user_to_session($user);
   $self->user($user);
 }
 
 sub logout($self) {
   $self->clear_user;
   $self->remove_user_from_session;
-}
-
-sub remove_user_from_session($self) {
-  delete $self->session->{user_id};
 }
 
 __PACKAGE__->meta->make_immutable();

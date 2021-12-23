@@ -1,4 +1,4 @@
-package Example::Base;
+package Example::Syntax;
 
 use strict;
 use warnings;

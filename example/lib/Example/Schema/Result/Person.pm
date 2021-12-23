@@ -1,6 +1,6 @@
 package Example::Schema::Result::Person;
 
-use Example::Base;
+use Example::Syntax;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("person");

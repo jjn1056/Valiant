@@ -1,5 +1,5 @@
 use Test::Most;
-use Valiant::HTML::FormTags 'form_for', 'raw';
+use Valiant::HTML::FormTags 'form_for';
 
 {
   package Local::Test::Person;
@@ -20,8 +20,8 @@ use Valiant::HTML::FormTags 'form_for', 'raw';
   sub namespace { 'Local::Test' }
 }
 
-my $person = Local::Test::Person->new(name=>'John');
-$person->validate;
+ok my $person = Local::Test::Person->new(name=>'John');
+ok $person->invalid;
 
 warn form_for($person, sub {
   my $fb = shift;
@@ -36,13 +36,10 @@ warn form_for($person, sub {
         $fb->input('name', +{class=>'aaa'}),
         $fb->errors_for('name'); 
     }),
-    "\n",
     $fb->errors_for('name', sub {
       my ($options, @errors) = @_;
       return join "\n", @errors;
     });
 });
-
-ok 1;
 
 done_testing;

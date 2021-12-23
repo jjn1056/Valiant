@@ -2,7 +2,7 @@ package Example::Controller::Root;
 
 use Moose;
 use MooseX::MethodAttributes;
-use Example::Base;
+use Example::Syntax;
 
 extends 'Catalyst::Controller';
 
@@ -47,7 +47,6 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         )
       );
       $model->build_related_if_empty('profile'); # Needed since the relationship is optional
-      return;
     }
 
       sub POST_profile :Action ($self, $c) {
@@ -66,7 +65,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
       $c->redirect_to_action('login');
     }
 
-  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Allow(GET,POST) ($self, $c) {
+  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) ($self, $c) {
     $c->redirect_to_action('home') if $c->user; # Don't bother if already logged in
   }
 

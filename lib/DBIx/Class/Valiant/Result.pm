@@ -133,9 +133,9 @@ sub insert {
     debug 2, "Skipping insert for @{[$self]} because its probably and _add";
     return $self;
   }
-  $self->next::method(@args);
+  my $ret = $self->next::method(@args);
   # TODO could probably do the merge errors from related here
-  return;
+  return $ret;
 }
 
 sub _nested_info_for_related {
@@ -753,6 +753,9 @@ sub set_multi_related_from_params {
     push @related_models, $related_model;
   }
 
+  # This bit we diff between the rows loaded in the orignal cache and what it looks
+  # like after the multi update.   Rows that are no longer present are marked for
+  # deletion if deletion is allowed
   my @new_pks =  map {
     my $r = $_; 
     +{
@@ -777,7 +780,7 @@ sub set_multi_related_from_params {
     if($current->in_storage) {
       debug 2, "Marking $current for deletion";
       $current->{__valiant_allow_destroy} = 1 if $allow_destroy;
-      $current->mark_for_deletion;
+      $current->mark_for_deletion;  # might be a good idea to find a way to expose this via an override-able method
 
       # Mark its children as pruned, recursively
       my $cb; $cb = sub {

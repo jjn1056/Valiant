@@ -1,5 +1,6 @@
 package Example::Schema::Result::Profile;
 
+use Example::Syntax;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("profile");

@@ -2,7 +2,7 @@ package Valiant::HTML::FormBuilder;
 
 use Moo;
 use Valiant::I18N;
-use Valiant::HTML::FormTags 'CONTENT_ARGS_KEY', 'input_tag', 'label_tag', 'tag', 'content_tag', '_e';
+use Valiant::HTML::FormTags 'CONTENT_ARGS_KEY', 'input_tag', 'label_tag', 'tag', 'content_tag', '_e', 'options_for_select';
 
 our $DEFAULT_INPUT_ERROR_CLASS = 'is_invalid';
 sub DEFAULT_INPUT_ERROR_CLASS { return $DEFAULT_INPUT_ERROR_CLASS }
@@ -188,6 +188,39 @@ sub _default_model_errors_content {
 sub content {
   my ($self, @content) = @_;
   return map { _e $_ } @content;
+}
+
+# Where $collection_arrayref is an arrayref suitable for passing to 'options_for_select'.
+# $fb->select($attribute, \@collection, \%options)
+# $fb->select($attribute, \@collection)
+
+# Where $collection_obj is an object that responds to ->all, returning an array of item objects
+# where each item object responds to both $value_method and $text_method.  If those are not specified
+# they default to 'option_value' and 'option_text'.  Maybe we should also check $collection_obj->select_option_text / value??
+# $fb->select($attribute, $collection_obj, $value_method, $text_method, \%options)
+# $fb->select($attribute, $collection_obj, \%options)
+# $fb->select($attribute, $collection_obj)
+
+# Where $collection_method is a a method name on $model which is called with $attribute, $value, \%options
+# and returns an arrayref suitable for options_for_select.  If the method name is not given, it defaults to
+# "select_options_for_${attribute}".
+# $fb->select($attribute, $collection_method, \%options)
+# $fb->select($attribute, $collection_method)
+# $fb->select($attribute, \%options)
+# $fb->select($attribute)
+#
+# In all cases when the final argument is a coderef that is used as a template for generating everything
+# inside the <select> tag.  Useful for when you have complex render needs.  This should return whatever
+# you want inside the <select>
+# $fb->select($attribute, sub {
+#   my ($normalized_collection, @selected) = @_;
+# });
+#
+# If the $attribute returns a collection instead of a value
+# $fb->select( +{ $attribute=>4key }, ...)
+
+sub select {
+  my $self = shift;
 }
 
 1;

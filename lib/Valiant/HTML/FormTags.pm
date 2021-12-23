@@ -449,12 +449,17 @@ sub options_for_select {
   my @options = _normalize_options_for_select($options_proto);
   my $options_string = join DEFAULT_OPTIONS_DELIM,
     map {
-      my %attrs = (value=>$_->[1], %{$_->[2]});
-      $attrs{selected} = 'selected' if grep { $_ eq $attrs{value} } @selected;
-      content_tag('option', $_->[0], \%attrs);
+      option_for_select($_, @selected);
     } @options;
 
   return  raw($options_string);
+}
+
+sub option_for_select {
+  my ($option_info, @selected) = @_;
+  my %attrs = (value=>$_->[1], %{$_->[2]});
+  $attrs{selected} = 'selected' if grep { $_ eq $attrs{value} } @selected;
+  return content_tag('option', $_->[0], \%attrs);
 }
 
 sub _normalize_options_for_select {

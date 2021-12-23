@@ -62,6 +62,10 @@ sub has_errors {
   return shift->errors->size ? 1:0; 
 }
 
+sub no_errors {
+  return !shift->has_errors;
+}
+
 has 'validated' => (is=>'rw', required=>1, init_args=>undef, default=>0);
 has 'skip_validation' =>  (is=>'rw', required=>1, init_args=>undef, default=>0);
 has '_context' => (is=>'rw', required=>0, predicate=>'has_context');
