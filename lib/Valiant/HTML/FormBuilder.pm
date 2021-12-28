@@ -65,6 +65,7 @@ sub input_name {
 
 sub input_value {
   my ($self, $attribute) = @_;
+  return $self->model->read_attribute_for_html($attribute) if $self->model->can('read_attribute_for_html');
   return $self->model->read_attribute_for_validation($attribute) || '';
 }
 
@@ -203,7 +204,8 @@ sub content {
 
 # Where $collection_method is a a method name on $model which is called with $attribute, $value, \%options
 # and returns an arrayref suitable for options_for_select.  If the method name is not given, it defaults to
-# "select_options_for_${attribute}".
+# "select_options_for_${attribute}" $model->select_options_for($attribute)
+# NOTE: Not sure we can do this since there maybe be more than one m2m for the target join table.
 # $fb->select($attribute, $collection_method, \%options)
 # $fb->select($attribute, $collection_method)
 # $fb->select($attribute, \%options)
@@ -212,16 +214,40 @@ sub content {
 # In all cases when the final argument is a coderef that is used as a template for generating everything
 # inside the <select> tag.  Useful for when you have complex render needs.  This should return whatever
 # you want inside the <select>
-# $fb->select($attribute, sub {
+# $fb->select($attribute, ..., sub {
 #   my ($normalized_collection, @selected) = @_;
 # });
 #
-# If the $attribute returns a collection instead of a value
-# $fb->select( +{ $attribute=>4key }, ...)
+# If the $attribute returns a collection instead of a value, that implies a multi select and you need to specify
+# field which is the value used to match selected options.  $model->select_selected_options_for($collection_attribute)  (excludes mark for delte)
+# $fb->select( +{ $collection_attribute => $value_field }, $roles_rs, id => 'label')
+# $fb->select( +{ person_roles => role_id }, $roles_rs, id => 'label')
+# <select name='person.person_roles[].role_id' multiple=1>
+#   <option value='1' selected=1>user</option>
+#   <option value='2' selected=1>admin</option>
+#   <option value='3'>guest</option>
+# </select>
 
 sub select {
   my $self = shift;
 }
+
+sub select_id {
+  my ($self, $attribute) = @_;
+  return join '_', ($self->model_name, $attribute);
+}
+
+sub select_name {
+  my ($self, $attribute) = @_;
+  return join '.', ($self->model_name, $attribute);
+}
+
+sub select_value {
+  my ($self, $attribute) = @_;
+  return $self->model->read_attribute_for_html($attribute) if $self->model->can('read_attribute_for_html');
+  return $self->model->read_attribute_for_validation($attribute) || '';
+}
+
 
 1;
 
