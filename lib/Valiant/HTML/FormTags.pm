@@ -1,89 +1,22 @@
 package Valiant::HTML::FormTags;
 
-{
-  package Valiant::HTML::FormTags::raw;
-
-    sub concat {
-      my $self = shift;
-      my $target = join '', map { $$_ } @_;
-      return bless \"${$self}${target}", 'Valiant::HTML::FormTags::raw';
-    }
-
-    sub to_string {
-      my $self = shift;
-      return $$self;
-    }
-}
-
 use warnings;
 use strict;
 use Exporter 'import'; # gives you Exporter's import() method directly
-use String::CamelCase qw(decamelize wordsplit);
-use HTML::Escape 'escape_html';
-use Module::Runtime 'use_module';
+use Valiant::HTML::TagBuilder ':all';
+use Scalar::Util (); 
+use Valiant::HTML::Util::Collection;
 
 our @EXPORT_OK = qw(
-  tag content_tag raw input_tag color_input_tag date_input_tag datetime_input_tag email_input_tag
-  file_field_tag hidden_field_tag button_tag checkbox_tag fieldset_tag form_tag label_tag
-  radio_button_tag month_field_tag number_field_tag password_field_tag range_field_tag search_field_tag
-  week_field_tag url_field_tag time_field_tag text_area_tag submit_tag select_tag options_for_select
-  form_for _merge_attrs CONTENT_ARGS_KEY _e
+  button_tag checkbox_tag fieldset_tag form_tag label_tag radio_button_tag input_tag option_tag
+  text_area_tag submit_tag password_tag hidden_tag select_tag options_for_select 
+  options_from_collection_for_select
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
-our $CONTENT_ARGS_KEY = 'content_args';
-sub CONTENT_ARGS_KEY { $CONTENT_ARGS_KEY }
-
+our $DEFAULT_BUTTON_CONTENT = 'Button';
 our $DEFAULT_SUBMIT_TAG_VALUE = 'Save changes';
-sub DEFAULT_SUBMIT_TAG_VALUE { return $DEFAULT_SUBMIT_TAG_VALUE }
-
-our $DEFAULT_OPTIONS_DELIM = "";
-sub DEFAULT_OPTIONS_DELIM { return $DEFAULT_OPTIONS_DELIM }
-
-our $DEFAULT_FORMBUILDER = 'Valiant::HTML::FormBuilder';
-sub DEFAULT_FORMBUILDER { return $DEFAULT_FORMBUILDER }
-
-our $DEFAULT_ID_DELIM = '_';
-sub DEFAULT_ID_DELIM { return $DEFAULT_ID_DELIM } 
-
-our @ATTRIBUTES_NEEDING_ESCAPING = qw(value);
-sub _normalize_attrs {
-  my %attrs = ref($_[0]) ? %{$_[0]} : @_;
-
-  if(my $data = delete $attrs{data}) {
-      foreach my $dataset_attr_proto (keys %$data) {
-        my $dataset_key = join('-', wordsplit(decamelize($dataset_attr_proto)));
-        $attrs{"data-${dataset_key}"} = $data->{$dataset_attr_proto};
-      }
-  }
-  if( (ref($attrs{class})||'') eq 'ARRAY') {
-    my @classes = @{delete $attrs{class}};
-    $attrs{class} = join ' ', @classes;
-  }
-  if( (ref($attrs{id})||'') eq 'ARRAY') {
-    my @id = @{delete $attrs{id}};
-    $attrs{id} = join '_', @id;
-  }
-
-  foreach my $attr (@ATTRIBUTES_NEEDING_ESCAPING) {
-    $attrs{$attr} = _e($attrs{$attr}) if exists $attrs{$attr};
-  }
-
-  return %attrs;
-}
-
-sub _sanitize_name_to_id {
-  my $name_attr = shift;
-  $name_attr =~ s/\]//g;
-  $name_attr =~ s/[^a-zA-Z0-9:.-]/_/g;
-  return $name_attr;
-}
-
-sub _stringify_attrs {
-  my %attrs = @_;
-  return '' unless %attrs;
-  return join ' ', map { qq|$_="$attrs{$_}"|} grep { defined($attrs{$_}) } sort keys %attrs;
-}
+our $DEFAULT_OPTIONS_DELIM = '';
 
 # _merge_attrs does a smart merge of two hashrefs that represent HTML tag attributes.  This
 # needs special processing since we need to merge 'data' and 'class' attributes with special
@@ -93,22 +26,10 @@ sub _stringify_attrs {
 sub _merge_attrs {
   my ($attrs1, $attrs2) = @_;
   foreach my $key (keys %{$attrs2||{}}) {
-    if($key eq 'data') {
+    if( ($key eq 'data') || ($key eq 'aria')) {
       my $data1 = exists($attrs1->{$key}) ? $attrs1->{$key} : +{};
       my $data2 = exists($attrs2->{$key}) ? $attrs2->{$key} : +{};
       $attrs1->{$key} = +{ %$data1, %$data2 };
-    } elsif($key eq 'class') {
-      my $class1 = exists($attrs1->{$key}) ? $attrs1->{$key} : [];
-      $class1 = [$class1] unless ref $class1;
-      my $class2 = exists($attrs2->{$key}) ? $attrs2->{$key} : [];
-      $class2 = [$class2] unless ref $class2;
-      $attrs1->{$key} = [ @$class1, @$class2 ];
-    } elsif($key eq 'id') {
-      my $id1 = exists($attrs1->{$key}) ? $attrs1->{$key} : [];
-      $id1 = [$id1] unless ref $id1;
-      my $id2 = exists($attrs2->{$key}) ? $attrs2->{$key} : [];
-      $id2 = [$id2] unless ref $id2;
-      $attrs1->{$key} = [ @$id1, @$id2 ];
     } else {
       $attrs1->{$key} = $attrs2->{$key};
     }
@@ -116,64 +37,113 @@ sub _merge_attrs {
   return $attrs1;
 }
 
-sub _e {
+# Given a string, return a version of it suitable for use in an 'id' HTML attribute.
+
+sub _sanitize_to_id {
   my $value = shift;
-  return ref($value)||'' eq 'Valiant::HTML::FormTags::raw' ? $$value : escape_html($value);
+  return unless defined $value;
+  $value =~ s/\]//g;
+  $value =~ s/[^a-zA-Z0-9:.-]/_/g;
+  return $value;
 }
 
-# raw $string
-sub raw {
+sub _prepend_block {
+  my ($block, @bits) = @_;
+  return sub { return @bits, $block->() };
+}
+
+sub _humanize {
   my $value = shift;
-  return bless \$value, 'Valiant::HTML::FormTags::raw';
+  $value =~s/_id$//; # remove trailing _id
+  $value =~s/_/ /g;
+  return ucfirst($value);
 }
 
-# tag 'div';
-# tag 'div', +{ class=>'container', id=>'content' }
-sub tag {
-  my $tag = shift;
-  my %attrs = _normalize_attrs(@_);
-  return _closed_tag($tag, %attrs);
+sub button_tag {
+  my ($content, $attrs) = (undef, +{});
 
+  $attrs = shift @_ if (ref($_[0])||'') eq 'HASH';
+  $content = shift @_ if (ref($_[0])||'') eq 'CODE';
+  $content = shift @_ unless defined $content;
+  $attrs = shift @_ if (ref($_[0])||'') eq 'HASH';
+  $attrs = _merge_attrs(+{name => 'button'}, $attrs);
+
+  return ref($content) ? content_tag('button', $attrs, $content) : content_tag('button', ($content||$DEFAULT_BUTTON_CONTENT), $attrs)
 }
 
-sub _closed_tag {
-  my ($tag, %attrs) = @_;
-  return "<$tag @{[ _stringify_attrs(%attrs) ]}/>";
+sub checkbox_tag {
+  my $name = shift;
+  my ($value, $checked, $attrs) = (1, 0, +{});
+  $attrs = pop(@_) if (ref($_[-1])||'') eq 'HASH';
+  $value = shift(@_) if defined $_[0];
+  $checked = shift(@_) if defined $_[0];
+  $attrs->{checked} = 1 if $checked;
+  $attrs = _merge_attrs(+{type => 'checkbox', name=>$name, id=>_sanitize_to_id($name), value=>$value}, $attrs);
+
+  return tag('input', $attrs);
 }
 
-# content_tag($tag, \%attrs, $coderef_content_block)
-# content_tag($tag, $raw_content, \%attrs)
-sub content_tag {
-  my $tag = shift;
-  my $content = "";
-  if( (ref($_[-1])||'') eq 'CODE' ) {
-    $content = pop(@_);
-  } else {
-    my $raw_content = _e shift(@_);
-    $content = sub { $raw_content };
-  }
-  my %attrs = _normalize_attrs(@_);
-  return _tag_with_body($tag, $content, %attrs);
+sub fieldset_tag {
+  my ($legend, $attrs, $content) = (undef, +{}, undef);
+  $content = pop @_; # Required
+  $attrs = pop @_ if (ref($_[-1])||'') eq 'HASH';
+  $legend = shift @_ if @_;
+
+  my $block = $legend ? _prepend_block($content, content_tag('legend', $legend)) : $content;
+
+  return content_tag('fieldset', $attrs, $block);
 }
 
-sub _tag_with_body {
-  my ($tag, $content, %attrs) = @_;
-  my @content_args = exists($attrs{CONTENT_ARGS_KEY}) ? @{delete $attrs{CONTENT_ARGS_KEY}} : ();
-  my $body = _flattened_content($content->(@content_args));
-  my $open_tag = %attrs ? "$tag @{[ _stringify_attrs(%attrs) ]}" : "$tag";
-  return "<$open_tag>@{[ defined $body ? $body : '' ]}</$tag>";
+sub form_tag {
+  my ($url_options, $attrs, $content) = @_;
+  $attrs = _process_form_attrs($url_options, $attrs);
+  return content_tag('form', $attrs, $content);
 }
 
-sub _flattened_content {
-  return join '', @_;
+sub _process_form_attrs {
+  my ($url_options, $attrs) = @_;
+  my $uri_for = delete $attrs->{uri_for};
+  $attrs->{action} ||= $uri_for ? $uri_for->($url_options) : $url_options;
+  $attrs->{method} ||= 'POST';
+  $attrs->{'accept-charset'} ||= 'UTF-8';
+  return $attrs;
 }
 
+sub label_tag {
+  my $name = shift;
+  my ($content, $attrs) = (_humanize($name), +{});
 
-## GENERNIC FORM TAGS
+  $content = pop @_ if (ref($_[-1])||'') eq 'CODE';
+  $attrs =  pop @_ if (ref($_[-1])||'') eq 'HASH';
+  $content = shift if @_;
+  $attrs->{for} ||= _sanitize_to_id($name) if $name;
+  
+  return ref($content) ? content_tag('label', $attrs, $content) : content_tag('label', $content, $attrs)
+}
 
-# input_tag($name, $value = nil, \%attrs = {})
-# input_tag($name, \%attrs = {})
-# input_tag(\%attrs = {})
+sub radio_button_tag {
+  my ($name, $value) = (shift @_, shift @_);
+  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  my $checked = @_ ? shift(@_) : 0;
+  $attrs = _merge_attrs(+{type=>'radio', name=>$name, value=>$value, id=>"@{[ _sanitize_to_id($name) ]}_@{[ _sanitize_to_id($value) ]}" }, $attrs);
+  $attrs->{checked} = 'checked' if $checked;
+  return tag('input', $attrs);
+}
+
+sub option_tag {
+  my ($text, $attrs) = (@_, +{});
+  $attrs->{value} = $text unless exists $attrs->{value};
+  return content_tag('option', $text, $attrs);  
+}
+
+sub text_area_tag {
+  my $name = shift @_;
+  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop @_ : +{};
+  my $content = @_ ? shift @_ : '';
+
+  $attrs = _merge_attrs(+{ name=>$name, id=>"@{[ _sanitize_to_id($name) ]}" }, $attrs);
+  return content_tag('textarea', $content, $attrs);
+}
 
 sub input_tag {
   my ($name, $value, $attrs) = (undef, undef, +{});
@@ -181,10 +151,498 @@ sub input_tag {
   $name = shift @_ if @_;
   $value = shift @_ if @_;
 
-  $attrs = _merge_attrs(+{type => "text", name => $name, value => $value}, $attrs);
-  $attrs->{id} = _sanitize_name_to_id($attrs->{name}) if exists($attrs->{name}) && defined($attrs->{name}) && !exists($attrs->{id});
+  $attrs = _merge_attrs(+{type => "text"}, $attrs);
+  $attrs = _merge_attrs(+{name => $name}, $attrs) if defined($name);
+  $attrs = _merge_attrs(+{value => $value}, $attrs) if defined($value);
+  $attrs->{id} = _sanitize_to_id($attrs->{name}) if exists($attrs->{name}) && defined($attrs->{name}) && !exists($attrs->{id});
+
   return tag('input', $attrs);
 }
+
+sub password_tag {
+  my $attrs = (ref($_[-1])||'' eq 'HASH') ? pop : +{};
+  $attrs = _merge_attrs(+{ type=>'password' }, $attrs);
+  return input_tag(@_, $attrs);
+}
+
+sub hidden_tag {
+  my $attrs = (ref($_[-1])||'' eq 'HASH') ? pop : +{};
+  $attrs = _merge_attrs(+{ type=>'hidden' }, $attrs);
+  return input_tag(@_, $attrs);
+}
+
+sub submit_tag {
+  my ($value, $attrs);
+  $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  $value = @_ ? shift(@_) : $DEFAULT_SUBMIT_TAG_VALUE;
+
+  $attrs = _merge_attrs(+{ type=>'submit', name=>'commit', value=>$value }, $attrs);
+  return input_tag $attrs;
+}
+
+sub select_tag {
+  my $name = shift;
+  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  my $option_tags = @_ ? shift(@_) : "";
+  my $html_name = $attrs->{multiple} && ($name !~ m/\[\]$/) ? "${name}[]" : $name;
+
+  if(my $include_blank = delete $attrs->{include_blank}) {
+    my $options_for_blank_options_tag = +{ value => '' };
+    if($include_blank eq '1') {
+      $include_blank = '';
+      $options_for_blank_options_tag->{label} = ' ';
+    }
+    $option_tags = content_tag('option', $include_blank, $options_for_blank_options_tag)->concat($option_tags);
+  }
+  if(my $prompt = delete $attrs->{prompt}) {
+      $option_tags = content_tag('option', $prompt, +{value=>''})->concat($option_tags);
+  }
+
+  $attrs = _merge_attrs(+{ name=>$html_name, id=>"@{[ _sanitize_to_id($name) ]}" }, $attrs);
+  return content_tag('select', $option_tags, $attrs);
+}
+
+sub options_for_select {
+  my $options_proto = shift @_;
+  return $options_proto unless( (ref($options_proto)||'') eq 'ARRAY');
+  my @options = _normalize_options_for_select($options_proto);
+
+  my $attrs_proto = $_[0] ? shift(@_) : [];
+  my (@selected_values, @disabled_values,  %global_attributes) = ();
+  if( (ref($attrs_proto)||'') eq 'ARRAY') {
+    @selected_values = @$attrs_proto;
+  } elsif( (ref($attrs_proto)||'') eq 'HASH') {
+    @selected_values = @{delete $attrs_proto->{selected}} if exists($attrs_proto->{selected});
+    @disabled_values = @{delete $attrs_proto->{disabled}} if exists($attrs_proto->{disabled});
+    %global_attributes = %{$attrs_proto};
+  } else {
+    @selected_values = ($attrs_proto);
+  }
+  
+  my %selected_lookup = map { $_=>1 } @selected_values;
+  my %disabled_lookup = map { $_=>1 } @disabled_values;
+  my ($first, @options_for_select) = map { option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes) } @options;
+
+  return  $first->concat(@options_for_select);
+}
+
+sub _normalize_options_for_select {
+  my $options_proto = shift;
+  my @options = map {
+    push @$_, +{} unless (ref($_->[-1])||'') eq 'HASH';
+    unshift @$_, $_->[0] unless scalar(@$_) == 3;
+    $_;
+  } map {
+    (ref($_)||'') eq 'ARRAY' ? $_ : [$_, $_, +{}];
+  } @$options_proto;
+  return @options;
+}
+
+sub option_for_select {
+  my ($option_info, $selected, $disabled, $attrs) = @_;
+  my %attrs = (value=>$option_info->[1], %{$option_info->[2]}, %$attrs);
+  $attrs{selected} = 'selected' if $selected->{$option_info->[1]};
+  $attrs{disabled} = 'disabled' if $disabled->{$option_info->[1]};
+
+  return option_tag($option_info->[0], \%attrs);
+}
+
+
+sub option_html_attributes { return +{} }
+
+sub options_from_collection_for_select {
+  my ($collection, $value_method, $label_method, $selected_proto) = (@_);
+
+  my @options = ();
+  my @selected = ();
+  my @disabled = ();
+  my %global_attributes = ();
+
+  @disabled = @{ delete($selected_proto->{disabled})||[] } if (ref($selected_proto)||'') eq 'HASH';
+  @selected = @{ delete($selected_proto->{selected})||[] } if (ref($selected_proto)||'') eq 'HASH';
+  %global_attributes = %{$selected_proto} if (ref($selected_proto)||'') eq 'HASH';
+  @selected = @$selected_proto if (ref($selected_proto)||'') eq 'ARRAY';
+  @selected = ($selected_proto) if ((ref(\$selected_proto)||'') eq 'SCALAR') && defined($selected_proto);
+
+  while(my $item = $collection->next) {
+    push @options, [ $item->$label_method => $item->$value_method, option_html_attributes($item) ];
+    push @selected, $item->$value_method if ((ref($selected_proto)||'') eq 'CODE') && $selected_proto->($item);
+  }
+  $collection->reset if $collection->can('reset');
+
+  return options_for_select \@options, +{ selected=>\@selected, disabled=>\@disabled, %global_attributes};
+}
+
+
+1;
+
+=head1 NAME
+
+Valiant::HTML::FormTags - HTML Form Tags
+
+=head1 SYNOPSIS
+
+    use Valiant::HTML::FormTags 'input_tag', 'select_tag';  # import named tags
+    use Valiant::HTML::FormTags ':all';                     # import all tags
+
+=head1 DESCRIPTION
+
+Functions that generate HTML tags, specifically those around HTML forms.   Not all
+HTML tags are in this library, this focuses on things that would be useful for building
+HTML forms.   In general this is a support libary for L<Valiant::HTML::FormBuilder> but
+there's nothing preventing you from using these stand alone, particularly when you have
+very complex form layout needs.
+
+=head1 EXPORTABLE FUNCTIONS
+
+The following functions can be exported by this library
+
+=head2 button_tag
+
+    button_tag($content_string, \%attrs)
+    button_tag($content_string)
+    button_tag(\%attrs, \&content_code_block)
+    button_tag(\&content_code_block)
+
+Creates a button element that defines a submit button, reset button or a generic button which 
+can be used in JavaScript, for example. You can use the button tag as a regular submit tag but
+it isn't supported in legacy browsers. However, the button tag does allow for richer labels
+such as images and emphasis, so this helper will also accept a block. By default, it will create
+a button tag with type submit, if type is not given.  HTML attribute C<name> defaults to 
+'Button' if not supplied.  Inner content also defaults to 'Button' if not supplied.
+
+=head2 checkbox_tag
+
+    checkbox_tag $name
+    checkbox_tag $name, $value
+    checkbox_tag $name, $value, $checked
+    checkbox_tag $name, \%attrs
+    checkbox_tag $name, $value, \%attrs
+    checkbox_tag $name, $value, $checked, \%attrs
+
+Creates a check box form input tag.  C<id> will be generated from $name if not passed in \%attrs. C<value>
+attribute will default to '1' and the control is unchecked by default.
+
+=head2 fieldset_tag
+
+    fieldset_tag \%content_block
+    fieldset_tag \%attrs, \%content_block
+    fieldset_tag $legend, \%attrs, \%content_block
+    fieldset_tag $legend, \%content_block
+
+Create a C<fieldset> with inner content.  Example:
+
+    fieldset_tag(sub {
+      button_tag 'username';
+    });
+
+    # <fieldset><button name="button">username</button></fieldset>
+  
+    fieldset_tag('Info', sub {
+      button_tag 'username';
+    });
+
+    # <fieldset><legend>Info</legend><button name="button">username</button></fieldset>
+
+=head2 form_tag
+
+    form_tag '/signup', \%attrs, \&content
+    form_tag \@args, +{ uri_for=>sub {...}, %attrs }, \&content
+
+Create a form tag with inner content.  Example:
+
+    form_tag('/user', +{ class=>'form' }, sub {
+      checkbox_tag 'person[1]username', +{class=>'aaa'};
+    });
+
+Produces:
+
+    <form accept-charset="UTF-8" action="/user" class="form" method="POST">
+      <input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/>
+    </form>';
+
+
+=head2 label_tag
+
+    label_tag $name, $content, \%attrs;
+    label_tag $name, $content;
+    label_tag $name, \%attrs, \&content;
+    label_tag $name, \&content;
+
+Create a label tag where $name is set to the C<for> attribute.   Can contain string or block contents.  Label
+contents default to something based on $name;
+
+    label_tag 'user_name', "User", +{id=>'userlabel'};    # <label id='userlabel' for='user_name'>User</label>
+    label_tag 'user_name';                                # <label for='user_name'>User Name</label>
+
+Example with block content:
+
+    label_tag('user_name', sub {
+      'User Name Active',
+      checkbox_tag 'active', 'yes', 1;
+    });
+
+    <label for='user_name'>
+      User Name Active<input checked  value="yes" id="user_name" name="user_name" type="checkbox"/>
+    </label>
+
+Produce a label tag, often linked to an input tag.   Can accept a block coderef.  Examples:
+
+=head2 radio_button_tag
+
+    radio_button_tag $name, $value
+    radio_button_tag $name, $value, $checked
+    radio_button_tag $name, $value, $checked, \%attrs
+    radio_button_tag $name, $value, \%attrs
+
+Creates a radio button; use groups of radio buttons named the same to allow users to select from a
+group of options. Examples:
+
+    radio_button_tag('role', 'admin', 0, +{ class=>'radio' });
+    # <input class="radio" id="role_admin" name="role" type="radio" value="admin"/>
+
+    radio_button_tag('role', 'user', 1, +{ class=>'radio' });
+    # <input checked class="radio" id="role_user" name="role" type="radio" value="user"/>'
+
+=head2 option_tag
+
+    option_tag $text, \%attributes
+    option_tag $text
+
+Create a single HTML option.  C<value> attribute is inferred from $text if not in \%attributes.  Examples:
+
+    option_tag('test', +{class=>'foo', value=>'100'});
+    # <option class="foo" value="100">test</option>
+
+    option_tag('test'):
+    #<option value="test">test</option>
+
+=head2 text_area_tag
+
+    text_area_tag $name, \%attrs
+    text_area_tag $name, $content, %attrs
+
+Create a named text_area form field. Examples:
+
+    text_area_tag("user", "hello", +{ class=>'foo' });
+    # <textarea class="foo" id="user" name="user">hello</textarea>
+
+    text_area_tag("user",  +{ class=>'foo' });
+    # <textarea class="foo" id="user" name="user"></textarea>
+
+=head2 input_tag
+
+    input_tag($name, $value, \%attrs)
+    input_tag($name, $value)
+    input_tag($name)
+    input_tag($name, \%attrs)
+    input_tag(\%attrs)
+
+Create a HTML input tag. If $name and/or $value are set, they are used to populate the 'name' and
+'value' attributes of the C<input>.  Anything passed in the \%attrs hashref overrides.  Examples:
+
+    input_tag('username', 'jjn', +{class=>'aaa'});
+    # <input class="aaa" id="username" name="username" type="text" value="jjn"/>
+
+    input_tag('username', 'jjn');
+    # <input id="username" name="username" type="text" value="jjn"/>
+
+    input_tag('username');
+    # <input id="username" name="username" type="text"/>
+
+    input_tag('username', +{class=>'foo'});
+    # <input class="foo" id="username" name="username" type="text"/>
+
+    input_tag(+{class=>'foo'});
+    # <input class="foo" type="text"/>
+
+=head2 password_tag
+
+=head2 hidden_tag
+
+Creates an input tag with the given type.  Example:
+
+    hidden_tag('user_id', 100, +{class=>'foo'});
+    # <input class="foo" id="user_id" name="user_id" type="hidden" value="100"/>
+    
+    password_tag('password', +{class=>'foo'});
+    # <input class="foo" id="password" name="password" type="password"/>
+
+=head2 submit_tag
+
+    submit_tag
+    submit_tag $value
+    submit_tag \%attrs
+    submit_tag $value, \%attrs 
+
+Create a submit tag.  Examples:
+
+    submit_tag;
+    # <input id="commit" name="commit" type="submit" value="Save changes"/>
+
+    submit_tag('person');
+    # <input id="commit" name="commit" type="submit" value="person"/>
+
+    submit_tag('Save', +{name=>'person'});
+    # <input id="person" name="person" type="submit" value="Save"/>
+
+    submit_tag(+{class=>'person'});
+    # <input class="person" id="commit" name="commit" type="submit" value="Save changes"/>
+
+=head2 select_tag
+
+    select_tag $name, $option_tags, \%attrs
+    select_tag $name, $option_tags
+    select_tag $name, \%attrs
+
+Create a select tag group with options.  Examples:
+
+    select_tag("people", raw("<option>David</option>"));
+    # <select id="people" name="people"><option>David</option></select>
+
+    select_tag("people", raw("<option>David</option>"), +{include_blank=>1});
+    # <select id="people" name="people"><option label=" " value=""></option><option>David</option></select>
+
+    select_tag("people", raw("<option>David</option>"), +{include_blank=>'empty'});
+    # <select id="people" name="people"><option value="">empty</option><option>David</option></select>
+      
+    select_tag("prompt", raw("<option>David-prompt</option>"), +{prompt=>'empty-prompt', class=>'foo'});
+    # <select class="foo" id="prompt" name="prompt"><option value="">empty-prompt</option><option>David-prompt</option></select>
+
+=head2 options_for_select
+
+    options_for_select [$value1, $value2, ...], $selected_value
+    options_for_select [$value1, $value2, ...], \@selected_values
+    options_for_select [$value1, $value2, ...], +{ selected => $selected_value, disabled => \@disabled_values, %global_options_attributes }
+    options_for_select [ [$label, $value], [$label, $value, \%attrs], ...]
+
+Create a string of HTML option tags suitable for using with C<select_tag>.  Accepts two arguments the
+first of whuch is required.  The first argument is an arrayref of values used for the options. Each value
+can be one of a scalar (in which case the value is used as both the text label for the option as well as 
+its actual value attribute) or a arrayref where the first item is the option label, the second is the value
+and an option third is a hashref used to add custom attributes to the option.
+
+The second (optional) argument lets you set which options are marked C<selected> and possible C<disabled>
+If the second argument is a scalar value then it is used to mark that value as selected.  If its an arrayref
+then all matching values are selected.  If its a hashref we look for a key C<selected> and key <disabled>
+and expect those (if exists) to be an arrayref of matching values.  Any additional keys in the hash will be
+passed as global HTML attributes to the options.  Examples:
+
+    options_for_select(['A','B','C']);
+    # <option value="A">A</option>
+    # <option value="B">B</option>
+    # <option value="C">C</option>
+
+    options_for_select(['A','B','C'], 'B');
+    # <option value="A">A</option>
+    # <option selected value="B">B</option>
+    # <option value="C">C</option>
+
+    options_for_select(['A','B','C'], ['A', 'C']);
+    #<option selected value="A">A</option>
+    #<option value="B">B</option>
+    #<option selected value="C">C</option>
+
+    options_for_select(['A','B','C'], ['A', 'C']);
+    # <option selected value="A">A</option>
+    # <option value="B">B</option>
+    # <option selected value="C">C</option>
+
+    options_for_select([[a=>'A'],[b=>'B'], [c=>'C']]);
+    # <option value="A">a</option>
+    # <option value="B">b</option>
+    # <option value="C">c</option>
+
+    options_for_select([[a=>'A'],[b=>'B'], [c=>'C']], 'B');
+    # <option value="A">a</option>
+    # <option selected value="B">b</option>
+    # <option value="C">c</option>
+
+    options_for_select(['A',[b=>'B', {class=>'foo'}], [c=>'C']], ['A','C']);
+    # <option selected value="A">A</option>
+    # <option class="foo" value="B">b</option>
+    # <option selected value="C">c</option>
+
+    options_for_select(['A','B','C'], +{selected=>['A','C'], disabled=>['B'], class=>'foo'});
+    # <option class="foo" selected value="A">A</option>
+    # <option class="foo" disabled value="B">B</option>
+    # <option class="foo" selected value="C">C</option>
+
+This function is useful with the C<select_tag>:
+
+    select_tag("state", options_for_select(['A','B','C'], 'A'), +{include_blank=>1});
+    # <select id="state" name="state">
+    #  <option label=" " value=""></option>
+    #  <option selected value="A">A</option>
+    #  <option value="B">B</option>
+    #  <option value="C">C</option>
+    # </select>
+
+Please note that since C<options_for_select> returns a L<Valiant::HTML::SafeString> you don't need to add 
+any additional escaping.
+
+=head2 options_from_collection_for_select
+
+Given a collection (an object that does the interface defined by L<Valiant::HTML::Util::Collection> return 
+a string of options suitable for C<select_tag>.  Optionally you can pass additional arguments, like with
+C<options_for_select> to mark individual options as selected, disabled and to pass additional HTML attributes.
+Examples:
+
+    my $collection = Valiant::HTML::Util::Collection->new([label=>'value'], [A=>'a'], [B=>'b'], [C=>'c']);
+
+    options_from_collection_for_select($collection, 'value', 'label');
+    # <option value="value">label</option>
+    # <option value="a">A</option>
+    # <option value="b">B</option>
+    # <option value="c">C</option>
+
+    options_from_collection_for_select($collection, 'value', 'label', 'a');
+    # <option value="value">label</option>
+    # <option selected value="a">A</option>
+    # <option value="b">B</option>
+    # <option value="c">C</option>
+
+    options_from_collection_for_select($collection, 'value', 'label', ['a', 'c']);
+    # <option value="value">label</option>
+    # <option selected value="a">A</option>
+    # <option value="b">B</option>
+    # <option selected value="c">C</option>
+
+    options_from_collection_for_select($collection, 'value', 'label', +{selected=>['a','c'], disabled=>['b'], class=>'foo'})
+    # <option class="foo" value="value">label</option>
+    # <option class="foo" selected value="a">A</option>
+    # <option class="foo" disabled value="b">B</option>
+    # <option class="foo" selected value="c">C</option>
+
+Additionally you can pass a coderef for dynamic selecting.  Example:
+
+    options_from_collection_for_select($collection, 'value', 'label', sub { shift->value eq 'a'} );
+    # <option value="value">label</option>
+    # <option selected value="a">A</option>
+    # <option value="b">B</option>
+    # <option value="c">C</option>
+
+The collection object must at minimum provide a method C<next> which returns the next object in the collection.
+This method C<next> should return false when all the item objects have been iterated thru in turn. Optionally
+you can provide a C<reset> method which will be called to return the collection to the first index.
+
+You can see L<Valiant::HTML::Util::Collection> source for example minimal code.
+
+=head1 SEE ALSO
+ 
+L<Valiant>, L<Valiant::HTML::FormBuilder>
+
+=head1 AUTHOR
+ 
+See L<Valiant>
+
+=head1 COPYRIGHT & LICENSE
+ 
+See L<Valiant>
+
+=cut
+
+__END__
 
 sub color_input_tag {
   my ($name, $value, $attrs) = @_;
@@ -270,208 +728,16 @@ sub time_field_tag {
   return input_tag('input', $value, $attrs);
 }
 
-# checkbox_tag $name
-# checkbox_tag $name, $attrs
-# checkbox_tag $name, $value, $attrs
-# checkbox_tag $name, $value, $checked, $attrs
-# checkbox_tag $name, $value
-# checkbox_tag $name, $value, $checked
 
-sub checkbox_tag {
-  my $name = shift;
-  my ($value, $checked, $attrs) = (1, 0, +{});
-  $attrs = pop(@_) if (ref($_[-1])||'') eq 'HASH';
-  $value = shift(@_) if defined $_[0];
-  $checked = shift(@_) if defined $_[0];
-  $attrs = _merge_attrs(+{type => 'checkbox', name=>$name, id=>_sanitize_name_to_id($name), value=>$value}, $attrs);
 
-  return tag('input', $attrs);
-}
+# options_from_set_object_for_select $set, $value_method, $text_method, $selected_value, \%global_options_attributes?
+# options_from_set_object_for_select $set, $value_method, $text_method, \@selected_values, \%global_options_attributes 
+# options_from_set_object_for_select $set, $value_method, $text_method, +{selected=>$selected_value, disabled=>$disabled_value, %global_options_attributes? }
+# options_from_set_object_for_select $set, $value_method, $text_method, +{selected=>\@selected_values, disabled=>\@disabled_values, %global_options_attributes? }
+# options_from_set_object_for_select $set, $value_method, $text_method, $info_set, $selected_method, $disabled_method, \%global_options_attributes
 
-# button_tag('content', \%attrs)
-# button_tag('content')
-# button_tag(\%attrs, $content_block)
-# button_tag($content_block)
+sub options_from_set_object_for_select {
 
-sub button_tag {
-  my ($content, $attrs) = (undef, +{});
-
-  $attrs = shift @_ if (ref($_[0])||'') eq 'HASH';
-  $content = shift @_ if (ref($_[0])||'') eq 'CODE';
-  $content = shift @_ unless defined $content;
-  $attrs = shift @_ if (ref($_[0])||'') eq 'HASH';
-  $attrs = _merge_attrs(+{name => 'button'}, $attrs);
-
-  return ref($content) ? content_tag('button', $attrs, $content) : content_tag('button', $content, $attrs)
-}
-
-# fieldset_tag $content_block
-# fieldset_tag $attrs, $content_block
-# fieldset_tag $legend, $attrs, $content_block
-# fieldset_tag $legend, $content_block
-
-sub fieldset_tag {
-  my ($legend, $attrs, $content) = (undef, +{}, undef);
-  $content = pop @_; # Required
-  $attrs = pop @_ if (ref($_[-1])||'') eq 'HASH';
-  $legend = shift @_ if @_;
-
-  my $output = '';
-  my @content_args = exists($attrs->{CONTENT_ARGS_KEY}) ? @{delete $attrs->{CONTENT_ARGS_KEY}} : ();
-  $output .= content_tag('legend', $legend) if $legend;
-  $output .= $content->(@content_args);
-
-  return content_tag('fieldset', $attrs, sub { $output });
-}
-
-# form_tag '/signup', \%attrs, ?$content
-# form_tag \@args, +{ uri_for=>sub {...}, %attrs }, ?$content
-
-sub form_tag {
-  my ($url_options, $attrs, $content) = @_;
-  $attrs = _process_form_attrs($url_options, $attrs);
-  return $content ? content_tag('form', $attrs, $content) : tag('form', $attrs);
-}
-
-# Breaking this bit out in case we want to make it easier to do custom attributes
-# and overall processing on the form_tag
-
-sub _process_form_attrs {
-  my ($url_options, $attrs) = @_;
-  my $uri_for = delete $attrs->{uri_for};
-  $attrs->{action} ||= $uri_for ? $uri_for->($url_options) : $url_options;
-  $attrs->{method} ||= 'POST';
-  $attrs->{'accept-charset'} ||= 'UTF-8';
-  return $attrs;
-}
-
-# label_tag $name, $content, \%attrs
-# label_tag $name, \%attrs, \&content;
-# label_tag \%attrs, \&content;
-# label_tag \%attrs, $content;
-# label_tag $name, $content,
-
-sub label_tag {
-  my ($name, $content, $attrs) = ('', '', +{});
-  if(ref $_[0]) {
-    $attrs = shift @_;
-    $content = shift @_;
-  } else {
-    $name = shift @_;
-  }
-  if( (ref($_[0])||'') eq 'HASH' ) {
-    $attrs = shift @_;
-  } elsif(@_) {
-    $content = shift @_;
-    $attrs = shift @_ if ref($_[0]);
-  }
-  $attrs->{for} ||= _sanitize_name_to_id($name) if $name;
-  $content ||= $name;
-
-  return ref($content) ? content_tag('label', $attrs, $content) : content_tag('label', $content, $attrs)
-}
-
-# radio_button_tag $name, $value
-# radio_button_tag $name, $value, $checked
-# radio_button_tag $name, $value, $checked, \%attrs
-# radio_button_tag $name, $value, \%attrs
-
-sub radio_button_tag {
-  my ($name, $value) = (shift @_, shift @_);
-  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
-  my $checked = @_ ? shift(@_) : 0;
-  $attrs = _merge_attrs(+{type=>'radio', name=>$name, value=>$value, id=>"@{[ _sanitize_name_to_id($name) ]}_@{[ _sanitize_name_to_id($value) ]}" }, $attrs);
-  $attrs->{checked} = 'checked' if $checked;
-  return input_tag('input', $value, $attrs);
-}
-
-# text_area_tag $name, \%attrs
-# text_area_tag $name, $content, %attrs
-
-sub text_area_tag {
-  my $name = shift @_;
-  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop @_ : +{};
-  my $content = @_ ? shift @_ : '';
-
-  $attrs = _merge_attrs(+{ name=>$name, id=>"@{[ _sanitize_name_to_id($name) ]}" }, $attrs);
-  return content_tag('textarea', $content, $attrs);
-}
-
-# submit_tag
-# submit_tag $value
-# submit_tag \%attrs
-# submit_tag $value, \%attrs
-
-sub submit_tag {
-  my ($value, $attrs);
-  $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
-  $value = @_ ? shift(@_) : DEFAULT_SUBMIT_TAG_VALUE;
-
-  $attrs = _merge_attrs(+{ type=>'submit', name=>'commit', value=>$value }, $attrs);
-  return input_tag $attrs;
-}
-
-# select_tag $name, $option_tags, \%attrs
-# select_tag $name, $option_tags
-# select_tag $name, \%attrs
-
-sub select_tag {
-  my $name = shift;
-  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
-  my $option_tags = @_ ? shift(@_) : "";
-  my $html_name = $attrs->{multiple} && ($name !~ m/\[\]$/) ? "${name}[]" : $name;
-
-  if(my $include_blank = delete $attrs->{include_blank}) {
-    my $options_for_blank_options_tag = +{ value => '' };
-    if($include_blank eq '1') {
-      $include_blank = '';
-      $options_for_blank_options_tag->{label} = ' ';
-    }
-    $option_tags = raw(content_tag('option', $include_blank, $options_for_blank_options_tag))->concat($option_tags);
-  }
-  if(my $prompt = delete $attrs->{prompt}) {
-      $option_tags = raw(content_tag('option', $prompt, +{value=>''}))->concat($option_tags);
-  }
-
-  $attrs = _merge_attrs(+{ name=>$html_name, id=>"@{[ _sanitize_name_to_id($name) ]}" }, $attrs);
-  return content_tag('select', $option_tags, $attrs);
-}
-
-# options_for_select [$value1, $value2, ...], $selected_value
-# options_for_select [$value1, $value2, ...], +{ selected => $selected_value, %global_options_attributes }
-# options_for_select [ [$label, $value], [$label, $value, \%attrs], ...]
-
-sub options_for_select {
-  my $options_proto = shift @_;
-  return $options_proto unless( (ref($options_proto)||'') eq 'ARRAY');
-  my $attrs_proto = $_[0] ? shift(@_) : [];
-  my @selected = (ref($attrs_proto)||'' eq 'ARRAY') ? @$attrs_proto : ($attrs_proto);
-  my @options = _normalize_options_for_select($options_proto);
-  my $options_string = join DEFAULT_OPTIONS_DELIM,
-    map {
-      option_for_select($_, @selected);
-    } @options;
-
-  return  raw($options_string);
-}
-
-sub option_for_select {
-  my ($option_info, @selected) = @_;
-  my %attrs = (value=>$_->[1], %{$_->[2]});
-  $attrs{selected} = 'selected' if grep { $_ eq $attrs{value} } @selected;
-  return content_tag('option', $_->[0], \%attrs);
-}
-
-sub _normalize_options_for_select {
-  my $options_proto = shift;
-  my @options = map {
-    push @$_, +{} unless (ref($_->[-1])||'') eq 'HASH';
-    unshift @$_, $_->[0] unless scalar(@$_) == 3;
-    $_;
-  } map {
-    (ref($_)||'') eq 'ARRAY' ? $_ : [$_, $_, +{}];
-  } @$options_proto;
-  return @options;
 }
 
 # Formbuilder stuff
@@ -550,27 +816,4 @@ sub _instantiate_builder {
 1;
 
 
-=head1 NAME
-
-DBIx::Class::Valiant::HTML::FormTags - HTML Form Tags
-
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
-
-=head1 ATTRIBUTES
-
-=head1 SEE ALSO
- 
-L<Valiant>
-
-=head1 AUTHOR
- 
-See L<Valiant>
-
-=head1 COPYRIGHT & LICENSE
- 
-See L<Valiant>
-
-=cut
 

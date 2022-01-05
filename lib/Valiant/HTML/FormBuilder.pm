@@ -38,6 +38,12 @@ has model => (
 has model_name => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1 );
 
+
+sub content {
+  my ($self, @content) = @_;
+  return map { _e $_ } @content;
+}
+
 # $fb->input($attribute, \%options)
 # $fb->input($attribute)
 sub input {
@@ -186,11 +192,6 @@ sub _default_model_errors_content {
   }
 }
 
-sub content {
-  my ($self, @content) = @_;
-  return map { _e $_ } @content;
-}
-
 # Where $collection_arrayref is an arrayref suitable for passing to 'options_for_select'.
 # $fb->select($attribute, \@collection, \%options)
 # $fb->select($attribute, \@collection)
@@ -227,6 +228,12 @@ sub content {
 #   <option value='2' selected=1>admin</option>
 #   <option value='3'>guest</option>
 # </select>
+#
+
+# $fb->select_from_collection(person_roles => role_id, $roles_rs, id=>'label', \%attrs, \&custom_options_template)
+# $fb->select_from_collection($roles_rs, +{id=>'label'}, person_roles=>role_id, )
+# $fb->select_options_from_collection($roles_rs, id=>'label', $profile->person_roles, 'role_id'
+sub select_from_collection {}
 
 sub select {
   my $self = shift;
@@ -252,6 +259,30 @@ sub select_value {
 1;
 
 __END__
+
+    %= form_for $profile, begin
+    <div class='form-row'>
+      <div class='col form-group'>
+        %= label 'state_id', $profile->human_attribute_name('state', $locale)
+        %= select state_id => $profile->stated_rs, id=>'name'
+        %= errors_for 'state_id'
+      </div>
+    </div>
+
+  <fieldset>
+    <legend><%= $person->human_attribute_name('roles')  %></legend>
+    %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
+    <div class='form-group'>
+      %= checkbox_list { person_roles => 'role_id' } , $role_rs, id=>'label'
+    </div>
+  </fieldset>
+
+  %= fields_for $role_rs, namespace=>$profile, begin
+    % my $role = shift;
+    %= $role->checkbox('label', sub { grep { $_->is_role($role) } $profile->roles })
+  %] end
+
+    %= end
 
 =head1 NAME
 
