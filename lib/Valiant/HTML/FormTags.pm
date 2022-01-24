@@ -4,13 +4,14 @@ use warnings;
 use strict;
 use Exporter 'import'; # gives you Exporter's import() method directly
 use Valiant::HTML::TagBuilder ':all';
-use Scalar::Util (); 
 use Valiant::HTML::Util::Collection;
+use Scalar::Util (); 
+use Module::Runtime ();
 
 our @EXPORT_OK = qw(
   button_tag checkbox_tag fieldset_tag form_tag label_tag radio_button_tag input_tag option_tag
-  text_area_tag submit_tag password_tag hidden_tag select_tag options_for_select 
-  options_from_collection_for_select
+  text_area_tag submit_tag password_tag hidden_tag select_tag options_for_select _merge_attrs
+  options_from_collection_for_select collection_select field_id field_name field_value
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
@@ -95,15 +96,16 @@ sub fieldset_tag {
 }
 
 sub form_tag {
-  my ($url_options, $attrs, $content) = @_;
-  $attrs = _process_form_attrs($url_options, $attrs);
+  my $content = pop @_; # required
+  my $attrs = ref($_[-1])||'' eq 'HASH' ? pop(@_) : +{};
+  my $url_info = @_ ? shift : undef;
+  $attrs = _process_form_attrs($url_info, $attrs);
   return content_tag('form', $attrs, $content);
 }
 
 sub _process_form_attrs {
-  my ($url_options, $attrs) = @_;
-  my $uri_for = delete $attrs->{uri_for};
-  $attrs->{action} ||= $uri_for ? $uri_for->($url_options) : $url_options;
+  my ($url_info, $attrs) = @_;
+  $attrs->{action} = $url_info if $url_info;
   $attrs->{method} ||= 'POST';
   $attrs->{'accept-charset'} ||= 'UTF-8';
   return $attrs;
@@ -247,7 +249,6 @@ sub option_for_select {
   return option_tag($option_info->[0], \%attrs);
 }
 
-
 sub option_html_attributes { return +{} }
 
 sub options_from_collection_for_select {
@@ -273,6 +274,76 @@ sub options_from_collection_for_select {
   return options_for_select \@options, +{ selected=>\@selected, disabled=>\@disabled, %global_attributes};
 }
 
+sub field_id {
+  my ($object_proto, $attribute, $index, $namespace, @extra) = @_;
+  my $object_name = Scalar::Util::blessed($object_proto) ? $object_proto->model_name->singular : $object_proto;
+  my $sanitized_name = _sanitize_to_id($object_name);
+
+  return join '_', grep { defined $_ } (
+    $namespace,
+    $sanitized_name,
+    $index,
+    $attribute,
+    @extra,
+  );
+}
+
+sub field_name {
+  my ($object_proto, $attribute) = (shift, shift);
+  my $object_name = Scalar::Util::blessed($object_proto) ? $object_proto->model_name->param_key : $object_proto;
+  my $sanitized_name = _sanitize_to_id($object_name);
+  my @method_names = (ref($_[0])||'') eq 'ARRAY' ? @{shift @_} : ();
+  my %args = (ref($_[0])||'') eq 'HASH' ? %{shift @_} : ();
+
+  my $field_name = "";
+  $field_name .= $sanitized_name if defined($sanitized_name);
+  $field_name .= "[$args{index}]" if defined($args{index});
+  $field_name .= ".${attribute}";
+  $field_name .= ".@{[ join('.', @method_names) ]}" if @method_names;
+  $field_name .= '[]' if $args{multiple};
+
+  return $field_name;
+}
+
+sub field_value {
+  my ($model, $attribute) = @_;
+  return  $model->can('read_attribute_for_html') ? $model->read_attribute_for_html($attribute) : $model->$attribute;
+}
+
+#collection_select(object, method, collection, value_method, text_method, options = {}, html_options = {})
+sub collection_select {
+  my ($object, $method_proto, $collection, $value_method, $label_method, $options) = (@_, +{});
+
+  my (@selected, $name, $id) = @_;
+  if(ref $method_proto) {
+    my ($bridge, $value_method) = %$method_proto;
+    my $collection = $object->$bridge;
+    while(my $item = $collection->next) {
+      push @selected, field_value($item, $value_method);
+    }
+    $name = field_name($object, $bridge, +{multiple=>1}) . ".$value_method";
+    $options->{id} = field_id($object, $bridge, undef, undef, $value_method) unless exists $options->{id};
+  } else {
+    @selected = (field_value($object, $method_proto)); 
+    $name = field_name($object, $method_proto);
+    $options->{id} = field_id($object, $method_proto) unless exists $options->{id};
+  }
+
+  return select_tag($name, options_from_collection_for_select($collection, $value_method, $label_method, \@selected), $options);
+}
+
+sub checkboxes_for_list {
+}
+
+sub checkboxes_from_collection_for_list {
+}
+
+#collection_check_boxes(object, method, collection, value_method, text_method, options = {}, html_options = {}, &block) Link
+sub collection_checkboxes {
+  my ($object, $method_proto, $collection, $value_method, $label_method) = @_;
+  my $block = (ref($_[-1])||'') eq 'CODE' ? pop @_ : sub {}; # TODO
+  my $options = (ref($_[-1])||'') eq 'HASH' ? pop @_ : +{};
+}
 
 1;
 
@@ -420,7 +491,7 @@ Create a single HTML option.  C<value> attribute is inferred from $text if not i
 =head2 text_area_tag
 
     text_area_tag $name, \%attrs
-    text_area_tag $name, $content, %attrs
+    text_area_tag $name, $content, \%attrs
 
 Create a named text_area form field. Examples:
 
@@ -628,6 +699,63 @@ you can provide a C<reset> method which will be called to return the collection 
 
 You can see L<Valiant::HTML::Util::Collection> source for example minimal code.
 
+=head2 field_id
+
+    field_id $object, $attribute
+    field_id $object, $attribute, $index
+    field_id $object, $attribute, $index, $namespace
+
+Generate a string suitable for use as an HTML C<id> attribute.  Examples:
+
+    package Local::Role;
+
+    use Moo;
+    use Valiant::Validations;
+
+    sub namespace { 'Local' }
+    
+    has ['id', 'label'] => (is=>'ro', required=>1);
+
+    my $user = Local::Role->new({id=>100, label=>'user'});
+
+    field_id($user, 'label');
+    # 'local_role_label'
+
+    field_id($user, 'label', 2);
+    # 'local_role_2_label'
+
+    field_id($user, 'label', 2, 'foo');
+    # 'foo_local_role_2_label'
+
+=head2 field_name
+
+    field_name $object, $attribute;
+    field_name $object, $attribute, \@extra;
+    field_name $object, $attribute, +{ index => $int, multiple => $bool };
+    field_name $object, $attribute, \@extra, +{ index => $int, multiple => $bool };
+
+Generate a string suitable for use as a C<name> HTML attribute.  Examples (see definition
+of C<Local::User> above:
+
+    field_name($user, 'label');
+    # 'role.label'
+
+    field_name($user, 'label', [qw/foo bar/]);
+    # 'role.label.foo.bar'
+
+    field_name($user, 'label', +{index=>10});
+    # 'role[10].label'
+
+    field_name($user, 'label', +{index=>10, multiple=>1});
+    # 'role[10].label[]'
+
+    field_name($user, 'label', [qw/baz foo/], +{index=>10, multiple=>1});
+    # 'role[10].label.baz.foo[]'
+
+=head2 collection_select
+
+Create a select control from a collection
+
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::HTML::FormBuilder>
@@ -644,90 +772,11 @@ See L<Valiant>
 
 __END__
 
-sub color_input_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'color'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub date_input_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'date'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub datetime_input_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'datetime-local'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub email_input_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'email'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
 sub file_field_tag {
   my ($name, $value, $attrs) = @_;
   $attrs = _merge_attrs(+{type => 'file'}, $attrs);
   return input_tag('input', $value, $attrs);
 }
-
-sub hidden_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'hidden'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub month_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'month'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub number_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'number'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub range_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'range'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub password_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'password'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub search_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'search'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub week_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'week'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub url_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'url'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-sub time_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'time'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
 
 
 # options_from_set_object_for_select $set, $value_method, $text_method, $selected_value, \%global_options_attributes?
@@ -742,76 +791,9 @@ sub options_from_set_object_for_select {
 
 # Formbuilder stuff
 
-sub form_for {
-  my $model = shift; # required; at the start
-  my $content_block_coderef = pop; # required; at the end
-  my $options = @_ ? shift : +{};
-  my $model_name = exists $options->{as} ? $options->{as} : _model_name_from($model)->param_key;
-  
-  _apply_form_for_options($model, $options);
-  my $html_options = $options->{html};
 
-  $html_options->{method} = $options->{method} if exists $options->{method};
-  $html_options->{data} = $options->{data} if exists $options->{data};
 
-  my $builder = _instantiate_builder($model_name, $model, $options);
-  push @{$html_options->{CONTENT_ARGS_KEY}}, $builder;
-  
-  return form_tag '', $html_options, $content_block_coderef;
-}
 
-# TODO I think this needs to support nested forms
-sub _model_name_from {
-  my $proto = shift;
-  my $model = $proto->can('to_model') ? $proto->to_model : $proto;
-  return $model->model_name;
-}
-
-sub _apply_form_for_options {
-  my ($model, $options) = @_;
-  $model = $model->to_model if $model->can('to_model');
-
-  my $as = exists $options->{as} ? $options->{as} : undef;
-  my $namespace = exists $options->{namespace} ? $options->{namespace} : undef;
-  my ($action, $method) = @{ $model->can('in_storage') && $model->in_storage ? ['edit', 'patch']:['new', 'post'] };
-
-  $options->{html} = _merge_attrs(
-    ($options->{html} || +{}),
-    +{
-      class => $as ? "${action}_${as}" : _dom_class($model, $action),
-      id => ( $as ? [ grep { defined $_ } $namespace, $action, $as ] : join('_', grep { defined $_ } ($namespace, _dom_id($model, $action))) ),
-      method => $method,
-    },
-  );
-}
-
-sub _dom_class {
-  my ($model, $prefix) = @_;
-  my $singular = _model_name_from($model)->param_key;
-  return $prefix ? "${prefix}@{[ DEFAULT_ID_DELIM ]}${singular}" : $singular;
-}
-
-sub _dom_id {
-  my ($model, $prefix) = @_;
-  if(my $model_id = _model_id_for_dom_id($model)) {
-    return "@{[ _dom_class($model, $prefix) ]}@{[ DEFAULT_ID_DELIM ]}${model_id}";
-  } else {
-    $prefix ||= 'new';
-    return _dom_class($model, $prefix)
-  }
-}
-
-sub _model_id_for_dom_id {
-  my $model = shift;
-  return unless $model->can('id');
-  return join '_', ($model->id);
-}
-
-sub _instantiate_builder {
-  my ($model_name, $model, $options) = @_;
-  my $builder_class = delete $options->{builder} || DEFAULT_FORMBUILDER;
-  return use_module($builder_class)->new(model_name=>$model_name, model=>$model, options=>$options);
-}
 
 1;
 
