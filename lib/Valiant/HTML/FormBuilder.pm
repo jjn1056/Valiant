@@ -3,7 +3,10 @@ package Valiant::HTML::FormBuilder;
 use Moo;
 use Valiant::HTML::FormTags ();
 use Valiant::HTML::TagBuilder ();
+use Valiant::HTML::Util::Collection;
+
 use Valiant::I18N;
+use Scalar::Util (); 
 
 with 'Valiant::Naming';
 
@@ -21,16 +24,25 @@ has model => (
   isa => sub {
     return 1;
     my $model = shift;
-    # in_storage, human_attribute_name, 
-    # errors, has_errors
+    # in_storage, human_attribute_name, primary_columns
+    # errors, has_errors, i18n
   },
 );
 
 has name => ( is => 'ro', required => 1 );
-#has id => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1, default => sub { +{} } );  
 has index => ( is => 'ro', required => 0, predicate => 'has_index' );
 has namespace => ( is => 'ro', required => 0, predicate => 'has_namespace' );
+has _nested_child_index => (is=>'rw', init_arg=>undef, required=>1, default=>sub { +{} });
+
+around BUILDARGS => sub {
+  my ($orig, $class, @args) = @_;
+  my $options = $class->$orig(@args);
+
+  $options->{index} = $options->{child_index} if !exists($options->{index}) && exists($options->{child_index});
+  
+  return $options;
+};
 
 sub DEFAULT_ERROR_CONTAINER_CLASS { return our $DEFAULT_ERROR_CONTAINER_CLASS = 'invalid-feedback' }
 sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS = 'Your form has errors' }
@@ -39,26 +51,44 @@ sub DEFAULT_INPUT_ERROR_CLASS { return our $DEFAULT_INPUT_ERROR_CLASS = 'is_inva
 sub DEFAULT_TEXT_AREA_ERROR_CLASS { return our $DEFAULT_TEXT_AREA_ERROR_CLASS = 'is_invalid' }
 sub DEFAULT_CHECKBOX_ERROR_CLASS { return our $DEFAULT_CHECKBOX_ERROR_CLASS = 'is_invalid' }
 
+sub sanitized_object_name {
+  my $self = shift;
+  return $self->{__cached_sanitized_object_name} if exists $self->{__cached_sanitized_object_name};
+
+  my $value = $self->name;
+  $value =~ s/\]//g;
+  $value =~ s/[^a-zA-Z0-9:.-]/_/g;
+  $self->{__cached_sanitized_object_name} = $value;
+  return $value;
+}
+
+sub nested_child_index {
+  my ($self, $attribute) = @_;
+  if(exists($self->_nested_child_index->{$attribute})) {
+    return ++$self->_nested_child_index->{$attribute};
+  } else {
+    return $self->_nested_child_index->{$attribute} = 0
+  }
+}
+
 sub tag_id_for_attribute {
-  my ($self, $attribute, @extra) = @_;
-  return Valiant::HTML::FormTags::field_id(
-    $self->model,
-    $attribute,
-    ($self->has_index ? $self->index : undef),
-    ($self->has_namespace ? $self->namespace : undef),
-    @extra,
-  );
+  my ($self, $attribute) = @_;
+  my $id = $self->has_namespace ? $self->namespace . '_' : '';
+  $id .= $self->has_index ?
+    "@{[$self->sanitized_object_name]}_@{ $self->index }_${attribute}" :
+    "@{[$self->sanitized_object_name]}_${attribute}";
+  return $id;
 }
 
 # $self->tag_name_for_attribute($attribute, +{ multiple=>1 });
 sub tag_name_for_attribute {
   my ($self, $attribute, $opts) = @_;
-  $opts->{index} = $self->index if $self->has_index;
-  return Valiant::HTML::FormTags::field_name(
-    $self->model,
-    $attribute,
-    $opts,
-  );
+  my $name = $self->has_index ?
+    "@{[$self->name]}[@{ $self->index }].${attribute}" :
+    "@{[$self->name]}.${attribute}";
+  $name .= '[]' if $opts->{multiple};
+
+  return $name;
 }
 
 sub tag_value_for_attribute {
@@ -170,12 +200,17 @@ sub errors_for {
     $options = $arg if (ref($arg)||'') eq 'HASH';
     $content = $arg if (ref($arg)||'') eq 'CODE';
   }
-  my @errors = $self->model->errors->full_messages_for($attribute);
-  my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
 
+  die "Can't display errors on a model that doesn't support the errors method" unless $self->model->can('errors');
+
+  my @errors = $self->model->errors->full_messages_for($attribute);
+  return unless @errors;
+  
+  my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
   @errors = @errors[0..($max_errors-1)] if($max_errors);
+
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $self->DEFAULT_ERROR_CONTAINER_CLASS))
-    if $self->model->can('errors') && $self->model->errors->where($attribute);
+    if $self->model->errors->where($attribute);
   $content = $self->_default_errors_for_content($options) unless defined($content);
 
   return $content->(@errors);  
@@ -284,8 +319,102 @@ sub radio_button {
 
   return $self->input($attribute, $options);
 }
+ 
+sub date_field {
+  my ($self, $attribute, $options) = (@_, +{});
+  my $value = $self->tag_value_for_attribute($attribute);
 
-# field_for
+  $options->{type} = 'date';
+  $options->{value} ||= Scalar::Util::blessed($value) ? $value->ymd : $value;
+  $options->{min} = $options->{min}->ymd if exists($options->{min}) && Scalar::Util::blessed($options->{min});
+  $options->{max} = $options->{max}->ymd if exists($options->{max}) && Scalar::Util::blessed($options->{max});
+
+  return $self->input($attribute, $options);
+}
+
+sub datetime_local_field {
+  my ($self, $attribute, $options) = (@_, +{});
+  my $value = $self->tag_value_for_attribute($attribute);
+
+  $options->{type} = 'datetime-local';
+  $options->{value} ||= Scalar::Util::blessed($value) ? $value->strftime('%Y-%m-%dT%T') : $value;
+  $options->{min} = $options->{min}->strftime('%Y-%m-%dT%T') if exists($options->{min}) && Scalar::Util::blessed($options->{min});
+  $options->{max} = $options->{max}->strftime('%Y-%m-%dT%T') if exists($options->{max}) && Scalar::Util::blessed($options->{max});
+
+  return $self->input($attribute, $options);
+}
+
+sub time_field {
+  my ($self, $attribute, $options) = (@_, +{});
+  my $value = $self->tag_value_for_attribute($attribute);
+  my $format = (exists($options->{include_seconds}) && !delete($options->{include_seconds})) ? '%H:%M' : '%T.%3N';
+
+  $options->{type} = 'time';
+  $options->{value} ||= Scalar::Util::blessed($value) ? $value->strftime($format) : $value;
+
+  return $self->input($attribute, $options);
+}
+
+# fields_for($related_attribute, ?\%options?, \&block)
+sub fields_for {
+  my ($self, $related_attribute) = (shift, shift);
+  my $options = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+  my $codeblock = shift || die "Missing required code block";
+
+  $options->{builder} = $self->options->{builder};
+  $options->{namespace} = $self->namespace if $self->has_namespace;
+  $options->{parent_builder} = $self;
+
+  my $related_record = $self->tag_value_for_attribute($related_attribute);
+  my $name = "@{[ $self->name ]}.@{[ $related_attribute ]}";
+
+  $related_record = $related_record->to_model if Scalar::Util::blessed($related_record) && $related_record->can('to_model');
+
+  # Coerce an array into a collection.  Not sure if we want this here or not TBH...
+  $related_record = Valiant::HTML::Util::Collection->new(map { $_->can('to_model') ? $_->to_model : $_ } @$related_record)
+    if (ref($related_record)||'') eq 'ARRAY';
+
+  # Ok is the related record a collection or something else.
+  if($related_record->can('next')) {
+    my @output = ();
+    my $explicit_child_index = exists($options->{child_index}) ? $options->{child_index} : undef;
+    while(my $child_model = $related_record->next) {
+      if(defined($explicit_child_index)) {
+        $options->{child_index} = $options->{child_index}->($child_model) if ref() eq 'CODE';  # allow for callback version of this
+      } else {
+        $options->{child_index} = $self->nested_child_index($related_attribute); 
+      }
+      push @output, $self->fields_for_nested_model("${name}[@{[ $options->{child_index} ]}]", $child_model, $options, $codeblock);
+    }
+    return @output;
+  } else {
+    return $self->fields_for_nested_model($name, $related_record, $options, $codeblock);
+  }
+}
+
+sub fields_for_nested_model {
+  my ($self, $name, $model, $options, $codeblock) = @_;
+
+  $model = $model->to_model if $model->can('to_model');
+
+  my $emit_hidden_id = 0;
+  if($model->can('in_storage') && $model->in_storage) {
+    $emit_hidden_id = exists($options->{include_id}) ? $options->{include_id} : 1;
+  }
+
+  return Valiant::HTML::Form::fields_for($name, $model, $options, sub {
+    my $fb = shift;
+    my $output = Valiant::HTML::FormTags::capture($codeblock, $fb);
+    if($output && $emit_hidden_id && $model->can('primary_columns')) {
+      foreach my $id_field ($model->primary_columns) {
+        $output->concat($fb->hidden($id_field));
+      }
+    }
+    return $output;
+  });
+}
+
+
 # ?? date and date time helpers (month field, etc) ??
 # select, checkbox/select/radio groups
 

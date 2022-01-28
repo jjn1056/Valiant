@@ -7,9 +7,8 @@ use Valiant::HTML::FormTags ();
 use Scalar::Util (); 
 use Module::Runtime ();
 
-our @EXPORT_OK = qw(form_for);
+our @EXPORT_OK = qw(form_for fields_for);
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
-
 
 sub _default_formbuilder_class { 'Valiant::HTML::FormBuilder' };
 sub _DEFAULT_ID_DELIM { '_' }
@@ -22,7 +21,7 @@ sub _instantiate_builder {
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my $object = Scalar::Util::blessed($_[-1]) ? pop(@_) : die "Missing required object";
   my $model_name = scalar(@_) ? pop(@_) : _model_name_from_object_or_class($object)->param_key;
-  my $builder = exists $options->{builder} ? delete($options->{builder}) : _default_formbuilder_class;
+  my $builder = exists $options->{builder} ? $options->{builder} : $options->{builder} = _default_formbuilder_class;
   my %args = (
     model => $object,
     name => $model_name,
@@ -104,9 +103,16 @@ sub form_for {
   $html_options->{data} = $options->{data} if exists $options->{data};
   $html_options->{class} = join(' ', (grep { defined $_ } $html_options->{class}, $options->{class})) if exists $options->{class};
 
-
   my $builder = _instantiate_builder($model_name, $model, $options);
   return Valiant::HTML::FormTags::form_tag $html_options, sub { $content_block_coderef->($builder) };
+}
+
+#fields_for($name, $model, $options, sub {
+
+sub fields_for {
+  my ($name, $model, $options, $block) = @_;
+  my $builder = _instantiate_builder($name, $model, $options);
+  return Valiant::HTML::FormTags::capture($block, $builder); 
 }
 
 1;

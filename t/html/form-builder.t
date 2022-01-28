@@ -1,6 +1,8 @@
 use Test::Most;
 use Valiant::HTML::Form 'form_for';
 use Valiant::HTML::SafeString 'raw';
+use DateTime;
+
 {
   package Local::Test::Person;
 
@@ -8,6 +10,9 @@ use Valiant::HTML::SafeString 'raw';
   use Valiant::Validations;
 
   has name => (is=>'ro');
+  has date => (is=>'ro');
+  has profile => (is=>'ro');
+  has emails => (is=>'ro');
 
   validates name => (
     length => {
@@ -17,10 +22,70 @@ use Valiant::HTML::SafeString 'raw';
     exclusion => 'John',
   );
 
+  validates profile => (
+    presence => 1,
+    object => { nested => 1 },
+  );
+
+  validates emails => (
+    presence => 1,
+    array => { validations => [object=>1] },
+  );
+
   sub namespace { 'Local::Test' }
+
+  package Local::Test::Profile;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has address => (is=>'ro');
+  has emails => (is=>'ro');
+
+  validates address => (
+    length => {
+      maximum => 40,
+      minimum => 3,
+    },
+  );
+
+  validates emails => (
+    presence => 1,
+    array => { validations => [object=>1] },
+  );
+
+  sub namespace { 'Local::Test' }
+
+  package Local::Test::Email;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has address => (is=>'ro');
+
+  validates address => (
+    length => {
+      maximum => 10,
+      minimum => 3,
+    },
+  );
+
+  sub namespace { 'Local::Test' }
+
 }
 
-ok my $person = Local::Test::Person->new(name=>'John');
+ok my $email1 = Local::Test::Email->new(address=>'jjn1@yahoo.com');
+ok my $email2 = Local::Test::Email->new(address=>'jjn2@yahoo.com');
+ok my $profile = Local::Test::Profile->new(address=>'123 Hello Street', emails=>[$email1, $email2]);
+
+
+ok my $person = Local::Test::Person->new(
+  name=>'John',
+  date=>DateTime->new(year=>2006,month=>1,day=>23, hour=>10,minute=>30,second=>15),
+  profile=>$profile,
+  emails => [$email1, $email2],
+);
+
 ok $person->invalid;
 
 warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
@@ -46,17 +111,58 @@ warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
     }),
     $fb->model_errors(+{show_message_on_field_errors=>1}, sub {
       my (@errors) = @_;
-      return raw shift,
+      return shift,
       $fb->hidden('name'),
     }),
     $fb->text_area('name', +{class=>'foo'}),
     $fb->checkbox('name'),
-    $fb->radio_button('name', 'aa');
+    $fb->radio_button('name', 'aa'),
+    $fb->date_field('date'),
+    $fb->datetime_local_field('date'),
+    $fb->time_field('date'),
+    $fb->time_field('date', +{include_seconds=>0}),
+    "\n\n",
+    $fb->fields_for('profile', sub {
+      my $fb2 = shift;
+      return $fb2->input('address'), "\n",
+      $fb2->fields_for('emails', sub {
+        my $fb3 = shift;
+        return 
+        $fb3->label('address'),
+        $fb3->input('address'),
+        $fb3->errors_for('address'), "\n";
+      });
+    }),
+    "\n\n",
+    $fb->fields_for('emails', sub {
+      my $fb2 = shift;
+      return 
+      $fb2->label('address'),
+      $fb2->input('address'),
+      $fb2->errors_for('address'), "\n";
+    });
 });
+
 
 done_testing;
 
 __END__
 
-<input class="is_invalid" id="local_test_person_name" name="person.name" type="hidden" value="0"/>
-<input checked class="is_invalid" id="local_test_person_name" name="person.name" type="checkbox" value="1"/>
+
+{
+  package Local::Test;
+
+  use Moo;
+
+  has a => (is=>'rw', lazy=>1, isa=>sub { warn 111; return 1}, default=> sub { 'default' });
+
+  my $a = Local::Test->new;
+
+  use Devel::Dwarn;
+  Dwarn $a;
+  
+  warn $a->a;
+  $a->a('b');
+  warn $a->a;
+}
+

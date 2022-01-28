@@ -120,7 +120,7 @@ sub label_tag {
   $content = shift if @_;
   $attrs->{for} ||= _sanitize_to_id($name) if $name;
   
-  return ref($content) ? content_tag('label', $attrs, $content) : content_tag('label', $content, $attrs)
+  return (ref($content)||'') eq 'CODE' ? content_tag('label', $attrs, $content) : content_tag('label', $content, $attrs)
 }
 
 sub radio_button_tag {
@@ -291,12 +291,11 @@ sub field_id {
 sub field_name {
   my ($object_proto, $attribute) = (shift, shift);
   my $object_name = Scalar::Util::blessed($object_proto) ? $object_proto->model_name->param_key : $object_proto;
-  my $sanitized_name = _sanitize_to_id($object_name);
   my @method_names = (ref($_[0])||'') eq 'ARRAY' ? @{shift @_} : ();
   my %args = (ref($_[0])||'') eq 'HASH' ? %{shift @_} : ();
 
   my $field_name = "";
-  $field_name .= $sanitized_name if defined($sanitized_name);
+  $field_name .= $object_name if defined($object_name);
   $field_name .= "[$args{index}]" if defined($args{index});
   $field_name .= ".${attribute}";
   $field_name .= ".@{[ join('.', @method_names) ]}" if @method_names;

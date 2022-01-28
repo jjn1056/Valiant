@@ -6,7 +6,11 @@ use Scalar::Util ();
 
 sub new {
   my ($class) = shift;
-  my @items = map { Scalar::Util::blessed $_ ? $_ : bless $_, 'Valiant::HTML::Util::Collection::Item' } @_;
+  my @items = map {
+    Scalar::Util::blessed($_) ?
+      $_ : 
+      bless $_, 'Valiant::HTML::Util::Collection::Item';
+    } @_;
   return bless +{ collection=>\@items, pointer=>0 }, $class;
 }
 
@@ -26,7 +30,7 @@ sub current_item { return $_[0]->{collection}->[$_[0]->{pointer}] }
 
 sub size { scalar @{$_[0]->{collection}} }
 
-sub reset { shift->{pointer} = 0 }
+sub reset { $_[0]->{pointer} = 0 }
 
 package Valiant::HTML::Util::Collection::Item;
 
