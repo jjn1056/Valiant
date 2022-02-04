@@ -51,6 +51,7 @@ sub human_attribute_name {
   @defaults = map { $self->i18n->make_tag($_) } (@defaults, "attributes.${attribute}");
 
   # Not sure if this should move up above the preceeding map...
+
   if(exists $options->{default}) {
     my $default = delete $options->{default};
     my @default = ref($default) ? @$default : ($default);

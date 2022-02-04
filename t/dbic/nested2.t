@@ -89,4 +89,26 @@ use Test::DBIx::Class
 
 }
 
+{
+  ok my $top = Schema
+    ->resultset('XTop')
+    ->create({
+      top_value => 'aaaaaa2',
+      middle => {
+        middle_value => 'bbbbbb2',
+        bottom => {
+          bottom_value => 'cccccc2',
+          children => [
+            {},
+          ],
+        },
+      },
+    });
+
+  ok $top->valid;
+
+  use Devel::Dwarn;
+  Dwarn +{ $top->errors->to_hash(full_messages=>1) };
+}
+
 done_testing;

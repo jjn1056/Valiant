@@ -34,8 +34,11 @@ sub validate_each {
   # This bit here where we exclude rows with errors from the count might not be right. It's likely
   # that if someone submits enough rows that we don't want to see this error just because one or more
   # has errors.
-  my $count = scalar(grep { !$_->{__valiant_donot_insert} } grep { $_->in_storage || !$_->errors->size } @rows);
+  #
 
+  #my $count = scalar(grep { !$_->{__valiant_donot_insert} } grep { $_->in_storage || !$_->errors->size } @rows);
+  my $count = scalar(@rows);
+  
   $record->errors->add($attribute, $self->too_few_msg, +{%$opts, count=>$count, min=>$self->min})
     if $self->has_min and $count < $self->min;
 

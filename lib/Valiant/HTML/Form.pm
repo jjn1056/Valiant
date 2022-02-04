@@ -77,7 +77,7 @@ sub _dom_id {
 
 sub _model_id_for_dom_id {
   my $model = shift;
-  return unless $model->can('id');
+  return unless $model->can('id') && defined($model->id);
   return join '_', ($model->id);
 }
 
@@ -99,9 +99,13 @@ sub form_for {
   _apply_form_options($model, $options);
   my $html_options = $options->{html};
 
+  my @extra_classes = ();
+  #push @extra_classes, 'was-validated' if $model->can('validated') && $model->validated;
+
   $html_options->{method} = $options->{method} if exists $options->{method};
   $html_options->{data} = $options->{data} if exists $options->{data};
-  $html_options->{class} = join(' ', (grep { defined $_ } $html_options->{class}, $options->{class})) if exists $options->{class};
+  $html_options->{class} = join(' ', (grep { defined $_ } $html_options->{class}, $options->{class}, @extra_classes)) if exists($options->{class}) || @extra_classes;
+  $html_options->{style} = join(' ', (grep { defined $_ } $html_options->{style}, $options->{style})) if exists $options->{style};
 
   my $builder = _instantiate_builder($model_name, $model, $options);
   return Valiant::HTML::FormTags::form_tag $html_options, sub { $content_block_coderef->($builder) };

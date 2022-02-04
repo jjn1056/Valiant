@@ -16,7 +16,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
     $c->detach;
   }
 
-  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) Does(CurrentModel) Model(Schema::Person) ($self, $c) {
+  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) Does(CurrentModel) Model(Schema::Person) Does(CurrentView) View(HTML2)  ($self, $c) {
     $c->redirect_to_action('home') if $c->user;
   }
 
@@ -37,7 +37,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
 
     sub home :Chained(auth) PathPart('home') Args(0) ($self, $c) { }
 
-    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,POST) ($self, $c) {
+    sub profile :Chained(auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,POST) Does(CurrentView) View(HTML2) ($self, $c) {
       $c->stash(states => $c->model('Schema::State'));
       $c->stash(roles => $c->model('Schema::Role'));
       $c->stash(person => my $model = $c->model('Schema::Person')
@@ -57,7 +57,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
           +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
         )->to_hash;
 
+        use Devel::Dwarn;
+        Dwarn \%params;
         $c->stash->{person}->context('profile')->update(\%params);
+
+        Dwarn +{ $c->stash->{person}->errors->to_hash(full_messages=>1) };
       }
 
     sub logout : Chained(auth) PathPart(logout) Args(0) ($self, $c) {
@@ -65,7 +69,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
       $c->redirect_to_action('login');
     }
 
-  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) ($self, $c) {
+  sub login : Chained(root) PathPart(login) Args(0) Does(Verbs) Does(CurrentView) View(HTML2) ($self, $c) {
     $c->redirect_to_action('home') if $c->user; # Don't bother if already logged in
   }
 
@@ -78,7 +82,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
 
     sub POST_login :Action ($self, $c) {
       my ($username, $password) = $c
-        ->structured_body('username', 'password')
+        ->structured_body(['person'], 'username', 'password')
         ->get('username', 'password');
 
       $c->stash(person => my $person = $c->authenticate($username, $password));

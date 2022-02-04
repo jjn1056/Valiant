@@ -802,7 +802,12 @@ sub set_multi_related_from_params {
       $cb->($current) if $current->is_marked_for_deletion; # We check because 'mark_for_deletion' will skip unless 'allow_destroy' is set
     }
 
-    push @related_models, $current if $current->in_storage; # don't preserve unsaved previous
+    if ($current->in_storage) {
+      debug 3, "Current model is in storage so put it into cache";
+      push @related_models, $current;
+    } else {
+      debug 3, "Current model is not in storage so don't bother to cache it since its marked for delete anyway";
+    }
   }
 
   debug 3, "About to save cache for @{[ ref $self ]} related resultset $related; has @{[ scalar @related_models ]} models to cache";

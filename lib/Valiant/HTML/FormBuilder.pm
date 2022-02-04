@@ -44,10 +44,8 @@ around BUILDARGS => sub {
   return $options;
 };
 
-sub DEFAULT_ERROR_CONTAINER_CLASS { return our $DEFAULT_ERROR_CONTAINER_CLASS = 'invalid-feedback' }
 sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS = 'Your form has errors' }
 sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS = 'invalid_form' }
-sub DEFAULT_INPUT_ERROR_CLASS { return our $DEFAULT_INPUT_ERROR_CLASS = 'is_invalid' }
 sub DEFAULT_TEXT_AREA_ERROR_CLASS { return our $DEFAULT_TEXT_AREA_ERROR_CLASS = 'is_invalid' }
 sub DEFAULT_CHECKBOX_ERROR_CLASS { return our $DEFAULT_CHECKBOX_ERROR_CLASS = 'is_invalid' }
 
@@ -123,6 +121,7 @@ sub model_errors {
   }
 
   my @errors = $self->model->errors->model_messages;
+
   if(
     $self->model->has_errors &&
     (my $tag = delete $options->{show_message_on_field_errors})
@@ -133,10 +132,10 @@ sub model_errors {
 
   my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
   @errors = @errors[0..($max_errors-1)] if($max_errors);
-  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $self->DEFAULT_ERROR_CONTAINER_CLASS));
   $content = $self->_default_model_errors_content($options) unless defined($content);
 
-  return $content->(@errors);
+  my $error_content = $content->(@errors);
+  return $error_content;
 }
 
 sub _generate_default_model_error {
@@ -204,13 +203,10 @@ sub errors_for {
   die "Can't display errors on a model that doesn't support the errors method" unless $self->model->can('errors');
 
   my @errors = $self->model->errors->full_messages_for($attribute);
-  return unless @errors;
+  return '' unless @errors;
   
   my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
   @errors = @errors[0..($max_errors-1)] if($max_errors);
-
-  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $self->DEFAULT_ERROR_CONTAINER_CLASS))
-    if $self->model->errors->where($attribute);
   $content = $self->_default_errors_for_content($options) unless defined($content);
 
   return $content->(@errors);  
@@ -233,9 +229,9 @@ sub _default_errors_for_content {
 
 sub input {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
-  my @errors_classes = (@{ delete($options->{errors_classes}) || [] }, $self->DEFAULT_INPUT_ERROR_CLASS);
+  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   
-  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, @errors_classes))
+  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
     if $self->model->can('errors') && $self->model->errors->where($attribute);
 
   set_unless_defined(type => $options, 'text');
@@ -279,13 +275,14 @@ sub checkbox {
   my $options = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
   my ($checked_value, $unchecked_value) = (@_, 1,0);
   my @errors_classes = (@{ delete($options->{errors_classes}) || [] }, $self->DEFAULT_CHECKBOX_ERROR_CLASS);
-  my $checked = $self->tag_value_for_attribute($attribute) ? 1:0;
   my $show_hidden_unchecked = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1;
   my $name = $self->tag_name_for_attribute($attribute);
 
-  my @return = ();
-  if($show_hidden_unchecked) {
-    push @return, Valiant::HTML::TagBuilder::tag 'input', +{type=>'hidden', name=>$name, value=>$unchecked_value};
+  my $checked = 0;
+  if(exists($options->{checked})) {
+    $checked = delete $options->{checked};
+  } else {
+    $checked = $self->tag_value_for_attribute($attribute) ? 1:0;
   }
 
   $options->{type} = 'checkbox';
@@ -295,14 +292,18 @@ sub checkbox {
 
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
 
-  push @return, Valiant::HTML::FormTags::checkbox_tag(
+  my $checkbox = Valiant::HTML::FormTags::checkbox_tag(
     $name,
     $checked_value,
     $checked,
     $options,
   );
 
-  return @return;
+  if($show_hidden_unchecked) {
+    $checkbox = Valiant::HTML::TagBuilder::tag('input', +{type=>'hidden', name=>$name, value=>$unchecked_value})->concat($checkbox);
+  }
+
+  return $checkbox;
 }
 
 #radio_button(object_name, method, tag_value, options = {})
@@ -355,6 +356,84 @@ sub time_field {
   return $self->input($attribute, $options);
 }
 
+sub submit {
+  my ($self) = shift;
+  my $options = pop(@_) if (ref($_[-1])||'') eq 'HASH';
+  my $value = @_ ? shift(@_) : $self->_submit_default_value;
+  return Valiant::HTML::FormTags::submit_tag($value, $options);
+}
+
+sub _humanize {
+  my $value = shift;
+  $value =~s/_id$//; # remove trailing _id
+  $value =~s/_/ /g;
+  return ucfirst($value);
+}
+
+sub _submit_default_value {
+  my $self = shift;
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+  my $key = $model->can('in_storage') ? ( $model->in_storage ? 'update':'create' ) : 'submit';
+  my $model_placeholder = $model->can('model_name') ? $model->model_name->human : _humanize($self->name);
+
+  my @defaults = ();
+
+  push @defaults, _t "formbuilder.submit.@{[ $self->name ]}.${key}";
+  push @defaults, _t "formbuilder.submit.${key}";
+  push @defaults, "@{[ _humanize($key) ]} ${model_placeholder}";
+
+  return $self->model->i18n->translate(
+      shift(@defaults),
+      model=>$model_placeholder,
+      default=>\@defaults,
+    );
+}
+
+# ->button($name, \%attrs, \&block)
+# ->button($name, \%attrs, $content)
+# ->button($name, \&block)
+# ->button($name, $content)
+
+sub button {
+  my $self = shift;
+  my $attribute = shift;
+  my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+  my $content = shift;
+
+  $attrs->{type} = 'submit' unless exists($attrs->{type});
+  $attrs->{value} = $self->tag_value_for_attribute($attribute) unless exists($attrs->{value});
+  $attrs->{name} = $self->tag_name_for_attribute($attribute) unless exists($attrs->{name});
+  $attrs->{id} = $self->tag_id_for_attribute($attribute) unless exists($attrs->{id});
+
+  return ref($content) ? Valiant::HTML::FormTags::button_tag($attrs, $content) : Valiant::HTML::FormTags::button_tag($content, $attrs);
+}
+
+sub legend {
+  my ($self) = shift;
+  my $options = pop(@_) if (ref($_[-1])||'') eq 'HASH';
+  my $value = @_ ? shift(@_) : $self->_legend_default_value;
+  return Valiant::HTML::FormTags::legend_tag($value, $options);
+}
+
+sub _legend_default_value {
+  my $self = shift;
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+  my $key = $model->can('in_storage') ? ( $model->in_storage ? 'update':'create' ) : 'new';
+  my $model_placeholder = $model->can('model_name') ? $model->model_name->human : _humanize($self->name);
+
+  my @defaults = ();
+
+  push @defaults, _t "formbuilder.legend.@{[ $self->name ]}.${key}";
+  push @defaults, _t "formbuilder.legend.${key}";
+  push @defaults, "@{[ _humanize($key) ]} ${model_placeholder}";
+
+  return $self->model->i18n->translate(
+      shift(@defaults),
+      model=>$model_placeholder,
+      default=>\@defaults,
+    );
+}
+
 # fields_for($related_attribute, ?\%options?, \&block)
 sub fields_for {
   my ($self, $related_attribute) = (shift, shift);
@@ -376,17 +455,24 @@ sub fields_for {
 
   # Ok is the related record a collection or something else.
   if($related_record->can('next')) {
-    my @output = ();
+    my $output = undef;
     my $explicit_child_index = exists($options->{child_index}) ? $options->{child_index} : undef;
+
     while(my $child_model = $related_record->next) {
       if(defined($explicit_child_index)) {
         $options->{child_index} = $options->{child_index}->($child_model) if ref() eq 'CODE';  # allow for callback version of this
       } else {
         $options->{child_index} = $self->nested_child_index($related_attribute); 
       }
-      push @output, $self->fields_for_nested_model("${name}[@{[ $options->{child_index} ]}]", $child_model, $options, $codeblock);
+      my $nested = $self->fields_for_nested_model("${name}[@{[ $options->{child_index} ]}]", $child_model, $options, $codeblock);
+
+      if(defined $output) {
+        $output = $output->concat($nested);
+      } else {
+        $output = $nested;
+      }
     }
-    return @output;
+    return defined($output) ? $output : '';
   } else {
     return $self->fields_for_nested_model($name, $related_record, $options, $codeblock);
   }
@@ -407,13 +493,87 @@ sub fields_for_nested_model {
     my $output = Valiant::HTML::FormTags::capture($codeblock, $fb);
     if($output && $emit_hidden_id && $model->can('primary_columns')) {
       foreach my $id_field ($model->primary_columns) {
-        $output->concat($fb->hidden($id_field));
+        $output = $output->concat($fb->hidden($id_field)); #TODO this cant be right...
       }
     }
     return $output;
   });
 }
 
+sub select {
+  my ($self, $attribute) = (shift, shift);
+  my $block = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
+  my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  my $value = $self->tag_value_for_attribute($attribute);  # TODO handle multiple
+
+  my $options_tags = '';
+  if(!$block) {
+    my $option_tags_proto = @_ ? shift : ();
+    my @selected = ( @{$options->{selected}||[]}, $value);
+    my @disabled = ( @{$options->{disabled}||[]});
+
+    $options_tags = Valiant::HTML::FormTags::options_for_select($option_tags_proto, +{
+      selected => \@selected,
+      disabled => \@disabled,
+    });
+  } else {
+    $options_tags = $block->($self->model, $attribute);
+  }
+
+  my $name = $self->tag_name_for_attribute($attribute);
+  $options->{id} = $self->tag_id_for_attribute($attribute);
+
+  return Valiant::HTML::FormTags::select_tag($name, $options_tags, $options);
+}
+
+#collection_select(object, method, collection, value_method, text_method, options = {}, html_options = {})
+sub collection_select {
+  my ($self, $method_proto, $collection) = (shift, shift, shift);
+  my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  my ($value_method, $label_method) = (@_, 'value', 'label');
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+
+  my (@selected, $name, $id) = @_;
+  if(ref $method_proto) {
+    $options->{multiple} = 1 unless exists($options->{multiple});
+    $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
+    my ($bridge, $value_method) = %$method_proto;
+    my $collection = $model->$bridge;
+    while(my $item = $collection->next) {
+      push @selected, $item->$value_method;
+    }
+    $name = $self->tag_name_for_attribute($bridge, +{multiple=>1}) . ".$value_method";
+    $options->{id} = $self->tag_id_for_attribute($bridge) . "_$value_method" unless exists $options->{id};
+  } else {
+    my $value = $self->tag_value_for_attribute($method_proto);
+    my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
+    $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
+      if $model->can('errors') && $model->errors->where($method_proto);
+
+    if((ref($value)||'') eq 'ARRAY') {
+      @selected = @$value;
+      $options->{multiple} = 1 unless exists($options->{multiple});
+    } elsif(defined($value)) {
+      @selected = ($value);
+    } else {
+      @selected = ();
+    }
+
+    $name = $self->tag_name_for_attribute($method_proto);
+    $id = $self->tag_id_for_attribute($method_proto);
+  }
+
+  my $select_tag = Valiant::HTML::FormTags::select_tag(
+    $name,
+    Valiant::HTML::FormTags::options_from_collection_for_select($collection, $value_method, $label_method, \@selected),
+    $options);
+
+  if(ref($method_proto)) {
+    #$select_tag = $self->hidden($name, '', +{id=>$options->{id}.'_hidden'})->concat($select_tag);    
+  }
+
+  return $select_tag;
+}
 
 # ?? date and date time helpers (month field, etc) ??
 # select, checkbox/select/radio groups
@@ -423,33 +583,6 @@ sub fields_for_nested_model {
 __END__
 
 
-# Where $collection_arrayref is an arrayref suitable for passing to 'options_for_select'.
-# $fb->select($attribute, \@collection, \%options)
-# $fb->select($attribute, \@collection)
-
-# Where $collection_obj is an object that responds to ->all, returning an array of item objects
-# where each item object responds to both $value_method and $text_method.  If those are not specified
-# they default to 'option_value' and 'option_text'.  Maybe we should also check $collection_obj->select_option_text / value??
-# $fb->select($attribute, $collection_obj, $value_method, $text_method, \%options)
-# $fb->select($attribute, $collection_obj, \%options)
-# $fb->select($attribute, $collection_obj)
-
-# Where $collection_method is a a method name on $model which is called with $attribute, $value, \%options
-# and returns an arrayref suitable for options_for_select.  If the method name is not given, it defaults to
-# "select_options_for_${attribute}" $model->select_options_for($attribute)
-# NOTE: Not sure we can do this since there maybe be more than one m2m for the target join table.
-# $fb->select($attribute, $collection_method, \%options)
-# $fb->select($attribute, $collection_method)
-# $fb->select($attribute, \%options)
-# $fb->select($attribute)
-#
-# In all cases when the final argument is a coderef that is used as a template for generating everything
-# inside the <select> tag.  Useful for when you have complex render needs.  This should return whatever
-# you want inside the <select>
-# $fb->select($attribute, ..., sub {
-#   my ($normalized_collection, @selected) = @_;
-# });
-#
 # If the $attribute returns a collection instead of a value, that implies a multi select and you need to specify
 # field which is the value used to match selected options.  $model->select_selected_options_for($collection_attribute)  (excludes mark for delte)
 # $fb->select( +{ $collection_attribute => $value_field }, $roles_rs, id => 'label')

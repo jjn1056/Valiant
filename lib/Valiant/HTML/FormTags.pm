@@ -11,7 +11,7 @@ use Module::Runtime ();
 our @EXPORT_OK = qw(
   button_tag checkbox_tag fieldset_tag form_tag label_tag radio_button_tag input_tag option_tag
   text_area_tag submit_tag password_tag hidden_tag select_tag options_for_select _merge_attrs
-  options_from_collection_for_select collection_select field_id field_name field_value
+  options_from_collection_for_select collection_select field_id field_name field_value legend_tag
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
@@ -182,12 +182,24 @@ sub submit_tag {
   return input_tag $attrs;
 }
 
+# legend_tag $value, \%attrs
+# legend_tag \%attrs, \&block
+sub legend_tag {
+  my $content = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : shift(@_);
+  my $attrs = @_ ? shift(@_) : +{};
+  return ref($content) ? content_tag('legend', $attrs, $content) : content_tag('legend',  $content, $attrs);
+}
+
 sub select_tag {
   my $name = shift;
   my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my $option_tags = @_ ? shift(@_) : "";
-  my $html_name = $attrs->{multiple} && ($name !~ m/\[\]$/) ? "${name}[]" : $name;
+  my $html_name = $name;
+  if($attrs->{multiple}) {
+    $html_name = "${name}[]" unless ( ($name =~ m/\[\]$/) || ($name =~ m/\[\]\.\w+$/) );
+  }
 
+  my $include_hidden = exists($attrs->{include_hidden}) ? delete($attrs->{include_hidden}) : 1;
   if(my $include_blank = delete $attrs->{include_blank}) {
     my $options_for_blank_options_tag = +{ value => '' };
     if($include_blank eq '1') {
@@ -201,7 +213,12 @@ sub select_tag {
   }
 
   $attrs = _merge_attrs(+{ name=>$html_name, id=>"@{[ _sanitize_to_id($name) ]}" }, $attrs);
-  return content_tag('select', $option_tags, $attrs);
+  my $select_tag = content_tag('select', $option_tags, $attrs);
+
+  if($attrs->{multiple} && $include_hidden) {
+    $select_tag = hidden_tag($html_name, '', +{id=>$attrs->{id}.'_hidden'})->concat($select_tag);    
+  }
+  return $select_tag;
 }
 
 sub options_for_select {
@@ -221,8 +238,9 @@ sub options_for_select {
     @selected_values = ($attrs_proto);
   }
   
-  my %selected_lookup = map { $_=>1 } @selected_values;
-  my %disabled_lookup = map { $_=>1 } @disabled_values;
+  my %selected_lookup = @selected_values ? (map { $_=>1 } @selected_values) : ();
+  my %disabled_lookup = @disabled_values ? (map { $_=>1 } @disabled_values) : ();
+
   my ($first, @options_for_select) = map { option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes) } @options;
 
   return  $first->concat(@options_for_select);
@@ -269,8 +287,10 @@ sub options_from_collection_for_select {
     push @options, [ $item->$label_method => $item->$value_method, option_html_attributes($item) ];
     push @selected, $item->$value_method if ((ref($selected_proto)||'') eq 'CODE') && $selected_proto->($item);
   }
-  $collection->reset if $collection->can('reset');
 
+
+
+  $collection->reset if $collection->can('reset');
   return options_for_select \@options, +{ selected=>\@selected, disabled=>\@disabled, %global_attributes};
 }
 
@@ -315,6 +335,8 @@ sub collection_select {
 
   my (@selected, $name, $id) = @_;
   if(ref $method_proto) {
+    $options->{multiple} = 1 unless exists($options->{multiple});
+    $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
     my ($bridge, $value_method) = %$method_proto;
     my $collection = $object->$bridge;
     while(my $item = $collection->next) {
@@ -328,7 +350,12 @@ sub collection_select {
     $options->{id} = field_id($object, $method_proto) unless exists $options->{id};
   }
 
-  return select_tag($name, options_from_collection_for_select($collection, $value_method, $label_method, \@selected), $options);
+  my $select_tag = select_tag($name, options_from_collection_for_select($collection, $value_method, $label_method, \@selected), $options);
+  if(ref($method_proto)) {
+    $select_tag = hidden_tag($name, '', +{id=>$options->{id}.'_hidden'})->concat($select_tag);    
+  }
+
+  return $select_tag;
 }
 
 sub checkboxes_for_list {
@@ -413,6 +440,27 @@ Create a C<fieldset> with inner content.  Example:
     });
 
     # <fieldset><legend>Info</legend><button name="button">username</button></fieldset>
+
+=head2 legend_tag
+
+    legend_tag $legend, \%html_attrs;
+    legend_tag $legend;
+    legend_tag \%html_attrs, \&content_block;
+    legend_tag \&content_block;
+
+Create an HTML form legend tag and content.  Examples:
+
+    legend_tag('test', +{class=>'foo'});
+    # <legend class="foo">test</legend>
+
+    legend_tag('test');
+    # <legend>test</legend>
+
+    legend_tag({class=>'foo'}, sub { 'test' });
+    # <legend class="foo">test</legend>
+
+    legend_tag(sub { 'test' });
+    # <legend>test</legend>
 
 =head2 form_tag
 

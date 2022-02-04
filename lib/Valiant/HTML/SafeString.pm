@@ -33,12 +33,14 @@ sub flattened_raw {
 sub is_safe {
   my $string_to_test = shift;
   return 0 unless defined($string_to_test);
-  return 0 unless (Scalar::Util::blessed($string_to_test)||'') eq 'Valiant::HTML::SafeString';
+  return 0 unless
+    ((Scalar::Util::blessed($string_to_test)||'') eq 'Valiant::HTML::SafeString') || 
+    ((Scalar::Util::blessed($string_to_test)||'') eq 'Mojo::ByteStream');
   return 1;
 }
 
 sub safe {
-  if(scalar(@_) == 1) {
+  if(scalar(@_) == 1) {;
     return is_safe($_[0]) ? $_[0] : _make_safe(escape_html($_[0]))
   } else {
     return map { is_safe($_) ? $_ : _make_safe(escape_html($_)) } @_;

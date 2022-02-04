@@ -125,6 +125,13 @@ is options_from_collection_for_select($collection, 'value', 'label', +{selected=
 is options_from_collection_for_select($collection, 'value', 'label', sub { shift->value eq 'a'} ),
   '<option value="value">label</option><option selected value="a">A</option><option value="b">B</option><option value="c">C</option>';
 
+is legend_tag('test', +{class=>'foo'}), '<legend class="foo">test</legend>';
+is legend_tag('test'), '<legend>test</legend>';
+is legend_tag({class=>'foo'}, sub { 'test' }), '<legend class="foo">test</legend>';
+is legend_tag(sub { 'test' }), '<legend>test</legend>';
+
+
+
 {
   package Local::Role;
 
@@ -176,9 +183,36 @@ is options_from_collection_for_select($collection, 'value', 'label', sub { shift
 
   my $person = Local::Person->new(name=>'John', roles=>Valiant::HTML::Util::Collection->new($user, $admin) );
 
-  warn collection_select($person, +{roles=>'id'}, $roles, 'id', 'label', {class=>'foo'});
+  warn "\n";
+  warn collection_select($person, +{roles=>'id'}, $roles, 'id', 'label', { class=>'foo'});
+  warn "\n";
+  warn collection_select($person, +{roles=>'id'}, $roles, 'id', 'label', {multiple=>1, class=>'foo'});
 
 }
 
 done_testing;
+
+__END__ 
+<input id="local_person_roles_id_hidden" name="person.roles[].id" type="hidden" value=""/>
+<select class="foo" id="local_person_roles_id" name="person.roles[].id">
+  <option selected value="1">user</option>
+  <option selected value="2">admin</option>
+  <option value="3">guest</option>
+</select>
+
+
+<select name="person.person_roles[]{}">
+  <option selected value="{role_id:1}">user</option>
+  <option selected value="{role_id:2}">admin</option>
+  <option value="{role_id:3}">guest</option>
+</select>
+
+<select name="person.person_roles.role.id[]">
+  <option selected value="1">user</option>
+  <option selected value="2">admin</option>
+  <option value="3">guest</option>
+</select>
+
+
+
 

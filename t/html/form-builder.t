@@ -4,6 +4,24 @@ use Valiant::HTML::SafeString 'raw';
 use DateTime;
 
 {
+ package Local::Role;
+
+  use Moo;
+  use Valiant::Validations;
+
+  sub namespace { 'Local' }
+  
+  has ['id', 'label'] => (is=>'ro', required=>1);
+
+  package Local::PersonRole;
+
+  use Moo;
+  use Valiant::Validations;
+
+  sub namespace { 'Local' }
+  
+  has ['role'] => (is=>'ro', required=>1);
+
   package Local::Test::Person;
 
   use Moo;
@@ -13,6 +31,11 @@ use DateTime;
   has date => (is=>'ro');
   has profile => (is=>'ro');
   has emails => (is=>'ro');
+  has state => (is=>'ro');
+  has state2 => (is=>'ro');
+  has person_role => (is=>'ro');
+
+  validates state => (presence=>1);
 
   validates name => (
     length => {
@@ -78,15 +101,29 @@ ok my $email1 = Local::Test::Email->new(address=>'jjn1@yahoo.com');
 ok my $email2 = Local::Test::Email->new(address=>'jjn2@yahoo.com');
 ok my $profile = Local::Test::Profile->new(address=>'123 Hello Street', emails=>[$email1, $email2]);
 
+  my ($user, $admin, $guest) = map {
+    Local::Role->new($_);
+  } (
+    {id=>1, label=>'user'},
+    {id=>2, label=>'admin'},
+    {id=>3, label=>'guest'},
+  );
 
+ok my $roles  = Valiant::HTML::Util::Collection->new($user, $admin, $guest);
 ok my $person = Local::Test::Person->new(
   name=>'John',
   date=>DateTime->new(year=>2006,month=>1,day=>23, hour=>10,minute=>30,second=>15),
   profile=>$profile,
   emails => [$email1, $email2],
+  state => 2,
+  state2 => [1,3],
+  person_role => Valiant::HTML::Util::Collection->new(
+    $user, $guest,
+  ),
 );
 
 ok $person->invalid;
+ok my $collection = Valiant::HTML::Util::Collection->new([NY=>'1'], [CA=>'2'], [TX=>'3']);
 
 warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
   my $fb = shift;
@@ -140,7 +177,29 @@ warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
       $fb2->label('address'),
       $fb2->input('address'),
       $fb2->errors_for('address'), "\n";
-    });
+    }),
+    "\n..\n",
+    $fb->select('state', [1,2,3], +{class=>'foo'}),
+    "\n..\n",
+
+    $fb->select('state', +{class=>'foo'}, sub {
+      my ($model, $attribute) = @_;
+      return "...";
+    }),
+    "\n..\n",
+    $fb->collection_select('state', $collection, value=>'label', +{class=>'foo'}),
+    "\n..\n",
+    $fb->collection_select('state', $collection),
+    "\n..\n",
+    $fb->collection_select('state2', $collection, value=>'label', +{class=>'foo'}),
+    "\n..\n",
+    $fb->collection_select({person_role => 'id'} , $roles, id=>'label'),
+    "\n..\n",
+    $fb->button,
+    "\n..\n",
+    $fb->submit,
+
+    
 });
 
 
