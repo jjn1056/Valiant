@@ -46,8 +46,6 @@ around BUILDARGS => sub {
 
 sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS = 'Your form has errors' }
 sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS = 'invalid_form' }
-sub DEFAULT_TEXT_AREA_ERROR_CLASS { return our $DEFAULT_TEXT_AREA_ERROR_CLASS = 'is_invalid' }
-sub DEFAULT_CHECKBOX_ERROR_CLASS { return our $DEFAULT_CHECKBOX_ERROR_CLASS = 'is_invalid' }
 
 sub sanitized_object_name {
   my $self = shift;
@@ -55,7 +53,7 @@ sub sanitized_object_name {
 
   my $value = $self->name;
   $value =~ s/\]//g;
-  $value =~ s/[^a-zA-Z0-9:.-]/_/g;
+  $value =~ s/[^a-zA-Z0-9:-]/_/g; # Different from Rails since I use foo.bar instead of foo[bar]
   $self->{__cached_sanitized_object_name} = $value;
   return $value;
 }
@@ -257,7 +255,7 @@ sub hidden {
 
 sub text_area {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
-  my @errors_classes = (@{ delete($options->{errors_classes}) || [] }, $self->DEFAULT_TEXT_AREA_ERROR_CLASS);
+  my @errors_classes = (@{ delete($options->{errors_classes}) || [] });
   
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, @errors_classes))
     if $self->model->can('errors') && $self->model->errors->where($attribute);
@@ -273,8 +271,9 @@ sub text_area {
 sub checkbox {
   my ($self, $attribute) = (shift, shift);
   my $options = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
-  my ($checked_value, $unchecked_value) = (@_, 1,0);
-  my @errors_classes = (@{ delete($options->{errors_classes}) || [] }, $self->DEFAULT_CHECKBOX_ERROR_CLASS);
+  my $checked_value = @_ ? shift : 1;
+  my $unchecked_value = @_ ? shift : 0;
+  my @errors_classes = (@{ delete($options->{errors_classes}) || [] });
   my $show_hidden_unchecked = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1;
   my $name = $self->tag_name_for_attribute($attribute);
 
@@ -300,7 +299,8 @@ sub checkbox {
   );
 
   if($show_hidden_unchecked) {
-    $checkbox = Valiant::HTML::TagBuilder::tag('input', +{type=>'hidden', name=>$name, value=>$unchecked_value})->concat($checkbox);
+    my $hidden_name = exists($options->{name}) ? $options->{name} : $name;
+    $checkbox = Valiant::HTML::TagBuilder::tag('input', +{type=>'hidden', name=>$hidden_name, value=>$unchecked_value})->concat($checkbox);
   }
 
   return $checkbox;
@@ -438,7 +438,8 @@ sub _legend_default_value {
 sub fields_for {
   my ($self, $related_attribute) = (shift, shift);
   my $options = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
-  my $codeblock = shift || die "Missing required code block";
+  my $codeblock = (ref($_[0])||'') eq 'CODE' ? shift(@_) : die "Missing required code block";
+  my $finally_block = (ref($_[0])||'') eq 'CODE' ? shift(@_) : undef;
 
   $options->{builder} = $self->options->{builder};
   $options->{namespace} = $self->namespace if $self->has_namespace;
@@ -471,6 +472,16 @@ sub fields_for {
       } else {
         $output = $nested;
       }
+    }
+    if($finally_block) {
+      my $finally_model = $related_record->can('build') ? $related_record->build : die "Can't have a finally block if the collection doesn't support 'build'";
+      my $finally_content = $self->fields_for_nested_model("${name}[]", $finally_model, $options, $finally_block);
+      if(defined $output) {
+        $output = $output->concat($finally_content);
+      } else {
+        $output = $finally_content;
+      }
+
     }
     return defined($output) ? $output : '';
   } else {
@@ -575,12 +586,76 @@ sub collection_select {
   return $select_tag;
 }
 
+# $fb->collection_checkbox({person_roles => role_id}, $roles_rs, $value_method, $text_method, \%options, \&block);
+# $fb->collection_checkbox({person_roles => role_id}, $roles_rs, $value_method, $text_method, \%options, \&block);
+sub collection_checkbox {
+  my ($self, $attribute_spec, $collection) = (shift, shift, shift);
+  my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
+  my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  my ($value_method, $label_method) = (@_, 'value', 'label');
+  my ($attribute, $attribute_value_method) = %{ $attribute_spec };
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+
+  $codeblock = $self->_default_collection_checkbox_content unless defined($codeblock);
+
+  my @checked_values = ();
+  my $value_collection = $self->tag_value_for_attribute($attribute);
+  while(my $value_model = $value_collection->next) {
+    push @checked_values, $value_model->$attribute_value_method unless $value_model->is_marked_for_deletion;
+  }
+
+  my @checkboxes = ();
+  while (my $checkbox_model = $collection->next) {
+    my $index = $options->{child_index} = $self->nested_child_index($attribute); 
+    my $name = "@{[ $self->name ]}.${attribute}[${index}]";
+    my $checkbox_fb = Valiant::HTML::Form::_instantiate_builder($name, $checkbox_model, $options);
+    my $checked = grep { $_ eq $checkbox_model->$value_method } @checked_values;
+    push @checkboxes, $codeblock->($checkbox_fb, $value_method, $label_method, $attribute_value_method, $checked);
+  }
+  return Valiant::HTML::FormTags::hidden_tag("@{[ $self->name ]}.${attribute}[]._nop", '1')->concat(@checkboxes);
+}
+
+sub _default_collection_checkbox_content {
+  my ($self) = @_;
+  return sub {
+    my ($fb, $value_method, $label_method, $attribute_value_method, $checked) = @_;
+    my $label = $fb->label($attribute_value_method, $fb->tag_value_for_attribute($label_method) );
+    my $checkbox = $fb->checkbox($value_method, +{
+      name=>$fb->tag_name_for_attribute($attribute_value_method),
+      id=>$fb->tag_id_for_attribute($attribute_value_method),
+      include_hidden => 0,
+      checked => $checked,
+    }, $fb->tag_value_for_attribute($value_method) );
+    return $label->concat($checkbox);
+  };
+}
+
 # ?? date and date time helpers (month field, etc) ??
 # select, checkbox/select/radio groups
 
 1;
 
 __END__
+
+{
+  person => {
+    person_roles => [
+      { role => { id => 1 } },
+      { role => { id => 2 } },
+      { role => { id => 3 } },
+    ],
+  },
+}
+
+{
+  person => {
+    person_roles => [
+      { role_id => 1 },
+      { role_id => 2 },
+      { role_id => 3 },
+    ],
+  },
+}
 
 
 # If the $attribute returns a collection instead of a value, that implies a multi select and you need to specify

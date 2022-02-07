@@ -453,6 +453,7 @@ sub set_from_params_recursively {
         if($params{$param}) {
           debug 3, "Found _nop";
           delete $params{$param};
+          $self->mark_for_deletion;
         }
     } elsif($param eq '_restore' && $params{$param}) {
       if($self->in_storage) {

@@ -195,9 +195,12 @@ warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
     "\n..\n",
     $fb->collection_select({person_role => 'id'} , $roles, id=>'label'),
     "\n..\n",
-    $fb->button,
+    $fb->button('name', 'Press Me'),
     "\n..\n",
     $fb->submit,
+    "\n..\n",
+    $fb->collection_checkbox({person_role => 'id'} , $roles, id=>'label'),
+
 
     
 });

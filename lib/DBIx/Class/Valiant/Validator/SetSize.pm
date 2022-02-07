@@ -37,6 +37,7 @@ sub validate_each {
   #
 
   #my $count = scalar(grep { !$_->{__valiant_donot_insert} } grep { $_->in_storage || !$_->errors->size } @rows);
+  #my $count = scalar(grep { !$_->errors->size } @rows);
   my $count = scalar(@rows);
   
   $record->errors->add($attribute, $self->too_few_msg, +{%$opts, count=>$count, min=>$self->min})

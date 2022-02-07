@@ -53,7 +53,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         my %params = $c->structured_body(
           ['person'], 'username', 'first_name', 'last_name', 
           'profile' => [qw/id address city state_id zip phone_number birthday/],
-          +{'person_roles' =>[qw/person_id role_id _delete/] },
+          +{'person_roles' =>[qw/person_id role_id _delete _nop/] },
           +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
         )->to_hash;
 

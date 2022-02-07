@@ -80,7 +80,6 @@ sub checkbox_tag {
   $checked = shift(@_) if defined $_[0];
   $attrs->{checked} = 1 if $checked;
   $attrs = _merge_attrs(+{type => 'checkbox', name=>$name, id=>_sanitize_to_id($name), value=>$value}, $attrs);
-
   return tag('input', $attrs);
 }
 
@@ -576,6 +575,11 @@ Create a HTML input tag. If $name and/or $value are set, they are used to popula
 
 =head2 password_tag
 
+Creates an password input tag with the given type.  Example:
+
+    password_tag('password', +{class=>'foo'});
+    # <input class="foo" id="password" name="password" type="password"/>
+
 =head2 hidden_tag
 
 Creates an input tag with the given type.  Example:
@@ -583,9 +587,6 @@ Creates an input tag with the given type.  Example:
     hidden_tag('user_id', 100, +{class=>'foo'});
     # <input class="foo" id="user_id" name="user_id" type="hidden" value="100"/>
     
-    password_tag('password', +{class=>'foo'});
-    # <input class="foo" id="password" name="password" type="password"/>
-
 =head2 submit_tag
 
     submit_tag

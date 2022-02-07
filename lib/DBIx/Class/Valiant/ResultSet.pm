@@ -43,6 +43,9 @@ sub _related_limit {
   return 0, undef;
 }
 
+# This is just an alias so that we can decouple the Valiant API from DBIC
+sub build { shift->new_result( shift || +{}) }
+
 sub new_result {
   my ($self, $fields, @args) = @_;
   my $context = delete $fields->{__context};
