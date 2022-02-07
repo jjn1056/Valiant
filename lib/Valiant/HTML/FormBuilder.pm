@@ -593,7 +593,7 @@ sub collection_checkbox {
   my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my ($value_method, $label_method) = (@_, 'value', 'label');
-  my ($attribute, $attribute_value_method) = %{ $attribute_spec };
+  my ($attribute, $attribute_value_method) = %{ $attribute_spec }; # TODO if just a collection then $attribute_value_method is $valid_method
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
 
   $codeblock = $self->_default_collection_checkbox_content unless defined($codeblock);
@@ -612,6 +612,7 @@ sub collection_checkbox {
     my $checked = grep { $_ eq $checkbox_model->$value_method } @checked_values;
     push @checkboxes, $codeblock->($checkbox_fb, $value_method, $label_method, $attribute_value_method, $checked);
   }
+  $collection->reset if $collection->can('reset');
   return Valiant::HTML::FormTags::hidden_tag("@{[ $self->name ]}.${attribute}[]._nop", '1')->concat(@checkboxes);
 }
 
