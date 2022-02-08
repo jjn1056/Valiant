@@ -148,7 +148,7 @@ ok $state->id;
       "Profile Phone Number is too short (minimum is 10 characters)",
     ],
     "profile.state_id" => [
-      "Profile State Id can't be blank",
+      "Profile State can't be blank",
     ],
   }, 'Got expected errors';
 
@@ -167,7 +167,7 @@ ok $state->id;
       "Phone Number is too short (minimum is 10 characters)",
     ],
     state_id => [
-      "State Id can't be blank",
+      "State can't be blank",
     ],
   }, 'Got expected errors';
 
@@ -375,7 +375,7 @@ ok $state->id;
       "Profile Phone Number is too short (minimum is 10 characters)",
     ],
     "profile.state_id" => [
-      "Profile State Id can't be blank",
+      "Profile State can't be blank",
     ],
   };
 
@@ -399,7 +399,7 @@ ok $state->id;
       "Phone Number is too short (minimum is 10 characters)",
     ],
     state_id => [
-      "State Id can't be blank",
+      "State can't be blank",
     ],
   }, 'Got expected errors';
 
