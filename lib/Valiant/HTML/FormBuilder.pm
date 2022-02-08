@@ -71,16 +71,16 @@ sub tag_id_for_attribute {
   my ($self, $attribute) = @_;
   my $id = $self->has_namespace ? $self->namespace . '_' : '';
   $id .= $self->has_index ?
-    "@{[$self->sanitized_object_name]}_@{ $self->index }_${attribute}" :
+    "@{[$self->sanitized_object_name]}_@{[ $self->index ]}_${attribute}" :
     "@{[$self->sanitized_object_name]}_${attribute}";
   return $id;
 }
 
 # $self->tag_name_for_attribute($attribute, +{ multiple=>1 });
 sub tag_name_for_attribute {
-  my ($self, $attribute, $opts) = @_;
+  my ($self, $attribute, $opts) = @_;  
   my $name = $self->has_index ?
-    "@{[$self->name]}[@{ $self->index }].${attribute}" :
+    "@{[$self->name]}\[@{[ $self->index ]}\].${attribute}" :
     "@{[$self->name]}.${attribute}";
   $name .= '[]' if $opts->{multiple};
 
@@ -491,10 +491,9 @@ sub fields_for {
 
 sub fields_for_nested_model {
   my ($self, $name, $model, $options, $codeblock) = @_;
-
+  my $emit_hidden_id = 0;
   $model = $model->to_model if $model->can('to_model');
 
-  my $emit_hidden_id = 0;
   if($model->can('in_storage') && $model->in_storage) {
     $emit_hidden_id = exists($options->{include_id}) ? $options->{include_id} : 1;
   }
@@ -605,12 +604,23 @@ sub collection_checkbox {
   }
 
   my @checkboxes = ();
+  my $checkbox_builder_options = +{
+    builder => 'Valiant::HTML::FormBuilder::Checkbox',
+    value_method => $value_method,
+    label_method => $label_method,
+    attribute_value_method => $attribute_value_method,
+  };
+
   while (my $checkbox_model = $collection->next) {
     my $index = $options->{child_index} = $self->nested_child_index($attribute); 
-    my $name = "@{[ $self->name ]}.${attribute}[${index}]";
-    my $checkbox_fb = Valiant::HTML::Form::_instantiate_builder($name, $checkbox_model, $options);
+    my $name = "@{[ $self->name ]}.${attribute}";
     my $checked = grep { $_ eq $checkbox_model->$value_method } @checked_values;
-    push @checkboxes, $codeblock->($checkbox_fb, $value_method, $label_method, $attribute_value_method, $checked);
+
+    $checkbox_builder_options->{index} = $index;
+    $checkbox_builder_options->{checked} = $checked;
+
+    my $checkbox_fb = Valiant::HTML::Form::_instantiate_builder($name, $checkbox_model, $checkbox_builder_options);
+    push @checkboxes, $codeblock->($checkbox_fb);
   }
   $collection->reset if $collection->can('reset');
   return Valiant::HTML::FormTags::hidden_tag("@{[ $self->name ]}.${attribute}[]._nop", '1')->concat(@checkboxes);
@@ -619,110 +629,53 @@ sub collection_checkbox {
 sub _default_collection_checkbox_content {
   my ($self) = @_;
   return sub {
-    my ($fb, $value_method, $label_method, $attribute_value_method, $checked) = @_;
-    my $label = $fb->label($attribute_value_method, $fb->tag_value_for_attribute($label_method) );
-    my $checkbox = $fb->checkbox($value_method, +{
-      name=>$fb->tag_name_for_attribute($attribute_value_method),
-      id=>$fb->tag_id_for_attribute($attribute_value_method),
-      include_hidden => 0,
-      checked => $checked,
-    }, $fb->tag_value_for_attribute($value_method) );
+    my ($fb) = @_;
+    my $label = $fb->label;
+    my $checkbox = $fb->checkbox;
     return $label->concat($checkbox);
   };
 }
 
+{
+  package Valiant::HTML::FormBuilder::Checkbox;
+
+  use Moo;
+  extends 'Valiant::HTML::FormBuilder';
+
+  sub text { 
+    my $self = shift;
+    return $self->tag_value_for_attribute($self->options->{label_method});
+  }
+
+  sub value { 
+    my $self = shift;
+    return $self->tag_value_for_attribute($self->options->{value_method});
+  }
+
+  around 'label', sub {
+    my ($orig, $self, $attrs) = @_;
+    $attrs = +{} unless defined($attrs);
+
+    return $self->$orig($self->options->{attribute_value_method}, $attrs, $self->text);
+  };
+
+  around 'checkbox', sub {
+    my ($orig, $self, $attrs) = @_;
+    $attrs = +{} unless defined($attrs);
+    $attrs->{name} = $self->tag_name_for_attribute($self->options->{attribute_value_method});
+    $attrs->{id} = $self->tag_id_for_attribute($self->options->{attribute_value_method});
+    $attrs->{include_hidden} = 0;;
+    $attrs->{checked} = $self->options->{checked};
+
+    return $self->$orig($self->options->{value_method}, $attrs, $self->value);
+  };
+}
+
+# select collection needs work
+# radiogrounp collection neede to be done
 # ?? date and date time helpers (month field, etc) ??
-# select, checkbox/select/radio groups
 
 1;
-
-__END__
-
-{
-  person => {
-    person_roles => [
-      { role => { id => 1 } },
-      { role => { id => 2 } },
-      { role => { id => 3 } },
-    ],
-  },
-}
-
-{
-  person => {
-    person_roles => [
-      { role_id => 1 },
-      { role_id => 2 },
-      { role_id => 3 },
-    ],
-  },
-}
-
-
-# If the $attribute returns a collection instead of a value, that implies a multi select and you need to specify
-# field which is the value used to match selected options.  $model->select_selected_options_for($collection_attribute)  (excludes mark for delte)
-# $fb->select( +{ $collection_attribute => $value_field }, $roles_rs, id => 'label')
-# $fb->select( +{ person_roles => role_id }, $roles_rs, id => 'label')
-# <select name='person.person_roles[].role_id' multiple=1>
-#   <option value='1' selected=1>user</option>
-#   <option value='2' selected=1>admin</option>
-#   <option value='3'>guest</option>
-# </select>
-#
-
-# $fb->select_from_collection(person_roles => role_id, $roles_rs, id=>'label', \%attrs, \&custom_options_template)
-# $fb->select_from_collection($roles_rs, +{id=>'label'}, person_roles=>role_id, )
-# $fb->select_options_from_collection($roles_rs, id=>'label', $profile->person_roles, 'role_id'
-sub select_from_collection {}
-
-sub select {
-  my $self = shift;
-}
-
-sub select_id {
-  my ($self, $attribute) = @_;
-  return join '_', ($self->model_name, $attribute);
-}
-
-sub select_name {
-  my ($self, $attribute) = @_;
-  return join '.', ($self->model_name, $attribute);
-}
-
-sub select_value {
-  my ($self, $attribute) = @_;
-  return $self->model->read_attribute_for_html($attribute) if $self->model->can('read_attribute_for_html');
-  return $self->model->read_attribute_for_validation($attribute) || '';
-}
-
-
-1;
-
-__END__
-
-    %= form_for $profile, begin
-    <div class='form-row'>
-      <div class='col form-group'>
-        %= label 'state_id', $profile->human_attribute_name('state', $locale)
-        %= select state_id => $profile->stated_rs, id=>'name'
-        %= errors_for 'state_id'
-      </div>
-    </div>
-
-  <fieldset>
-    <legend><%= $person->human_attribute_name('roles')  %></legend>
-    %= model_errors_for 'person_roles', max_errors=>1, class=>'alert alert-danger', role=>'alert';
-    <div class='form-group'>
-      %= checkbox_list { person_roles => 'role_id' } , $role_rs, id=>'label'
-    </div>
-  </fieldset>
-
-  %= fields_for $role_rs, namespace=>$profile, begin
-    % my $role = shift;
-    %= $role->checkbox('label', sub { grep { $_->is_role($role) } $profile->roles })
-  %] end
-
-    %= end
 
 =head1 NAME
 

@@ -72,7 +72,13 @@
     <legend><%= $person->human_attribute_name('roles')  %></legend>
     %== $fb->errors_for('person_roles', +{ class=>'alert alert-danger', role=>'alert' });
     <div class='form-group'>
-      %== $fb->collection_checkbox({person_roles => 'role_id'}, $roles, id=>'label'),
+      %== $fb->collection_checkbox({person_roles => 'role_id'}, $roles, id=>'label', begin
+        % my $fb_roles = shift;
+        <div class='form-check'>
+          %== $fb_roles->checkbox({class=>'form-check-input'});
+          %== $fb_roles->label({class=>'form-check-label'});
+        </div>
+      % end);
     </div>
   </fieldset>
   
