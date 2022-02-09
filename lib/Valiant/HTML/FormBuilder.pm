@@ -235,7 +235,7 @@ sub input {
   set_unless_defined(type => $options, 'text');
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
   set_unless_defined(name => $options, $self->tag_name_for_attribute($attribute));
-  set_unless_defined(value => $options, $self->tag_value_for_attribute($attribute));
+  $options->{value} = $self->tag_value_for_attribute($attribute) unless defined($options->{value});
 
   return Valiant::HTML::FormTags::input_tag $attribute, $options;
 }
@@ -605,16 +605,24 @@ sub collection_checkbox {
 
   my @checkboxes = ();
   my $checkbox_builder_options = +{
-    builder => 'Valiant::HTML::FormBuilder::Checkbox',
+    builder => (exists($options->{builder}) ? $options->{builder} : 'Valiant::HTML::FormBuilder::Checkbox'),
     value_method => $value_method,
     label_method => $label_method,
     attribute_value_method => $attribute_value_method,
+    parent_builder => $self,
   };
+  $checkbox_builder_options->{namespace} = $self->namespace if $self->has_namespace;
 
   while (my $checkbox_model = $collection->next) {
-    my $index = $options->{child_index} = $self->nested_child_index($attribute); 
+    my $index = $self->nested_child_index($attribute); 
     my $name = "@{[ $self->name ]}.${attribute}";
     my $checked = grep { $_ eq $checkbox_model->$value_method } @checked_values;
+
+    unless(@checkboxes) { # Add nop as first to handle empty list
+      my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $value_collection->build, {index=>$index});
+      push @checkboxes, $hidden_fb->hidden('_nop', +{value=>'1'});
+      $index = $self->nested_child_index($attribute);
+    }
 
     $checkbox_builder_options->{index} = $index;
     $checkbox_builder_options->{checked} = $checked;
@@ -623,7 +631,7 @@ sub collection_checkbox {
     push @checkboxes, $codeblock->($checkbox_fb);
   }
   $collection->reset if $collection->can('reset');
-  return Valiant::HTML::FormTags::hidden_tag("@{[ $self->name ]}.${attribute}[]._nop", '1')->concat(@checkboxes);
+  return shift(@checkboxes)->concat(@checkboxes);
 }
 
 sub _default_collection_checkbox_content {
@@ -655,7 +663,6 @@ sub _default_collection_checkbox_content {
   around 'label', sub {
     my ($orig, $self, $attrs) = @_;
     $attrs = +{} unless defined($attrs);
-
     return $self->$orig($self->options->{attribute_value_method}, $attrs, $self->text);
   };
 
