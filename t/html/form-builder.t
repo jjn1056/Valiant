@@ -200,7 +200,8 @@ warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
     $fb->submit,
     "\n..\n",
     $fb->collection_checkbox({person_role => 'id'} , $roles, id=>'label'),
-
+    "\n..\n",
+    $fb->collection_radio_buttons('state', $roles, id=>'label'),
 
     
 });

@@ -11,7 +11,7 @@ use Module::Runtime ();
 our @EXPORT_OK = qw(
   button_tag checkbox_tag fieldset_tag form_tag label_tag radio_button_tag input_tag option_tag
   text_area_tag submit_tag password_tag hidden_tag select_tag options_for_select _merge_attrs
-  options_from_collection_for_select collection_select field_id field_name field_value legend_tag
+  options_from_collection_for_select field_value legend_tag
 );
 our %EXPORT_TAGS = (all => \@EXPORT_OK);
 
@@ -287,87 +287,13 @@ sub options_from_collection_for_select {
     push @selected, $item->$value_method if ((ref($selected_proto)||'') eq 'CODE') && $selected_proto->($item);
   }
 
-
-
   $collection->reset if $collection->can('reset');
   return options_for_select \@options, +{ selected=>\@selected, disabled=>\@disabled, %global_attributes};
-}
-
-sub field_id {
-  my ($object_proto, $attribute, $index, $namespace, @extra) = @_;
-  my $object_name = Scalar::Util::blessed($object_proto) ? $object_proto->model_name->singular : $object_proto;
-  my $sanitized_name = _sanitize_to_id($object_name);
-
-  return join '_', grep { defined $_ } (
-    $namespace,
-    $sanitized_name,
-    $index,
-    $attribute,
-    @extra,
-  );
-}
-
-sub field_name {
-  my ($object_proto, $attribute) = (shift, shift);
-  my $object_name = Scalar::Util::blessed($object_proto) ? $object_proto->model_name->param_key : $object_proto;
-  my @method_names = (ref($_[0])||'') eq 'ARRAY' ? @{shift @_} : ();
-  my %args = (ref($_[0])||'') eq 'HASH' ? %{shift @_} : ();
-
-  my $field_name = "";
-  $field_name .= $object_name if defined($object_name);
-  $field_name .= "[$args{index}]" if defined($args{index});
-  $field_name .= ".${attribute}";
-  $field_name .= ".@{[ join('.', @method_names) ]}" if @method_names;
-  $field_name .= '[]' if $args{multiple};
-
-  return $field_name;
 }
 
 sub field_value {
   my ($model, $attribute) = @_;
   return  $model->can('read_attribute_for_html') ? $model->read_attribute_for_html($attribute) : $model->$attribute;
-}
-
-#collection_select(object, method, collection, value_method, text_method, options = {}, html_options = {})
-sub collection_select {
-  my ($object, $method_proto, $collection, $value_method, $label_method, $options) = (@_, +{});
-
-  my (@selected, $name, $id) = @_;
-  if(ref $method_proto) {
-    $options->{multiple} = 1 unless exists($options->{multiple});
-    $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
-    my ($bridge, $value_method) = %$method_proto;
-    my $collection = $object->$bridge;
-    while(my $item = $collection->next) {
-      push @selected, field_value($item, $value_method);
-    }
-    $name = field_name($object, $bridge, +{multiple=>1}) . ".$value_method";
-    $options->{id} = field_id($object, $bridge, undef, undef, $value_method) unless exists $options->{id};
-  } else {
-    @selected = (field_value($object, $method_proto)); 
-    $name = field_name($object, $method_proto);
-    $options->{id} = field_id($object, $method_proto) unless exists $options->{id};
-  }
-
-  my $select_tag = select_tag($name, options_from_collection_for_select($collection, $value_method, $label_method, \@selected), $options);
-  if(ref($method_proto)) {
-    $select_tag = hidden_tag($name, '', +{id=>$options->{id}.'_hidden'})->concat($select_tag);    
-  }
-
-  return $select_tag;
-}
-
-sub checkboxes_for_list {
-}
-
-sub checkboxes_from_collection_for_list {
-}
-
-#collection_check_boxes(object, method, collection, value_method, text_method, options = {}, html_options = {}, &block) Link
-sub collection_checkboxes {
-  my ($object, $method_proto, $collection, $value_method, $label_method) = @_;
-  my $block = (ref($_[-1])||'') eq 'CODE' ? pop @_ : sub {}; # TODO
-  my $options = (ref($_[-1])||'') eq 'HASH' ? pop @_ : +{};
 }
 
 1;
@@ -747,63 +673,6 @@ you can provide a C<reset> method which will be called to return the collection 
 
 You can see L<Valiant::HTML::Util::Collection> source for example minimal code.
 
-=head2 field_id
-
-    field_id $object, $attribute
-    field_id $object, $attribute, $index
-    field_id $object, $attribute, $index, $namespace
-
-Generate a string suitable for use as an HTML C<id> attribute.  Examples:
-
-    package Local::Role;
-
-    use Moo;
-    use Valiant::Validations;
-
-    sub namespace { 'Local' }
-    
-    has ['id', 'label'] => (is=>'ro', required=>1);
-
-    my $user = Local::Role->new({id=>100, label=>'user'});
-
-    field_id($user, 'label');
-    # 'local_role_label'
-
-    field_id($user, 'label', 2);
-    # 'local_role_2_label'
-
-    field_id($user, 'label', 2, 'foo');
-    # 'foo_local_role_2_label'
-
-=head2 field_name
-
-    field_name $object, $attribute;
-    field_name $object, $attribute, \@extra;
-    field_name $object, $attribute, +{ index => $int, multiple => $bool };
-    field_name $object, $attribute, \@extra, +{ index => $int, multiple => $bool };
-
-Generate a string suitable for use as a C<name> HTML attribute.  Examples (see definition
-of C<Local::User> above:
-
-    field_name($user, 'label');
-    # 'role.label'
-
-    field_name($user, 'label', [qw/foo bar/]);
-    # 'role.label.foo.bar'
-
-    field_name($user, 'label', +{index=>10});
-    # 'role[10].label'
-
-    field_name($user, 'label', +{index=>10, multiple=>1});
-    # 'role[10].label[]'
-
-    field_name($user, 'label', [qw/baz foo/], +{index=>10, multiple=>1});
-    # 'role[10].label.baz.foo[]'
-
-=head2 collection_select
-
-Create a select control from a collection
-
 =head1 SEE ALSO
  
 L<Valiant>, L<Valiant::HTML::FormBuilder>
@@ -818,32 +687,4 @@ See L<Valiant>
 
 =cut
 
-__END__
-
-sub file_field_tag {
-  my ($name, $value, $attrs) = @_;
-  $attrs = _merge_attrs(+{type => 'file'}, $attrs);
-  return input_tag('input', $value, $attrs);
-}
-
-
-# options_from_set_object_for_select $set, $value_method, $text_method, $selected_value, \%global_options_attributes?
-# options_from_set_object_for_select $set, $value_method, $text_method, \@selected_values, \%global_options_attributes 
-# options_from_set_object_for_select $set, $value_method, $text_method, +{selected=>$selected_value, disabled=>$disabled_value, %global_options_attributes? }
-# options_from_set_object_for_select $set, $value_method, $text_method, +{selected=>\@selected_values, disabled=>\@disabled_values, %global_options_attributes? }
-# options_from_set_object_for_select $set, $value_method, $text_method, $info_set, $selected_method, $disabled_method, \%global_options_attributes
-
-sub options_from_set_object_for_select {
-
-}
-
-# Formbuilder stuff
-
-
-
-
-
 1;
-
-
-

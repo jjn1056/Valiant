@@ -31,40 +31,40 @@
     %== $fb->errors_for('profile', +{ class=>'alert alert-danger', role=>'alert' });
     %== $fb->fields_for('profile', begin
       % my $fb_profile = shift;
-    <div class='form-group'>
-      %== $fb_profile->label('address');
-      %== $fb_profile->input('address', +{ class=>'form-control', errors_classes=>'is-invalid' });
-      %== $fb_profile->errors_for('address', +{ class=>'invalid-feedback' });
-    </div>
-    <div class='form-group'>
-      %== $fb_profile->label('city');
-      %== $fb_profile->input('city', +{ class=>'form-control', errors_classes=>'is-invalid' });
-      %== $fb_profile->errors_for('city', +{ class=>'invalid-feedback' });
-    </div>
-    <div class='form-row'>
-      <div class='col form-group'>
-        %== $fb_profile->label('state_id');
-        %== $fb_profile->collection_select('state_id', $states, id=>'name', +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'});
-        %== $fb_profile->errors_for('state_id', +{ class=>'invalid-feedback' });
+      <div class='form-group'>
+        %== $fb_profile->label('address');
+        %== $fb_profile->input('address', +{ class=>'form-control', errors_classes=>'is-invalid' });
+        %== $fb_profile->errors_for('address', +{ class=>'invalid-feedback' });
       </div>
-      <div class='col form-group'>
-        %== $fb_profile->label('zip');
-        %== $fb_profile->input('zip', +{ class=>'form-control', errors_classes=>'is-invalid' });
-        %== $fb_profile->errors_for('zip', +{ class=>'invalid-feedback' });
+      <div class='form-group'>
+        %== $fb_profile->label('city');
+        %== $fb_profile->input('city', +{ class=>'form-control', errors_classes=>'is-invalid' });
+        %== $fb_profile->errors_for('city', +{ class=>'invalid-feedback' });
       </div>
-    </div>
-    <div class='form-row'>
-      <div class='col form-group'>
-        %== $fb_profile->label('phone_number');
-        %== $fb_profile->input('phone_number', +{ class=>'form-control', errors_classes=>'is-invalid' });
-        %== $fb_profile->errors_for('phone_number', +{ class=>'invalid-feedback' });
+      <div class='form-row'>
+        <div class='col form-group'>
+          %== $fb_profile->label('state_id');
+          %== $fb_profile->collection_select('state_id', $states, id=>'name', +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'});
+          %== $fb_profile->errors_for('state_id', +{ class=>'invalid-feedback' });
+        </div>
+        <div class='col form-group'>
+          %== $fb_profile->label('zip');
+          %== $fb_profile->input('zip', +{ class=>'form-control', errors_classes=>'is-invalid' });
+          %== $fb_profile->errors_for('zip', +{ class=>'invalid-feedback' });
+        </div>
       </div>
-      <div class='col form-group'>
-        %== $fb_profile->label('birthday');
-        %== $fb_profile->date_field('birthday', +{ class=>'form-control', errors_classes=>'is-invalid' });
-        %== $fb_profile->errors_for('birthday', +{ class=>'invalid-feedback' });
+      <div class='form-row'>
+        <div class='col form-group'>
+          %== $fb_profile->label('phone_number');
+          %== $fb_profile->input('phone_number', +{ class=>'form-control', errors_classes=>'is-invalid' });
+          %== $fb_profile->errors_for('phone_number', +{ class=>'invalid-feedback' });
+        </div>
+        <div class='col form-group'>
+          %== $fb_profile->label('birthday');
+          %== $fb_profile->date_field('birthday', +{ class=>'form-control', errors_classes=>'is-invalid' });
+          %== $fb_profile->errors_for('birthday', +{ class=>'invalid-feedback' });
+        </div>
       </div>
-    </div>
     % end);
   </fieldset>
 

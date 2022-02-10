@@ -24,6 +24,11 @@ sub next {
   }
 }
 
+sub build {
+  my $self = shift;
+  return bless \@_, 'Valiant::HTML::Util::Collection::Item';
+}
+
 sub current_index { return shift->{pointer} }
 
 sub current_item { return $_[0]->{collection}->[$_[0]->{pointer}] }

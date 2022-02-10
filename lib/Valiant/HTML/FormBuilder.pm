@@ -315,7 +315,7 @@ sub radio_button {
 
   $options->{type} = 'radio';
   $options->{value} = $value unless exists($options->{value});
-  $options->{checked} = $self->tag_value_for_attribute($attribute) eq $value ? 1:0;
+  $options->{checked} = do { $self->tag_value_for_attribute($attribute) eq $value ? 1:0 } unless exists($options->{checked});
   $options->{id} = $self->tag_id_for_attribute($attribute, $value);
 
   return $self->input($attribute, $options);
@@ -591,9 +591,18 @@ sub collection_checkbox {
   my ($self, $attribute_spec, $collection) = (shift, shift, shift);
   my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
-  my ($value_method, $label_method) = (@_, 'value', 'label');
-  my ($attribute, $attribute_value_method) = %{ $attribute_spec }; # TODO if just a collection then $attribute_value_method is $valid_method
+  my $value_method = @_ ? shift(@_) : 'value';
+  my $label_method = @_ ? shift(@_) : 'label';
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+
+  # It's either +{ person_roles => role_id } or roles 
+  my ($attribute, $attribute_value_method) = ();
+  if( (ref($attribute_spec)||'') eq 'HASH' ) {
+    ($attribute, $attribute_value_method) = (%{ $attribute_spec });
+  } else {
+    $attribute = $attribute_spec;
+    $attribute_value_method = $value_method;
+  }
 
   $codeblock = $self->_default_collection_checkbox_content unless defined($codeblock);
 
@@ -678,13 +687,109 @@ sub _default_collection_checkbox_content {
   };
 }
 
-# select collection needs work
-# radiogrounp collection neede to be done
-# ?? date and date time helpers (month field, etc) ??
+sub collection_radio_buttons {
+  my ($self, $attribute, $collection) = (shift, shift, shift);
+  my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
+  my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  my $value_method = @_ ? shift(@_) : 'value';
+  my $label_method = @_ ? shift(@_) : 'label';
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+  my $checked_value = exists($options->{checked_value}) ? $options->{checked_value} : $self->tag_value_for_attribute($attribute);
+
+  $codeblock = $self->_default_collection_radio_buttons_content unless defined($codeblock);
+
+  my @radio_buttons = ();
+  my $radio_buttons_builder_options = +{
+    builder => (exists($options->{builder}) ? $options->{builder} : 'Valiant::HTML::FormBuilder::RadioButton'),
+    value_method => $value_method,
+    label_method => $label_method,
+    checked_value => $checked_value,
+    parent_builder => $self,
+  };
+  $radio_buttons_builder_options->{namespace} = $self->namespace if $self->has_namespace;
+
+  while (my $radio_button_model = $collection->next) {
+    my $name = "@{[ $self->name ]}.${attribute}";
+    my $checked = $radio_button_model->$value_method eq $checked_value ? 1:0;
+
+    unless(@radio_buttons) { # Add nop as first to handle empty list
+      my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $model);
+      push @radio_buttons, $hidden_fb->hidden($name, +{name=>$name, id=>$self->tag_id_for_attribute($attribute).'_hidden', value=>''});
+    }
+
+    $radio_buttons_builder_options->{checked} = $checked;
+
+    my $radio_button_fb = Valiant::HTML::Form::_instantiate_builder($name, $radio_button_model, $radio_buttons_builder_options);
+    push @radio_buttons, $codeblock->($radio_button_fb);
+  }
+  $collection->reset if $collection->can('reset');
+  return shift(@radio_buttons)->concat(@radio_buttons);
+}
+
+sub _default_collection_radio_buttons_content {
+  my ($self) = @_;
+  return sub {
+    my ($fb) = @_;
+    my $label = $fb->label();
+    my $checkbox = $fb->radio_button();
+    return $label->concat($checkbox);
+  };
+}
+
+{
+  package Valiant::HTML::FormBuilder::RadioButton;
+
+  use Moo;
+  extends 'Valiant::HTML::FormBuilder';
+
+  sub text { 
+    my $self = shift;
+    return $self->tag_value_for_attribute($self->options->{label_method});
+  }
+
+  sub value { 
+    my $self = shift;
+    return $self->tag_value_for_attribute($self->options->{value_method});
+  }
+
+  around 'label', sub {
+    my ($orig, $self, $attrs) = @_;
+    $attrs = +{} unless defined($attrs);
+    return $self->$orig($self->value, $attrs, $self->text);
+  };
+
+  around 'radio_button', sub {
+    my ($orig, $self, $attrs) = @_;
+    $attrs = +{} unless defined($attrs);
+    $attrs->{name} = $self->name;
+    $attrs->{checked} = $self->options->{checked};
+
+    return $self->$orig($self->value, $self->value, $attrs);
+  };
+}
+
+
+# select collection needs work (with multiple)
+# select with opt grounps needs to work
+# ?? date and date time helpers (month field, weeks, etc) ??
+# country list helpers...?
 
 1;
 
+
 =head1 NAME
+
+      <div class='form-group'>
+        %== $fb_profile->collection_radio_buttons('state_id', $states, id=>'name', +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'}, begin
+          % my $fb_state = shift;
+          <div class='form-check'>
+            %== $fb_state->radio_button(+{class=>"form-check-input"});
+            %== $fb_state->label(+{class=>"form-check-label"});
+          </div>
+        % end );
+        %== $fb_profile->errors_for('state_id', +{ class=>'invalid-feedback' });
+      </div>
+
 
 Valiant::HTML::Formbuilder - HTML Forms
 
