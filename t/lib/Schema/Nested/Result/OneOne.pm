@@ -19,6 +19,6 @@ __PACKAGE__->has_one(
 __PACKAGE__->accept_nested_for('one', {update_only=>1});
 __PACKAGE__->add_unique_constraint(['value']);
 __PACKAGE__->validates(value => ( presence=>1, length=>[3,24], unique=>1 ));
-__PACKAGE__->validates(one => ( presence=>1, result=>+{validations=>1} ));
+__PACKAGE__->validates(one => ( presence=>1));
 
 1;

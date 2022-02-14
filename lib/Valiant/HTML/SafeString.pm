@@ -15,7 +15,10 @@ sub _make_safe {
   return bless(\$string_to_make_safe, 'Valiant::HTML::SafeString');
 }
 
-sub escape_html { return HTML::Escape::escape_html(shift) }
+sub escape_html {
+  my $string = shift;
+  return HTML::Escape::escape_html($string);
+}
 
 sub raw {
   if(scalar(@_) == 1) {

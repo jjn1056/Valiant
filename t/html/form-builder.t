@@ -206,6 +206,42 @@ warn form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
     
 });
 
+{
+  use HTML::Tags;
+
+  {
+    package XML::Tags::TIEHANDLE;
+
+    sub one { warn 111 }
+  }
+
+  sub test123 {
+    my $aaa = 'aaa';
+
+    return HTML::Tags::to_html_string(
+      <html>,
+        <head>,
+          <title>, "hello", </title>,
+        </head>,
+        <body class="$aaa">,
+          form_for($person, +{data=>{main=>'person'}, class=>'main-form'}, sub {
+            my $fb = shift;
+            <div>, "tests", </div>,
+            $fb->model_errors(+{show_message_on_field_errors=>1}),
+            $fb->label('name', +{data=>{a=>1}}, sub {
+              my ($content) = @_;
+              <div>, $content, </div>,
+            }),
+            $fb->input('name', +{class=>'ddd'}),
+          }),
+        </body>,
+      </html>
+    );
+  }
+}
+
+warn "\n\n-----\n\n";
+warn test123;
 
 done_testing;
 

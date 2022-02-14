@@ -97,6 +97,18 @@ sub accept_nested_for {
     push @existing, $attribute;
     push @existing, +{ %default_config, %$config };
     $changed = 1;
+
+    ## Add validation
+    my $rel_data = $class->relationship_info($attribute);
+
+    die "'$attribute' does not seem to be a relationship. There's a typo in your source or you've placed your 'accept_nested_for' statement before the relationship it's associated with (has_many, belongs_to, etc)." unless $rel_data;
+
+    my $rel_type = $rel_data->{attrs}{accessor};    
+    if($rel_type eq 'single') {
+      $class->validates($attribute => (result=>+{validations=>1} ));
+    } else {
+      $class->validates($attribute => (result_set=>+{validations=>1} ));
+    }
   }
   $class->_nested(\@existing) if $changed;
   

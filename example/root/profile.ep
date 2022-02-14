@@ -1,6 +1,6 @@
 % layout 'layout.ep', title => 'Update Profile';
 
-%== form_for $person => +{ style=>'width:35em; margin:auto', method=>'POST',  }, begin
+%== form_for $person => +{ style=>'width:35em; margin:auto', method=>'POST' }, begin
   % my $fb = shift;
   % if($person->validated && !$person->has_errors) {
     <div class='alert alert-success' role='alert'>Successfully Updated</div>

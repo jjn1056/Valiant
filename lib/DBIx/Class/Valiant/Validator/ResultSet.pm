@@ -6,10 +6,7 @@ use namespace::autoclean;
 
 with 'Valiant::Validator::Each';
 
-has too_few_msg => (is=>'ro', required=>1, default=>sub {_t 'too_few'});
-has too_many_msg => (is=>'ro', required=>1, default=>sub {_t 'too_many'});
 has invalid_msg => (is=>'ro', required=>1, default=>sub {_t 'invalid'});
-
 has validations => (is=>'ro', required=>1, default=>sub {0});
 
 sub normalize_shortcut {
