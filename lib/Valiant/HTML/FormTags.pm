@@ -105,7 +105,7 @@ sub form_tag {
 sub _process_form_attrs {
   my ($url_info, $attrs) = @_;
   $attrs->{action} = $url_info if $url_info;
-  $attrs->{method} ||= 'POST';
+  $attrs->{method} ||= 'post';
   $attrs->{'accept-charset'} ||= 'UTF-8';
   return $attrs;
 }

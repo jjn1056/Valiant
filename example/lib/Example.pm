@@ -16,6 +16,7 @@ __PACKAGE__->setup_plugins([qw/
 
 __PACKAGE__->config(
   disable_component_resolution_regex_fallback => 1,
+  using_frontend_proxy => 1,
   'Plugin::Session' => { storage_secret_key => 'abc123' },
   'Model::Schema' => {
     traits => ['SchemaProxy'],

@@ -1,4 +1,105 @@
 use Test::Most;
+use Valiant::HTML::FormBuilder;
+
+{
+  package Local::Person;
+
+  use Moo;
+  use Valiant::Validations;
+  use Valiant::Filters;
+
+  has first_name => (is=>'ro');
+  has last_name => (is=>'ro');
+
+  validates ['first_name', 'last_name'] => (
+    length => {
+      maximum => 10,
+      minimum => 3,
+    }
+  );
+
+  validates_with sub {
+    my ($self, $opts) = @_;
+    $self->errors->add(undef, 'Trouble 1', $opts);
+    $self->errors->add(undef, 'Trouble 2', $opts);
+    $self->errors->add('first_name', 'contains non alphabetic characters', $opts);
+
+  };
+}
+
+ok my $person = Local::Person->new(
+  first_name=>'J', 
+  last_name=>'Napiorkowski');
+
+ok $person->invalid; # runs validation and verify that the model has errors.
+
+ok my $fb = Valiant::HTML::FormBuilder->new(
+  model => $person,
+  name => 'person');
+
+is $fb->model_errors, '<ol><li>Trouble 1</li><li>Trouble 2</li></ol>';
+is $fb->model_errors({class=>'foo'}), '<ol class="foo"><li>Trouble 1</li><li>Trouble 2</li></ol>';
+is $fb->model_errors({max_errors=>1}), '<div>Trouble 1</div>';
+is $fb->model_errors({max_errors=>1, class=>'foo'}), '<div class="foo">Trouble 1</div>';
+is $fb->model_errors({show_message_on_field_errors=>1}), '<ol><li>Form has errors</li><li>Trouble 1</li><li>Trouble 2</li></ol>';
+is $fb->model_errors({show_message_on_field_errors=>"Bad!"}), '<ol><li>Bad!</li><li>Trouble 1</li><li>Trouble 2</li></ol>';
+is $fb->model_errors(sub {
+  my (@errors) = @_;
+  join " | ", @errors;
+}), 'Trouble 1 | Trouble 2';
+
+is $fb->label('first_name'), '<label for="person_first_name">First Name</label>';
+is $fb->label('first_name', {class=>'foo'}), '<label class="foo" for="person_first_name">First Name</label>';
+is $fb->label('first_name', 'Your First Name'), '<label for="person_first_name">Your First Name</label>';
+is $fb->label('first_name', {class=>'foo'}, 'Your First Name'), '<label class="foo" for="person_first_name">Your First Name</label>';
+is $fb->label('first_name', sub {
+  my $translated_attribute = shift;
+  return "$translated_attribute ",
+    $fb->input('first_name');
+}), '<label for="person_first_name">First Name <input id="person_first_name" name="person.first_name" type="text" value="J"/></label>';
+is $fb->label('first_name', +{class=>'foo'}, sub {
+  my $translated_attribute = shift;
+  return "$translated_attribute ",
+    $fb->input('first_name');
+}), '<label class="foo" for="person_first_name">First Name <input id="person_first_name" name="person.first_name" type="text" value="J"/></label>';
+
+is $fb->errors_for('first_name'), '<ol><li>First Name is too short (minimum is 3 characters)</li><li>First Name contains non alphabetic characters</li></ol>';
+is $fb->errors_for('first_name', {class=>'foo'}), '<ol class="foo"><li>First Name is too short (minimum is 3 characters)</li><li>First Name contains non alphabetic characters</li></ol>';
+is $fb->errors_for('first_name', {class=>'foo', max_errors=>1}), '<div class="foo">First Name is too short (minimum is 3 characters)</div>';
+is $fb->errors_for('first_name', sub {
+  my (@errors) = @_;
+  join " | ", @errors;
+}), 'First Name is too short (minimum is 3 characters) | First Name contains non alphabetic characters';
+is $fb->errors_for('first_name', {max_errors=>1},sub {
+  my (@errors) = @_;
+  join " | ", @errors;
+}), 'First Name is too short (minimum is 3 characters)';
+
+is $fb->input('first_name'), '<input id="person_first_name" name="person.first_name" type="text" value="J"/>';
+is $fb->input('first_name', {class=>'foo'}), '<input class="foo" id="person_first_name" name="person.first_name" type="text" value="J"/>';
+is $fb->input('first_name', {errors_classes=>'error'}), '<input class="error" id="person_first_name" name="person.first_name" type="text" value="J"/>';
+is $fb->input('first_name', {class=>'foo', errors_classes=>'error'}), '<input class="foo error" id="person_first_name" name="person.first_name" type="text" value="J"/>';
+
+is $fb->password('first_name'), '<input id="person_first_name" name="person.first_name" type="password" value=""/>';
+is $fb->password('first_name', {class=>'foo'}), '<input class="foo" id="person_first_name" name="person.first_name" type="password" value=""/>';
+is $fb->password('first_name', {errors_classes=>'error'}), '<input class="error" id="person_first_name" name="person.first_name" type="password" value=""/>';
+is $fb->password('first_name', {class=>'foo', errors_classes=>'error'}), '<input class="foo error" id="person_first_name" name="person.first_name" type="password" value=""/>';
+
+is $fb->hidden('first_name'), '<input id="person_first_name" name="person.first_name" type="hidden" value="J"/>';
+is $fb->hidden('first_name', {class=>'foo'}), '<input class="foo" id="person_first_name" name="person.first_name" type="hidden" value="J"/>';
+is $fb->hidden('first_name', {errors_classes=>'error'}), '<input class="error" id="person_first_name" name="person.first_name" type="hidden" value="J"/>';
+is $fb->hidden('first_name', {class=>'foo', errors_classes=>'error'}), '<input class="foo error" id="person_first_name" name="person.first_name" type="hidden" value="J"/>';
+
+is $fb->text_area('first_name'), '<textarea id="person_first_name" name="person.first_name">J</textarea>';
+is $fb->text_area('first_name', {class=>'foo'}), '<textarea class="foo" id="person_first_name" name="person.first_name">J</textarea>';
+is $fb->text_area('first_name', {class=>'foo', errors_classes=>'error'}), '<textarea class="foo error" id="person_first_name" name="person.first_name">J</textarea>';
+
+use Devel::Dwarn;
+
+done_testing;
+
+__END__
+
 use Valiant::HTML::Form 'form_for';
 use Valiant::HTML::SafeString 'raw';
 use DateTime;

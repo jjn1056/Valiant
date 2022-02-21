@@ -18,17 +18,7 @@ sub set_unless_defined {
   $options->{$key} = $value;
 }
 
-has model => (
-  is => 'ro',
-  required => 1,
-  isa => sub {
-    return 1;
-    my $model = shift;
-    # in_storage, human_attribute_name, primary_columns
-    # errors, has_errors, i18n
-  },
-);
-
+has model => ( is => 'ro', required => 1);
 has name => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1, default => sub { +{} } );  
 has index => ( is => 'ro', required => 0, predicate => 'has_index' );
@@ -44,8 +34,10 @@ around BUILDARGS => sub {
   return $options;
 };
 
-sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS = 'Your form has errors' }
-sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return our $DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS = 'invalid_form' }
+sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return 'Your form has errors' }
+sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return 'invalid_form' }
+sub DEFAULT_COLLECTION_CHECKBOX_BUILDER { return 'Valiant::HTML::FormBuilder::Checkbox' }
+sub DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER { return 'Valiant::HTML::FormBuilder::RadioButton' }
 
 sub sanitized_object_name {
   my $self = shift;
@@ -118,7 +110,7 @@ sub model_errors {
     $content = $arg if (ref($arg)||'') eq 'CODE';
   }
 
-  my @errors = $self->model->errors->model_messages;
+  my @errors = $self->_get_model_errors;
 
   if(
     $self->model->has_errors &&
@@ -134,6 +126,11 @@ sub model_errors {
 
   my $error_content = $content->(@errors);
   return $error_content;
+}
+
+sub _get_model_errors {
+  my ($self) = @_;
+  return my @errors = $self->model->errors->model_messages;
 }
 
 sub _generate_default_model_error {
@@ -228,9 +225,10 @@ sub _default_errors_for_content {
 sub input {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
-    if $self->model->can('errors') && $self->model->errors->where($attribute);
+    if $errors_classes && $model->can('errors') && $model->errors->where($attribute);
 
   set_unless_defined(type => $options, 'text');
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
@@ -243,7 +241,7 @@ sub input {
 sub password {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
   $options->{type} = 'password';
-  $options->{value} = '';
+  $options->{value} = '' unless exists($options->{value});
   return $self->input($attribute, $options);
 }
 
@@ -255,10 +253,10 @@ sub hidden {
 
 sub text_area {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
-  my @errors_classes = (@{ delete($options->{errors_classes}) || [] });
+  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   
-  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, @errors_classes))
-    if $self->model->can('errors') && $self->model->errors->where($attribute);
+  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
+    if $errors_classes && $self->model->can('errors') && $self->model->errors->where($attribute);
 
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
   return Valiant::HTML::FormTags::text_area_tag(
@@ -422,6 +420,8 @@ sub _legend_default_value {
   my $model_placeholder = $model->can('model_name') ? $model->model_name->human : _humanize($self->name);
 
   my @defaults = ();
+
+  return "@{[ _humanize($key) ]} ${model_placeholder}" unless $self->model->can('i18n');
 
   push @defaults, _t "formbuilder.legend.@{[ $self->name ]}.${key}";
   push @defaults, _t "formbuilder.legend.${key}";
@@ -614,7 +614,7 @@ sub collection_checkbox {
 
   my @checkboxes = ();
   my $checkbox_builder_options = +{
-    builder => (exists($options->{builder}) ? $options->{builder} : 'Valiant::HTML::FormBuilder::Checkbox'),
+    builder => (exists($options->{builder}) ? $options->{builder} : $self->DEFAULT_COLLECTION_CHECKBOX_BUILDER),
     value_method => $value_method,
     label_method => $label_method,
     attribute_value_method => $attribute_value_method,
@@ -653,40 +653,6 @@ sub _default_collection_checkbox_content {
   };
 }
 
-{
-  package Valiant::HTML::FormBuilder::Checkbox;
-
-  use Moo;
-  extends 'Valiant::HTML::FormBuilder';
-
-  sub text { 
-    my $self = shift;
-    return $self->tag_value_for_attribute($self->options->{label_method});
-  }
-
-  sub value { 
-    my $self = shift;
-    return $self->tag_value_for_attribute($self->options->{value_method});
-  }
-
-  around 'label', sub {
-    my ($orig, $self, $attrs) = @_;
-    $attrs = +{} unless defined($attrs);
-    return $self->$orig($self->options->{attribute_value_method}, $attrs, $self->text);
-  };
-
-  around 'checkbox', sub {
-    my ($orig, $self, $attrs) = @_;
-    $attrs = +{} unless defined($attrs);
-    $attrs->{name} = $self->tag_name_for_attribute($self->options->{attribute_value_method});
-    $attrs->{id} = $self->tag_id_for_attribute($self->options->{attribute_value_method});
-    $attrs->{include_hidden} = 0;;
-    $attrs->{checked} = $self->options->{checked};
-
-    return $self->$orig($self->options->{value_method}, $attrs, $self->value);
-  };
-}
-
 sub collection_radio_buttons {
   my ($self, $attribute, $collection) = (shift, shift, shift);
   my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
@@ -700,7 +666,7 @@ sub collection_radio_buttons {
 
   my @radio_buttons = ();
   my $radio_buttons_builder_options = +{
-    builder => (exists($options->{builder}) ? $options->{builder} : 'Valiant::HTML::FormBuilder::RadioButton'),
+    builder => (exists($options->{builder}) ? $options->{builder} : $self->DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER),
     value_method => $value_method,
     label_method => $label_method,
     checked_value => $checked_value,
@@ -736,71 +702,374 @@ sub _default_collection_radio_buttons_content {
   };
 }
 
-{
-  package Valiant::HTML::FormBuilder::RadioButton;
-
-  use Moo;
-  extends 'Valiant::HTML::FormBuilder';
-
-  sub text { 
-    my $self = shift;
-    return $self->tag_value_for_attribute($self->options->{label_method});
-  }
-
-  sub value { 
-    my $self = shift;
-    return $self->tag_value_for_attribute($self->options->{value_method});
-  }
-
-  around 'label', sub {
-    my ($orig, $self, $attrs) = @_;
-    $attrs = +{} unless defined($attrs);
-    return $self->$orig($self->value, $attrs, $self->text);
-  };
-
-  around 'radio_button', sub {
-    my ($orig, $self, $attrs) = @_;
-    $attrs = +{} unless defined($attrs);
-    $attrs->{name} = $self->name;
-    $attrs->{checked} = $self->options->{checked};
-
-    return $self->$orig($self->value, $self->value, $attrs);
-  };
-}
-
 
 # select collection needs work (with multiple)
 # select with opt grounps needs to work
 # ?? date and date time helpers (month field, weeks, etc) ??
-# country list helpers...?
 
 1;
 
 
 =head1 NAME
 
-      <div class='form-group'>
-        %== $fb_profile->collection_radio_buttons('state_id', $states, id=>'name', +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'}, begin
-          % my $fb_state = shift;
-          <div class='form-check'>
-            %== $fb_state->radio_button(+{class=>"form-check-input"});
-            %== $fb_state->label(+{class=>"form-check-label"});
-          </div>
-        % end );
-        %== $fb_profile->errors_for('state_id', +{ class=>'invalid-feedback' });
-      </div>
-
-
-Valiant::HTML::Formbuilder - HTML Forms
+Valiant::HTML::Formbuilder - General HTML Forms
 
 =head1 SYNOPSIS
 
+Given a model with the correct API such as:
+
+    package Local::Person;
+
+    use Moo;
+    use Valiant::Validations;
+
+    has first_name => (is=>'ro');
+    has last_name => (is=>'ro');
+
+    validates ['first_name', 'last_name'] => (
+      length => {
+        maximum => 10,
+        minimum => 3,
+      }
+    );
+
+Wrap a formbuilder object around it and generate HTML form field controls:
+
+    my $person = Local::Person->new(first_name=>'J', last_name=>'Napiorkowski');
+    $person->validate;
+
+    my $fb = Valiant::HTML::FormBuilder->new(
+      model => $person,
+      name => 'person'
+    );
+
+    print $fb->input('first_name');
+    # <input id="person_first_name" name="person.first_name" type="text" value="J"/> 
+
+    print $fb->errors_for('first_name');
+    # <div>First Name is too short (minimum is 3 characters)</div> 
+
+Although you can create a formbuilder instance directly as in the above example you might
+find it easier to use the export helper method L<Valiant::HTML::Form/form_for> which encapsulates
+the display logic needed for creating the C<form> tags.  This builder creates form tag elements
+but not the actual C<form> open and close tags.  
+
 =head1 DESCRIPTION
+
+This class wraps an underlying data model and makes it easy to build HTML form elements based on
+the state of that model.  Inspiration for this design come from Ruby on Rails Formbuilder as well
+as similar designs in the Phoenix Framework.
+
+You can subclass this to future customize how your form elements display as well as to add more complex
+form elements for your templates.
+
+Documentation here is basically API level, a more detailed tutorial will follow eventually but for now
+you'll need to review the source, test cases and example application bundled with this distribution
+for for hand holding.
+
+Currently this is designed to work mostly with the L<Valiant> model validation framework as well as the
+glue for L<DBIx:Class>, L<DBIx:Class::Valiant>, although I did take pains to try and make the API
+agnostic many of the test cases are assuming that stack and getting that integration working well is
+the primary use case for me.  Thoughts and code to make this more stand alone are very welcomed.
 
 =head1 ATTRIBUTES
 
+This class defines the following attributes used in creating an instance.
+
+=head2 model
+
+This is the data model that the formbuilder inspects for field state and error conditions.   This should be
+a model that does the API described here: L<Valiant::HTML::Form/'REQUIRED MODEL API'>. Required but the API
+is pretty flexible (see docs).
+
+Please note that my initial use case for this is using L<Valiant> for validation and L<DBIx::Class> as the
+model (via L<DBIx:Class::Valiant>) so that combination has the most testing and examples.   If you are using
+a different storage or validation setup you need to complete the API described.  Please send test cases
+and pull requests to improve interoperability!
+
+=head2 name
+
+This is a string which is the internal name given to the model.  This is used to set a namespace for form
+field C<name> attributes and the default namespace for C<id> attributes.  Required.
+
+=head2 options
+
+A optional hashref of options used in form field generation.   Some of these might become attributes in the
+future.  Here's a list of the current options
+
+=over 4
+
+=item index
+
+The index of the formbuilder when it is a sub formbuilder with a parent and we are iterating over a collection.
+
+=item child_index
+
+When creating a sub formbuilder that is an element in a collection, this is used to pass the index value
+
+=item builder
+
+The package name of the current builder
+
+=item parent_builder
+
+The parent formbuilder instance to a sub builder.
+
+=item include_id
+
+Used to indicated that a sub formbuilder should add hidden fields indicating the storage ID for the current model.
+
+=item namespace
+
+The ID namespace; used to populate the C<namespace> attribute.
+
+=item as
+
+Used to override how the class and ids are made for your forms.
+
+=back
+
+=head2 index
+
+The current index of a collection for which the current formbuilder is one item in.
+
+=head2 namespace
+
+Used to add a prefix to the ID for your form elements.
+
+=head1 METHODS
+
+This class defines the following public instance methods.
+
+=head2 model_errors
+
+    $fb->model_errors();
+    $fb->model_errors(\%attrs);
+    $fb->model_errors(\%attrs, \&template); # %attrs limited to 'max_errors' and 'show_message_on_field_errors'
+    $fb->model_errors(\&template);
+
+Display model level errors, either with a default or custom template.  'Model' errors are
+errors that are not associated with a model attribute in particular, but rather the model
+as a whole.
+
+Arguments to this method are optional.  "\%attrs" is a hashref which is passed to the tag 
+builder to create any needed HTML attributes (such as class and style). "\&template" is
+a coderef that gets the @errors as an argument and you can use it to customize how the errors
+are displayed.  Otherwise we use a default template that lists the errors with an HTML ordered
+list, or a C<div> if there's only one error.
+
+"\%attrs" can also contain two options that gives you some additional control over the display
+
+=over
+
+=item max_errors
+
+Don't display more than a certain number of errors
+
+=item show_message_on_field_errors
+
+Sometimes you want a global message displayed when there are field errors.  L<Valiant> doesn't
+add a model error if there's field errors (although it would be easy for you to add this yourself
+with a model validation) so this makes it easy to display such a message.  If a string or translation
+tag then show that, if its a '1' the show the default message, which is "Form has errors" unless
+you overide it.
+
+=back
+
+Examples.  Assume two model level errors "Trouble 1" and "Trouble 2":
+
+    $fb->model_errors;
+    # <ol><li>Trouble 1</li><li>Trouble 2</li></ol>
+
+    $fb->model_errors({class=>'foo'});
+    # <ol class="foo"><li>Trouble 1</li><li>Trouble 2</li></ol>
+
+    $fb->model_errors({max_errors=>1});
+    # <div>Trouble 1</div>
+
+    $fb->model_errors({max_errors=>1, class=>'foo'})
+    # <div class="foo">Trouble 1</div>
+
+    $fb->model_errors({show_message_on_field_errors=>1})
+    # <ol><li>Form has errors</li><li>Trouble 1</li><li>Trouble 2</li></ol>
+
+    $fb->model_errors({show_message_on_field_errors=>"Bad!"})
+    # <ol><li>Bad!</li><li>Trouble 1</li><li>Trouble 2</li></ol>
+
+    $fb->model_errors(sub {
+      my (@errors) = @_;
+      join " | ", @errors;
+    });
+    # Trouble 1 | Trouble 2
+
+=head2 label
+
+    $fb->label($attribute)
+    $fb->label($attribute, \%options)
+    $fb->label($attribute, $content)
+    $fb->label($attribute, \%options, $content) 
+    $fb->label($attribute, \&content);   sub content { my ($translated_attribute) = @_;  ... }
+    $fb->label($attribute, \%options, \&content);   sub content { my ( $translated_attribute) = @_;  ... }
+
+Creates a HTML form element C<label> with the given "\%options" passed to the tag builder to
+create HTML attributes and an optional "$content".  If "$content" is not provided we use the
+human, translated (if available) version of the "$attribute" for the C<label> content.  Alternatively
+you can provide a template which is a subroutine reference which recieves the translated attribute
+as an argument.  Examples:
+
+    $fb->label('first_name');
+    # <label for="person_first_name">First Name</label>
+
+    $fb->label('first_name', {class=>'foo'});
+    # <label class="foo" for="person_first_name">First Name</label>
+
+    $fb->label('first_name', 'Your First Name');
+    # <label for="person_first_name">Your First Name</label>
+
+    $fb->label('first_name', {class=>'foo'}, 'Your First Name');
+    # <label class="foo" for="person_first_name">Your First Name</label>
+
+    $fb->label('first_name', sub {
+      my $translated_attribute = shift;
+      return "$translated_attribute ",
+        $fb->input('first_name');
+    });
+    # <label for="person_first_name">
+    #   First Name 
+    #   <input id="person_first_name" name="person.first_name" type="text" value="John"/>
+    # </label>
+
+    $fb->label('first_name', +{class=>'foo'}, sub {
+      my $translated_attribute = shift;
+      return "$translated_attribute ",
+        $fb->input('first_name');
+    });
+    # <label class="foo" for="person_first_name">
+    #   First Name
+    #   <input id="person_first_name" name="person.first_name" type="text" value="John"/>
+    # </label>
+
+=head2 errors_for
+
+    $fb->errors_for($attribute)
+    $fb->errors_for($attribute, \%options)
+    $fb->errors_for($attribute, \%options, \&template)
+    $fb->errors_for($attribute, \&template)
+
+Similar to L</model_errors> but for errors associated with an attribute of a model.  Accepts
+the $attribute name, a hashref of \%options (used to set options controling the display of
+errors as well as used by the tag builder to create HTML attributes for the containing tag) and
+lastly an optional \&template which is a subroutine reference that received an array of the
+translated errors for when you need very custom error display.  If omitted we use a default
+template displaying errors in an ordered list (if more than one) or wrapped in a C<div> tag
+(if only one error).
+
+\%options used for error display and which are not passed to the tag builder as HTML attributes:
+
+=over
+
+=item max_errors
+
+Don't display more than a certain number of errors
+
+=back
+
+Assume the attribute 'last_name' has the following two errors in the given examples: "first Name
+is too short", "First Name contains non alphabetic characters".
+
+    $fb->errors_for('first_name');
+    # <ol><li>First Name is too short (minimum is 3 characters)</li><li>First Name contains non alphabetic characters</li></ol>
+
+    $fb->errors_for('first_name', {class=>'foo'});
+    # <ol class="foo"><li>First Name is too short (minimum is 3 characters)</li><li>First Name contains non alphabetic characters</li></ol>
+
+    $fb->errors_for('first_name', {class=>'foo', max_errors=>1});
+    # <div class="foo">First Name is too short (minimum is 3 characters)</div>
+
+    $fb->errors_for('first_name', sub {
+      my (@errors) = @_;
+      join " | ", @errors;
+    });
+    # First Name is too short (minimum is 3 characters) | First Name contains non alphabetic characters
+
+=head2 input
+
+    $fb->input($attribute, \%options)
+    $fb->input($attribute)
+
+Create an C<input> form tag using the $attribute's value (if any) and optionally passing a hashref of
+\%options which are passed to the tag builder to create HTML attributes for the C<input> tag.  Optionally
+add C<errors_classes> which is a string that is appended to the C<class> attribute when the $attribute has
+errors.  Examples:
+
+    $fb->input('first_name');
+    # <input id="person_first_name" name="person.first_name" type="text" value="J"/>
+
+    $fb->input('first_name', {class=>'foo'});
+    # <input class="foo" id="person_first_name" name="person.first_name" type="text" value="J"/>
+
+    $fb->input('first_name', {errors_classes=>'error'});
+    # <input class="error" id="person_first_name" name="person.first_name" type="text" value="J"/>
+
+    $fb->input('first_name', {class=>'foo', errors_classes=>'error'});
+    # <input class="foo error" id="person_first_name" name="person.first_name" type="text" value="J"/>
+
+=head2 password
+
+    $fb->password($attribute, \%options)
+    $fb->password($attribute)
+
+Create a C<password> HTML form field.   Similar to L</input> but sets the C<type> to 'password' and also
+sets C<value> to '' since generally you don't want to show the current password (and if you are doing the
+right thing and saving a 1 way hash not the plain text you don't even have it to show anyway).
+
+Example:
+
+    $fb->password('password');
+    # <input id="person_password" name="person.password" type="password" value=""/>
+
+    $fb->password('password', {class='foo'});
+    # <input class="foo" id="person_password" name="person.password" type="password" value=""/>
+
+    $fb->password('password', {class='foo', errors_classes=>'error'});
+    # <input class="foo error" id="person_password" name="person.password" type="password" value=""/>
+
+=head2 hidden
+
+    $fb->hidden($attribute, \%options)
+    $fb->hidden($attribute)
+
+Create a C<hidden> HTML form field.   Similar to L</input> but sets the C<type> to 'hidden'.
+
+    $fb->hidden('id');
+    # <input id="person_id name="person.id" type="hidden" value="101"/>
+
+    $fb->hidden('id', {class='foo'});
+    # <input class="foo" id="person_id name="person.id" type="hidden" value="101"/>
+
+=head2 text_area
+
+    $fb->text_area($attribute);
+    $fb->text_area($attribute, \%options);
+
+Create an HTML C<text_area> tag based on the attribute value and with optional \%options
+which is a a hashref passed to the tag builder for generating HTML attributes.   Can also set
+C<errors_classes> that will append a string of additional CSS classes when the $attribute has
+errors.  Examples:
+
+    $fb->text_area('comments');
+    # <textarea id="person_comments" name="person.comments">J</textarea>
+
+    $fb->text_area('comments', {class=>'foo'});
+    # <textarea class="foo" id="person_comments" name="person.comments">J</textarea>
+
+    $fb->text_area('comments', {class=>'foo', errors_classes=>'error'});
+    # <textarea class="foo error" id="person_comments" name="person.comments">J</textarea>
+
+
+
 =head1 SEE ALSO
- 
+
 L<Valiant>
 
 =head1 AUTHOR

@@ -20,6 +20,7 @@ requires 'overload';
 requires 'DBIx::Class';
 requires 'Sub::Util';
 requires 'HTML::Escape';
+requires 'URI';
 
 on test => sub {
   requires 'Test::Most' => '0.34';
