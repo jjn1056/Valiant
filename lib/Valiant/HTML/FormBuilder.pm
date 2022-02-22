@@ -60,11 +60,12 @@ sub nested_child_index {
 }
 
 sub tag_id_for_attribute {
-  my ($self, $attribute) = @_;
+  my ($self, $attribute, @extra) = @_;
   my $id = $self->has_namespace ? $self->namespace . '_' : '';
   $id .= $self->has_index ?
     "@{[$self->sanitized_object_name]}_@{[ $self->index ]}_${attribute}" :
     "@{[$self->sanitized_object_name]}_${attribute}";
+  $id = join('_', $id, @extra) if @extra;
   return $id;
 }
 
@@ -271,7 +272,7 @@ sub checkbox {
   my $options = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
   my $checked_value = @_ ? shift : 1;
   my $unchecked_value = @_ ? shift : 0;
-  my @errors_classes = (@{ delete($options->{errors_classes}) || [] });
+  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   my $show_hidden_unchecked = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1;
   my $name = $self->tag_name_for_attribute($attribute);
 
@@ -284,8 +285,8 @@ sub checkbox {
 
   $options->{type} = 'checkbox';
   $options->{value} = $checked_value unless exists($options->{value});
-  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, @errors_classes))
-    if $self->model->can('errors') && $self->model->errors->where($attribute);
+  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
+    if $errors_classes && $self->model->can('errors') && $self->model->errors->where($attribute);
 
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
 
@@ -305,7 +306,6 @@ sub checkbox {
 }
 
 #radio_button(object_name, method, tag_value, options = {})
-
 sub radio_button {
   my ($self, $attribute) = (shift, shift);
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
@@ -408,8 +408,14 @@ sub button {
 
 sub legend {
   my ($self) = shift;
-  my $options = pop(@_) if (ref($_[-1])||'') eq 'HASH';
-  my $value = @_ ? shift(@_) : $self->_legend_default_value;
+  my $value = my $default_value = $self->_legend_default_value;
+  my $options = +{};
+
+  $value = pop(@_) if (ref($_[-1])||'') eq 'CODE';
+  $options = pop(@_) if (ref($_[-1])||'') eq 'HASH';
+  $value = shift(@_) if @_;
+  $value = $value->($default_value) if ((ref($value)||'') eq 'CODE');
+
   return Valiant::HTML::FormTags::legend_tag($value, $options);
 }
 
@@ -1014,6 +1020,16 @@ errors.  Examples:
     $fb->input('first_name', {class=>'foo', errors_classes=>'error'});
     # <input class="foo error" id="person_first_name" name="person.first_name" type="text" value="J"/>
 
+Special \%options:
+
+=over 4
+
+=item errors_classes
+
+A string that is appended to the C<class> attribute if the $attribute has errors (as defined by the model API)
+
+=back
+
 =head2 password
 
     $fb->password($attribute, \%options)
@@ -1066,6 +1082,292 @@ errors.  Examples:
     $fb->text_area('comments', {class=>'foo', errors_classes=>'error'});
     # <textarea class="foo error" id="person_comments" name="person.comments">J</textarea>
 
+Special \%options:
+
+=over 4
+
+=item errors_classes
+
+A string that is appended to the C<class> attribute if the $attribute has errors (as defined by the model API)
+
+=back
+
+=head2 checkbox
+
+    $fb->checkbox($attribute);
+    $fb->checkbox($attribute, \%options);
+    $fb->checkbox($attribute, $checked_value, $unchecked_value);
+    $fb->checkbox($attribute, \%options, $checked_value, $unchecked_value);
+
+Generate an HTML form checkbox element with its state based on evaluating the value of $attribute
+in a boolean context. If $attribute is true then the C<checkbox> will be checked. May also pass a
+hashref of \%options, which contain render instructions and HTML attributes used by the tag builder.
+"$checked_value" and "$unchecked_value" specify the values when the checkbox is checked or not (defaults
+to 1 for checked and 0 for unchecked, but $unchecked is ignored if option C<include_hidden> is set to 
+false; see below).
+
+Special \%options:
+
+=over 4
+
+=item errors_classes
+
+A string that is appended to the C<class> attribute if the $attribute has errors (as defined by the model API)
+
+=item include_hidden
+
+Defaults to true.  Since the rules for an HTML form checkbox specify that if the checkbox is 'unchecked' then
+nothing is submitted.  This can cause issues if you are expecting a submission that somehow indicates 'unchecked'
+For example you might have a status field boolean where unchecked should indicate 'false'.  So by default we add
+a hidden field with the same name as the checkbox, with a value set to $unchecked_value (defaults to 0).  In the
+case where the field is checked then you'll get two values for the same field name so you should have logic that
+in the case that field name is an array then take the last one (if you are using L<Plack::Request> this is using
+L<Hash::MultiValue> which does this by default; if you are using L<Catalyst> you can use the C<use_hash_multivalue_in_request>
+option or you can use something like L<Catalyst::TraitFor::Request::StructuredParameters> which has options to
+help with this.   If you are using L<Mojolicious> then the C<param> method works this way as well.
+
+=item checked
+
+A boolean value to indicate if the checkbox field is 'checked' when generated.   By default a checkbox state is
+determined by the value of $attribute for the underlying model.  You can use this to override (for example you 
+might wish a checkbox default state to be checked when creating a new entry when it would otherwise be false).
+
+=back
+
+Examples:
+
+    $fb->checkbox('status');
+    # <input name="person.status" type="hidden" value="0"/>
+    # <input id="person_status" name="person.status" type="checkbox" value="1"/>
+
+    $fb->checkbox('status', {class=>'foo'});
+    # <input name="person.status" type="hidden" value="0"/>
+    # <input class="foo" id="person_status" name="person.status" type="checkbox" value="1"/>
+
+    $fb->checkbox('status', 'active', 'deactive');
+    # <input name="person.status" type="hidden" value="deactive"/>
+    # <input id="person_status" name="person.status" type="checkbox" value="active"/>
+
+    $fb->checkbox('status', {include_hidden=>0});
+    # <input id="person_status" name="person.status" type="checkbox" value="1"/>
+
+    $person->status(1);
+    $fb->checkbox('status', {include_hidden=>0});
+    # <input checked id="person_status" name="person.status" type="checkbox" value="1"/>
+
+    $person->status(0);
+    $fb->checkbox('status', {include_hidden=>0, checked=>1});
+    # <input checked id="person_status" name="person.status" type="checkbox" value="1"/>
+
+    $fb->checkbox('status', {include_hidden=>0, errors_classes=>'err'});
+    # <input class="err" id="person_status" name="person.status" type="checkbox" value="1"/>
+
+=head2 radio_button
+
+    $fb->radio_button($attribute, $value);
+    $fb->radio_button($attribute, $value, \%options);
+
+Generate an HTML input type 'radio', typically part of a group including 2 or more controls.
+Generated value attributes uses $value, the control is marked 'checked' when $value matches
+the value of $attribute (or you can override, see below).   \%options are HTML attributes which
+are passed to the tag builder unless special as described below.
+
+Special \%options:
+
+=over 4
+
+=item errors_classes
+
+A string that is appended to the C<class> attribute if the $attribute has errors (as defined by the model API)
+
+=item checked
+
+A boolean which determines if the input radio control is marked 'checked'.   Used if you want to 
+override the default.
+
+=back
+
+Examples:
+
+    # Example radio group
+
+    $person->type('admin');
+
+    $fb->radio_button('type', 'admin');
+    $fb->radio_button('type', 'user');
+    $fb->radio_button('type', 'guest');
+
+    #<input checked id="person_type_admin" name="person.type" type="radio" value="admin"/>
+    #<input id="person_type_user" name="person.type" type="radio" value="user"/>
+    #<input id="person_type_guest" name="person.type" type="radio" value="guest"/>
+    
+    # Example \%options
+
+    $fb->radio_button('type', 'guest', {class=>'foo', errors_classes=>'err'});
+    # <input class="foo err" id="person_type_guest" name="person.type" type="radio" value="guest"/>
+
+    $fb->radio_button('type', 'guest', {checked=>1});
+    # <input checked id="person_type_guest" name="person.type" type="radio" value="guest"/>
+
+=head2 date_field
+
+    $fb->date_field($attribute);
+    $fb->date_field($attribute, \%options);
+
+Generates a 'type' C<date> HTML input control.  Used when your $attribute value is a L<DateTime>
+object to get proper string formatting.  Although the C<date> type is considered HTML5 you can
+use this for older HTML versions as well when you need to get the object formatting (you just don't
+get the date HTML controls).
+
+When the $attribute value is a L<DateTime> object (or actually is any object) we call '->ymd' to stringify
+the object to the expected format. '\%options' as in the input control are passed to the tag builder
+to create HTML attributes on the input tag with the exception of the specials ones already documented
+(such as C<errors_classes>) and the following special \%options
+
+=over 4
+
+=item min
+
+=item max
+
+When these are L<DateTime> objects we stringify using ->ymd to get the expected format; otherwise 
+they are passed as is to the tag builder.
+
+=back
+
+Examples:
+
+    $person->birthday(DateTime->new(year=>1969, month=>2, day=>13));
+
+    $fb->date_field('birthday');
+    # <input id="person_birthday" name="person.birthday" type="date" value="1969-02-13"/>
+
+    $fb->date_field('birthday', {class=>'foo', errors_classes=>'err'});
+    # <input class="foo err" id="person_birthday" name="person.birthday" type="date" value="1969-02-13"/>
+
+    $fb->date_field('birthday', +{
+      min => DateTime->new(year=>1900, month=>1, day=>1),
+      max => DateTime->new(year=>2030, month=>1, day=>1),
+    });
+    #<input id="person_birthday" max="2030-01-01" min="1900-01-01" name="person.birthday" type="date" value="1969-02-13"/>
+
+=head2 datetime_local_field
+
+=head2 time_field
+
+Like L</date_field> but sets the input type to C<datetime-local> or C<time> respectively and formats any
+<DateTime> values with "->strftime('%Y-%m-%dT%T')" (for C<datetime-local>) or either "->strftime('%H:%M')"
+or "->strftime('%T.%3N')" for C<time> depending on the \%options C<include_seconds>, which defaults to true).
+
+Examples:
+
+    $person->due(DateTime->new(year=>1969, month=>2, day=>13, hour=>10, minute=>45, second=>11, nanosecond=> 500000000));
+
+    $fb->datetime_local_field('due');
+    # <input id="person_due" name="person.due" type="datetime-local" value="1969-02-13T10:45:11"/>
+
+    $fb->time_field('due');
+    # <input id="person_due" name="person.due" type="time" value="10:45:11.500"/>
+
+    $fb->time_field('due', +{include_seconds=>0});
+    # <input id="person_due" name="person.due" type="time" value="10:45"/>
+
+=head2 submit
+
+    $fb->submit;
+    $fb->submit(\%options);
+    $fb->submit($value);
+    $fb->submit($value, \%options);
+
+Create an HTML submit C<input> tag with a meaningful default value based on the model name and its state
+in storage (if supported by the model).  Will also look up the following two translation tag keys:
+
+    "formbuilder.submit.@{[ $self->name ]}.${key}"
+    "formbuilder.submit.${key}"
+
+Where $key is by default 'submit' and if the model supports 'in_storage' its either 'update' or 'create'
+depending on if the model is new or already existing.
+
+Examples:
+
+    $fb->submit;
+    # <input id="commit" name="commit" type="submit" value="Submit Person"/>
+
+    $fb->submit('Login', {class=>'foo'});
+    # <input class="foo" id="commit" name="commit" type="submit" value="Login"/>
+
+=head2 button
+
+    $fb->button($name, \%attrs, \&block)
+    $fb->button($name, \%attrs, $content)
+    $fb->button($name, \&block)
+    $fb->button($name, $content)
+
+Create a C<button> tag with custom attibutes and content.  Content be be a string or a coderef if you
+need to do complex layout.
+
+Useful to create submit buttons with fancy formatting or when you need a button that submits in the
+form namespace.
+
+Examples:
+
+    $person->type('admin');
+
+    $fb->button('type');
+    # <button id="person_type" name="person.type" type="submit" value="admin">Button</button>
+
+    $fb->button('type', {class=>'foo'});
+    # <button class="foo" id="person_type" name="person.type" type="submit" value="admin">Button</button>
+
+    $fb->button('type', "Press Me")
+    # <button id="person_type" name="person.type" type="submit" value="admin">Press Me</button>
+
+    $fb->button('type', sub { "Press Me" })
+    # <button id="person_type" name="person.type" type="submit" value="admin">Press Me</button>
+
+=head2 legend
+
+    $fb->legend;
+    $fb->legend(\%options);
+    $fb->legend($content);
+    $fb->legend($content, \%options);
+    $fb->legend(\&template);
+    $fb->legend(\%options, \&template);
+
+Create an HTML Form C<legend> element with default content that is based on the model name.
+Accepts \%options which are passed to the tag builder and used to create HTML element attributes.
+You can override the content with either a $content string or a \&template coderef (which will 
+receive the default content translation as its first argument).
+
+The default content will be based on the model name and can be influenced by its storage status
+if C<in_storage> is supplied by the model.  We attempt to lookup the content string via the
+following translation tags (if the body supports ->i18n):
+
+    "formbuilder.legend.@{[ $self->name ]}.${key}"
+    "formbuilder.legend.${key}"
+
+Where $key is 'new' if the model doesn't support C<in_storage> else it's either 'update' or 'create'
+based on if the current model is already in storage (update) or its new an needs to be created.
+
+Examples:
+
+    $fb->legend;
+    # <legend>New Person</legend>
+
+    $fb->legend({class=>'foo'});
+    # <legend class="foo">New Person</legend>
+
+    $fb->legend("Person");
+    # <legend>Person</legend>
+
+    $fb->legend("Persons", {class=>'foo'});
+    # <legend class="foo">Persons</legend>
+
+    $fb->legend(sub { shift . " Info"});
+    # <legend>New Person Info</legend>
+
+    $fb->legend({class=>'foo'}, sub {"Person"});
+    # <legend class="foo">Person</legend>
 
 
 =head1 SEE ALSO

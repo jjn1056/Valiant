@@ -33,7 +33,7 @@ is fieldset_tag(+{id=>100},sub {
 
 is form_tag('/user', +{ class=>'form' }, sub {
     checkbox_tag 'person[1]username', +{class=>'aaa'};
-  }), '<form accept-charset="UTF-8" action="/user" class="form" method="POST"><input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
+  }), '<form accept-charset="UTF-8" action="/user" class="form" method="post"><input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
 is label_tag('user_name'), '<label for="user_name">User name</label>';
 is label_tag('name', 'Info'), '<label for="name">Info</label>';

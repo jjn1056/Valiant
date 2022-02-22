@@ -45,7 +45,7 @@ sub _tag_options {
 
 sub _tag_option {
   my ($attr, $value) = @_;
-  return qq[${attr}="@{[ escape_html(($value||'')) ]}"];
+  return qq[${attr}="@{[ escape_html(( defined($value) ? $value : '' )) ]}"];
 }
 
 sub tag {

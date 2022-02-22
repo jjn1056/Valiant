@@ -1,5 +1,6 @@
 use Test::Most;
 use Valiant::HTML::FormBuilder;
+use DateTime;
 
 {
   package Local::Person;
@@ -10,6 +11,10 @@ use Valiant::HTML::FormBuilder;
 
   has first_name => (is=>'ro');
   has last_name => (is=>'ro');
+  has status => (is=>'rw');
+  has type => (is=>'rw');
+  has birthday => (is=>'rw');
+  has due => (is=>'rw');
 
   validates ['first_name', 'last_name'] => (
     length => {
@@ -23,13 +28,18 @@ use Valiant::HTML::FormBuilder;
     $self->errors->add(undef, 'Trouble 1', $opts);
     $self->errors->add(undef, 'Trouble 2', $opts);
     $self->errors->add('first_name', 'contains non alphabetic characters', $opts);
-
+    $self->errors->add('status', 'bad value', $opts);
+    $self->errors->add('type', 'bad value', $opts);
+    $self->errors->add('birthday', 'bad value', $opts);
   };
 }
 
 ok my $person = Local::Person->new(
   first_name=>'J', 
-  last_name=>'Napiorkowski');
+  last_name=>'Napiorkowski',
+  birthday=>DateTime->new(year=>1969, month=>2, day=>13),
+  due=>DateTime->new(year=>1969, month=>2, day=>13, hour=>10, minute=>45, second=>11, nanosecond=> 500000000, time_zone  => 'UTC'),
+  type=>'admin');
 
 ok $person->invalid; # runs validation and verify that the model has errors.
 
@@ -94,7 +104,51 @@ is $fb->text_area('first_name'), '<textarea id="person_first_name" name="person.
 is $fb->text_area('first_name', {class=>'foo'}), '<textarea class="foo" id="person_first_name" name="person.first_name">J</textarea>';
 is $fb->text_area('first_name', {class=>'foo', errors_classes=>'error'}), '<textarea class="foo error" id="person_first_name" name="person.first_name">J</textarea>';
 
-use Devel::Dwarn;
+is $fb->checkbox('status'), '<input name="person.status" type="hidden" value="0"/><input id="person_status" name="person.status" type="checkbox" value="1"/>';
+is $fb->checkbox('status', {class=>'foo'}), '<input name="person.status" type="hidden" value="0"/><input class="foo" id="person_status" name="person.status" type="checkbox" value="1"/>';
+is $fb->checkbox('status', 'active', 'deactive'), '<input name="person.status" type="hidden" value="deactive"/><input id="person_status" name="person.status" type="checkbox" value="active"/>';
+is $fb->checkbox('status', {include_hidden=>0}), '<input id="person_status" name="person.status" type="checkbox" value="1"/>';
+$person->status(1);
+is $fb->checkbox('status', {include_hidden=>0}), '<input checked id="person_status" name="person.status" type="checkbox" value="1"/>';
+$person->status(0);
+is $fb->checkbox('status', {include_hidden=>0, checked=>1}), '<input checked id="person_status" name="person.status" type="checkbox" value="1"/>';
+is $fb->checkbox('status', {include_hidden=>0, errors_classes=>'err'}), '<input class="err" id="person_status" name="person.status" type="checkbox" value="1"/>';
+
+
+is $fb->radio_button('type', 'admin'), '<input checked id="person_type_admin" name="person.type" type="radio" value="admin"/>';
+is $fb->radio_button('type', 'user'), '<input id="person_type_user" name="person.type" type="radio" value="user"/>';
+is $fb->radio_button('type', 'guest'), '<input id="person_type_guest" name="person.type" type="radio" value="guest"/>';
+
+is $fb->radio_button('type', 'guest', {class=>'foo', errors_classes=>'err'}), '<input class="foo err" id="person_type_guest" name="person.type" type="radio" value="guest"/>';
+is $fb->radio_button('type', 'guest', {checked=>1}), '<input checked id="person_type_guest" name="person.type" type="radio" value="guest"/>';
+
+## DateTime->new(year=>1969, month=>2, day=>13),
+is $fb->date_field('birthday'), '<input id="person_birthday" name="person.birthday" type="date" value="1969-02-13"/>';
+is $fb->date_field('birthday', {class=>'foo', errors_classes=>'err'}), '<input class="foo err" id="person_birthday" name="person.birthday" type="date" value="1969-02-13"/>';
+is $fb->date_field('birthday', +{
+  min => DateTime->new(year=>1900, month=>1, day=>1),
+  max => DateTime->new(year=>2030, month=>1, day=>1),
+}), '<input id="person_birthday" max="2030-01-01" min="1900-01-01" name="person.birthday" type="date" value="1969-02-13"/>';
+
+
+is $fb->datetime_local_field('due'), '<input id="person_due" name="person.due" type="datetime-local" value="1969-02-13T10:45:11"/>';
+is $fb->time_field('due'), '<input id="person_due" name="person.due" type="time" value="10:45:11.500"/>';
+is $fb->time_field('due', +{include_seconds=>0}), '<input id="person_due" name="person.due" type="time" value="10:45"/>';
+
+is $fb->submit, '<input id="commit" name="commit" type="submit" value="Submit Person"/>';
+is $fb->submit('fff', {class=>'foo'}), '<input class="foo" id="commit" name="commit" type="submit" value="fff"/>';
+
+is $fb->button('type'), '<button id="person_type" name="person.type" type="submit" value="admin">Button</button>';
+is $fb->button('type', {class=>'foo'}), '<button class="foo" id="person_type" name="person.type" type="submit" value="admin">Button</button>';
+is $fb->button('type', "Press Me"), '<button id="person_type" name="person.type" type="submit" value="admin">Press Me</button>';
+is $fb->button('type', sub { "Press Me" }), '<button id="person_type" name="person.type" type="submit" value="admin">Press Me</button>';
+
+is $fb->legend, '<legend>New Person</legend>';
+is $fb->legend({class=>'foo'}), '<legend class="foo">New Person</legend>';
+is $fb->legend("Person"), '<legend>Person</legend>';
+is $fb->legend("Persons", {class=>'foo'}), '<legend class="foo">Persons</legend>';
+is $fb->legend(sub { shift . " Info"}), '<legend>New Person Info</legend>';
+is $fb->legend({class=>'foo'}, sub {"Person"}), '<legend class="foo">Person</legend>';
 
 done_testing;
 
