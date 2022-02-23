@@ -22,7 +22,7 @@ sub _instantiate_builder {
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my $object = Scalar::Util::blessed($_[-1]) ? pop(@_) : die "Missing required object";
   my $model_name = scalar(@_) ? pop(@_) : _model_name_from_object_or_class($object)->param_key;
-  my $builder = exists($options->{builder}) ? $options->{builder} :  _default_formbuilder_class;
+  my $builder = exists($options->{builder}) && defined($options->{builder}) ? $options->{builder} :  _default_formbuilder_class;
   $options->{builder} = $builder;
   
   my %args = (
@@ -34,7 +34,6 @@ sub _instantiate_builder {
   $args{namespace} = $options->{namespace} if exists $options->{namespace};
   $args{id} = $options->{id} if exists $options->{id};
   $args{index} = $options->{index} if exists $options->{index};
-
   return Module::Runtime::use_module($builder)->new(%args);
 }
 

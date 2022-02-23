@@ -2,6 +2,7 @@ package Valiant::HTML::FormBuilder;
 
 use Moo;
 use Valiant::HTML::FormTags ();
+use Valiant::HTML::Form ();
 use Valiant::HTML::TagBuilder ();
 use Valiant::HTML::Util::Collection;
 
@@ -447,7 +448,7 @@ sub fields_for {
   my $codeblock = (ref($_[0])||'') eq 'CODE' ? shift(@_) : die "Missing required code block";
   my $finally_block = (ref($_[0])||'') eq 'CODE' ? shift(@_) : undef;
 
-  $options->{builder} = $self->options->{builder};
+  $options->{builder} = $self->options->{builder} if !exists($options->{builder}) && !defined($options->{builder}) && defined($self->options->{builder});
   $options->{namespace} = $self->namespace if $self->has_namespace;
   $options->{parent_builder} = $self;
 
@@ -479,9 +480,15 @@ sub fields_for {
         $output = $nested;
       }
     }
+    $related_record->reset if $related_record->can('reset');
     if($finally_block) {
       my $finally_model = $related_record->can('build') ? $related_record->build : die "Can't have a finally block if the collection doesn't support 'build'";
-      my $finally_content = $self->fields_for_nested_model("${name}[]", $finally_model, $options, $finally_block);
+      if(defined($explicit_child_index)) {
+        $options->{child_index} = $options->{child_index}->($finally_model) if ref() eq 'CODE';  # allow for callback version of this
+      } else {
+        $options->{child_index} = $self->nested_child_index($related_attribute); 
+      }
+      my $finally_content = $self->fields_for_nested_model("${name}[@{[ $options->{child_index} ]}]", $finally_model, $options, $finally_block);
       if(defined $output) {
         $output = $output->concat($finally_content);
       } else {
@@ -1347,7 +1354,7 @@ following translation tags (if the body supports ->i18n):
     "formbuilder.legend.${key}"
 
 Where $key is 'new' if the model doesn't support C<in_storage> else it's either 'update' or 'create'
-based on if the current model is already in storage (update) or its new an needs to be created.
+based on if the current model is already in storage (update) or its new and needs to be created.
 
 Examples:
 
@@ -1369,6 +1376,119 @@ Examples:
     $fb->legend({class=>'foo'}, sub {"Person"});
     # <legend class="foo">Person</legend>
 
+=head2 fields_for
+
+    $fb->fields_for($attribute, sub {
+      my $nested_$fb = shift;
+    });
+
+    $fb->fields_for($attribute, \%options, sub {
+      my $nested_$fb = shift;
+    });
+
+    # With a 'finally' block when $attribute is a collection
+
+    $fb->fields_for($attribute, sub {
+      my $nested_$fb = shift;
+    }, sub {
+      my $finally_$fb = shift;
+    });
+
+
+Used to create sub form builders under the current one for nested models (either a collection of models
+or a single model.)
+
+When the $attribute refers to a collection the collection object must provide a C<next> method which should
+iterate thru the collection in the order desired and return C<undef> to indicate all records have been rolled
+thru. This collection object may also implement a C<reset> method to return the index to the start of the
+collection (which will be called after the final record is processed) and a C<build> method which should 
+return a new empty record (required if you want a C<finally> block as described below).
+
+Please see L<Valiant::HTML::Util::Collection> for example.  B<NOTE>: If you supply an arrayref instead of
+a collection object, we will build one using L<Valiant::HTML::Util::Collection> automatically.  This behavior
+might change in the future so it would be ideal to not rely on it.
+
+If the $attribute is a collection you may optionally add a second coderef template which is called after
+the collect has been fully iterated thru and it recieves a sub formbuilder with a new blank model as an
+argument.   This finally block is always called, even if the collection is empty so it can he used to
+generate a blank entry for adding new items to the collection (for example) or for any extra code or field
+controls that you want under the sub model namespace.
+
+Available \%options:
+
+=over 4
+
+=item builder
+
+The class name of the formbuilder.  Defaults to L<Valiant::HTML::FormBuilder> or whatever the current
+builder is (if overridden in the parent).
+
+=item namespace
+
+The ID namespace.  Will default to the parent formbuilder C<namespace> if there is one.
+
+=item child_index
+
+The index of the sub object. Can be a coderef.   Used if you need explicit control over the index generated
+
+=item include_id
+
+Defaults to true.   If the sub model does C<in_storage> and C<primary_columns> then add hidden form fields
+with those IDs to the sub model namespace.  Often needed to properly match a record to its existing state
+in storage (such as a database).  Not sure why you'd want to turn this off but the option is a carry over
+from Rails so I presume there is a use case.
+
+=item id
+
+Override the ID namespace for th sub model.
+
+=item index
+
+Explicitly override the index of the sub model.
+
+=back
+
+Example of an attribute that refers to a nested object.
+
+    $person->profile(Local::Profile->new(zip=>'78621', address=>'ab'));
+
+    $fb->fields_for('profile', sub {
+      my $fb_profile = shift;
+      return  $fb_profile->input('address'),
+              $fb_profile->errors_for('address'),
+              $fb_profile->input('zip');
+    });
+
+    # <input id="person_profile_address" name="person.profile.address" type="text" value="ab"/>
+    # <div>Address is too short (minimum is 3 characters)</div>
+    # <input id="person_profile_zip" name="person.profile.zip" type="text" value="78621"/>
+
+Example of an attribute that refers to a nested collection object (and with a "finally block")
+
+    $person->credit_cards([
+      Local::CreditCard->new(number=>'234234223444', expiration=>DateTime->now->add(months=>11)),
+      Local::CreditCard->new(number=>'342342342322', expiration=>DateTime->now->add(months=>11)),
+      Local::CreditCard->new(number=>'111112222233', expiration=>DateTime->now->subtract(months=>11)),  # An expired card
+    ]);
+
+    $fb->fields_for('credit_cards', sub {
+      my $fb_cc = shift;
+      return  $fb_cc->input('number'),
+              $fb_cc->date_field('expiration'),
+              $fb_cc->errors_for('expiration');
+    }, sub {
+      my $fb_finally = shift;
+      return  $fb_finally->button('add', +{value=>1}, 'Add a New Credit Card');
+    });
+
+    # <input id="person_credit_cards_0_number" name="person.credit_cards[0].number" type="text" value="234234223444"/>
+    # <input id="person_credit_cards_0_expiration" name="person.credit_cards[0].expiration" type="date" value="2023-01-23"/>
+    # <input id="person_credit_cards_1_number" name="person.credit_cards[1].number" type="text" value="342342342322"/>
+    # <input id="person_credit_cards_1_expiration" name="person.credit_cards[1].expiration" type="date" value="2023-01-23"/>
+    # <input id="person_credit_cards_2_number" name="person.credit_cards[2].number" type="text" value="111112222233"/>
+    # <input id="person_credit_cards_2_expiration" name="person.credit_cards[2].expiration" type="date" value="2021-03-23"/>
+    # <div>Expiration chosen date can&#39;t be earlier than 2022-02-23</div>
+    # <button id="person_credit_cards_3_add" name="person.credit_cards[3].add" type="submit" value="1">Add a New Credit Card</button>
 
 =head1 SEE ALSO
 

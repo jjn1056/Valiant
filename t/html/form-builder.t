@@ -1,8 +1,34 @@
 use Test::Most;
 use Valiant::HTML::FormBuilder;
 use DateTime;
+use Valiant::HTML::Util::Collection;
 
 {
+  package Local::Profile;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has address => (is=>'ro');
+  has zip => (is=>'ro');
+
+  validates address => (
+    length => {
+      maximum => 40,
+      minimum => 3,
+    },
+  );
+
+  package Local::CreditCard;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has ['number', 'expiration'] => (is=>'ro', required=>1);
+
+  validates number => (presence=>1, length=>[13,20] );
+  validates expiration => (presence=>1, date=>'is_future' ); 
+
   package Local::Person;
 
   use Moo;
@@ -15,6 +41,8 @@ use DateTime;
   has type => (is=>'rw');
   has birthday => (is=>'rw');
   has due => (is=>'rw');
+  has profile => (is=>'ro');
+  has credit_cards => (is=>'ro');
 
   validates ['first_name', 'last_name'] => (
     length => {
@@ -22,6 +50,9 @@ use DateTime;
       minimum => 3,
     }
   );
+
+  validates profile => (object=>1); 
+  validates credit_cards => (array=>[object=>1]); 
 
   validates_with sub {
     my ($self, $opts) = @_;
@@ -39,6 +70,12 @@ ok my $person = Local::Person->new(
   last_name=>'Napiorkowski',
   birthday=>DateTime->new(year=>1969, month=>2, day=>13),
   due=>DateTime->new(year=>1969, month=>2, day=>13, hour=>10, minute=>45, second=>11, nanosecond=> 500000000, time_zone  => 'UTC'),
+  profile=>Local::Profile->new(zip=>'78621', address=>'ab'),
+  credit_cards=>[
+    Local::CreditCard->new(number=>'234234223444', expiration=>DateTime->now->add(months=>11)),
+    Local::CreditCard->new(number=>'342342342322', expiration=>DateTime->now->add(months=>11)),
+    Local::CreditCard->new(number=>'111112222233', expiration=>DateTime->now->subtract(months=>11)),
+  ],
   type=>'admin');
 
 ok $person->invalid; # runs validation and verify that the model has errors.
@@ -149,6 +186,25 @@ is $fb->legend("Person"), '<legend>Person</legend>';
 is $fb->legend("Persons", {class=>'foo'}), '<legend class="foo">Persons</legend>';
 is $fb->legend(sub { shift . " Info"}), '<legend>New Person Info</legend>';
 is $fb->legend({class=>'foo'}, sub {"Person"}), '<legend class="foo">Person</legend>';
+
+is $fb->fields_for('profile', sub {
+  my $fb_profile = shift;
+  return  $fb_profile->input('address'),
+          $fb_profile->errors_for('address'),
+          $fb_profile->input('zip');
+
+}), '<input id="person_profile_address" name="person.profile.address" type="text" value="ab"/><div>Address is too short (minimum is 3 characters)</div><input id="person_profile_zip" name="person.profile.zip" type="text" value="78621"/>';
+
+is $fb->fields_for('credit_cards', sub {
+  my $fb_cc = shift;
+  return  $fb_cc->input('number'),
+          $fb_cc->date_field('expiration'),
+          $fb_cc->errors_for('expiration');
+}, sub {
+  my $fb_finally = shift;
+  return  $fb_finally->button('add', +{value=>1}, 'Add a New Credit Card');
+}), '<input id="person_credit_cards_0_number" name="person.credit_cards[0].number" type="text" value="234234223444"/><input id="person_credit_cards_0_expiration" name="person.credit_cards[0].expiration" type="date" value="2023-01-23"/><input id="person_credit_cards_1_number" name="person.credit_cards[1].number" type="text" value="342342342322"/><input id="person_credit_cards_1_expiration" name="person.credit_cards[1].expiration" type="date" value="2023-01-23"/><input id="person_credit_cards_2_number" name="person.credit_cards[2].number" type="text" value="111112222233"/><input id="person_credit_cards_2_expiration" name="person.credit_cards[2].expiration" type="date" value="2021-03-23"/><div>Expiration chosen date can&#39;t be earlier than 2022-02-23</div><button id="person_credit_cards_3_add" name="person.credit_cards[3].add" type="submit" value="1">Add a New Credit Card</button>';
+
 
 done_testing;
 

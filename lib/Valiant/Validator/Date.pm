@@ -40,7 +40,6 @@ sub validate_each {
   }
 
   my $dt = $self->_strp->parse_datetime($value);
-
   unless($dt) {
     $record->errors->add($attribute, $self->invalid_date_msg, $opts);
     return;
@@ -49,6 +48,7 @@ sub validate_each {
   if($self->has_min) {
     my $min = $self->_cb_value($record, $self->min);
     my $min_dt_obj = $self->parse_if_needed($min);
+
     $record->errors->add($attribute, $self->below_min_msg, +{%$opts, min=>$min_dt_obj->strftime($self->pattern)})
       unless $dt > $min_dt_obj;
   }
