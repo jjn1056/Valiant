@@ -528,12 +528,13 @@ sub select {
   my $block = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
-  
+  my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1; 
+
   my @selected = ();
   my $name = '';
   if(ref $attribute_proto) {
     $options->{multiple} = 1 unless exists($options->{multiple});
-    $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
+    $options->{include_hidden} = 0; # Avoid adding two
     my ($bridge, $value_method) = %$attribute_proto;
     my $collection = $model->$bridge;
     $collection = Valiant::HTML::Util::Collection->new(map { $_->can('to_model') ? $_->to_model : $_ } @$collection)
@@ -553,8 +554,8 @@ sub select {
   my $options_tags = '';
   if(!$block) {
     my $option_tags_proto = @_ ? shift : ();
-    my @selected = ( @{$options->{selected}||[]}, @selected);
-    my @disabled = ( @{$options->{disabled}||[]});
+    my @disabled = ( @{delete($options->{disabled})||[]});
+    @selected = @{ delete($options->{selected})||[]} if exists($options->{selected});
 
     $options_tags = Valiant::HTML::FormTags::options_for_select($option_tags_proto, +{
       selected => \@selected,
@@ -565,7 +566,7 @@ sub select {
   }
 
   my $select_tag = Valiant::HTML::FormTags::select_tag($name, $options_tags, $options);
-  if(ref($attribute_proto)) {
+  if($include_hidden && ref($attribute_proto)) {
     my ($bridge, $value_method) = %$attribute_proto;
     $select_tag = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'})->concat($select_tag);    
   }

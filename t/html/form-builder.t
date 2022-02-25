@@ -246,6 +246,8 @@ is $fb->fields_for('credit_cards', sub {
 
 is $fb->select('state_id', [1,2,3], +{class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option selected value="1">1</option><option value="2">2</option><option value="3">3</option></select>';
 
+is $fb->select('state_id', [1,2,3], +{selected=>[3], disabled=>[1],class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option disabled value="1">1</option><option value="2">2</option><option selected value="3">3</option></select>';
+
 is $fb->select('state_id', [map { [$_->name, $_->id] } $states_collection->all], +{include_blank=>1} ), '<select id="person_state_id" name="person.state_id"><option label=" " value=""></option><option selected value="1">TX</option><option value="2">NY</option><option value="3">CA</option></select>';
 
 is $fb->select('state_id', sub {
