@@ -2,8 +2,23 @@ use Test::Most;
 use Valiant::HTML::FormBuilder;
 use DateTime;
 use Valiant::HTML::Util::Collection;
+use Valiant::HTML::FormTags 'option_tag';
 
 {
+  package Local::Role;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has ['id', 'label'] => (is=>'ro', required=>1);
+
+  package Local::State;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has ['id', 'name'] => (is=>'ro', required=>1);
+
   package Local::Profile;
 
   use Moo;
@@ -43,6 +58,8 @@ use Valiant::HTML::Util::Collection;
   has due => (is=>'rw');
   has profile => (is=>'ro');
   has credit_cards => (is=>'ro');
+  has state_id =>(is=>'ro');
+  has roles => (is=>'ro');
 
   validates ['first_name', 'last_name'] => (
     length => {
@@ -53,6 +70,7 @@ use Valiant::HTML::Util::Collection;
 
   validates profile => (object=>1); 
   validates credit_cards => (array=>[object=>1]); 
+  validates roles => (array=>[object=>1]); 
 
   validates_with sub {
     my ($self, $opts) = @_;
@@ -65,6 +83,26 @@ use Valiant::HTML::Util::Collection;
   };
 }
 
+ok my ($user, $admin, $guest) = map {
+  Local::Role->new($_);
+} (
+  {id=>1, label=>'user'},
+  {id=>2, label=>'admin'},
+  {id=>3, label=>'guest'},
+);
+
+ok my $roles_collection = Valiant::HTML::Util::Collection->new($user, $admin, $guest);
+
+ok my ($tx, $ny, $ca) = map {
+  Local::State->new($_);
+} (
+  {id=>1, name=>'TX'},
+  {id=>2, name=>'NY'},
+  {id=>3, name=>'CA'},
+);
+
+ok my $states_collection = Valiant::HTML::Util::Collection->new($tx, $ny, $ca);
+
 ok my $person = Local::Person->new(
   first_name=>'J', 
   last_name=>'Napiorkowski',
@@ -76,6 +114,8 @@ ok my $person = Local::Person->new(
     Local::CreditCard->new(number=>'342342342322', expiration=>DateTime->now->add(months=>11)),
     Local::CreditCard->new(number=>'111112222233', expiration=>DateTime->now->subtract(months=>11)),
   ],
+  state_id => 1,
+  roles=>[$user,$admin],
   type=>'admin');
 
 ok $person->invalid; # runs validation and verify that the model has errors.
@@ -159,7 +199,6 @@ is $fb->radio_button('type', 'guest'), '<input id="person_type_guest" name="pers
 is $fb->radio_button('type', 'guest', {class=>'foo', errors_classes=>'err'}), '<input class="foo err" id="person_type_guest" name="person.type" type="radio" value="guest"/>';
 is $fb->radio_button('type', 'guest', {checked=>1}), '<input checked id="person_type_guest" name="person.type" type="radio" value="guest"/>';
 
-## DateTime->new(year=>1969, month=>2, day=>13),
 is $fb->date_field('birthday'), '<input id="person_birthday" name="person.birthday" type="date" value="1969-02-13"/>';
 is $fb->date_field('birthday', {class=>'foo', errors_classes=>'err'}), '<input class="foo err" id="person_birthday" name="person.birthday" type="date" value="1969-02-13"/>';
 is $fb->date_field('birthday', +{
@@ -203,12 +242,57 @@ is $fb->fields_for('credit_cards', sub {
 }, sub {
   my $fb_finally = shift;
   return  $fb_finally->button('add', +{value=>1}, 'Add a New Credit Card');
-}), '<input id="person_credit_cards_0_number" name="person.credit_cards[0].number" type="text" value="234234223444"/><input id="person_credit_cards_0_expiration" name="person.credit_cards[0].expiration" type="date" value="2023-01-23"/><input id="person_credit_cards_1_number" name="person.credit_cards[1].number" type="text" value="342342342322"/><input id="person_credit_cards_1_expiration" name="person.credit_cards[1].expiration" type="date" value="2023-01-23"/><input id="person_credit_cards_2_number" name="person.credit_cards[2].number" type="text" value="111112222233"/><input id="person_credit_cards_2_expiration" name="person.credit_cards[2].expiration" type="date" value="2021-03-23"/><div>Expiration chosen date can&#39;t be earlier than 2022-02-23</div><button id="person_credit_cards_3_add" name="person.credit_cards[3].add" type="submit" value="1">Add a New Credit Card</button>';
+}), '<input id="person_credit_cards_0_number" name="person.credit_cards[0].number" type="text" value="234234223444"/><input id="person_credit_cards_0_expiration" name="person.credit_cards[0].expiration" type="date" value="'.$person->credit_cards->[0]->expiration->ymd.'"/><input id="person_credit_cards_1_number" name="person.credit_cards[1].number" type="text" value="342342342322"/><input id="person_credit_cards_1_expiration" name="person.credit_cards[1].expiration" type="date" value="'.$person->credit_cards->[1]->expiration->ymd.'"/><input id="person_credit_cards_2_number" name="person.credit_cards[2].number" type="text" value="111112222233"/><input id="person_credit_cards_2_expiration" name="person.credit_cards[2].expiration" type="date" value="'.$person->credit_cards->[2]->expiration->ymd.'"/><div>Expiration chosen date can&#39;t be earlier than '.DateTime->now->ymd.'</div><button id="person_credit_cards_3_add" name="person.credit_cards[3].add" type="submit" value="1">Add a New Credit Card</button>';
+
+is $fb->select('state_id', [1,2,3], +{class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option selected value="1">1</option><option value="2">2</option><option value="3">3</option></select>';
+
+is $fb->select('state_id', [map { [$_->name, $_->id] } $states_collection->all], +{include_blank=>1} ), '<select id="person_state_id" name="person.state_id"><option label=" " value=""></option><option selected value="1">TX</option><option value="2">NY</option><option value="3">CA</option></select>';
+
+is $fb->select('state_id', sub {
+  my ($model, $attribute, $value) = @_;
+  return map {
+    my $selected = $_->id eq $value ? 1:0;
+    option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
+  } $states_collection->all;
+}), '<select id="person_state_id" name="person.state_id"><option class="foo" selected value="1">TX</option><option class="foo" value="2">NY</option><option class="foo" value="3">CA</option></select>';
+
+is $fb->select({roles => 'id'}, [map { [$_->label, $_->id] } $roles_collection->all]), 
+  '<input id="person_roles_id_hidden" name="person.roles[0]._nop" type="hidden" value="1"/>'.
+  '<select id="person_roles_id" multiple name="person.roles[].id">'.
+    '<option selected value="1">user</option>'.
+    '<option selected value="2">admin</option>'.
+    '<option value="3">guest</option>'.
+  '</select>';
+
 
 
 done_testing;
 
 __END__
+
+
+  ok my $body_parameters = [
+    'person.roles[0]._nop' => '1',
+    'person.roles[].id' => '',
+    'person.roles[].id' => '1',
+    'person.roles[].id' => '2',
+  ];
+
+  
+<select id="person_roles_id" multiple name="person.roles[].id">
+<option selected value="1">user</option>
+<option selected value="2">admin</option>
+<option value="3">guest</option>
+</select>
+
+    $fb->select('state', [1,2,3], +{class=>'foo'}),
+    "\n..\n",
+
+    $fb->select('state', +{class=>'foo'}, sub {
+      my ($model, $attribute) = @_;
+      return "...";
+    }),
+
 
 use Valiant::HTML::Form 'form_for';
 use Valiant::HTML::SafeString 'raw';

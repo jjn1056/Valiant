@@ -524,15 +524,36 @@ sub fields_for_nested_model {
 }
 
 sub select {
-  my ($self, $attribute) = (shift, shift);
+  my ($self, $attribute_proto) = (shift, shift);
   my $block = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
-  my $value = $self->tag_value_for_attribute($attribute);  # TODO handle multiple
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+  
+  my @selected = ();
+  my $name = '';
+  if(ref $attribute_proto) {
+    $options->{multiple} = 1 unless exists($options->{multiple});
+    $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
+    my ($bridge, $value_method) = %$attribute_proto;
+    my $collection = $model->$bridge;
+    $collection = Valiant::HTML::Util::Collection->new(map { $_->can('to_model') ? $_->to_model : $_ } @$collection)
+      if (ref($collection)||'') eq 'ARRAY';
+
+    while(my $item = $collection->next) {
+      push @selected, $item->$value_method;
+    }
+    $name = $self->tag_name_for_attribute($bridge, +{multiple=>1}) . ".$value_method";
+    $options->{id} = $self->tag_id_for_attribute($bridge) . "_$value_method" unless exists $options->{id};
+  } else {
+    @selected = ($self->tag_value_for_attribute($attribute_proto));
+    $name = $self->tag_name_for_attribute($attribute_proto);
+    $options->{id} = $self->tag_id_for_attribute($attribute_proto);
+  }
 
   my $options_tags = '';
   if(!$block) {
     my $option_tags_proto = @_ ? shift : ();
-    my @selected = ( @{$options->{selected}||[]}, $value);
+    my @selected = ( @{$options->{selected}||[]}, @selected);
     my @disabled = ( @{$options->{disabled}||[]});
 
     $options_tags = Valiant::HTML::FormTags::options_for_select($option_tags_proto, +{
@@ -540,13 +561,15 @@ sub select {
       disabled => \@disabled,
     });
   } else {
-    $options_tags = $block->($self->model, $attribute);
+    $options_tags = Valiant::HTML::FormTags::capture($block, $self->model, $attribute_proto, @selected);
   }
 
-  my $name = $self->tag_name_for_attribute($attribute);
-  $options->{id} = $self->tag_id_for_attribute($attribute);
-
-  return Valiant::HTML::FormTags::select_tag($name, $options_tags, $options);
+  my $select_tag = Valiant::HTML::FormTags::select_tag($name, $options_tags, $options);
+  if(ref($attribute_proto)) {
+    my ($bridge, $value_method) = %$attribute_proto;
+    $select_tag = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'})->concat($select_tag);    
+  }
+  return $select_tag;
 }
 
 #collection_select(object, method, collection, value_method, text_method, options = {}, html_options = {})
@@ -1489,6 +1512,11 @@ Example of an attribute that refers to a nested collection object (and with a "f
     # <input id="person_credit_cards_2_expiration" name="person.credit_cards[2].expiration" type="date" value="2021-03-23"/>
     # <div>Expiration chosen date can&#39;t be earlier than 2022-02-23</div>
     # <button id="person_credit_cards_3_add" name="person.credit_cards[3].add" type="submit" value="1">Add a New Credit Card</button>
+
+=head2 select
+
+Since this is built on top if C<select_tag> \%options can be anything supported by that
+method.  See L<Valiant::HTML::FormTags/select_tag> for more.
 
 =head1 SEE ALSO
 

@@ -37,6 +37,8 @@ sub size { scalar @{$_[0]->{collection}} }
 
 sub reset { $_[0]->{pointer} = 0 }
 
+sub all { @{$_[0]->{collection}} }
+
 package Valiant::HTML::Util::Collection::Item;
 
 sub label { return shift->[0] }
