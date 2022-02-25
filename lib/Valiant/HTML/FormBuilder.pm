@@ -532,7 +532,7 @@ sub select {
 
   my @selected = ();
   my $name = '';
-  if(ref $attribute_proto) {
+  if( (ref($attribute_proto)||'') eq 'HASH') {
     $options->{multiple} = 1 unless exists($options->{multiple});
     $options->{include_hidden} = 0; # Avoid adding two
     my ($bridge, $value_method) = %$attribute_proto;
@@ -546,7 +546,13 @@ sub select {
     $name = $self->tag_name_for_attribute($bridge, +{multiple=>1}) . ".$value_method";
     $options->{id} = $self->tag_id_for_attribute($bridge) . "_$value_method" unless exists $options->{id};
   } else {
-    @selected = ($self->tag_value_for_attribute($attribute_proto));
+    my $tag_value_proto = $self->tag_value_for_attribute($attribute_proto);
+    if( (ref($tag_value_proto)||'') eq 'ARRAY') {
+      @selected = @$tag_value_proto;
+      $options->{multiple} = 1;
+    } else {
+      @selected = ($tag_value_proto);
+    }
     $name = $self->tag_name_for_attribute($attribute_proto);
     $options->{id} = $self->tag_id_for_attribute($attribute_proto);
   }
@@ -562,7 +568,7 @@ sub select {
       disabled => \@disabled,
     });
   } else {
-    $options_tags = Valiant::HTML::FormTags::capture($block, $self->model, $attribute_proto, @selected);
+    $options_tags = Valiant::HTML::FormTags::capture($block, $model, $attribute_proto, @selected);
   }
 
   my $select_tag = Valiant::HTML::FormTags::select_tag($name, $options_tags, $options);
@@ -579,13 +585,17 @@ sub collection_select {
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my ($value_method, $label_method) = (@_, 'value', 'label');
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
-
+  my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1; 
+  
   my (@selected, $name, $id) = @_;
   if(ref $method_proto) {
     $options->{multiple} = 1 unless exists($options->{multiple});
     $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
     my ($bridge, $value_method) = %$method_proto;
     my $collection = $model->$bridge;
+    $collection = Valiant::HTML::Util::Collection->new(map { $_->can('to_model') ? $_->to_model : $_ } @$collection)
+      if (ref($collection)||'') eq 'ARRAY';
+
     while(my $item = $collection->next) {
       push @selected, $item->$value_method;
     }
@@ -609,14 +619,20 @@ sub collection_select {
     $name = $self->tag_name_for_attribute($method_proto);
     $id = $self->tag_id_for_attribute($method_proto);
   }
-
+  
+  my @disabled = ( @{delete($options->{disabled})||[]});
+  @selected = @{ delete($options->{selected})||[]} if exists($options->{selected});
   my $select_tag = Valiant::HTML::FormTags::select_tag(
     $name,
-    Valiant::HTML::FormTags::options_from_collection_for_select($collection, $value_method, $label_method, \@selected),
+    Valiant::HTML::FormTags::options_from_collection_for_select($collection, $value_method, $label_method, +{
+      selected => \@selected,
+      disabled => \@disabled,
+    }),
     $options);
 
-  if(ref($method_proto)) {
-    #$select_tag = $self->hidden($name, '', +{id=>$options->{id}.'_hidden'})->concat($select_tag);    
+  if($include_hidden && ref($method_proto)) {
+    my ($bridge, $value_method) = %$method_proto;
+    $select_tag = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'})->concat($select_tag);    
   }
 
   return $select_tag;
@@ -645,8 +661,11 @@ sub collection_checkbox {
 
   my @checked_values = ();
   my $value_collection = $self->tag_value_for_attribute($attribute);
+  $value_collection = Valiant::HTML::Util::Collection->new(map { $_->can('to_model') ? $_->to_model : $_ } @$value_collection)
+    if (ref($value_collection)||'') eq 'ARRAY';
+
   while(my $value_model = $value_collection->next) {
-    push @checked_values, $value_model->$attribute_value_method unless $value_model->is_marked_for_deletion;
+    push @checked_values, $value_model->$attribute_value_method unless $value_model->can('is_marked_for_deletion') && $value_model->is_marked_for_deletion;
   }
 
   my @checkboxes = ();
@@ -1516,8 +1535,245 @@ Example of an attribute that refers to a nested collection object (and with a "f
 
 =head2 select
 
+    $fb->select($attribute_proto, \@options, \%options)
+    $fb->select($attribute_proto, \@options)
+    $fb->select($attribute_proto, \%options, \&template)
+    $fb->select($attribute_proto, \&template)
+
+Where C<$attribute_proto> is one of:
+
+    $attribute                # A scalar value which is an attribute on the underlying $model
+    { $attribute => $method } # A hashref composed of an $attribute on the underlying $model
+                              # which returns a sub model or a collection of sub models
+                              # and a $method to be called on the value of that sub model (
+                              # or on each item sub model if the $attribute is a collection).
+
+Used to create a C<select> tag group with option tags.  \@options can be anything that can be
+accepted by L<Valiant::HTML::FormTags/options_for_select>.  The value(s) of $attribute_proto
+are automatically marked as C<selected>.
+
 Since this is built on top if C<select_tag> \%options can be anything supported by that
-method.  See L<Valiant::HTML::FormTags/select_tag> for more.
+method.  See L<Valiant::HTML::FormTags/select_tag> for more.  In addition we have the following
+special handling for \%options:
+
+=over 4
+
+=item selected
+
+=item disabled
+
+Mark C\<option> tags as selected or disabled.   If you manual set selected then we ignore
+the value of $attribute (or @values when $attribute is a collection)
+
+=back
+
+Optionally you can provide a \&template which should return C<option> tags.  This coderef
+will recieve the $model, $attribute and an array of @selected values based on the $attribute.
+
+Examples:
+
+    $fb->select('state_id', [1,2,3], +{class=>'foo'} );
+    # <select class="foo" id="person_state_id" name="person.state_id">
+    #   <option selected value="1">1</option>
+    #   <option value="2">2</option>
+    #   <option value="3">3</option>
+    # </select>
+
+    $fb->select('state_id', [1,2,3], +{selected=>[3], disabled=>[1]} );
+    # <select id="person_state_id" name="person.state_id">
+    #   <option disabled value="1">1</option>
+    #   <option value="2">2</option>
+    #   <option selected value="3">3</option>
+    # </select>
+
+    $fb->select('state_id', [map { [$_->name, $_->id] } $states_collection->all], +{include_blank=>1} );
+    # <select id="person_state_id" name="person.state_id">
+    #   <option label=" " value=""></option>
+    #   <option selected value="1">TX</option>
+    #   <option value="2">NY</option>
+    #   <option value="3">CA</option>
+    # </select>
+
+    $fb->select('state_id', sub {
+      my ($model, $attribute, $value) = @_;
+      return map {
+        my $selected = $_->id eq $value ? 1:0;
+        option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
+      } $states_collection->all;
+    });
+    # <select id="person_state_id" name="person.state_id">
+    #   <option class="foo" selected value="1">TX</option>
+    #   <option class="foo" value="2">NY</option>
+    #   <option class="foo" value="3">CA</option>
+    # </select>
+
+Examples when $attribute is a collection:
+
+    $fb->select({roles => 'id'}, [map { [$_->label, $_->id] } $roles_collection->all]), 
+    # <input id="person_roles_id_hidden" name="person.roles[0]._nop" type="hidden" value="1"/>
+    # <select id="person_roles_id" multiple name="person.roles[].id">
+    #   <option selected value="1">user</option>
+    #   <option selected value="2">admin</option>
+    #   <option value="3">guest</option>
+    # </select>
+
+Please note when the $attribute is a collection we add a hidden field to cope with case when
+no items are selected, you'll need to write form processing code to mark and notice the
+C<_nop> field.
+
+=head2 collection_select
+
+    $fb->collection_select($attribute_proto, $collection, $value_method, $text_method, \%options);
+    $fb->collection_select($attribute_proto, $collection, $value_method, $text_method);
+    $fb->collection_select($attribute_proto, $collection);
+
+Where C<$attribute_proto> is one of:
+
+    $attribute                # A string which is an attribute on the underlying $model
+                              # that returns a scalar value.
+    { $attribute => $method } # A hashref composed of an $attribute on the underlying $model
+                              # which returns a sub model or a collection of sub models
+                              # and a $method to be called on the value of that sub model (
+                              # or on each item sub model if the $attribute is a collection).
+
+Similar to L</select> but works with a $collection instead of delineated options.  Its a type of
+shortcut to reduce boilerplate at the expense of some flexibility (if you need that you'll need
+to use L</select>).  Examples:
+
+    $fb->collection_select('state_id', $states_collection, id=>'name');
+    # <select id="person.state_id" name="person.state_id">
+    #   <option selected value="1">TX</option>
+    #   <option value="2">NY</option>
+    #   <option value="3">CA</option>
+    # </select>
+
+    $fb->collection_select('state_id', $states_collection, id=>'name', {class=>'foo', include_blank=>1});
+    # <select class="foo" id="person.state_id" name="person.state_id">
+    #   <option label=" " value=""></option>
+    #   <option selected value="1">TX</option>
+    #   <option value="2">NY</option>
+    #   <option value="3">CA</option>
+    # </select>
+
+    $fb->collection_select('state_id', $states_collection, id=>'name', {selected=>[3], disabled=>[1]});
+    # <select id="person.state_id" name="person.state_id">
+    #   <option disabled value="1">TX</option>
+    #   <option value="2">NY</option>
+    #   <option selected value="3">CA</option>
+    # </select>
+
+    is $fb->collection_select({roles => 'id'}, $roles_collection, id=>'label');
+    # <input id="person_roles_id_hidden" name="person.roles[0]._nop" type="hidden" value="1"/>
+    # <select id="person_roles_id" multiple name="person.roles[].id">
+    #   <option selected value="1">user</option>
+    #   <option selected value="2">admin</option>
+    #   <option value="3">guest</option>
+    # </select>
+
+Please note when the $attribute is a collection value we add a hidden field to allow you to send a signal
+to the form processor that this namespace contains no records.   Otherwise the form will just send 
+nothing.  If you have a custom way to handle this you can disable the behavior if you wish by explicitly
+setting include_hidden=>0
+
+=head2 collection_checkbox
+
+    $fb->collection_checkbox({$attribute=>$value_method}, $collection, $value_method, $text_method, \%options);
+    $fb->collection_checkbox({$attribute=>$value_method}, $collection, $value_method, $text_method);
+    $fb->collection_checkbox({$attribute=>$value_method}, $collection);
+    $fb->collection_checkbox({$attribute=>$value_method}, $collection, $value_method, $text_method, \%options, \&template);
+    $fb->collection_checkbox({$attribute=>$value_method}, $collection, $value_method, $text_method, \&template);
+    $fb->collection_checkbox({$attribute=>$value_method}, $collection, \&template);
+
+Create a checkbox group for a collection attribute
+
+Examples:
+
+Where the $attribute C<roles> refers to a collection of sub models, each of which provides a method C<id>
+which is used to fetch a matching value and $roles_collection refers to the full set of available roles
+which can be added or removed from the parent model.
+
+    $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'); 
+    # <input id="person_roles_0__nop" name="person.roles[0]._nop" type="hidden" value="1"/>
+    # <label for="person_roles_1_id">user</label>
+    # <input checked id="person_roles_1_id" name="person.roles[1].id" type="checkbox" value="1"/>
+    # <label for="person_roles_2_id">admin</label>
+    # <input checked id="person_roles_2_id" name="person.roles[2].id" type="checkbox" value="2"/>
+    # <label for="person_roles_3_id">guest</label>
+    # <input id="person_roles_3_id" name="person.roles[3].id" type="checkbox" value="3"/>
+
+Please note when the $attribute is a collection value we add a hidden field to allow you to send a signal
+to the form processor that this namespace contains no records.   Otherwise the form will just send 
+nothing.  If you have a custom way to handle this you can disable the behavior if you wish by explicitly
+setting include_hidden=>0
+
+If you have special needs for formatting or layout you can override the default template with a coderef
+that will receive a special type of formbuilder localized to the current value (an instance of
+L<Valiant::HTML::FormBuilder::Checkbox>):
+
+    $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', sub {
+      my $fb_roles = shift;
+      return  $fb_roles->checkbox({class=>'form-check-input'}),
+              $fb_roles->label({class=>'form-check-label'});
+    });
+
+    # <input id="person_roles_4__nop" name="person.roles[4]._nop" type="hidden" value="1"/>
+    # <input checked class="form-check-input" id="person_roles_5_id" name="person.roles[5].id" type="checkbox" value="1"/>
+    # <label class="form-check-label" for="person_roles_5_id">user</label>
+    # <input checked class="form-check-input" id="person_roles_6_id" name="person.roles[6].id" type="checkbox" value="2"/>
+    # <label class="form-check-label" for="person_roles_6_id">admin</label>
+    # <input class="form-check-input" id="person_roles_7_id" name="person.roles[7].id" type="checkbox" value="3"/>
+    # <label class="form-check-label" for="person_roles_7_id">guest</label>
+
+In addition to overriding C<checkbox> and C<label> to already contain value and state (if its checked or
+not) information.   This special builder contains some additional methods of possible use, you should see
+the documentation of L<Valiant::HTML::FormBuilder::Checkbox> for more.
+
+=head2 collection_radio_buttons
+
+    $fb->collection_radio_buttons($attribute, $collection, $value_method, $text_method, \%options);
+    $fb->collection_radio_buttons($attribute, $collection, $value_method, $text_method);
+    $fb->collection_radio_buttons($attribute, $collection);
+    $fb->collection_radio_buttons($attribute, $collection, $value_method, $text_method, \%options, \&template);
+    $fb->collection_radio_buttons($attribute, $collection, $value_method, $text_method, \&template);
+    $fb->collection_radio_buttons($attribute, $collection, \&template);
+
+A collection of radio buttons.  Similar to L<\collection_checkbox> but used one only one value is
+permitted.  Example:
+
+    $fb->collection_radio_buttons('state_id', $states_collection, id=>'name');
+    # <input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/>
+    # <label for="person_state_id_1">TX</label>
+    # <input checked id="person_state_id_1_1" name="person.state_id" type="radio" value="1"/>
+    # <label for="person_state_id_2">NY</label>
+    # <input id="person_state_id_2_2" name="person.state_id" type="radio" value="2"/>
+    # <label for="person_state_id_3">CA</label>'.
+    # <input id="person_state_id_3_3" name="person.state_id" type="radio" value="3"/>
+
+Please note when the $attribute is a collection value we add a hidden field to allow you to send a signal
+to the form processor that this namespace contains no records.   Otherwise the form will just send 
+nothing.  If you have a custom way to handle this you can disable the behavior if you wish by explicitly
+setting include_hidden=>0
+
+If you have special needs for formatting or layout you can override the default template with a coderef
+that will receive a special type of formbuilder localized to the current value (an instance of
+L<Valiant::HTML::FormBuilder::RadioButton>):
+
+    $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', sub {
+      my $fb_states = shift;
+      return  $fb_states->radio_button({class=>'form-check-input'}),
+              $fb_states->label({class=>'form-check-label'});  
+    });
+    # <input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/>
+    # <input checked class="form-check-input" id="person_state_id_1_1" name="person.state_id" type="radio" value="1"/>
+    # <label class="form-check-label" for="person_state_id_1">TX</label>
+    # <input class="form-check-input" id="person_state_id_2_2" name="person.state_id" type="radio" value="2"/>
+    # <label class="form-check-label" for="person_state_id_2">NY</label>
+    # <input class="form-check-input" id="person_state_id_3_3" name="person.state_id" type="radio" value="3"/>
+    # <label class="form-check-label" for="person_state_id_3">CA</label>
+
+In addition to overriding C<radio_button> and C<label> to already contain value and state (if its checked or
+not) information.   This special builder contains some additional methods of possible use, you should see
+the documentation of L<Valiant::HTML::FormBuilder::RadioButton> for more.
 
 =head1 SEE ALSO
 
@@ -1532,4 +1788,3 @@ See L<Valiant>
 See L<Valiant>
 
 =cut
-

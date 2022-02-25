@@ -215,7 +215,7 @@ sub select_tag {
   my $select_tag = content_tag('select', $option_tags, $attrs);
 
   if($attrs->{multiple} && $include_hidden) {
-    $select_tag = hidden_tag($html_name, '', +{id=>$attrs->{id}.'_hidden'})->concat($select_tag);    
+    $select_tag = hidden_tag($html_name, '', +{id=>$attrs->{id}.'_hidden', value=>1})->concat($select_tag);    
   }
   return $select_tag;
 }

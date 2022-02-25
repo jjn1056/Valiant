@@ -255,7 +255,13 @@ needed particularly with one - many style relationships so that we find the righ
 model to update.
 
 B<NOTE>: This method requirement is subject to change.  It feels a bit too tightly bound to the idea of
-and ORM and to L<DBIx::Class> in particular.  
+and ORM and to L<DBIx::Class> in particular. 
+
+=head2 is_marked_for_deletion
+
+Optional, but should be supported if your model supports a storage backend.  A boolean that indicates if
+the model is currently marked for deletion upon successful validation.   Used for things like radio
+and checkbox collections when the state should be 'unchecked' even if the model is still in storage.
 
 =head1 EXPORTABLE FUNCTIONS
 
