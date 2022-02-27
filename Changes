@@ -1,6 +1,6 @@
 The following logs changes for the CPAN distribution Valiant
 
-0.001012 2022 TBA
+0.001012 2022 February 27
           - Added packages under Valiant::HTML for HTML form generation and templating.
           - Lots of changes and bugfixs to how nested models and collections work for
             the DBIC integration.  Some changes such as we now automatically add the 

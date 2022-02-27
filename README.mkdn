@@ -1,6 +1,6 @@
 # NAME
 
-Valiant - Ruby on Rails-like validation framework.
+Valiant - Object validation inspired by Ruby on Rails and more.
 
 <div>
     <a href="https://github.com/jjn1056/valiant/actions"><img src="https://github.com/jjn1056/valiant/workflows/linux/badge.svg"></a>
