@@ -1184,6 +1184,10 @@ Or just add to your base Result class
 
 =head1 DESCRIPTION
 
+Glue L<Valiant> validations into your DBIC result sources.   This package just has some basic
+API level docs, you should see L<DBIx::Class::Valiant> for a somewhat more detailed documentation
+and examples.
+
 =head1 CONTEXTS
 
 When doing an insert / create on a result, we automatically add a 'create' context which you

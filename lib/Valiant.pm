@@ -7,7 +7,7 @@ $VERSION = eval $VERSION;
 
 =head1 NAME
 
-Valiant - Ruby on Rails-like validation framework.
+Valiant - Object validation inspired by Ruby on Rails and more.
 
 =begin html
 

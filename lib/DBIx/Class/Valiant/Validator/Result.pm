@@ -95,6 +95,9 @@ DBIx::Class::Valiant::Validator::Result - Verify a DBIC related result
 Trigger validations on a related result and aggregates any errors as nested errors
 on the parent class.
 
+B<NOTE>: This gets added automatically for you if you setup C<accepts_nested> on the parent
+object.  So you shouldn't really ever need to use this code directly.  
+
 =head1 ATTRIBUTES
 
 This validator supports the following attributes:

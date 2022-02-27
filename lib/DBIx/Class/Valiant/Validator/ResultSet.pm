@@ -94,6 +94,9 @@ Validations on related resultsets. Used to apply constraints on the resultset as
 (such as total number of rows) or to trigger running validations on any related row objects.
 Any errors from related resultsets will be added as sub errors on the parent result.
 
+B<NOTE>: This gets added automatically for you if you setup C<accepts_nested> on the parent
+object.  So you shouldn't really ever need to use this code directly.  
+
 =head1 ATTRIBUTES
 
 This validator supports the following attributes:

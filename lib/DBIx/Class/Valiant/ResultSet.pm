@@ -162,6 +162,11 @@ which presets the enable or disable value.
     ->skip_validate
     ->create(\%user_args);
 
+=head2 build
+
+This is just a shortcut for "->new_result(+{})" and exists mostly to provide expected API
+for L<Valiant::HTML::FormBuilder>.
+
 =head1 AUTHOR
  
 John Napiorkowski L<email:jjnapiork@cpan.org>
