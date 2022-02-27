@@ -91,12 +91,21 @@ sub accept_nested_for {
   );
 
   my @existing = @{$class->_nested};
+  my %m2m_names = map { $_=>1 } keys %{ $class->_m2m_metadata ||+{} };
+
   my $changed = 0;
   while(my $attribute = shift) {
     my $config = (ref($_[0])||'') eq 'HASH' ? shift : +{};    
     push @existing, $attribute;
     push @existing, +{ %default_config, %$config };
     $changed = 1;
+
+    ## Handed m2m, ugg
+    if($m2m_names{$attribute}) {
+      # treat it like a set
+      $class->validates($attribute => (result_set=>+{validations=>1} ));
+      next;
+    }
 
     ## Add validation
     my $rel_data = $class->relationship_info($attribute);
@@ -1252,6 +1261,12 @@ deleted and a new one inserted.  Default is false.
 
 Generally we only try to find a matching row in the DB if a primary key is given.   If you set 
 this to true then we also try to match using and unique keys establish for the related row.
+
+=back
+
+B<NOTE> Recursion warning!  You cannot currently C<accept_nested_for> for a relationship
+whose target result source is setting C<accept_nested_for> into yourself.   This is probably
+fixable, patches and use cases welcomed!
 
 =head1 METHODS
 

@@ -23,10 +23,11 @@ use Test::DBIx::Class
       value => 'test',
       one => { value => 'hello'},
     }), 'created fixture';
-  
+ 
   ok $one->valid;
   ok $one->in_storage;
   ok $one->one->in_storage;
+
 
   # do a good update
   $one->update({
@@ -311,10 +312,9 @@ use Test::DBIx::Class
 # Lets do one or two reverse to stress belongs to.  Here's
 # a bunch that shoud all always pass.
 #
-
 {
   my $might = Schema
-    ->resultset('Might')
+    ->resultset('Might3')
     ->create({
       value => 'might01',
       one => {

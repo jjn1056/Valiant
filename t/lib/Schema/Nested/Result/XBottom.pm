@@ -24,7 +24,7 @@ __PACKAGE__->has_many(
   { 'foreign.bottom_id' => 'self.bottom_id' },
 );
 
-__PACKAGE__->validates( children => ( set_size => {min=>3}, result_set => +{ validations=>1 } ));
+__PACKAGE__->validates( children => ( set_size => {min=>3} ));
 __PACKAGE__->validates( bottom_value => (presence => 1, length => [4,48] ));
 __PACKAGE__->validates_with(sub {
     my ($self, $opts) = @_;

@@ -1,4 +1,4 @@
-package Schema::Nested::Result::Might;
+package Schema::Nested::Result::Might3;
 
 use base 'Schema::Result';
 
@@ -18,11 +18,12 @@ __PACKAGE__->add_unique_constraint(['value']);
 
 __PACKAGE__->belongs_to(
   one =>
-  'Schema::Nested::Result::One',
+  'Schema::Nested::Result::One3',
   { 'foreign.one_id' => 'self.one_id' }
 );
 
-#__PACKAGE__->accept_nested_for('one', {update_only=>1});
+__PACKAGE__->accept_nested_for('one', {update_only=>1});
 #__PACKAGE__->validates(one => ( result=>+{validations=>1} ));
 
 1;
+

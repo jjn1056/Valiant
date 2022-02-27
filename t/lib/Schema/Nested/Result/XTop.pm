@@ -19,7 +19,7 @@ __PACKAGE__->has_one(
 
 
 __PACKAGE__->validates( top_value => ( presence => 1, length => [4,48] ));
-__PACKAGE__->validates( middle => ( result => +{ validations => 1} ));
+#__PACKAGE__->validates( middle => ( result => +{ validations => 1} ));
 __PACKAGE__->accept_nested_for( middle => +{ update_only => 1 } );
 
 1;

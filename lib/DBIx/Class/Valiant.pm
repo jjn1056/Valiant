@@ -620,6 +620,10 @@ Then you can do an update:
 
 As before if there's a valiation issue the update won't happen.
 
+B<NOTE> Recursion warning!  You cannot currently C<accept_nested_for> for a relationship
+whose target result source is setting C<accept_nested_for> into yourself.   This is probably
+fixable, patches and use cases welcomed!
+
 =head2 Deleting
 
 If a nested relationship permits deleting (via the 'allow_destroy' flag) you can mark a row for deletion

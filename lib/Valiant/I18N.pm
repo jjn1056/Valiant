@@ -67,11 +67,11 @@ sub _module_path {
 sub _locale_path_from_module {
   my $class = shift;
   my $module_path = _module_path($class);
-  debug 2, "Found a path '$module_path' for class '$class'";
+  debug 2, "Found a path '@{[ $module_path||'NotFound' ]}' for class '$class'";
   my ($vol, $dir, $file) = File::Spec->splitpath($module_path);
   #my $locale_path = File::Spec->catfile($dir, 'locale','*.*');
   my $locale_path = File::Spec->catpath($vol, $dir, File::Spec->catfile('locale', '*.*'));
-  debug 2, "module path '$module_path' resolves to path '$locale_path' with vol:$vol, dir:$dir and file:$file";
+  debug 2, "module path '@{[ $module_path||'NotFound' ]}' resolves to path '$locale_path' with vol:$vol, dir:$dir and file:$file";
   return $locale_path;
 }
 
