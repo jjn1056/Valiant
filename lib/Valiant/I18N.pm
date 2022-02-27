@@ -95,7 +95,7 @@ sub translate {
   my ($self, $key, %args) = @_;
 
   my @defaults = @{ delete($args{default})||[] };
-  my $scope = delete($args{scope})||''; 
+  my $scope = delete($args{scope})||'';
   my $count = $args{count};
 
   # TODO work around 0 count bug in Data::Localize until I can get a fix in
