@@ -11,14 +11,15 @@ jobs:
     strategy:
       matrix:
         os: ['windows-latest']
+        perl: [ 'latest' ]
     runs-on: ${{ matrix.os }}
-    name: Perl  on ${{ matrix.os }}i
+    name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up perl
         uses: shogo82148/actions-setup-perl@v1
         with:
-          perl-version: 'latest'
+          perl-version: ${{ matrix.perl }}
           distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
           install-modules-with: cpanm
           install-modules-args: --with-develop --with-configure
