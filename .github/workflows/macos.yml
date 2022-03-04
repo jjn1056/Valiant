@@ -11,13 +11,14 @@ jobs:
     strategy:
       matrix:
         os: ['macOS-latest']
+        perl: [ '5.10', '5.12', '5.14', '5.14', '5.16', '5.18', '5.20', '5.22', '5.24', '5.26', '5.28', '5.30', '5.32', 'latest' ]
     runs-on: ${{ matrix.os }}
-    name: Perl on ${{ matrix.os }}i
+    name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - uses: shogo82148/actions-setup-perl@v1
         with:
-          perl-version: '5.34'
+          perl-version: ${{ matrix.perl }}
           install-modules-with: cpanm
           install-modules-args: --with-develop --with-configure
       - name: perl -V
