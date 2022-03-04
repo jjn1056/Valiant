@@ -18,7 +18,7 @@ jobs:
       - name: Set up perl
         uses: shogo82148/actions-setup-perl@v1
         with:
-          perl-version: '5.34'
+          perl-version: 'latest'
           distribution: ${{ ( startsWith( matrix.runner, 'windows-' ) && 'strawberry' ) || 'default' }}
           install-modules-with: cpanm
           install-modules-args: --with-develop --with-configure
