@@ -43,6 +43,6 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         run: |
-          PERL5OPT=-MDevel::Cover=+ignore,^t,prove$  prove -j9 -lr t
+          PERL5OPT=-MDevel::Cover=+ignore,^t,prove$  prove -lr t
           cover -report codecovbash
           curl -s https://codecov.io/bash | bash
