@@ -168,6 +168,7 @@ is $fb->input('first_name'), '<input id="person_first_name" name="person.first_n
 is $fb->input('first_name', {class=>'foo'}), '<input class="foo" id="person_first_name" name="person.first_name" type="text" value="J"/>';
 is $fb->input('first_name', {errors_classes=>'error'}), '<input class="error" id="person_first_name" name="person.first_name" type="text" value="J"/>';
 is $fb->input('first_name', {class=>'foo', errors_classes=>'error'}), '<input class="foo error" id="person_first_name" name="person.first_name" type="text" value="J"/>';
+is $fb->input('first_name', {class=>'foo', errors_attrs=>{ class=>'error'}}), '<input class="foo error" id="person_first_name" name="person.first_name" type="text" value="J"/>';
 
 is $fb->password('first_name'), '<input id="person_first_name" name="person.first_name" type="password" value=""/>';
 is $fb->password('first_name', {class=>'foo'}), '<input class="foo" id="person_first_name" name="person.first_name" type="password" value=""/>';

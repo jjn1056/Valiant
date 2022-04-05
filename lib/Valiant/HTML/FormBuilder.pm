@@ -221,6 +221,26 @@ sub _default_errors_for_content {
   }
 }
 
+sub process_options {
+  my ($self, $attribute, $options) = @_;
+  if( ($self->attribute_has_errors($attribute)) && (my $errors_attrs = delete $options->{errors_attrs})) {
+    foreach my $key(keys %$errors_attrs) {
+      if(exists $options->{$key}) {
+        if( ($key eq 'data') || ($key eq 'aria') ) {
+          $options->{$key} = +{ %{$options->{$key}}, %{$errors_attrs->{$key}} };
+        } elsif($key eq 'class') {
+          $options->{$key} .= " $errors_attrs->{$key}";
+        } else {
+          $options->{$key} .= $errors_attrs->{$key};
+        }
+      } else {
+        $options->{$key} = $errors_attrs->{$key};
+      }
+    }
+  }
+  return $options;
+}
+
 # $fb->input($attribute, \%options)
 # $fb->input($attribute)
 
@@ -237,7 +257,7 @@ sub input {
   set_unless_defined(name => $options, $self->tag_name_for_attribute($attribute));
   $options->{value} = $self->tag_value_for_attribute($attribute) unless defined($options->{value});
 
-  return Valiant::HTML::FormTags::input_tag $attribute, $options;
+  return Valiant::HTML::FormTags::input_tag $attribute, $self->process_options($attribute, $options);
 }
 
 sub password {
@@ -264,7 +284,7 @@ sub text_area {
   return Valiant::HTML::FormTags::text_area_tag(
     $self->tag_name_for_attribute($attribute),
     $self->tag_value_for_attribute($attribute),
-    $options,
+    $self->process_options($attribute, $options),
   );
 }
 
@@ -295,7 +315,7 @@ sub checkbox {
     $name,
     $checked_value,
     $checked,
-    $options,
+    $self->process_options($attribute, $options),
   );
 
   if($show_hidden_unchecked) {
@@ -317,7 +337,7 @@ sub radio_button {
   $options->{checked} = do { $self->tag_value_for_attribute($attribute) eq $value ? 1:0 } unless exists($options->{checked});
   $options->{id} = $self->tag_id_for_attribute($attribute, $value);
 
-  return $self->input($attribute, $options);
+  return $self->input($attribute, $self->process_options($attribute, $options));
 }
  
 sub date_field {
@@ -404,7 +424,9 @@ sub button {
   $attrs->{name} = $self->tag_name_for_attribute($attribute) unless exists($attrs->{name});
   $attrs->{id} = $self->tag_id_for_attribute($attribute) unless exists($attrs->{id});
 
-  return ref($content) ? Valiant::HTML::FormTags::button_tag($attrs, $content) : Valiant::HTML::FormTags::button_tag($content, $attrs);
+  return ref($content) ?
+    Valiant::HTML::FormTags::button_tag($attrs, $content) :
+      Valiant::HTML::FormTags::button_tag($content, $self->process_options($attribute, $attrs));
 }
 
 sub legend {
