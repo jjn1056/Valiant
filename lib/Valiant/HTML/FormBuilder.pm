@@ -1814,7 +1814,7 @@ permitted.  Example:
     # <input checked id="person_state_id_1_1" name="person.state_id" type="radio" value="1"/>
     # <label for="person_state_id_2">NY</label>
     # <input id="person_state_id_2_2" name="person.state_id" type="radio" value="2"/>
-    # <label for="person_state_id_3">CA</label>'.
+    # <label for="person_state_id_3">CA</label>
     # <input id="person_state_id_3_3" name="person.state_id" type="radio" value="3"/>
 
 Please note when the $attribute is a collection value we add a hidden field to allow you to send a signal
