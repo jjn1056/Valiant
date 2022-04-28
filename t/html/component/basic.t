@@ -163,7 +163,13 @@ use Test::Most;
   sub render {
     my ($self) = @_;
     return  Layout +{ page_title=>'Layout1' }, sub {
-              Hello +{ name=>$self->name },
+              shift->top(
+                p [
+                  p 111,
+                  p 222,
+                ]
+              );
+              return Hello +{ name=>$self->name },
               p +{ id=>1 },
               "Truth! Justice!";
     };
@@ -210,10 +216,12 @@ use Test::Most;
   with 'Valiant::HTML::ContentComponent';
 
   has 'page_title' => (is=>'rw', required=>1);
+  has 'top' => (is=>'rw', required=>1, default=>sub { "test<p>" });
 
   sub render {
     my ($self, $inner) = @_;
     return  html [
+              $self->top,
               head
                 title $self->page_title,
               body $inner
