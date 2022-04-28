@@ -4,9 +4,7 @@ use warnings;
 use strict;
 use Exporter 'import';
 use Valiant::HTML::SafeString ':all';
-
-our @EXPORT_OK = qw(tag content_tag capture);
-our %EXPORT_TAGS = (all => \@EXPORT_OK);
+use Scalar::Util 'blessed';
 
 our $ATTRIBUTE_SEPARATOR = ' ';
 our %SUBHASH_ATTRIBUTES = map { $_ => 1} qw(data aria);
@@ -17,6 +15,35 @@ our %BOOLEAN_ATTRIBUTES = map { $_ => 1 } qw(
   inert ismap itemscope loop multiple muted nohref nomodule noresize noshade novalidate nowrap open
   pauseonexit playsinline readonly required reversed scoped seamless selected sortable truespeed
   typemustmatch visible);
+
+our %HTML_CONTENT_ELEMENTS = map { $_ => 1 } qw(
+  a abbr acronym address apple article aside audio
+  b basefont bdi bdo big blockquote body button
+  canvas caption center cite code colgroup
+  data datalist dd del details dfn dialog dir div dl dt
+  em
+  fieldset figcaption figure font footer form frame frameset
+  head header hgroup h1 h2 h3 h4 5 h6 html
+  i iframe ins
+  kbd label legend li
+  main map mark menu menuitem meter
+  nav noframes noscript
+  object ol optgroup option output
+  p picture pre progress
+  q
+  rp rt ruby
+  s samp script section select small span strike strong style sub summary sup svg
+  table tbody td template textarea tfoot th thead time title tr tt
+  u ul
+  var video);
+
+our @ALL_HTML_TAGS = (keys(%HTML_VOID_ELEMENTS), keys(%HTML_CONTENT_ELEMENTS));
+our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS);
+our %EXPORT_TAGS = (
+  all => \@EXPORT_OK,
+  utils => ['tag', 'content_tag', 'capture'],
+  html => \@ALL_HTML_TAGS,
+);
 
 sub _dasherize {
   my $value = shift;
@@ -56,9 +83,10 @@ sub tag {
 
 sub content_tag {
   my $name = shift;
+  die "'$name' is a VOID HTML element" if $HTML_VOID_ELEMENTS{$name};
   my $block = ref($_[-1]) eq 'CODE' ? pop(@_) : undef;
   my $attrs = ref($_[-1]) eq 'HASH' ? pop(@_) : +{};
-  my $content = flattened_safe($block ? $block->() : (shift || ''));
+  my $content = flattened_safe(defined($block) ? $block->() : (shift || ''));
   return raw "<${name}@{[ _tag_options(%{$attrs}) ]}>$content</${name}>";
 }
 
@@ -67,6 +95,40 @@ sub capture {
   return flattened_safe $block->(@_);
 }
 
+sub html_content_tag {
+  my $tag = shift;
+  my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+  my $content;
+
+  if( (ref(\$_[0])||'') eq 'SCALAR' ) {  # or isa SafeString...
+    $content = shift(@_);
+  } elsif(blessed($_[0]) && $_[0]->isa('Valiant::HTML::SafeString') ) {
+    $content = shift(@_);
+  } elsif( (ref($_[0])||'') eq 'ARRAY' ) {
+    $content = concat(@{shift(@_)});
+  } elsif( (ref($_[0])||'') eq 'CODE' ) {
+    $content = concat(shift->());
+  }
+
+  return defined($content) ?
+    (content_tag($tag, $content, $attrs), @_) :
+    (tag($tag, $attrs), @_);
+}
+
+sub html_tag {
+  my $tag = shift;
+  my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+  return (tag($tag, $attrs), @_);
+}
+
+foreach my $e (keys %HTML_CONTENT_ELEMENTS) {
+  eval "sub $e { html_content_tag('$e', \@_) }";
+}
+
+foreach my $e (keys %HTML_VOID_ELEMENTS) {
+  eval "sub $e { html_tag('$e', \@_) }";
+  die $@ if $@; 
+}
 
 1;
 
