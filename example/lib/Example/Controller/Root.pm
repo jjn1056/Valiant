@@ -8,7 +8,6 @@ extends 'Catalyst::Controller';
 
 sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { } 
 
-
   sub login2 : Chained(root) PathPart(login2) Args(0) Does(Verbs) ($self, $c) {
     $c->redirect_to_action('home') if $c->user; 
   }
