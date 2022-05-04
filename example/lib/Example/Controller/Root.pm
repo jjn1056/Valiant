@@ -8,6 +8,28 @@ extends 'Catalyst::Controller';
 
 sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { } 
 
+
+  sub login2 : Chained(root) PathPart(login2) Args(0) Does(Verbs) ($self, $c) {
+    $c->redirect_to_action('home') if $c->user; 
+  }
+    sub GET_login2 :Action ($self, $c) {
+        return $c->view('Components::Login',
+          person => $c->model('Schema::Person')->new_result(+{})
+        )->http_ok;
+    }
+
+    sub POST_login2 :Action ($self, $c) {
+      my ($username, $password) = $c
+        ->structured_body(['person'], 'username', 'password')
+        ->get('username', 'password');
+      my $person = $c->authenticate($username, $password);
+
+      return $c->view('Components::Login', person=>$person)->http_bad_request if $person->has_errors;
+      return $c->redirect_to_action('home');
+    }
+
+
+
   sub not_found :Chained(root) PathPart('') Args ($self, $c, @args) { $c->detach_error(404) }
   
   sub auth: Chained(root) PathPart('') CaptureArgs() ($self, $c) {
@@ -59,7 +81,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
 
         $c->session(form=>\%params);
         $c->stash->{person}->context('profile')->update(\%params);
-        Dwarn +{ $c->stash->{person}->errors->to_hash(full_messages=>1) };
+        # Dwarn +{ $c->stash->{person}->errors->to_hash(full_messages=>1) };
       }
 
     sub logout : Chained(auth) PathPart(logout) Args(0) ($self, $c) {

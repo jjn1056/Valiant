@@ -38,10 +38,11 @@ our %HTML_CONTENT_ELEMENTS = map { $_ => 1 } qw(
   var video);
 
 our @ALL_HTML_TAGS = (keys(%HTML_VOID_ELEMENTS), keys(%HTML_CONTENT_ELEMENTS));
-our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS);
+our @ALL_FLOW_CONTROL = (qw(cond otherwise loop));
+our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS, @ALL_FLOW_CONTROL);
 our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
-  utils => ['tag', 'content_tag', 'capture'],
+  utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL],
   html => \@ALL_HTML_TAGS,
 );
 
@@ -129,6 +130,64 @@ foreach my $e (keys %HTML_VOID_ELEMENTS) {
   eval "sub $e { html_tag('$e', \@_) }";
   die $@ if $@; 
 }
+
+## Util tags
+
+sub cond(&;@) {
+  my $check = shift;
+  my $block = shift;
+  my $otherwise = ( blessed($_[0]) && $_[0]->isa('Valiant::HTML::TagBuilder::otherwise') ) ? shift(@_) : undef;
+  my $result = $check->();
+
+  if($result) {
+    $block = $block->($result) if (ref($block)||'') eq 'CODE';
+    return ($block, @_);
+  } else {
+    if($otherwise) {
+      return ($otherwise->($result), @_);
+    } else {
+      return @_;
+    }
+  }
+}
+
+sub otherwise {
+  my $result = shift;
+  my $code = (ref($result)||'') eq 'CODE' ? $result : sub { $result };
+  return (bless($code, 'Valiant::HTML::TagBuilder::otherwise'), @_);
+}
+
+sub loop(&;@) {
+  my $function = shift;
+  my $item_proto = shift;
+  
+  my @items = ();
+  my $i = 0;
+  if(blessed($item_proto) && $item_proto->can('next')) {
+    while (my $next = $item_proto->next) {
+      push @items, $function->($next, $i);
+      $i++;
+    }
+  } elsif( (ref($item_proto)||'') eq 'ARRAY' ) {
+    foreach my $next( @$item_proto ) {
+      push @items, $function->($next, $i);
+      $i++;
+    }
+  } else {
+    die "Not sure how to loop over $item_proto";
+  }
+
+  return (concat(@items), @_);
+}
+
+
+sub css { }
+sub js { }
+
+# a, img select ul ol ?? dl???
+#       ul \%attrs, \@items, sub {
+#         li "item# $_[0]";
+#       },
 
 1;
 

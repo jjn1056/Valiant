@@ -18,6 +18,8 @@ __PACKAGE__->config(
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
   'Plugin::Session' => { storage_secret_key => 'abc123' },
+  'View::Components' => { components_class => 'Example::HTML::Components' },
+  'View::Components::Layout' => { copyright => 2022 },
   'Model::Schema' => {
     traits => ['SchemaProxy'],
     schema_class => 'Example::Schema',
