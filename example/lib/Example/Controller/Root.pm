@@ -8,27 +8,6 @@ extends 'Catalyst::Controller';
 
 sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { } 
 
-  sub login2 : Chained(root) PathPart(login2) Args(0) Does(Verbs) ($self, $c) {
-    $c->redirect_to_action('home') if $c->user; 
-  }
-    sub GET_login2 :Action ($self, $c) {
-        return $c->view('Components::Login',
-          person => $c->model('Schema::Person')->new_result(+{})
-        )->http_ok;
-    }
-
-    sub POST_login2 :Action ($self, $c) {
-      my ($username, $password) = $c
-        ->structured_body(['person'], 'username', 'password')
-        ->get('username', 'password');
-      my $person = $c->authenticate($username, $password);
-
-      return $c->view('Components::Login', person=>$person)->http_bad_request if $person->has_errors;
-      return $c->redirect_to_action('home');
-    }
-
-
-
   sub not_found :Chained(root) PathPart('') Args ($self, $c, @args) { $c->detach_error(404) }
   
   sub auth: Chained(root) PathPart('') CaptureArgs() ($self, $c) {
@@ -37,12 +16,13 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
     $c->detach;
   }
 
-  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs) Does(CurrentModel) Model(Schema::Person) ($self, $c) {
+  sub register :Chained(root) PathPart('register') Args(0) Does(Verbs)  ($self, $c) {
     $c->redirect_to_action('home') if $c->user;
   }
 
     sub GET_register :Action ($self, $c) {
-      $c->stash(person => $c->model->new_result(+{}));
+      my $person = $c->model('Schema::Person')->new_result(+{});
+      return $c->view('Components::Register', person=>$person)->http_ok;
     }
 
     sub POST_register :Action ($self, $c) {
@@ -52,8 +32,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
         'password', 'password_confirmation'
       )->to_hash;
 
-      $c->stash(person => my $model = $c->model->create(\%params));
-      $c->redirect_to_action('login') if $model->valid;
+      my $person = $c->model('Schema::Person')->create(\%params);
+
+      return $c->redirect_to_action('login') if $person->valid;
+      return $c->view('Components::Register', person=>$person)->http_bad_request;
     }
 
     sub home :Chained(auth) PathPart('home') Args(0) ($self, $c) { }
@@ -70,6 +52,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
       $model->build_related_if_empty('profile'); # Needed since the relationship is optional
     }
 
+      sub GET_profile :Action ($self, $c) {
+        return $c->view('Components::Profile', %{$c->stash}{'person','roles','states'} )->http_ok;
+      }
+
       sub PATCH_profile :Action ($self, $c) {
         my %params = $c->structured_body(
           ['person'], 'username', 'first_name', 'last_name', 
@@ -78,9 +64,10 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
           +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
         )->to_hash;
 
-        $c->session(form=>\%params);
         $c->stash->{person}->context('profile')->update(\%params);
-        # Dwarn +{ $c->stash->{person}->errors->to_hash(full_messages=>1) };
+        my $view = $c->view('Components::Profile', %{$c->stash}{'person','roles','states'});
+
+        return $c->stash->{person}->valid ? $view->http_ok : $view->http_bad_request;
       }
 
     sub logout : Chained(auth) PathPart(logout) Args(0) ($self, $c) {
@@ -96,19 +83,19 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Does(CurrentView) View(HTML) { 
     # to be consistent since its the pattern used for more complex stuff
 
     sub GET_login :Action ($self, $c) {
-      $c->stash(person => $c->model('Schema::Person')->new_result(+{})); 
+        return $c->view('Components::Login',
+          person => $c->model('Schema::Person')->new_result(+{})
+        )->http_ok;
     }
 
     sub POST_login :Action ($self, $c) {
       my ($username, $password) = $c
         ->structured_body(['person'], 'username', 'password')
         ->get('username', 'password');
+      my $person = $c->authenticate($username, $password);
 
-      $c->stash(person => my $person = $c->authenticate($username, $password));
-
-      return if $person->has_errors; # The model did not authenticate
-      
-      $c->redirect_to_action('home');
+      return $c->view('Components::Login', person=>$person)->http_bad_request if $person->has_errors;
+      return $c->redirect_to_action('home');
     }
 
 sub end : Action Does(RenderView) Does(RenderErrors) {}

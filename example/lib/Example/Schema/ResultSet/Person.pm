@@ -8,9 +8,11 @@ sub find_by_id($self, $id) {
 }
 
 sub authenticate($self, $username='', $password='') {
-  my $user = $self->find_or_new({username=>$username});
-  $user->errors->add(undef, 'Invalid login credentials')
-    unless $user->in_storage && $user->check_password($password);
+  my $user = $self->find({username=>$username});
+  return $user if $user && $user->check_password($password);
+
+  $user = $self->new_result({username=>$username});
+  $user->errors->add(undef, 'Invalid login credentials');
   return $user;
 }
 

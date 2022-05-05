@@ -116,4 +116,3 @@
     %== $fb->submit(+{class=>'btn btn-lg btn-primary btn-block'})
   </fieldset>
 %= end
-

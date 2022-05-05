@@ -22,7 +22,7 @@ sub render($self) {
                 ],
                 div +{ class=>'form-group' }, [
                   $fb->label('password'),
-                  $fb->input('password', +{class=>'form-control' }),
+                  $fb->password('password', +{class=>'form-control' }),
                 ],
                 $fb->submit('Sign In', +{class=>'btn btn-lg btn-primary btn-block'}),
               ],

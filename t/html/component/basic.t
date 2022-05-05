@@ -3,10 +3,6 @@ use Test::Lib;
 use Local::HTML;
 
 my $registry = Local::HTML->new;
-ok $registry->add(Hello => +{class=>'Local::HTML::Hello'});
-ok $registry->add(Page => +{class=>'Local::HTML::Page'});
-ok $registry->add(Layout => +{class=>'Local::HTML::Layout'});
-
-warn $registry->create(Page => +{name=>'John'})->render;
+is $registry->create(Page => +{name=>'John'})->render, '<html><p><p>111</p><p>222</p></p><head><title>Layout1</title></head><body><p>Hello John</p><p id="1">Truth! Justice!</p></body></html>';
 
 done_testing;
