@@ -64,15 +64,4 @@ sub COMPONENT {
   return $components_model;
 }
 
-__PACKAGE__->config(
-  injected_args => +{
-    Hello => sub {
-      my ($self, $c) = shift;
-      return (
-        wow => 'wow', 
-      );
-    },
-  },
-);
-
 __PACKAGE__->meta->make_immutable;

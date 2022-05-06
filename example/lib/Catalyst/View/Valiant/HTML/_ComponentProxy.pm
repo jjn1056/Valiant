@@ -18,12 +18,14 @@ sub render { shift->component->render(@_) }
 
 sub respond {
   my ($self, $status, $headers) = @_;
+
   for my $r ($self->ctx->res) {
     $r->status($status) if $r->status != 200; # Catalyst sets 200
     $r->content_type('text/html') if !$r->content_type;
     $r->headers->push_header(@{$headers}) if $headers;
     $r->body($self->render);
   }
+
   return $self;
 }
 
@@ -31,6 +33,12 @@ sub respond {
 sub process {
   my ($self, $c, @args) = @_;
   #$self->response(200, @args);
+}
+
+sub profile {
+  my $self = shift;
+  $self->ctx->stats->profile(@_)
+    if $self->ctx->debug;
 }
 
 __PACKAGE__->meta->make_immutable;

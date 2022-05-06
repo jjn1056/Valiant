@@ -1,19 +1,16 @@
 package Example::HTML::Components::Home;
 
 use Moo;
-use Example::HTML::Components 'Layout';
-use Valiant::HTML::TagBuilder 'p', 'a';
+use Example::HTML::Components 'Layout', 'Navbar';
+use Valiant::HTML::TagBuilder 'div';
 use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
 sub render($self) {
   return  Layout 'Homepage',
-    p [
-      a +{href=>'/profile'}, 'Profile',
-      ' or ',
-      a +{href=>'/logout'}, 'Logout',
-    ];
+    Navbar +{ active_link=>'/' },
+    div 'Welcome to your Example application Homepage', 
 }
 
 1;

@@ -1,14 +1,13 @@
 package Example::View::Components;
 
 use Moose;
-use Module::Runtime;
+use Example::Syntax;
 
 extends 'Catalyst::View::Valiant::HTML::Components';
 
 __PACKAGE__->config(
   injected_args => +{
-    Hello => sub {
-      my ($self, $c) = shift;
+    Hello => sub($self, $c) {
       return (
         wow => 'wow', 
       );

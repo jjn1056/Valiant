@@ -1,7 +1,7 @@
 package Example::HTML::Components::Profile;
 
 use Moo;
-use Example::HTML::Components 'Layout', 'FormFor';
+use Example::HTML::Components 'Layout', 'FormFor', 'Navbar';
 use Valiant::HTML::TagBuilder ':html', ':utils';
 use Example::Syntax;
 
@@ -13,6 +13,7 @@ has 'roles' => (is=>'ro', required=>1);
 
 sub render($self) {
   return  Layout 'Register',
+            Navbar +{active_link=>'/profile'},
             FormFor $self->profile, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
               cond { $self->profile->validated && !$self->profile->has_errors }
                 div +{ class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
