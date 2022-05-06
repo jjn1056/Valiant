@@ -104,7 +104,7 @@ around 'dispatch', sub {
   my ($orig, $self, $ctx, @args) = @_;
   my $ret = $self->$orig($ctx, @args);
   my $method = $ctx->req->method;
-  my @return = @{ delete $ctx->stash->{__execute}||[] };
+  my @return = grep { defined $_ } @{ delete $ctx->stash->{__execute}||[] };
 
   return $ret unless my $action_handler = $self->verb_action_handlers->{$method};
   return $self->_dispatch_to_verb($ctx, $action_handler, @return);
@@ -114,8 +114,8 @@ sub _dispatch_to_verb {
   my ($self, $ctx, $action_handler, @return) = @_;
 
   ## TODO @return seems to contain undef when it really means empty.
-  #return $ctx->forward($action_handler, [@{$ctx->req->args}, @return]);
-  return $ctx->forward($action_handler, $ctx->req->args)
+  return $ctx->forward($action_handler, [@{$ctx->req->args}, @return]);
+  #return $ctx->forward($action_handler, $ctx->req->args)
 }
 
 1;

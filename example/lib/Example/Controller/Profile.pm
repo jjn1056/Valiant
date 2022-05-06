@@ -13,14 +13,12 @@ sub root :Chained(/auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,PATCH
     states  => $profile->available_states,
     roles   => $profile->available_roles
   );
-
-  $c->stash(current_model_instance => $profile);
-  $c->stash(current_view_instance => $view);
+  return $profile, $view;
 }
 
-  sub GET :Action ($self, $c) { return $c->view->http_ok }
+  sub GET :Action ($self, $c, $profile, $view) { return $view->http_ok }
 
-  sub PATCH :Action ($self, $c) {
+  sub PATCH :Action ($self, $c, $profile, $view) {
     my %params = $c->structured_body(
       ['person'], 'username', 'first_name', 'last_name', 
       'profile' => [qw/id address city state_id zip phone_number birthday/],
@@ -28,11 +26,11 @@ sub root :Chained(/auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,PATCH
       +{'credit_cards' => [qw/id card_number expiration _delete _add/]},
     )->to_hash;
 
-    $c->model->context('profile')->update(\%params);
+    $profile->context('profile')->update(\%params);
 
-    return $c->model->valid ? 
-      $c->view->http_ok : 
-        $c->view->http_bad_request;
+    return $profile->valid ? 
+      $view->http_ok : 
+        $view->http_bad_request;
   }
 
 __PACKAGE__->meta->make_immutable;
