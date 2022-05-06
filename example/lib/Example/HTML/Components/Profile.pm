@@ -7,14 +7,14 @@ use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
-has 'person' => (is=>'ro', required=>1);
+has 'profile' => (is=>'ro', required=>1);
 has 'states' => (is=>'ro', required=>1);
 has 'roles' => (is=>'ro', required=>1);
 
 sub render($self) {
   return  Layout 'Register',
-            FormFor $self->person, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
-              cond { $self->person->validated && !$self->person->has_errors }
+            FormFor $self->profile, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
+              cond { $self->profile->validated && !$self->profile->has_errors }
                 div +{ class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
               fieldset [
                 $fb->legend,
@@ -37,7 +37,7 @@ sub render($self) {
                 ],
               ],
               fieldset [
-                legend $self->person->human_attribute_name('profile'),
+                legend $self->profile->human_attribute_name('profile'),
                 $fb->errors_for('profile', +{ class=>'alert alert-danger', role=>'alert' }),
                 $fb->fields_for('profile', sub ($fb_profile) {
                   div +{ class=>'form-group' }, [
@@ -77,7 +77,7 @@ sub render($self) {
                 }),
               ],
               fieldset [
-                legend $self->person->human_attribute_name('roles'),
+                legend $self->profile->human_attribute_name('roles'),
                 $fb->errors_for('person_roles', +{ class=>'alert alert-danger', role=>'alert' }),
                 div +{ class=>'form-group' },
                   $fb->collection_checkbox({person_roles => 'role_id'}, $self->roles, id=>'label', sub ($fb_roles) {
@@ -88,7 +88,7 @@ sub render($self) {
                   }),
               ],
               fieldset [
-                legend $self->person->human_attribute_name('credit_cards'),
+                legend $self->profile->human_attribute_name('credit_cards'),
                 div +{ class=>'form-group' }, [
                   $fb->errors_for('credit_cards', +{ class=>'alert alert-danger', role=>'alert' }),
                   $fb->fields_for('credit_cards', sub($fb_cc) {

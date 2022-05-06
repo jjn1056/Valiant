@@ -2,14 +2,14 @@ package Example::HTML::Components::Layout;
 
 use Moo;
 use Valiant::HTML::TagBuilder ':html';
+use Example::Syntax;
 
 with 'Valiant::HTML::ContentComponent';
 
 has 'page_title' => (is=>'ro', required=>1);
 has 'css' => (is=>'ro', required=>1, default=>'');
 
-sub prepare_args {
-  my ($class, @args) = @_;
+sub prepare_args($class, @args) {
   if(ref(\$args[0]) eq 'SCALAR') {
     my $page_title = shift(@args);
     return +{page_title=>$page_title}, @args;
@@ -17,8 +17,7 @@ sub prepare_args {
   return @args;
 }
 
-sub render {
-  my ($self, $content) = @_;
+sub render($self, $content) {
   return  html +{ lang=>'en' }, [
             head [
               title $self->page_title,

@@ -54,8 +54,9 @@ sub COMPONENT {
         my %injected_args = $components_model->find_injected_args($c, $name);
         my %combined_args = (%$self, %injected_args, %args, ctx=>$c);
         my $component = $components->create($name, \%combined_args);
-
-        return Module::Runtime::use_module("Catalyst::View::Valiant::HTML::_ComponentProxy")->new(component=>$component, ctx=>$c);
+        my $proxied =  Module::Runtime::use_module("Catalyst::View::Valiant::HTML::_ComponentProxy")->new(component=>$component, ctx=>$c);
+        #$c->stash(current_view_instance=>$proxied);
+        return $proxied;
       };
     }
   }

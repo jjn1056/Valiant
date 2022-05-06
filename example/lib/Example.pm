@@ -12,6 +12,7 @@ __PACKAGE__->setup_plugins([qw/
   URI
   Errors
   StructuredParameters
+  ServeFile
 /]);
 
 __PACKAGE__->config(

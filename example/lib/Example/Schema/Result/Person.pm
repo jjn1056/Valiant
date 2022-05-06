@@ -57,16 +57,12 @@ __PACKAGE__->accept_nested_for('person_roles', {allow_destroy=>1});
 
 __PACKAGE__->accept_nested_for('profile');
 
-# TODO: I think these can be removed
-sub registered {
-  my $self = shift;
-  return $self->validated && $self->valid;
+sub available_states($self) {
+  return $self->result_source->schema->resultset('State');
 }
 
-sub default_roles {
-  my ($self, $attribute_name, $record, $opts) = @_;
-  $self->errors->add($attribute_name, 'Must be at least a user', $opts)
-    unless $record->is_user;
+sub available_roles($self) {
+  return $self->result_source->schema->resultset('Role');
 }
 
 1;

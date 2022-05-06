@@ -16,4 +16,13 @@ sub authenticate($self, $username='', $password='') {
   return $user;
 }
 
+sub full_profile_for($self, $user) {
+  my $full_profile = $self->find(
+    { 'me.id' => $user->id },
+    { prefetch => ['profile', 'credit_cards', {person_roles => 'role' }] }
+  );
+  $full_profile->build_related_if_empty('profile'); # Needed since the relationship is optional
+  return $full_profile;
+}
+
 1;
