@@ -122,9 +122,17 @@ sub form_for {
   }
 
   my $builder = _instantiate_builder($model_name, $model, $options);
+  my $csrf_token;
+  if(my $tok = $options->{csrf_token}) {
+    $csrf_token = $tok;
+  } elsif($model->can('has_csrf_token') && $model->has_csrf_token) {
+    $csrf_token = $model->csrf_token;
+  }
 
   return Valiant::HTML::FormTags::form_tag $html_options, sub { 
-    return Valiant::HTML::FormTags::capture($content_block_coderef, $builder);
+    my $captured = Valiant::HTML::FormTags::capture($content_block_coderef, $builder);
+    $captured = $captured->concat(Valiant::HTML::FormTags::hidden_tag('csrf_token', {value=>$csrf_token})) if $csrf_token; 
+    return $captured;
   };
 }
 

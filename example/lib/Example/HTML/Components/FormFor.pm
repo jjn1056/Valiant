@@ -7,6 +7,7 @@ use Scalar::Util 'blessed';
 with 'Valiant::HTML::ContentComponent';
 
 has 'model' => (is=>'ro', required=>1);
+has 'csrf_token' => (is=>'ro', required=>1);
 has 'attrs' => (is=>'ro', required=>1, default=>sub {+{}});
 
 sub prepare_args {
@@ -28,7 +29,7 @@ sub expand_content {
 
 sub render {
   my ($self, $content) = @_;
-  return form_for($self->model, $self->attrs, $content);
+  return form_for($self->model, +{ %{$self->attrs}, csrf_token=>$self->csrf_token }, $content);
 }
 
 1;

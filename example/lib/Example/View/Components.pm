@@ -7,9 +7,9 @@ extends 'Catalyst::View::Valiant::HTML::Components';
 
 __PACKAGE__->config(
   injected_args => +{
-    Hello => sub($self, $c) {
+    FormFor => sub($self, $c) {
       return (
-        wow => 'wow', 
+        csrf_token => $c->csrf_token, 
       );
     },
   },
