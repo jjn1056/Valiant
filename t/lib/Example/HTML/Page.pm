@@ -1,7 +1,7 @@
 package Example::HTML::Page;
 
 use Moo;
-use Local::HTML 'Hello', 'Layout';
+use Example::HTML 'Hello', 'Layout';
 use Valiant::HTML::TagBuilder 'p';
 
 with 'Valiant::HTML::Component';
