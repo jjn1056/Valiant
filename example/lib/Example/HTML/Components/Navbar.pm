@@ -12,6 +12,7 @@ has active_link => (is=>'ro', required=>1);
 our @links = (
   +{ href => '/', title => 'Home' },
   +{ href => '/profile', title => 'Profile' },
+  +{ href => '/todos', title => 'Todo List' },
   +{ href => '/logout', title => 'Logout' },
 );
 

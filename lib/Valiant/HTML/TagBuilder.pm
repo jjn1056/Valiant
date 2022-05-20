@@ -33,12 +33,12 @@ our %HTML_CONTENT_ELEMENTS = map { $_ => 1 } qw(
   q
   rp rt ruby
   s samp script section select small span strike strong style sub summary sup svg
-  table tbody td template textarea tfoot th thead time title tr tt
+  table tbody td template textarea tfoot th thead time title  tt
   u ul
   var video);
 
-our @ALL_HTML_TAGS = (keys(%HTML_VOID_ELEMENTS), keys(%HTML_CONTENT_ELEMENTS));
-our @ALL_FLOW_CONTROL = (qw(cond otherwise loop));
+our @ALL_HTML_TAGS = ('trow', keys(%HTML_VOID_ELEMENTS), keys(%HTML_CONTENT_ELEMENTS));
+our @ALL_FLOW_CONTROL = (qw(cond otherwise over loop));
 our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS, @ALL_FLOW_CONTROL);
 our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
@@ -131,6 +131,7 @@ foreach my $e (keys %HTML_VOID_ELEMENTS) {
   die $@ if $@; 
 }
 
+sub trow { html_content_tag('tr', @_) }
 ## Util tags
 
 sub cond(&;@) {
@@ -156,6 +157,29 @@ sub otherwise {
   my $code = (ref($result)||'') eq 'CODE' ? $result : sub { $result };
   return (bless($code, 'Valiant::HTML::TagBuilder::otherwise'), @_);
 }
+
+sub over($&) {
+  my $item_proto = shift;
+  my $function = shift;
+
+  my @items = ();
+  my $i = 0;
+  if(blessed($item_proto) && $item_proto->can('next')) {
+    while (my $next = $item_proto->next) {
+      push @items, $function->($next, $i);
+      $i++;
+    }
+  } elsif( (ref($item_proto)||'') eq 'ARRAY' ) {
+    foreach my $next( @$item_proto ) {
+      push @items, $function->($next, $i);
+      $i++;
+    }
+  } else {
+    die "Not sure how to loop over $item_proto";
+  }
+
+  return (concat(@items), @_);
+}  
 
 sub loop(&;@) {
   my $function = shift;

@@ -39,6 +39,12 @@ __PACKAGE__->has_many(
   { 'foreign.person_id' => 'self.id' }
 );
 
+__PACKAGE__->has_many(
+  todos =>
+  'Example::Schema::Result::Todo',
+  { 'foreign.person_id' => 'self.id' }
+);
+
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
 __PACKAGE__->validates( password => (presence=>1, confirmation => 1,  on=>'create' ));
 __PACKAGE__->validates( password => (confirmation => { 
