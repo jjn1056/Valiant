@@ -7,11 +7,11 @@ use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
-has 'person' => (is=>'ro', required=>1);
+has 'registration' => (is=>'ro', required=>1);
 
 sub render($self) {
   return  Layout 'Register',
-            FormFor $self->person, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
+            FormFor $self->registration, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
               fieldset [
                 $fb->legend,
                 div +{ class=>'form-group' },

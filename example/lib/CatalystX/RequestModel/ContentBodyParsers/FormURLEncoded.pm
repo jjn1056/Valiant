@@ -14,11 +14,8 @@ sub parse {
 
 sub handle_form_encoded {
   my ($class, $body_parameters, $ns, $rules) = @_;
+
   my $current = +{};
-
-  use Devel::Dwarn;
-  Dwarn [$body_parameters, $ns, $rules];
-
   while(@$rules) {
     my $current_rule = shift @{$rules};
     my ($attr, $attr_rules) = %$current_rule;
@@ -37,7 +34,6 @@ sub handle_form_encoded {
       $current->{$attr} = $class->normalize_value($value, $attr_rules);
     }
   }
-  
   return $current;
 }
 

@@ -71,4 +71,10 @@ sub available_roles($self) {
   return $self->result_source->schema->resultset('Role');
 }
 
+sub register($self, $nested_params) {
+  $self->set_columns_recursively($nested_params)
+    ->insert_or_update;
+  return $self;
+}
+
 1;

@@ -25,4 +25,8 @@ sub full_profile_for($self, $user) {
   return $full_profile;
 }
 
+sub registration($self, $args=+{}) {
+  return $self->new_result($args);
+}
+
 1;
