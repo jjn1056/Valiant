@@ -41,6 +41,7 @@ has user => (
   clearer => 'clear_user',
 );
 
+# This should probably return an empty user rather than undef
 sub get_user_from_session($self) {
   my $id = $self->session->{user_id} // return;
   my $person = $self->model('Schema::Person')->find_by_id($id) // return;

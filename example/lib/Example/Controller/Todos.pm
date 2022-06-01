@@ -13,9 +13,6 @@ sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) ($self, $c) {
     todos => $todos,
     new_todo => $new_todo);
 
-  use Devel::Dwarn;
-  Dwarn +{ $new_todo->get_columns };
-
   return $new_todo, $view;
 }
 

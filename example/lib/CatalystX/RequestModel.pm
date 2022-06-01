@@ -1,0 +1,233 @@
+package CatalystX::RequestModel;
+
+use Class::Method::Modifiers;
+use Scalar::Util;
+use Moo::_Utils;
+use Module::Pluggable::Object;
+use Module::Runtime ();
+
+require Moo::Role;
+require Sub::Util;
+
+our @DEFAULT_ROLES = (qw(Catalyst::ComponentRole::RequestModel));
+our @DEFAULT_EXPORTS = (qw(property properties namespace content_type));
+our %Meta_Data = ();
+our %ContentBodyParsers = ();
+
+sub default_roles { return @DEFAULT_ROLES }
+sub default_exports { return @DEFAULT_EXPORTS }
+sub request_model_metadata { return %Meta_Data }
+sub content_body_parsers { return %ContentBodyParsers }
+
+sub content_body_parser_for {
+  my $ct = shift;
+  return $ContentBodyParsers{$ct} || die "No content body parser for '$ct'";
+}
+
+sub load_content_body_parsers {
+  my $class = shift;
+  my @packages = Module::Pluggable::Object->new(
+      search_path => "${class}::ContentBodyParsers"
+    )->plugins;
+
+  %ContentBodyParsers = map {
+    $_->content_type => $_;
+  } map {
+    Module::Runtime::use_module $_;
+  } @packages;
+}
+
+sub import {
+  my $class = shift;
+  my $target = caller;
+
+  $class->load_content_body_parsers;
+
+  unless (Moo::Role->is_role($target)) {
+    my $orig = $target->can('with');
+    Moo::_Utils::_install_tracked($target, 'with', sub {
+      unless ($target->can('request_metadata')) {
+        $Meta_Data{$target}{'request'} = \my @data;
+        my $method = Sub::Util::set_subname "${target}::request_metadata" => sub { @data };
+        no strict 'refs';
+        *{"${target}::request_metadata"} = $method;
+      }
+      &$orig;
+    });
+  } 
+
+  foreach my $default_role ($class->default_roles) {
+    next if Role::Tiny::does_role($target, $default_role);
+    Moo::Role->apply_roles_to_package($target, $default_role);
+    foreach my $export ($class->default_exports) {
+      Moo::_Utils::_install_tracked($target, "__${export}_for_exporter", \&{"${target}::${export}"});
+    }
+  }
+
+  my %cb = map {
+    $_ => $target->can("__${_}_for_exporter");
+  } $class->default_exports;
+
+  foreach my $exported_method (keys %cb) {
+    my $sub = sub {
+      if(Scalar::Util::blessed($_[0])) {
+        return $cb{$exported_method}->(@_);
+      } else {
+        return $cb{$exported_method}->($target, @_);
+      }
+    };
+    Moo::_Utils::_install_tracked($target, $exported_method, $sub);
+  }
+
+  Class::Method::Modifiers::install_modifier $target, 'around', 'has', sub {
+    my $orig = shift;
+    my ($attr, %opts) = @_;
+
+    foreach my $exported ($class->default_exports) {
+      if(my $info = delete $opts{$exported}) {
+        my $method = \&{"${target}::${exported}"};
+        $method->($attr, $info, \%opts);
+      }
+    }
+
+    return $orig->($attr, %opts);
+  } if $target->can('has');
+} 
+
+sub _add_metadata {
+  my ($target, $type, @add) = @_;
+  my $store = $Meta_Data{$target}{$type} ||= do {
+    my @data;
+    if (Moo::Role->is_role($target) or $target->can("${type}_metadata")) {
+      $target->can('around')->("${type}_metadata", sub {
+        my ($orig, $self) = (shift, shift);
+        ($self->$orig(@_), @data);
+      });
+    } else {
+      require Sub::Util;
+      my $method = Sub::Util::set_subname "${target}::${type}_metadata" => sub { @data };
+      no strict 'refs';
+      *{"${target}::${type}_metadata"} = $method;
+    }
+    \@data;
+  };
+
+  push @$store, @add;
+  return;
+}
+package Catalyst::ComponentRole::RequestModel;
+
+use Moo::Role;
+
+has ctx => (is=>'ro');
+
+sub request_model_metadata { return CatalystX::RequestModel::request_model_metadata } 
+
+sub namespace {
+  my ($class_or_self, @data) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  if(@data) {
+    @data = map { split /\./, $_ } @data;
+    CatalystX::RequestModel::_add_metadata($class, 'namespace', @data);
+  }
+
+  return $class_or_self->namespace_metadata if $class_or_self->can('namespace_metadata');
+}
+
+sub content_type {
+  my ($class_or_self, $ct) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  CatalystX::RequestModel::_add_metadata($class, 'content_type', $ct) if $ct;
+
+  if($class_or_self->can('content_type_metadata')) {
+    my ($ct) = $class_or_self->content_type_metadata;  # needed because this returns an array but we only want the first one
+    return $ct;
+  }
+}
+
+sub property {
+  my ($class_or_self, $attr, $data_proto, $options) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  if(defined $data_proto) {
+    my $data = (ref($data_proto)||'') eq 'HASH' ? $data_proto : +{ name => $attr };
+    CatalystX::RequestModel::_add_metadata($class, 'property_data', +{$attr => $data});
+  }
+}
+
+sub properties {
+  my ($class_or_self, @data) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  while(@data) {
+    my $attr = shift(@data);
+    my $data = (ref($data[0])||'') eq 'HASH' ? shift(@data) : +{ name => $attr };
+    CatalystX::RequestModel::_add_metadata($class, 'property_data', +{$attr => $data});
+  }
+
+  return $class_or_self->property_data_metadata if $class_or_self->can('property_data_metadata');
+}
+
+sub COMPONENT {
+  my ($class, $app, $args) = @_;
+  $args = $class->merge_config_hashes($class->config, $args);
+  return bless $args, $class;
+}
+
+sub ACCEPT_CONTEXT {
+  my $self = shift;
+  my $c = shift;
+
+  my %args = (%$self, @_);
+  my %request_args = $self->parse_content_body($c);
+  my $request_model = ref($self)->new(%args, %request_args, ctx=>$c);  ## TODO catch and wrap error
+
+  return $request_model;
+}
+
+sub parse_content_body {
+  my ($self, $c) = @_;
+  
+  my $parser = $self->get_content_body_parser($c);
+  my @ns = $self->namespace;            
+  my @rules = $self->properties;
+
+  die 'The defined request content parser does not handle the request content type'
+    unless lc($c->req->content_type) eq lc($parser->content_type);
+
+  return $parser->parse($c, \@ns, \@rules);
+}
+
+sub get_content_body_parser {
+  my ($self, $c) = @_;
+  return my $parser = CatalystX::RequestModel::content_body_parser_for($c->req->content_type);
+}
+
+## TODO This needs to be fixed to deal with optional params so we don't inflate
+## not existing to an empty string or undefined.  We probably need to make sure
+## if the attribute is not required then a predicate MUST exist and we need to put
+## the predicate into the metadata.
+
+sub get_attribute_value_for {
+  my ($self, $attr) = @_;
+  return $self->$attr;
+}
+
+sub nested_params {
+  my $self = shift;
+  my %return;
+  foreach my $p ($self->properties) {
+    my ($attr) = %$p;
+    $return{$attr} = $self->get_attribute_value_for($attr);
+  }
+  return \%return;
+} 
+
+1;
+
+__END__
+
+sub get {  # TODO get from list of names
+  my ($self, @params) = @_;
+  return map {
+    #$self->
+  } @params;
+}
