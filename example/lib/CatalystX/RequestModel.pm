@@ -17,6 +17,7 @@ our %ContentBodyParsers = ();
 sub default_roles { return @DEFAULT_ROLES }
 sub default_exports { return @DEFAULT_EXPORTS }
 sub request_model_metadata { return %Meta_Data }
+sub request_model_metadata_for { return $Meta_Data{shift} }
 sub content_body_parsers { return %ContentBodyParsers }
 
 sub content_body_parser_for {
@@ -118,10 +119,17 @@ sub _add_metadata {
 package Catalyst::ComponentRole::RequestModel;
 
 use Moo::Role;
+use Scalar::Util;
 
 has ctx => (is=>'ro');
+has current_namespace => (is=>'ro', predicate=>'has_current_namespace');
+has catalyst_component_name => (is=>'ro');
 
-sub request_model_metadata { return CatalystX::RequestModel::request_model_metadata } 
+sub request_model_metadata {
+  my ($class_or_self) = @_;
+  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
+  return CatalystX::RequestModel::request_model_metadata_for($class);
+} 
 
 sub namespace {
   my ($class_or_self, @data) = @_;
@@ -150,6 +158,7 @@ sub property {
   my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
   if(defined $data_proto) {
     my $data = (ref($data_proto)||'') eq 'HASH' ? $data_proto : +{ name => $attr };
+    $data->{name} = $attr unless exists($data->{name});
     CatalystX::RequestModel::_add_metadata($class, 'property_data', +{$attr => $data});
   }
 }
@@ -160,6 +169,7 @@ sub properties {
   while(@data) {
     my $attr = shift(@data);
     my $data = (ref($data[0])||'') eq 'HASH' ? shift(@data) : +{ name => $attr };
+    $data->{name} = $attr unless exists($data->{name});
     CatalystX::RequestModel::_add_metadata($class, 'property_data', +{$attr => $data});
   }
 
@@ -176,19 +186,23 @@ sub ACCEPT_CONTEXT {
   my $self = shift;
   my $c = shift;
 
-  my %args = (%$self, @_);
-  my %request_args = $self->parse_content_body($c);
+  my %args = (%$self, @_);  
+  my %request_args = $self->parse_content_body($c, %args);
   my $request_model = ref($self)->new(%args, %request_args, ctx=>$c);  ## TODO catch and wrap error
 
   return $request_model;
 }
 
 sub parse_content_body {
-  my ($self, $c) = @_;
+  my ($self, $c, %args) = @_;
   
   my $parser = $self->get_content_body_parser($c);
   my @ns = $self->namespace;            
   my @rules = $self->properties;
+
+  if(exists $args{current_namespace}) {
+    unshift @ns, @{ $args{current_namespace} };
+  }
 
   die 'The defined request content parser does not handle the request content type'
     unless lc($c->req->content_type) eq lc($parser->content_type);
@@ -216,7 +230,9 @@ sub nested_params {
   my %return;
   foreach my $p ($self->properties) {
     my ($attr) = %$p;
-    $return{$attr} = $self->get_attribute_value_for($attr);
+    my $value = $self->get_attribute_value_for($attr);
+    $value = $value->nested_params if Scalar::Util::blessed($value) && $value->can('nested_params');
+    $return{$attr} = $value;
   }
   return \%return;
 } 

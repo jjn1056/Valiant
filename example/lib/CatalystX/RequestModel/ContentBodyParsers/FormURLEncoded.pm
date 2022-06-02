@@ -9,11 +9,17 @@ sub content_type { 'application/x-www-form-urlencoded' }
 sub parse {
   my ($class, $c, $ns, $rules) = @_;
   my $body_parameters = $c->req->body_parameters;
-  return %{ $class->handle_form_encoded($body_parameters, $ns, $rules) };
+  return %{ $class->handle_form_encoded($c, $body_parameters, $ns, $rules) };
+}
+
+sub _sorted {
+  return 1 if $a eq '';
+  return -1 if $b eq '';
+  return $a <=> $b;
 }
 
 sub handle_form_encoded {
-  my ($class, $body_parameters, $ns, $rules) = @_;
+  my ($class, $c, $body_parameters, $ns, $rules) = @_;
 
   my $current = +{};
   while(@$rules) {
@@ -24,9 +30,26 @@ sub handle_form_encoded {
     $attr_rules = +{ flatten=>1, %$attr_rules }; ## Set defaults
 
     # TODO handle $rule->{indexed}
+    my %indexes = ();
+    if($attr_rules->{indexed}) {
+      warn "doing index for $param_name";
+      my $body_parameter_name = join '.', @$ns, $param_name;
+      foreach my $body_param (CORE::keys %$body_parameters) {
+        my ($i, $under) = ($body_param =~m/^\Q$body_parameter_name\E\[(\d*)\]\.?(.*)$/);
+        next unless defined $i;
+        $indexes{$i} = $under;
+      }
+      
+      use Devel::Dwarn;
+      Dwarn [indexes=>\%indexes];
 
-    if($attr_rules->{model}) {
-      # need to dive into the related model
+      foreach my $index (sort _sorted CORE::keys %indexes) {
+      }
+    }
+
+
+    if(my $nested_model = $attr_rules->{model}) {
+      $current->{$attr} = $c->model($nested_model, current_namespace=>$ns);
     } else {
       my $body_parameter_name = join '.', @$ns, $param_name;
       die "400 Bad Request $body_parameter_name   '$param_name'" unless exists $body_parameters->{$body_parameter_name};   ## TODO needs to be a proper Bad Request Exception class

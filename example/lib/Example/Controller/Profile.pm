@@ -19,6 +19,13 @@ sub root :Chained(/auth) PathPart('profile') Args(0) Does(Verbs) Allow(GET,PATCH
   sub GET :Action ($self, $c, $profile, $view) { return $view->http_ok }
 
   sub PATCH :Action ($self, $c, $profile, $view) {
+  
+    my $request = $c->model('ProfileRequest');
+
+    use Devel::Dwarn;
+    Dwarn $request->request_model_metadata;
+    Dwarn $request->nested_params;
+
     my %params = $c->structured_body(
       ['person'], 'username', 'first_name', 'last_name', 
       'profile' => [qw/id address city state_id zip phone_number birthday/],
