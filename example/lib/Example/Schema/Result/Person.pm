@@ -73,8 +73,40 @@ sub available_roles($self) {
 
 sub register($self, $nested_params) {
   $self->set_columns_recursively($nested_params)
+    ->set_columns_recursively(+{ person_roles=>[{role=>{label=>'user'}}] })
     ->insert_or_update;
   return $self;
 }
 
+sub authenticated($self) {
+  return $self->username && $self->in_storage ? 1:0;
+}
+
+sub registered($self) {
+  return $self->username &&
+    $self->first_name &&
+    $self->last_name &&
+    $self->password ? 1:0;
+}
+
 1;
+
+__END__
+
+sub register($self, $model) {
+  $self->first_name($model->first_name) if $model->has_first_name;
+  $self->last_name($model->last_name) if $model->has_last_name;
+  $self->password($model->password) if $model->has_password;
+  $self->password_confirmation($model->password_confirmation) if $model->has_password_confirmation;
+  $self->insert_or_update;
+  return $self;
+}
+
+  my %pairs = $request->get_pairs(qw/
+    first_name
+    last_name
+    password
+    password_confirmation/);
+  $self->set_columns_recursively(\%pairs)
+    ->insert_or_update;
+  

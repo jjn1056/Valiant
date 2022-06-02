@@ -1,7 +1,7 @@
 package Example::HTML::Components::Todos;
 
 use Moo;
-use Example::HTML::Components 'Layout', 'FormFor';
+use Example::HTML::Components 'Layout', 'FormFor', 'Navbar';
 use Valiant::HTML::TagBuilder ':html', ':utils';
 use Example::Syntax;
 
@@ -12,6 +12,7 @@ has 'todos' => (is=>'ro', required=>1);
 
 sub render($self) {
   return  Layout 'Todo List',
+            Navbar +{active_link=>'/todos'},
             FormFor $self->new_todo, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
               fieldset [
                 $fb->legend,

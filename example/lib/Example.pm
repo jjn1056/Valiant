@@ -17,6 +17,7 @@ __PACKAGE__->setup_plugins([qw/
 /]);
 
 __PACKAGE__->config(
+  user_store => 'Schema::Person',
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
   'Plugin::Session' => { storage_secret_key => 'abc123' },
@@ -34,17 +35,24 @@ __PACKAGE__->config(
 
 __PACKAGE__->setup();
 
+has user_store => (
+  is => 'ro',
+  lazy => 1,
+  default => sub($c) { $c->model($c->config->{user_store}) },
+);
+
 has user => (
   is => 'rw',
   lazy => 1,
+  required => 1,
   builder => 'get_user_from_session',
   clearer => 'clear_user',
 );
 
 # This should probably return an empty user rather than undef
 sub get_user_from_session($self) {
-  my $id = $self->session->{user_id} // return;
-  my $person = $self->model('Schema::Person')->find_by_id($id) // return;
+  my $id = $self->session->{user_id} // return $self->user_store->unauthenticated_user;
+  my $person = $self->user_store->find_by_id($id) // $self->remove_user_from_session && die "Bad ID '$id' in session";
   return $person;
 }
 
@@ -57,7 +65,7 @@ sub remove_user_from_session($self) {
 }
 
 sub authenticate($self, $username='', $password='') {
-  my $user = $self->model('Schema::Person')->authenticate($username, $password);
+  my $user = $self->user_store->authenticate($username, $password);
   $self->set_user($user) if $user->no_errors;
   return $user; 
 }
@@ -68,8 +76,8 @@ sub set_user ($self, $user) {
 }
 
 sub logout($self) {
-  $self->clear_user;
   $self->remove_user_from_session;
+  $self->clear_user;
 }
 
 __PACKAGE__->meta->make_immutable();

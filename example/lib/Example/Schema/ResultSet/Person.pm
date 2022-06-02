@@ -29,4 +29,8 @@ sub registration($self, $args=+{}) {
   return $self->new_result($args);
 }
 
+sub unauthenticated_user($self) {
+  return $self->new_result(+{});  
+}
+
 1;

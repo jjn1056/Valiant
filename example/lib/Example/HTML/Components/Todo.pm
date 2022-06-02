@@ -1,7 +1,7 @@
 package Example::HTML::Components::Todo;
 
 use Moo;
-use Example::HTML::Components 'Layout', 'FormFor';
+use Example::HTML::Components 'Layout', 'FormFor', 'Navbar';
 use Valiant::HTML::TagBuilder ':html';
 use Example::Syntax;
 
@@ -19,6 +19,7 @@ sub status_options($self) {
 
 sub render($self) {
   return  Layout 'Edit Todo',
+            Navbar +{active_link=>'/todos'},
             FormFor $self->todo, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
               fieldset [
                 $fb->legend,

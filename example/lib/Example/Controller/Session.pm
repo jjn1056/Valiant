@@ -7,7 +7,7 @@ use Example::Syntax;
 extends 'Catalyst::Controller';
 
 sub login : Chained(/root) Args(0) Does(Verbs) Name(login) ($self, $c) {
-  $c->redirect_to_action('#home') if $c->user; # Don't bother if already logged in
+  $c->redirect_to_action('#home') && $c->detach if $c->user->authenticated # Don't bother if already logged in
 }
 
   # Might seem silly to use an empty model for such a small form but its better

@@ -7,7 +7,7 @@ use Example::Syntax;
 extends 'Catalyst::Controller';
 
 sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs)  ($self, $c) {
-  return $c->redirect_to_action('#home') if $c->user;   # ->user->registered
+  return $c->redirect_to_action('#home') && $c->detach if $c->user->registered;
   my $registration = $c->model('Schema::Person')->registration;
   my $view = $c->view('Components::Register', registration=>$registration);
   return $registration, $view;
