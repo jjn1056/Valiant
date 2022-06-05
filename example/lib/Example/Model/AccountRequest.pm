@@ -1,4 +1,4 @@
-package Example::Model::ProfileRequest;
+package Example::Model::AccountRequest;
 
 use Moose;
 use CatalystX::RequestModel;
@@ -10,21 +10,18 @@ content_type 'application/x-www-form-urlencoded';
 has username => (is=>'ro', property=>1);  # TODO?? if required=>0 then predicat MUST be set  
 has first_name => (is=>'ro', property=>1);
 has last_name => (is=>'ro', property=>1);
-has profile => (is=>'ro', property=>+{model=>'ProfileRequest::Profile'});
-#has person_roles => (is=>'ro', property=>+{ indexed=>1, model=>'ProfileRequest::PersonRole'});
-has credit_cards => (is=>'ro', property=>+{ indexed=>1, model=>'ProfileRequest::CreditCard'});
+has profile => (is=>'ro', property=>+{model=>'AccountRequest::Profile' });
+has person_roles => (is=>'ro', property=>+{ indexed=>1, model=>'AccountRequest::PersonRole' });
+has credit_cards => (is=>'ro', property=>+{ indexed=>1, model=>'AccountRequest::CreditCard' });
 
 __PACKAGE__->meta->make_immutable();
 
-package Example::Model::ProfileRequest::Profile;
+package Example::Model::AccountRequest::Profile;
 
 use Moose;
 use CatalystX::RequestModel;
 
 extends 'Catalyst::Model';
-
-namespace 'profile';
-content_type 'application/x-www-form-urlencoded';
 
 has id => (is=>'ro', property=>1);
 has address => (is=>'ro', property=>1);
@@ -36,29 +33,23 @@ has birthday => (is=>'ro', property=>1);
 
 __PACKAGE__->meta->make_immutable();
 
-package Example::Model::ProfileRequest::PersonRole;
+package Example::Model::AccountRequest::PersonRole;
 
 use Moose;
 use CatalystX::RequestModel;
 
 extends 'Catalyst::Model';
-
-namespace 'person_roles';
-content_type 'application/x-www-form-urlencoded';
 
 has role_id => (is=>'ro', property=>1);
 
 __PACKAGE__->meta->make_immutable();
 
-package Example::Model::ProfileRequest::CreditCard;
+package Example::Model::AccountRequest::CreditCard;
 
 use Moose;
 use CatalystX::RequestModel;
 
 extends 'Catalyst::Model';
-
-namespace 'person_roles';
-content_type 'application/x-www-form-urlencoded';
 
 has id => (is=>'ro', property=>1);
 has card_number => (is=>'ro', property=>1);

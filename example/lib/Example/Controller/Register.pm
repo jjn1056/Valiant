@@ -18,7 +18,7 @@ sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs)  ($self, $c) {
   }
 
   sub POST :Action Does(RequestModel) RequestModel(RegistrationRequest) ($self, $c, $registration, $view, $request) {    
-    $registration->register($request->nested_params);  ## Avoid DBIC specific API
+    $registration->register($request);  ## Avoid DBIC specific API
     return $registration->valid ?
       $c->redirect_to_action('#login') :
         $view->http_bad_request;

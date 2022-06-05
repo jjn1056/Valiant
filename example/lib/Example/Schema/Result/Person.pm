@@ -55,10 +55,10 @@ __PACKAGE__->validates( password => (confirmation => {
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
-__PACKAGE__->validates(credit_cards => (set_size=>{min=>2, max=>4}, on=>'profile' ));
+__PACKAGE__->validates(credit_cards => (set_size=>{min=>2, max=>4}, on=>'account' ));
 __PACKAGE__->accept_nested_for('credit_cards', +{allow_destroy=>1});
 
-__PACKAGE__->validates(person_roles => (set_size=>{min=>1}, on=>'profile' ));
+__PACKAGE__->validates(person_roles => (set_size=>{min=>1}, on=>'account' ));
 __PACKAGE__->accept_nested_for('person_roles', {allow_destroy=>1});
 
 __PACKAGE__->accept_nested_for('profile');
@@ -71,13 +71,6 @@ sub available_roles($self) {
   return $self->result_source->schema->resultset('Role');
 }
 
-sub register($self, $nested_params) {
-  $self->set_columns_recursively($nested_params)
-    ->set_columns_recursively(+{ person_roles=>[{role=>{label=>'user'}}] })
-    ->insert_or_update;
-  return $self;
-}
-
 sub authenticated($self) {
   return $self->username && $self->in_storage ? 1:0;
 }
@@ -87,6 +80,18 @@ sub registered($self) {
     $self->first_name &&
     $self->last_name &&
     $self->password ? 1:0;
+}
+
+# Update from request object methods
+
+sub register($self, $request) {
+  $self->set_columns_recursively($request->nested_params)
+    ->set_columns_recursively(+{ person_roles=>[{role=>{label=>'user'}}] })
+    ->insert_or_update;
+}
+
+sub update_account($self, $request) {
+  $self->context('account')->update($request->nested_params);
 }
 
 1;

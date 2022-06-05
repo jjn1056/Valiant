@@ -6,10 +6,21 @@ use Module::Runtime ();
 
 sub content_type { 'application/x-www-form-urlencoded' }
 
+sub new {
+  my ($class, %args) = @_;
+  my $self = bless \%args, $class;
+  $self->{bp} ||= $self->{ctx}->req->body_parameters;
+
+  #use Devel::Dwarn;
+  #Dwarn $self->{bp} ;
+
+  return $self;
+}
+
+
 sub parse {
-  my ($class, $c, $ns, $rules) = @_;
-  my $body_parameters = $c->req->body_parameters;
-  return %{ $class->handle_form_encoded($c, $body_parameters, $ns, $rules) };
+  my ($self, $ns, $rules) = @_;
+  return %{ $self->handle_form_encoded($ns, undef, $rules) };
 }
 
 sub _sorted {
@@ -19,9 +30,11 @@ sub _sorted {
 }
 
 sub handle_form_encoded {
-  my ($class, $c, $body_parameters, $ns, $rules) = @_;
+  my ($self, $ns, $index, $rules) = @_;
 
   my $current = +{};
+  my $body_parameters = $self->{bp};
+
   while(@$rules) {
     my $current_rule = shift @{$rules};
     my ($attr, $attr_rules) = %$current_rule;
@@ -29,45 +42,44 @@ sub handle_form_encoded {
 
     $attr_rules = +{ flatten=>1, %$attr_rules }; ## Set defaults
 
-    # TODO handle $rule->{indexed}
-    my %indexes = ();
-    if($attr_rules->{indexed}) {
-      warn "doing index for $param_name";
+    if($attr_rules->{indexed} && !defined($index)) {
       my $body_parameter_name = join '.', @$ns, $param_name;
+      my %indexes = ();
       foreach my $body_param (CORE::keys %$body_parameters) {
         my ($i, $under) = ($body_param =~m/^\Q$body_parameter_name\E\[(\d*)\]\.?(.*)$/);
         next unless defined $i;
-        $indexes{$i} = $under;
+        push @{$indexes{$i}}, $under;
       }
-      
-      use Devel::Dwarn;
-      Dwarn [indexes=>\%indexes];
-
+      my @values = ();
       foreach my $index (sort _sorted CORE::keys %indexes) {
+        my $value = $self->handle_form_encoded($ns, $index, [$current_rule]);
+        push @values, $value->{$attr}; #$self->normalize_value($value, $attr_rules);
       }
-    }
-
-
-    if(my $nested_model = $attr_rules->{model}) {
-      $current->{$attr} = $c->model($nested_model, current_namespace=>$ns);
+      $current->{$attr} = \@values;
+    } elsif(my $nested_model = $attr_rules->{model}) {
+      $current->{$attr} = $self->{ctx}->model(
+        $nested_model, 
+        current_namespace=>[@$ns, (defined($index) ? "${param_name}[$index]": $param_name)], 
+        current_parser=>$self
+      );
     } else {
-      my $body_parameter_name = join '.', @$ns, $param_name;
-      die "400 Bad Request $body_parameter_name   '$param_name'" unless exists $body_parameters->{$body_parameter_name};   ## TODO needs to be a proper Bad Request Exception class
+      my $body_parameter_name = join '.', @$ns, (defined($index) ? "${param_name}[$index]": $param_name);
+      next unless exists $body_parameters->{$body_parameter_name};   ## TODO needs to be a proper Bad Request Exception class
       my $value = $body_parameters->{$body_parameter_name};
-      $current->{$attr} = $class->normalize_value($value, $attr_rules);
+      $current->{$attr} = $self->normalize_value($value, $attr_rules);
     }
   }
   return $current;
 }
 
 sub normalize_value {
-  my ($class, $value, $key_rules) = @_;
+  my ($self, $value, $key_rules) = @_;
   if($key_rules->{always_array}) {
     $value = [$value] unless (ref($value)||'') eq 'ARRAY';
   } elsif($key_rules->{flatten}) {
     $value = $value->[-1] if (ref($value)||'') eq 'ARRAY';
   }
-  $value = $class->json_parser($value) if ($key_rules->{expand}||'') eq 'JSON';
+  $value = $self->json_parser($value) if ($key_rules->{expand}||'') eq 'JSON';
   return $value;
 }
 
@@ -78,8 +90,8 @@ sub _build_json_parser {
 }
 
 sub json_parse {
-  my ($class, $string) = @_;
-  $_JSON_PARSER ||= $class->_build_json_parser;
+  my ($self, $string) = @_;
+  $_JSON_PARSER ||= $self->_build_json_parser;
   return $_JSON_PARSER->decode($string); # TODO need to catch errors
 }
 

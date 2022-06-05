@@ -84,11 +84,16 @@ sub import {
     my $orig = shift;
     my ($attr, %opts) = @_;
 
-    foreach my $exported ($class->default_exports) {
-      if(my $info = delete $opts{$exported}) {
-        my $method = \&{"${target}::${exported}"};
-        $method->($attr, $info, \%opts);
-      }
+    my $predicate;
+    unless($opts{required}) {
+      $predicate = $opts{predicate} = "has_${attr}" unless exists($opts{predicate});
+    }
+
+    if(my $info = delete $opts{property}) {
+      $info = +{ name=>$attr } unless (ref($info)||'') eq 'HASH';
+      $info->{attr_predicate} = $predicate if defined($predicate);
+      my $method = \&{"${target}::property"};
+      $method->($attr, $info, \%opts);
     }
 
     return $orig->($attr, %opts);
@@ -123,13 +128,8 @@ use Scalar::Util;
 
 has ctx => (is=>'ro');
 has current_namespace => (is=>'ro', predicate=>'has_current_namespace');
+has current_parser => (is=>'ro', predicate=>'has_current_parser');
 has catalyst_component_name => (is=>'ro');
-
-sub request_model_metadata {
-  my ($class_or_self) = @_;
-  my $class = ref($class_or_self) ? ref($class_or_self) : $class_or_self;
-  return CatalystX::RequestModel::request_model_metadata_for($class);
-} 
 
 sub namespace {
   my ($class_or_self, @data) = @_;
@@ -195,24 +195,22 @@ sub ACCEPT_CONTEXT {
 
 sub parse_content_body {
   my ($self, $c, %args) = @_;
-  
-  my $parser = $self->get_content_body_parser($c);
-  my @ns = $self->namespace;            
+
   my @rules = $self->properties;
+  my @ns = exists($args{current_namespace}) ? @{$args{current_namespace}} : $self->namespace;            
 
-  if(exists $args{current_namespace}) {
-    unshift @ns, @{ $args{current_namespace} };
-  }
+  my $parser_class = $self->get_content_body_parser_class($c->req->content_type)
+    || die "No parser for content type";
+  my $parser = exists($args{current_parser}) ? 
+    $args{current_parser} :
+      $parser_class->new(ctx=>$c);
 
-  die 'The defined request content parser does not handle the request content type'
-    unless lc($c->req->content_type) eq lc($parser->content_type);
-
-  return $parser->parse($c, \@ns, \@rules);
+  return my %request_args = $parser->parse(\@ns, \@rules);
 }
 
-sub get_content_body_parser {
-  my ($self, $c) = @_;
-  return my $parser = CatalystX::RequestModel::content_body_parser_for($c->req->content_type);
+sub get_content_body_parser_class {
+  my ($self, $content_type) = @_;
+  return my $parser_class = CatalystX::RequestModel::content_body_parser_for($content_type);
 }
 
 ## TODO This needs to be fixed to deal with optional params so we don't inflate
@@ -229,21 +227,34 @@ sub nested_params {
   my $self = shift;
   my %return;
   foreach my $p ($self->properties) {
-    my ($attr) = %$p;
+    my ($attr, $meta) = %$p;
+
+    if(my $predicate = $meta->{attr_predicate}) {
+      next unless $self->$predicate;  # skip empties
+    }
+
     my $value = $self->get_attribute_value_for($attr);
-    $value = $value->nested_params if Scalar::Util::blessed($value) && $value->can('nested_params');
-    $return{$attr} = $value;
+    if( (ref($value)||'') eq 'ARRAY') {
+      my @gathered = ();
+      foreach my $v (@$value) {
+        if(Scalar::Util::blessed($v)) {
+          my $params = $v->nested_params;
+          push @gathered, $params if keys(%$params);
+        } else {
+          push @gathered, $v;
+        }
+
+      }
+      $return{$attr} = \@gathered;
+    } elsif(Scalar::Util::blessed($value) && $value->can('nested_params')) { 
+      my $params = $value->nested_params;
+      next unless keys(%$params);
+      $return{$attr} = $params;
+    } else {
+      $return{$attr} = $value;
+    }
   }
   return \%return;
 } 
 
 1;
-
-__END__
-
-sub get {  # TODO get from list of names
-  my ($self, @params) = @_;
-  return map {
-    #$self->
-  } @params;
-}
