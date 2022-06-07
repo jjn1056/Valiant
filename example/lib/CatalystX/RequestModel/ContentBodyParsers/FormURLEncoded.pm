@@ -11,6 +11,7 @@ sub new {
   my $self = bless \%args, $class;
   $self->{bp} ||= $self->{ctx}->req->body_parameters;
 
+  ## TODO preaprse into hash of hashes to optimize how indexes work
   #use Devel::Dwarn;
   #Dwarn $self->{bp} ;
 
