@@ -442,6 +442,17 @@ sub legend {
   return Valiant::HTML::FormTags::legend_tag($value, $options);
 }
 
+sub legend_for {
+  my $self = shift;
+  my $attribute = shift;
+  my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+  my $content = @_ ? shift(@_) : $self->human_name_for_attribute($attribute);
+
+  $attrs->{id} = "@{[ $self->tag_id_for_attribute($attribute) ]}_legend" unless exists($attrs->{id});
+
+  return Valiant::HTML::FormTags::legend_tag($attrs, $content);
+}
+
 sub _legend_default_value {
   my $self = shift;
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
@@ -793,6 +804,12 @@ sub _default_collection_radio_buttons_content {
     my $checkbox = $fb->radio_button();
     return $label->concat($checkbox);
   };
+}
+
+sub radio_buttons {
+  my ($self, $attribute, $collection_proto) = (shift, shift, shift);
+  my $collection = Valiant::HTML::Util::Collection->new(@$collection_proto);
+  return $self->collection_radio_buttons($attribute, $collection, @_);
 }
 
 # select collection needs work (with multiple)
@@ -1454,6 +1471,20 @@ Examples:
     $fb->legend({class=>'foo'}, sub {"Person"});
     # <legend class="foo">Person</legend>
 
+=head2 legend_for
+
+    $fb->legend_for($attr);
+    $fb->legend_for($attr, \%options);
+
+Creates an HTML C<legend> tags with it's content set to the human translated name of the given
+$attribute.  Allows you to pass some additional HTML attributes to the legend tag.  Examples:
+
+    $fb->legend_for('status')
+    # <legend id="status_legend" >Status</legend>
+    
+    $fb->legend_for('status', {class=>'foo'})
+    # <legend id="status_legend" class="foo" >Status</legend>
+
 =head2 fields_for
 
     $fb->fields_for($attribute, sub {
@@ -1842,6 +1873,30 @@ L<Valiant::HTML::FormBuilder::RadioButton>):
 In addition to overriding C<radio_button> and C<label> to already contain value and state (if its checked or
 not) information.   This special builder contains some additional methods of possible use, you should see
 the documentation of L<Valiant::HTML::FormBuilder::RadioButton> for more.
+
+=head2 radio_buttons
+
+    $fb->radio_buttons($attribute, \@options, \%options);
+    $fb->radio_buttons($attribute, \@options, \%options, \&template);
+    $fb->radio_buttons($attribute, \@options);
+    $fb->radio_buttons($attribute, \@options, \&template);
+
+Similar to L</collection_radio_buttons> but takes an arrayref of label / values instead of a collection.
+Useful when you have a list of radio buttons (like from an ENUM) but you don't want to list each radio
+separately.  Example:
+
+    $fb_profile->radio_buttons('status', [[Pending=>'pending'],[Active=>'active'],[Inactive=>'inactive']]);
+
+    # <input id="person_profile_status_hidden" name="person.profile.status" type="hidden" value="">
+    # <input id="person_profile_status_pending_pending" name="person.profile.status" type="radio" value="pending">
+    # <label for="person_profile_status_pending">Pending</label>
+    # <input checked="" id="person_profile_status_active_actie" name="person.profile.status" type="radio" value="active">
+    # <label for="person_profile_status_active">Active</label>
+    # <input id="person_profile_status_inactive_inactive" name="person.profile.status" type="radio" value="inactive">
+    # <label for="person_profile_status_inactive">Inactive</label>
+
+Supports using a template subroutine reference (like L</collection_radio_buttons>) when you need to be
+fussy about style and positioning.
 
 =head1 SEE ALSO
 

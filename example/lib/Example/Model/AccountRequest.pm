@@ -30,6 +30,8 @@ has state_id => (is=>'ro', property=>1);
 has zip => (is=>'ro', property=>1);
 has phone_number => (is=>'ro', property=>1);
 has birthday => (is=>'ro', property=>1);
+has status => (is=>'ro', property=>1);
+has registered => (is=>'ro', property=>+{ boolean=>1 });
 
 __PACKAGE__->meta->make_immutable();
 

@@ -15,6 +15,12 @@ has 'account' => (is=>'ro', required=>1);
 
 has 'states' => (is=>'ro', lazy=>1, required=>1, default=>sub($self) { $self->account->available_states });
 has 'roles' => (is=>'ro', lazy=>1, required=>1, default=>sub($self) { $self->account->available_roles });
+has 'status_options' => (
+  is=>'ro',
+  lazy=>1,
+  required=>1,
+  default=>sub($self) { [map { [ucfirst($_) => $_] } $self->account->profile->status_options ] },
+);
 
 sub render($self) {
   return  Layout 'Account Details',
@@ -78,6 +84,26 @@ sub render($self) {
                       $fb_profile->label('birthday'),
                       $fb_profile->date_field('birthday', +{ class=>'form-control', errors_classes=>'is-invalid' }),
                       $fb_profile->errors_for('birthday', +{ class=>'invalid-feedback' }),
+                    ],
+                  ],
+                  div +{ class=>'form-row' }, [
+                    div +{ class=>'col form-group' }, [
+                      div + { class=>'form-check' }, [
+                        $fb_profile->checkbox('registered', +{ class=>'form-check-input', errors_classes=>'is-invalid' }),
+                        $fb_profile->label('registered', +{ class=>'form-check-label'}),
+                        $fb_profile->errors_for('registered', +{ class=>'invalid-feedback' }),
+                      ],
+                    ],
+                    div +{ class=>'col form-group' }, [
+                      fieldset [
+                        $fb_profile->legend_for('status'),
+                        $fb_profile->radio_buttons('status', $self->status_options, sub ($fb_status) {
+                          div +{class=>'form-check'}, [
+                            $fb_status->radio_button({class=>'form-check-input'}),
+                            $fb_status->label({class=>'form-check-label'}),
+                          ],
+                        }),
+                      ]
                     ],
                   ],
                 }),
