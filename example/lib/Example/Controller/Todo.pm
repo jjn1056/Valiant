@@ -6,24 +6,19 @@ use Example::Syntax;
 
 extends 'Example::ControllerPerRequest';
 
-sub root :Chained(/auth) PathPart('todos') Args(1) Does(Verbs) ($self, $c, $id) {
-  my $todo = $c->user->todos->find($id) || return $c->detach_error(404);
-  my $view = $c->view('Components::Todo', todo => $todo);
-  return $todo, $view;
+has todo => (is=>'rw');
+
+sub root :Chained(/auth) PathPart('todos') Args(1) Does(Verbs) View(Components::Todo) ($self, $c, $id) {
+  $self->todo($c->user->todos->find($id) || return $c->detach_error(404));
 }
 
-  sub GET :Action ($self, $c, $todo, $view) { return $view->http_ok }
+  sub GET :Action ($self, $c) { return $c->res->code(200) }
 
-  sub PATCH :Action ($self, $c, $todo, $view) {
-    my %params = $c->structured_body(
-      ['todo'], 'title', 'status'
-    )->to_hash;
-
-    $todo->set_columns_recursively(\%params)->update;
-
-    return $todo->valid ?
-      $c->redirect_to_action('/todos/root')  :
-        $view->http_bad_request;
+  sub PATCH :Action RequestModel(TodoRequest) ($self, $c, $request) {
+    $self->todo->set_from_request($request);
+    return $self->todo->valid ?
+      $c->redirect_to_action('/todos/root') :
+        $c->res->code(400);
   }
 
 __PACKAGE__->meta->make_immutable;

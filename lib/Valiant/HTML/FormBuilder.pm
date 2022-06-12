@@ -780,7 +780,7 @@ sub collection_radio_buttons {
 
   while (my $radio_button_model = $collection->next) {
     my $name = "@{[ $self->name ]}.${attribute}";
-    my $checked = $radio_button_model->$value_method eq $checked_value ? 1:0;
+    my $checked = $radio_button_model->$value_method eq ($checked_value||'') ? 1:0;
 
     if($include_hidden && !scalar(@radio_buttons) ) { # Add nop as first to handle empty list
       my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $model);

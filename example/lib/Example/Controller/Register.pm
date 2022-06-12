@@ -4,24 +4,26 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Catalyst::Controller';
+extends 'Example::ControllerPerRequest';
 
-sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs)  ($self, $c) {
+has registration => (
+  is => 'ro',
+  lazy => 1,
+  required => 1,
+  default => sub($self) { $self->ctx->users->registration  },
+);
+
+sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs) View(Components::Register)  ($self, $c) {
   return $c->redirect_to_action('#home') && $c->detach if $c->user->registered;
-  my $registration = $c->model('Schema::Person')->registration;
-  my $view = $c->view('Components::Register', registration=>$registration);
-  return $registration, $view;
 }
 
-  sub GET :Action ($self, $c, $person, $view) {
-    return $view->http_ok;
-  }
+  sub GET :Action ($self, $c) { return $c->res->code(200) }
 
-  sub POST :Action Does(RequestModel) RequestModel(RegistrationRequest) ($self, $c, $registration, $view, $request) {    
-    $registration->register($request);  ## Avoid DBIC specific API
-    return $registration->valid ?
+  sub POST :Action RequestModel(RegistrationRequest) ($self, $c, $request) {    
+    $self->registration->register($request);  ## Avoid DBIC specific API
+    return $self->registration->valid ?
       $c->redirect_to_action('#login') :
-        $view->http_bad_request;
+        $c->res->code(400);
   }
 
 __PACKAGE__->meta->make_immutable;  

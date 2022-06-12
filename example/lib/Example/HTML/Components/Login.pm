@@ -7,11 +7,12 @@ use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
-has 'person' => (is=>'ro', required=>1);
+has 'ctx' => (is=>'ro', required=>1);
+has 'user' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx->controller->user } );
 
 sub render($self) {
   return  Layout 'Sign In',
-            FormFor $self->person, +{method=>'POST', style=>'width:20em; margin:auto'}, sub ($fb) {
+            FormFor $self->user, +{method=>'POST', style=>'width:20em; margin:auto'}, sub ($fb) {
               fieldset [
                 legend 'Sign In',
                 div +{ class=>'form-group' },

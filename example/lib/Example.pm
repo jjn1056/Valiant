@@ -36,7 +36,7 @@ __PACKAGE__->config(
 
 __PACKAGE__->setup();
 
-has user_store => (
+has users => (
   is => 'ro',
   lazy => 1,
   default => sub($c) { $c->model($c->config->{user_store}) },
@@ -52,8 +52,8 @@ has user => (
 
 # This should probably return an empty user rather than undef
 sub get_user_from_session($self) {
-  my $id = $self->session->{user_id} // return $self->user_store->unauthenticated_user;
-  my $person = $self->user_store->find_by_id($id) // $self->remove_user_from_session && die "Bad ID '$id' in session";
+  my $id = $self->session->{user_id} // return $self->users->unauthenticated_user;
+  my $person = $self->users->find_by_id($id) // $self->remove_user_from_session && die "Bad ID '$id' in session";
   return $person;
 }
 

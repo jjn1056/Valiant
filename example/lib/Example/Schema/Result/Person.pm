@@ -94,7 +94,9 @@ sub new_todo($self) {
 
 sub register($self, $request) {
   $self->set_columns_recursively($request->nested_params)
-    ->set_columns_recursively(+{ person_roles=>[{role=>{label=>'user'}}] })
+    ->set_columns_recursively(+{
+        person_roles=>[{role=>{label=>'user'}}],
+      })
     ->insert_or_update;
 }
 

@@ -7,7 +7,8 @@ use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
-has 'todo' => (is=>'ro', required=>1);
+has 'ctx' => (is=>'ro', required=>1);
+has 'todo' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->todo } );
 
 sub status_options($self) {
   return [qw/

@@ -107,7 +107,7 @@ around 'dispatch', sub {
   my @return = grep { defined $_ } @{ delete $ctx->stash->{__execute}||[] };
 
   return $ret unless my $action_handler = $self->verb_action_handlers->{$method};
-  return $self->_dispatch_to_verb($ctx, $action_handler, @return);
+  return $self->_dispatch_to_verb($ctx, $action_handler); # @return
 };
 
 sub _dispatch_to_verb {

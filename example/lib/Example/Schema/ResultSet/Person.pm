@@ -7,6 +7,11 @@ sub find_by_id($self, $id) {
   return $self->find({id=>$id});
 }
 
+sub user_from_request($self, $request) {
+  my ($username, $password) = $request->get('username', 'password');
+  return $self->authenticate($username, $password);
+}
+
 sub authenticate($self, $username='', $password='') {
   my $user = $self->find({username=>$username});
   return $user if $user && $user->check_password($password);
@@ -22,6 +27,7 @@ sub account_for($self, $user) {
     { prefetch => ['profile', 'credit_cards', {person_roles => 'role' }] }
   );
   $account->build_related_if_empty('profile'); # Needed since the relationship is optional
+  $account->profile->status('pending') unless defined($account->profile->status);
   return $account;
 }
 

@@ -185,13 +185,22 @@ sub COMPONENT {
 sub ACCEPT_CONTEXT {
   my $self = shift;
   my $c = shift;
-
-  my %args = (%$self, @_);  
-  my %request_args = $self->parse_content_body($c, %args);
-  my $request_model = ref($self)->new(%args, %request_args, ctx=>$c);  ## TODO catch and wrap error, make request scope
+  my $class = ref($self);
+  my $request_model = $c->stash->{"__RequestModel_${class}"} ||= do {
+    my %args = (%$self, @_);  
+    my %request_args = $self->parse_content_body($c, %args);
+    %args = (%args, %request_args, ctx=>$c);
+    $self->build_request_model($c, $class, %args);
+  };
 
   return $request_model;
 }
+
+sub build_request_model {
+  my ($self, $c, $class, %args) = @_;
+  return $class->new(%args); ## TODO catch and wrap error
+}
+
 
 sub parse_content_body {
   my ($self, $c, %args) = @_;
@@ -212,11 +221,6 @@ sub get_content_body_parser_class {
   my ($self, $content_type) = @_;
   return my $parser_class = CatalystX::RequestModel::content_body_parser_for($content_type);
 }
-
-## TODO This needs to be fixed to deal with optional params so we don't inflate
-## not existing to an empty string or undefined.  We probably need to make sure
-## if the attribute is not required then a predicate MUST exist and we need to put
-## the predicate into the metadata.
 
 sub get_attribute_value_for {
   my ($self, $attr) = @_;
@@ -256,5 +260,12 @@ sub nested_params {
   }
   return \%return;
 } 
+
+sub get {
+  my ($self, @fields) = @_;
+  my $p = $self->nested_params;
+  my @got = @$p{@fields};
+  return @got;
+}
 
 1;
