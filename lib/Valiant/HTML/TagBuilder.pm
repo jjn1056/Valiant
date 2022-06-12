@@ -132,6 +132,7 @@ foreach my $e (keys %HTML_VOID_ELEMENTS) {
 }
 
 sub trow { html_content_tag('tr', @_) }
+
 ## Util tags
 
 sub cond(&;@) {
@@ -141,8 +142,8 @@ sub cond(&;@) {
   my $result = $check->();
 
   if($result) {
-    $block = $block->($result) if (ref($block)||'') eq 'CODE';
-    return ($block, @_);
+    my @block = $block->($result) if (ref($block)||'') eq 'CODE';
+    return (@block, @_);
   } else {
     if($otherwise) {
       return ($otherwise->($result), @_);

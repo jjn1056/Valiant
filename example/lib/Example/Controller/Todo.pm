@@ -4,7 +4,7 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Catalyst::Controller';
+extends 'Example::ControllerPerRequest';
 
 sub root :Chained(/auth) PathPart('todos') Args(1) Does(Verbs) ($self, $c, $id) {
   my $todo = $c->user->todos->find($id) || return $c->detach_error(404);

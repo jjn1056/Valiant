@@ -4,31 +4,24 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Catalyst::Controller';
+extends 'Example::ControllerPerRequest';
 
-sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) ($self, $c) {
-  my $todos = $c->user->todos;
-  my $new_todo =  $todos->new_result(+{status=>'active'});
-  my $view = $c->view('Components::Todos',
-    todos => $todos,
-    new_todo => $new_todo);
+has todo => (
+  is=>'ro',
+  required=>1,
+  lazy=>1,
+  default=>sub($self) { $self->ctx->user->new_todo },
+);
 
-  return $new_todo, $view;
-}
+sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) View(Components::Todos) ($self, $c) { }
 
-  sub GET :Action ($self, $c, $new_todo, $view) { return $view->http_ok }
+  sub GET :Action ($self, $c) { return $c->res->code(200) }
 
-  sub POST :Action ($self, $c, $new_todo, $view) {
-    my %params = $c->structured_body(
-      ['todo'], 'title', 
-    )->to_hash;
-
-    $new_todo->set_columns_recursively(\%params)
-      ->insert;
-
-    return $new_todo->valid ?
-      $c->redirect_to_action('root')  :
-        $view->http_bad_request;
+  sub POST :Action RequestModel(TodoRequest) ($self, $c, $request) {
+    $self->todo->set_from_request($request);
+    return $self->todo->valid ?
+      $c->redirect_to_action('root') :
+        $c->res->code(400);
   }
 
 __PACKAGE__->meta->make_immutable;

@@ -188,7 +188,7 @@ sub ACCEPT_CONTEXT {
 
   my %args = (%$self, @_);  
   my %request_args = $self->parse_content_body($c, %args);
-  my $request_model = ref($self)->new(%args, %request_args, ctx=>$c);  ## TODO catch and wrap error
+  my $request_model = ref($self)->new(%args, %request_args, ctx=>$c);  ## TODO catch and wrap error, make request scope
 
   return $request_model;
 }

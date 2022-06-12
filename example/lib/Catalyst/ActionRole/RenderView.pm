@@ -37,7 +37,7 @@ around 'execute', sub {
   # stash flags 'current_view' or 'current_view_instance'.
 
   my $view = $c->view() || Catalyst::ActionRole::RenderView::Utils::NoView->throw;
-  $c->forward($view);
+  $view->respond;
 
 
   return @return;

@@ -20,6 +20,7 @@ __PACKAGE__->config(
   user_store => 'Schema::Person',
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
+  'Controller::Session' => { foo=>'bar' },
   'Plugin::Session' => { storage_secret_key => 'abc123' },
   'Plugin::CSRFToken' => { auto_check =>1, default_secret => 'abc123' },
   'View::Components' => { components_class => 'Example::HTML::Components' },

@@ -22,7 +22,9 @@ sub _do_render {
   local $SELF = $self;
   my @rendered = map {
     $_->can('render') ? $_->render : $_;
-  } $self->$orig(@args);
+  } grep {
+    defined $_ && ($_ ne '');
+  }$self->$orig(@args);
 
   return concat(@rendered);
 }

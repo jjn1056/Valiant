@@ -7,7 +7,8 @@ use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
-has 'account' => (is=>'ro', required=>1);
+has 'ctx' => (is=>'ro', required=>1);
+has 'account' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx->controller->account } );
 
 # Putting this here rather than passing it from the controller means that
 # the controller needs to know less about its view and this view can control

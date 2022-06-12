@@ -4,21 +4,24 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Catalyst::Controller';
+extends 'Example::ControllerPerRequest';
 
-sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) Allow(GET,PATCH) ($self, $c) {
-  my $account = $c->model('Schema::Person')->account_for($c->user);
-  my $view = $c->view('Components::Account', account => $account);
-  return $account, $view;
-}
+has account => (
+  is=>'ro',
+  required=>1,
+  lazy=>1,
+  default=>sub($self) { $self->ctx->user->account },
+);
 
-  sub GET :Action ($self, $c, $account, $view) { return $view->http_ok }
+sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(Components::Account) ($self, $c) { }
 
-  sub PATCH :Action Does(RequestModel) RequestModel(AccountRequest) ($self, $c, $account, $view, $request) {
-    $account->update_account($request);
-    return $account->valid ? 
-      $view->http_ok : 
-        $view->http_bad_request;
+  sub GET :Action ($self, $c) { return $c->res->code(200) }
+
+  sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $request) {
+    $self->account->update_account($request);
+    return $self->account->valid ? 
+      $c->res->code(200) : 
+        $c->res->code(400);
   }
 
 __PACKAGE__->meta->make_immutable;

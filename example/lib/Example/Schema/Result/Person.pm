@@ -82,6 +82,14 @@ sub registered($self) {
     $self->password ? 1:0;
 }
 
+sub account($self) {
+  $self->result_source->resultset->account_for($self);
+}
+
+sub new_todo($self) {
+  return $self->todos->new_result(+{status=>'active'});
+}
+
 # Update from request object methods
 
 sub register($self, $request) {

@@ -4,9 +4,10 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Catalyst::Controller';
+extends 'Example::ControllerPerRequest';
 
 sub login : Chained(/root) Args(0) Does(Verbs) Name(login) ($self, $c) {
+  warn $self;
   $c->redirect_to_action('#home') && $c->detach if $c->user->authenticated # Don't bother if already logged in
 }
 

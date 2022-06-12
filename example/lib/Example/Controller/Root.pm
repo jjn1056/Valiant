@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Catalyst::Controller';
 
-sub root :Chained(/) PathPart('') CaptureArgs(0) { } 
+sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { } 
 
   sub not_found :Chained(root) PathPart('') Args ($self, $c, @args) { return $c->detach_error(404) }
 
@@ -19,12 +19,8 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) { }
     return if $c->user->authenticated;
     return $c->redirect_to_action('#login') && $c->detach;
   }
-  
-    sub home :Chained(auth) PathPart('') Args(0) Name(home) ($self, $c) {
-      return $c->view('Components::Home')->http_ok;
-    }
 
-sub end :Action Does(RenderErrors) {}
+sub end :Action Does(RenderView) Does(RenderErrors) {}
 
 __PACKAGE__->config(namespace=>'');
 __PACKAGE__->meta->make_immutable;

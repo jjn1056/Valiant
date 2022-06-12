@@ -20,7 +20,7 @@ sub respond {
   my ($self, $status, $headers) = @_;
 
   for my $r ($self->ctx->res) {
-    $r->status($status) if $r->status != 200; # Catalyst sets 200
+    $r->status($status) if $status && $r->status != 200; # Catalyst sets 200
     $r->content_type('text/html') if !$r->content_type;
     $r->headers->push_header(@{$headers}) if $headers;
     $r->body($self->render);
@@ -32,7 +32,11 @@ sub respond {
 # Support old school Catalyst::Action::RenderView
 sub process {
   my ($self, $c, @args) = @_;
-  #$self->response(200, @args);
+  $c->log->debug('sdffsdfsfsdfsdfsdfsdf');
+
+  use Devel::Dwarn;
+  Dwarn $self;
+  $self->respond(@args);
 }
 
 sub profile {

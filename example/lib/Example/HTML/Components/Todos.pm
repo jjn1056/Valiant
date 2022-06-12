@@ -7,13 +7,14 @@ use Example::Syntax;
 
 with 'Valiant::HTML::Component';
 
-has 'new_todo' => (is=>'ro', required=>1);
-has 'todos' => (is=>'ro', required=>1);
+has 'ctx' => (is=>'ro', required=>1);
+has 'list' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->user->todos } );
+has 'todo' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->todo } );
 
 sub render($self) {
   return  Layout 'Todo List',
             Navbar +{active_link=>'/todos'},
-            FormFor $self->new_todo, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
+            FormFor $self->todo, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
               fieldset [
                 $fb->legend,
                 div +{ class=>'form-group' },
@@ -26,7 +27,7 @@ sub render($self) {
                       th +{scope=>"col", style=>'width:6em'}, 'Status',
                     ],
                   tbody [
-                    over $self->todos, sub ($todo, $i) {
+                    over $self->list, sub ($todo, $i) {
                       trow [
                        td a +{ href=>"/todos/@{[ $todo->id ]}" }, $todo->title,
                        td $todo->status,

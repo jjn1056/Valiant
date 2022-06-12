@@ -1,8 +1,6 @@
 package Example::Schema::Result::Todo;
 
-use strict;
-use warnings;
-
+use Example::Syntax;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table("todo");
@@ -25,5 +23,10 @@ __PACKAGE__->belongs_to(
 
 __PACKAGE__->validates(title => presence=>1, length=>[3,60]);
 __PACKAGE__->validates(status => presence=>1, inclusion => [qw/active completed archived/] );
+
+sub set_from_request($self, $request) {
+  $self->set_columns_recursively($request->nested_params)
+      ->insert_or_update;
+}
 
 1;
