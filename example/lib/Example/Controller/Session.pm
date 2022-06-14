@@ -6,12 +6,7 @@ use Example::Syntax;
 
 extends 'Example::ControllerPerRequest';
 
-has user => (
-  is => 'rw',
-  lazy => 1,
-  required => 1,
-  default => sub($self) { $self->ctx->users->unauthenticated_user  },
-);
+has user => ( is=>'rw', required=>1, lazy=>1, default=>sub($self) { $self->ctx->users->unauthenticated_user } );
 
 sub login : Chained(/root) Args(0) Does(Verbs) Name(login) View(Components::Login) ($self, $c) {
   $c->redirect_to_action('#home') && $c->detach if $c->user->authenticated # Don't bother if already logged in

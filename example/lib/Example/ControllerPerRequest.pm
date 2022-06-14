@@ -3,7 +3,7 @@ package Example::ControllerPerRequest;
 use Moose;
 extends 'Catalyst::Controller';
 
-has 'ctx' => (is=>'ro', predicate=>'has_ctx');
+has 'ctx' => (is=>'ro', required=>1);
 
 sub COMPONENT {
   my ($class, $app, $args) = @_;
