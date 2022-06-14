@@ -10,7 +10,7 @@ has user => (
   is => 'rw',
   lazy => 1,
   required => 1,
-  default => sub($self) { $self->ctx->user  },
+  default => sub($self) { $self->ctx->users->unauthenticated_user  },
 );
 
 sub login : Chained(/root) Args(0) Does(Verbs) Name(login) View(Components::Login) ($self, $c) {
