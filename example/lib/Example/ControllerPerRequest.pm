@@ -21,17 +21,14 @@ sub COMPONENT {
   $application_self->{path_prefix} =  delete $application_self->{path} if exists $application_self->{path};
   $application_self->{_action_roles} = $application_self->_build__action_roles;
 
-  #Dwarn $application_self;
-  # Dwarn $application_self->_application;
-
   return $application_self;
 }
 
 sub ACCEPT_CONTEXT {
   my $application_self = shift;
   my $c = shift;
-  my $class = ref($application_self);
 
+  my $class = ref($application_self);
   my $self = $c->stash->{"__ControllerPerContext_${class}"} ||= do {
     my %args = (%$application_self, ctx=>$c, @_);  
     $class->new($c, \%args);

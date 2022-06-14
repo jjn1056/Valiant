@@ -6,11 +6,16 @@ use Example::Syntax;
 
 extends 'Example::ControllerPerRequest';
 
+##  This data is scoped to the controller for which it makes sense, as opposed to
+## how the stash is scoped to the entire request.  Plus you reduce the risk of typos
+## in calling the stash breaks stuff is sometimes hard to figure out ways.  Basically
+## we have a strongly typed controller with a clear data access API.
+
 has registration => (
   is => 'ro',
   lazy => 1,
   required => 1,
-  default => sub($self) { $self->ctx->users->registration  },
+  default => sub($self) { $self->ctx->users->registration },
 );
 
 sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs) View(Components::Register)  ($self, $c) {
