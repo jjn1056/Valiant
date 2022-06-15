@@ -41,7 +41,7 @@ sub handle_form_encoded {
     my ($attr, $attr_rules) = %$current_rule;
     my $param_name = $attr_rules->{name};
 
-    $attr_rules = +{ omit_empty=>1, flatten=>1, %$attr_rules }; ## Set defaults
+    $attr_rules = +{ flatten=>1, %$attr_rules }; ## Set defaults
 
     if($attr_rules->{indexed} && !defined($index)) {
       my $body_parameter_name = join '.', @$ns, $param_name;
@@ -56,7 +56,12 @@ sub handle_form_encoded {
         my $value = $self->handle_form_encoded($ns, $index, [$current_rule]);
         push @values, $value->{$attr}; #$self->normalize_value($value, $attr_rules);
       }
-      $current->{$attr} = \@values;
+
+      if(@values) {
+        $current->{$attr} = \@values;
+      } elsif(!$attr_rules->{omit_empty}) {
+        $current->{$attr} = [];
+      }
     } elsif(my $nested_model = $attr_rules->{model}) {
       $current->{$attr} = $self->{ctx}->model(
         $nested_model, 

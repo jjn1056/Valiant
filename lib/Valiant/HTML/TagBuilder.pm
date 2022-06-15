@@ -142,7 +142,7 @@ sub cond(&;@) {
   my $result = $check->();
 
   if($result) {
-    my @block = $block->($result) if (ref($block)||'') eq 'CODE';
+    my @block = (ref($block)||'') eq 'CODE' ? ($block->($result)) : ($block);
     return (@block, @_);
   } else {
     if($otherwise) {

@@ -18,8 +18,6 @@ sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(Components
   sub GET :Action ($self, $c) { return $c->res->code(200) }
 
   sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $request) {
-  use Devel::Dwarn;
-  Dwarn $request->nested_params;
     $self->account->update_account($request);
     return $self->account->valid ? 
       $c->res->code(200) : 
