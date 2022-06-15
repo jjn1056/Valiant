@@ -28,7 +28,7 @@ sub content_body_parser_for {
 sub load_content_body_parsers {
   my $class = shift;
   my @packages = Module::Pluggable::Object->new(
-      search_path => "${class}::ContentBodyParsers"
+      search_path => "${class}::ContentBodyParser"
     )->plugins;
 
   %ContentBodyParsers = map {
@@ -92,6 +92,7 @@ sub import {
     if(my $info = delete $opts{property}) {
       $info = +{ name=>$attr } unless (ref($info)||'') eq 'HASH';
       $info->{attr_predicate} = $predicate if defined($predicate);
+      $info->{omit_empty} = 1 unless exists($info->{omit_empty});
       my $method = \&{"${target}::property"};
       $method->($attr, $info, \%opts);
     }
@@ -232,9 +233,12 @@ sub nested_params {
   my %return;
   foreach my $p ($self->properties) {
     my ($attr, $meta) = %$p;
+    use Devel::Dwarn; Dwarn $p;
 
     if(my $predicate = $meta->{attr_predicate}) {
-      next unless $self->$predicate;  # skip empties
+      if($meta->{omit_empty}) {
+        next unless $self->$predicate;  # skip empties when omit_empty=>1
+      }
     }
 
     my $value = $self->get_attribute_value_for($attr);
@@ -269,3 +273,12 @@ sub get {
 }
 
 1;
+
+
+__END__
+
+flatten
+omit_empty   (should also remove [] for indexed or arraryed values
+indexed
+model
+expand (JSON, CSV

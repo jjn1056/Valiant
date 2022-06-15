@@ -1,8 +1,8 @@
-package CatalystX::RequestModel::ContentBodyParsers::FormURLEncoded;
+package CatalystX::RequestModel::ContentBodyParser::FormURLEncoded;
 
 use warnings;
 use strict;
-use Module::Runtime ();
+use base 'CatalystX::RequestModel::ContentBodyParser';
 
 sub content_type { 'application/x-www-form-urlencoded' }
 
@@ -41,7 +41,7 @@ sub handle_form_encoded {
     my ($attr, $attr_rules) = %$current_rule;
     my $param_name = $attr_rules->{name};
 
-    $attr_rules = +{ flatten=>1, %$attr_rules }; ## Set defaults
+    $attr_rules = +{ omit_empty=>1, flatten=>1, %$attr_rules }; ## Set defaults
 
     if($attr_rules->{indexed} && !defined($index)) {
       my $body_parameter_name = join '.', @$ns, $param_name;
@@ -71,29 +71,6 @@ sub handle_form_encoded {
     }
   }
   return $current;
-}
-
-sub normalize_value {
-  my ($self, $value, $key_rules) = @_;
-  if($key_rules->{always_array}) {
-    $value = [$value] unless (ref($value)||'') eq 'ARRAY';
-  } elsif($key_rules->{flatten}) {
-    $value = $value->[-1] if (ref($value)||'') eq 'ARRAY';
-  }
-  $value = $self->json_parser($value) if ($key_rules->{expand}||'') eq 'JSON';
-  return $value;
-}
-
-my $_JSON_PARSER;
-
-sub _build_json_parser {
-  return my $parser = Module::Runtime::use_module('JSON::MaybeXS')->new(utf8 => 1);
-}
-
-sub json_parse {
-  my ($self, $string) = @_;
-  $_JSON_PARSER ||= $self->_build_json_parser;
-  return $_JSON_PARSER->decode($string); # TODO need to catch errors
 }
 
 1;
