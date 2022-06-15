@@ -24,6 +24,7 @@ has 'status_options' => (
 );
 
 sub render($self) {
+
   return  Layout 'Account Details',
             Navbar +{active_link=>'/account'},
             FormFor $self->account, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {

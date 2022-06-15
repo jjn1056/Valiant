@@ -186,22 +186,19 @@ sub COMPONENT {
 sub ACCEPT_CONTEXT {
   my $self = shift;
   my $c = shift;
-  my $class = ref($self);
-  my $request_model = $c->stash->{"__RequestModel_${class}"} ||= do {
-    my %args = (%$self, @_);  
-    my %request_args = $self->parse_content_body($c, %args);
-    %args = (%args, %request_args, ctx=>$c);
-    $self->build_request_model($c, $class, %args);
-  };
 
-  return $request_model;
+  my %args = (%$self, @_);  
+  my %request_args = $self->parse_content_body($c, %args);
+  my %init_args = (%args, %request_args, ctx=>$c);
+  my $class = ref($self);
+
+  return my $request_model = $self->build_request_model($c, $class, %init_args);
 }
 
 sub build_request_model {
-  my ($self, $c, $class, %args) = @_;
-  return $class->new(%args); ## TODO catch and wrap error
+  my ($self, $c, $class, %init_args) = @_;
+  return $class->new(%init_args); ## TODO catch and wrap error
 }
-
 
 sub parse_content_body {
   my ($self, $c, %args) = @_;
@@ -233,8 +230,6 @@ sub nested_params {
   my %return;
   foreach my $p ($self->properties) {
     my ($attr, $meta) = %$p;
-    use Devel::Dwarn; Dwarn $p;
-
     if(my $predicate = $meta->{attr_predicate}) {
       if($meta->{omit_empty}) {
         next unless $self->$predicate;  # skip empties when omit_empty=>1
