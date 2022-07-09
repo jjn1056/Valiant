@@ -34,6 +34,4 @@ sub prepare_render_args {
   return @args;
 }
 
-
-
 1;

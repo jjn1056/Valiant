@@ -26,6 +26,7 @@ sub parse { die "Must be overridden"}
 
 sub normalize_value {
   my ($self, $param, $value, $key_rules) = @_;
+
   if($key_rules->{always_array}) {
     $value = [$value] unless (ref($value)||'') eq 'ARRAY';
   } elsif($key_rules->{flatten}) {
@@ -41,6 +42,8 @@ sub normalize_value {
   }
 
   $value = $self->normalize_boolean($value) if ($key_rules->{boolean}||'');
+
+  return $value;
 }
 
 sub normalize_boolean {

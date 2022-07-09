@@ -11,7 +11,7 @@ sub new {
   my $self = bless \%args, $class;
   $self->{bp} ||= $self->{ctx}->req->body_parameters;
 
-  ## TODO preaprse into hash of hashes to optimize how indexes work
+  ## TODO prepare into hash of hashes to optimize how indexes work
   #use Devel::Dwarn;
   #Dwarn $self->{bp} ;
 
@@ -21,9 +21,6 @@ sub new {
 sub parse {
   my ($self, $ns, $rules) = @_;
   my %parsed = %{ $self->handle_form_encoded($ns, undef, $rules) };
-
-  use Devel::Dwarn; Dwarn \%parsed;
-  
   return %parsed;
 }
 
@@ -75,7 +72,7 @@ sub handle_form_encoded {
       my $body_parameter_name = join '.', @$ns, (defined($index) ? "${param_name}[$index]": $param_name);
       next unless exists $body_parameters->{$body_parameter_name};   ## TODO needs to be a proper Bad Request Exception class
       my $value = $body_parameters->{$body_parameter_name};
-      $current->{$attr} = $self->normalize_value($body_parameter_name ,$value, $attr_rules);
+      $current->{$attr} = $self->normalize_value($body_parameter_name, $value, $attr_rules);
     }
   }
   return $current;
