@@ -8,7 +8,7 @@ extends 'Catalyst::Controller';
 
 sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { } 
 
-  sub not_found :Chained(root) PathPart('') Args ($self, $c, @args) { return $c->detach_error(404) }
+  sub not_found :Chained(root) PathPart('') Args ($self, $c, @args) { return $c->detach_error(404) }  # ->detach_error($code, \@headers, \%data)
 
   sub public :Chained(root) PathPart('public') Args {
     my ($self, $c, @args) = @_;

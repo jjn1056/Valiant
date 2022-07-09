@@ -7,7 +7,7 @@ extends 'Catalyst::Model';
 namespace 'person';
 content_type 'application/x-www-form-urlencoded';
 
-has username => (is=>'ro', property=>1);  # TODO?? if required=>0 then predicat MUST be set  
+has username => (is=>'ro', property=>1);  
 has first_name => (is=>'ro', property=>1);
 has last_name => (is=>'ro', property=>1);
 has profile => (is=>'ro', property=>+{model=>'AccountRequest::Profile' });

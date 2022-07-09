@@ -11,7 +11,6 @@ __PACKAGE__->setup_plugins([qw/
   RedirectTo
   URI
   Errors
-  StructuredParameters
   ServeFile
   CSRFToken
 /]);
@@ -63,12 +62,6 @@ sub persist_user_to_session ($self, $user) {
 
 sub remove_user_from_session($self) {
   delete $self->session->{user_id};
-}
-
-sub authenticate($self, $username='', $password='') {
-  my $user = $self->user_store->authenticate($username, $password);
-  $self->set_user($user) if $user->no_errors;
-  return $user; 
 }
 
 sub set_user ($self, $user) {

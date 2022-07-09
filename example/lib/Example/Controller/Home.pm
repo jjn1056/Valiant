@@ -9,7 +9,7 @@ extends 'Example::ControllerPerRequest';
 sub root :Chained(/auth) PathPart('') Args(0) Does(Verbs) View(Components::Home) Name(home) ($self, $c) { }
 
   sub GET :Action ($self, $c) {
-    $c->view->component->info('The time is '. localtime);
+    $c->view->info('The time is '. localtime);
     return $c->res->code(200);
   }
 

@@ -8,7 +8,7 @@ extends 'Example::ControllerPerRequest';
 
 ##  This data is scoped to the controller for which it makes sense, as opposed to
 ## how the stash is scoped to the entire request.  Plus you reduce the risk of typos
-## in calling the stash breaks stuff is sometimes hard to figure out ways.  Basically
+## in calling the stash which breaks stuff in hard to figure out ways.  Basically
 ## we have a strongly typed controller with a clear data access API.
 
 has registration => (

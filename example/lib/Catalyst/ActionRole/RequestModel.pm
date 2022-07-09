@@ -2,6 +2,7 @@ package Catalyst::ActionRole::RequestModel;
 
 use Moose::Role;
 use Catalyst::Utils;
+use CatalystX::RequestModel::Utils::InvalidContentType;
 
 requires 'attributes', 'execute', 'dispatch';
 
@@ -32,14 +33,14 @@ sub get_request_model {
     $self->build_request_model_instance($controller, $ctx, $_)
   } @models;
 
-  die "Bad request content type not allowed '@{[ $ctx->req->content_type ]}' " unless $model;  ## TODO real exeption class
+  CatalystX::RequestModel::Utils::InvalidContentType->throw(ct=>$ctx->req->content_type) unless $model;
   return $model;
 }
 
 sub build_request_model_instance {
   my ($self, $controller, $ctx, $request_model_class) = @_;
   my $request_model_instance = $ctx->model($request_model_class)
-    || die "Request Model '$request_model_class' doesn't exist"; ## TODO real exeption class
+    || die "Request Model '$request_model_class' doesn't exist";
 
   return $request_model_instance;
 }

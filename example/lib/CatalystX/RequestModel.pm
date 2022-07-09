@@ -5,6 +5,7 @@ use Scalar::Util;
 use Moo::_Utils;
 use Module::Pluggable::Object;
 use Module::Runtime ();
+use CatalystX::RequestModel::Utils::InvalidContentType;
 
 require Moo::Role;
 require Sub::Util;
@@ -22,7 +23,7 @@ sub content_body_parsers { return %ContentBodyParsers }
 
 sub content_body_parser_for {
   my $ct = shift;
-  return $ContentBodyParsers{$ct} || die "No content body parser for '$ct'";
+  return $ContentBodyParsers{$ct} || CatalystX::RequestModel::Utils::InvalidContentType->throw(ct=>$ct);
 }
 
 sub load_content_body_parsers {
@@ -126,6 +127,7 @@ package Catalyst::ComponentRole::RequestModel;
 
 use Moo::Role;
 use Scalar::Util;
+use CatalystX::RequestModel::Utils::InvalidContentType;
 
 has ctx => (is=>'ro');
 has current_namespace => (is=>'ro', predicate=>'has_current_namespace');
@@ -207,7 +209,7 @@ sub parse_content_body {
   my @ns = exists($args{current_namespace}) ? @{$args{current_namespace}} : $self->namespace;            
 
   my $parser_class = $self->get_content_body_parser_class($c->req->content_type)
-    || die "No parser for content type";
+    || CatalystX::RequestModel::Utils::InvalidContentType->throw(ct=>$c->req->content_type);
   my $parser = exists($args{current_parser}) ? 
     $args{current_parser} :
       $parser_class->new(ctx=>$c);

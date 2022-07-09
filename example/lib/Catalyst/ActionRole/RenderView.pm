@@ -5,17 +5,11 @@ package # hide from PAUSE
   package Catalyst::ActionRole::RenderView::Utils::NoView;
    
   use Moose;
-  use namespace::clean -except => 'meta';
-    
-  extends 'CatalystX::Utils::HttpException';
-  
-  has '+status' => (is=>'ro', init_arg=>undef, default=>sub {500});
-  has '+errors' => (
-    is=>'ro',
-    init_arg=>undef, 
-    default=>sub { ["No View can be found to render."] },
-  );
+  with 'CatalystX::Utils::DoesHttpException';
    
+  sub status_code { 500 }
+  sub error { "No View can be found to render." }
+
   __PACKAGE__->meta->make_immutable;
 }
 

@@ -32,7 +32,7 @@ sub COMPONENT {
       $args{ctx} : 
         exists($args{container}->{__ctx}) ?
           $args{container}->{__ctx} :
-            die "Can't find context";
+            die "Can't find context for ${class}::${comp_name}";
 
     my %injected_args = $components_model->find_injected_args($c, $comp_name);
     my $component = $component_class->new(%$config, %injected_args, %args, ctx=>$c);

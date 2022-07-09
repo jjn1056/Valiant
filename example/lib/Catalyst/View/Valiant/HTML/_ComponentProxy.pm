@@ -29,20 +29,30 @@ sub respond {
   return $self;
 }
 
-# Support old school Catalyst::Action::RenderView
+# Support old school Catalyst::Action::RenderView  TBD
 sub process {
-  my ($self, $c, @args) = @_;
-  $c->log->debug('sdffsdfsfsdfsdfsdfsdf');
-
-  use Devel::Dwarn;
-  Dwarn $self;
-  $self->respond(@args);
+  my ($self, $c, $args) = @_; 
+  $self->respond();
 }
 
 sub profile {
   my $self = shift;
   $self->ctx->stats->profile(@_)
     if $self->ctx->debug;
+}
+
+around 'can', sub {
+  my ($orig, $self, $target) = @_;
+  my $can = $self->$orig($target);
+  return $can if $can;
+  return $self->component->can($target);
+};
+
+sub AUTOLOAD {
+    my $self = shift;
+    (my $method) = (our $AUTOLOAD =~ /([^:]+)$/);
+    return if $method eq "DESTROY";
+    return $self->component->$method(@_) if $self->component->can($method); 
 }
 
 __PACKAGE__->meta->make_immutable;

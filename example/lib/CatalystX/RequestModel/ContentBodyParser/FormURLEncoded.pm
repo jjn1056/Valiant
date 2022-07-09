@@ -18,10 +18,13 @@ sub new {
   return $self;
 }
 
-
 sub parse {
   my ($self, $ns, $rules) = @_;
-  return %{ $self->handle_form_encoded($ns, undef, $rules) };
+  my %parsed = %{ $self->handle_form_encoded($ns, undef, $rules) };
+
+  use Devel::Dwarn; Dwarn \%parsed;
+  
+  return %parsed;
 }
 
 sub _sorted {
@@ -72,7 +75,7 @@ sub handle_form_encoded {
       my $body_parameter_name = join '.', @$ns, (defined($index) ? "${param_name}[$index]": $param_name);
       next unless exists $body_parameters->{$body_parameter_name};   ## TODO needs to be a proper Bad Request Exception class
       my $value = $body_parameters->{$body_parameter_name};
-      $current->{$attr} = $self->normalize_value($value, $attr_rules);
+      $current->{$attr} = $self->normalize_value($body_parameter_name ,$value, $attr_rules);
     }
   }
   return $current;
