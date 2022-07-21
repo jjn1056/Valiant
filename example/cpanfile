@@ -14,6 +14,7 @@ requires 'Catalyst::Plugin::ServeFile', '0.004';
 requires 'Catalyst::Plugin::CSRFToken', '0.001';
 requires 'CatalystX::Errors', '0.001008';
 requires 'CatalystX::RequestModel', '0.002';
+requires 'Catalyst::ControllerPerContext', '0.001';
 
 requires 'DBIx::Class', '0.082840';
 requires 'DBIx::Class::Helpers', '2.033003';

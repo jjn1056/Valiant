@@ -1,7 +1,7 @@
 use warnings;
 use strict;
 
-package Example::Server;
+package Example::PSGI;
 
 use Plack::Runner;
 use Module::Runtime 'use_module';

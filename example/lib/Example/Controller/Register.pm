@@ -4,7 +4,7 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Example::ControllerPerRequest';
+extends 'Example::Controller';
 
 ##  This data is scoped to the controller for which it makes sense, as opposed to
 ## how the stash is scoped to the entire request.  Plus you reduce the risk of typos

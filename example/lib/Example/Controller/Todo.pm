@@ -4,7 +4,7 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Example::ControllerPerRequest';
+extends 'Example::Controller';
 
 has todo => (is=>'rw');
 

@@ -4,7 +4,7 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Example::ControllerPerRequest';
+extends 'Example::Controller';
 
 sub root :Chained(/auth) PathPart('') Args(0) Does(Verbs) View(Components::Home) Name(home) ($self, $c) { }
 

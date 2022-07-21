@@ -4,7 +4,7 @@ use Moose;
 use MooseX::MethodAttributes;
 use Example::Syntax;
 
-extends 'Example::ControllerPerRequest';
+extends 'Example::Controller';
 
 has user => ( is=>'rw', required=>1, lazy=>1, default=>sub($self) { $self->ctx->users->unauthenticated_user } );
 
