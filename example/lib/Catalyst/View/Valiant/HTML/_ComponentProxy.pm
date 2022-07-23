@@ -31,7 +31,7 @@ sub respond {
 
 # Support old school Catalyst::Action::RenderView  TBD
 sub process {
-  my ($self, $c, $args) = @_; 
+  my ($self, $c, $args) = @_;
   $self->respond();
 }
 
@@ -42,9 +42,11 @@ sub profile {
 }
 
 around 'can', sub {
+
   my ($orig, $self, $target) = @_;
   my $can = $self->$orig($target);
   return $can if $can;
+  return unless ref $self;
   return $self->component->can($target);
 };
 

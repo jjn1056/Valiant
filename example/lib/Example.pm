@@ -34,7 +34,7 @@ __PACKAGE__->config(
 );
 
 __PACKAGE__->setup();
-
+  
 has users => (
   is => 'ro',
   lazy => 1,
