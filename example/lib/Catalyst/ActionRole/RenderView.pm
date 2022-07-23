@@ -1,5 +1,4 @@
-package # hide from PAUSE
-  Catalyst::ActionRole::RenderView;
+package Catalyst::ActionRole::RenderView;
 
 {
   package Catalyst::ActionRole::RenderView::Utils::NoView;
@@ -31,7 +30,6 @@ around 'execute', sub {
   # stash flags 'current_view' or 'current_view_instance'.
 
   my $view = $c->view() || Catalyst::ActionRole::RenderView::Utils::NoView->throw;
-  #$view->respond;
   $c->forward($view);
 
   return @return;
@@ -99,13 +97,28 @@ This is basically L<Catalyst::Action::RenderView> done as an action role (basica
 role) rather than as a base class.  This is a bit more flexible if you plan to do fancy
 stuff with your end action.
 
+Two things it doesn't do that the classic L<Catalyst::Action::RenderView> does is it doesn't
+set a default content type if none is found (old one just set C<text/html> which was probably
+ok back in the 'Aughts but not always true now) and we don't support the C<dump_info> when in
+debug mode since I really think something like that belongs in another part of the stack.
+
+I'm willing to be proven wrong, just send me your use cases and patches.
+
+=head1 EXCEPTIONS
+
+This class can throw the following exceptions which are compatible with L<CatalystX::Errors>
+
+=head2 Now View found
+
+If there's no view found when calling '$c->view()' we throw L<Catalyst::ActionRole::RenderView::Utils::NoView>
+
 =head1 AUTHOR
 
   John Napiorkowski <jnapiork@cpan.org>
  
 =head1 COPYRIGHT
  
-Copyright (c) 2021 the above named AUTHOR
+Copyright (c) 2022 the above named AUTHOR
  
 =head1 LICENSE
  
