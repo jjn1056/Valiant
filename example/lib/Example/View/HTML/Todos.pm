@@ -73,7 +73,7 @@ sub pagelist($self) {
 }
 
 sub status_label($self, $label) {
-  return b u $label if $label eq 'all' and $self->query->status_none;
+  return b u $label if $label eq 'all' and $self->query->status_all;
   return b u $label if $label eq 'active' and $self->query->status_active;
   return b u $label if $label eq 'completed' and $self->query->status_completed;
   return $label;

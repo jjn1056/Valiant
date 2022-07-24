@@ -92,9 +92,8 @@ sub new_todo($self) {
 
 sub request_todos($self, $request) {
   my $todos = $self->todos->newer_first;
-  $todos = $todos->filter_by_status($request->status) unless $request->status_none;
+  $todos = $todos->filter_by_status($request->status) unless $request->status_all;
   $todos = $todos->page($request->page);
-
   return $todos;
 }
 
@@ -113,23 +112,3 @@ sub update_account($self, $request) {
 }
 
 1;
-
-__END__
-
-sub register($self, $model) {
-  $self->first_name($model->first_name) if $model->has_first_name;
-  $self->last_name($model->last_name) if $model->has_last_name;
-  $self->password($model->password) if $model->has_password;
-  $self->password_confirmation($model->password_confirmation) if $model->has_password_confirmation;
-  $self->insert_or_update;
-  return $self;
-}
-
-  my %pairs = $request->get_pairs(qw/
-    first_name
-    last_name
-    password
-    password_confirmation/);
-  $self->set_columns_recursively(\%pairs)
-    ->insert_or_update;
-  
