@@ -20,11 +20,8 @@ sub render($self, $c) {
         $fb->legend,
         div +{ class=>'form-group' }, [
           $fb->model_errors(+{class=>'alert alert-danger', role=>'alert', show_message_on_field_errors=>'Error Adding new Todo'}),
-          div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
-            "@{[ $self->pager->first]} to @{[ $self->pager->last ]} of @{[ $self->pager->total_entries ]}",
+          $self->page_window_info,
         ],
-
-
 
         table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
           thead
@@ -39,7 +36,7 @@ sub render($self, $c) {
                td $todo->status,
               ],
             },
-            cond {$self->pager->last_page > 1 }
+            cond {$self->pager->last_page > 1  }
               trow td {colspan=>2, style=>'background:white'},
                 [ "Page: ", $self->pagelist ],
           ],
@@ -59,6 +56,16 @@ sub render($self, $c) {
       ],
     }
   });
+}
+
+sub page_window_info($self) {
+  cond {$self->pager->total_entries > 0 }
+    cond {$self->pager->last_page == 1} 
+      div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
+        "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}",
+    cond {$self->pager->last_page > 1} 
+      div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
+        "@{[ $self->pager->first]} to @{[ $self->pager->last ]} of @{[ $self->pager->total_entries ]}";
 }
 
 sub pagelist($self) {
