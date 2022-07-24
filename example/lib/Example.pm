@@ -16,14 +16,10 @@ __PACKAGE__->setup_plugins([qw/
 /]);
 
 __PACKAGE__->config(
-  user_store => 'Schema::Person',
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
-  'Controller::Session' => { foo=>'bar' },
   'Plugin::Session' => { storage_secret_key => 'abc123' },
   'Plugin::CSRFToken' => { auto_check =>1, default_secret => 'abc123' },
-  'View::Components' => { components_class => 'Example::HTML::Components' },
-  'View::Components::Layout' => { copyright => 2022 },
   'Model::Schema' => {
     traits => ['SchemaProxy'],
     schema_class => 'Example::Schema',
@@ -38,7 +34,7 @@ __PACKAGE__->setup();
 has users => (
   is => 'ro',
   lazy => 1,
-  default => sub($c) { $c->model($c->config->{user_store}) },
+  default => sub($c) { $c->model('Schema::Person') },
 );
 
 has user => (
