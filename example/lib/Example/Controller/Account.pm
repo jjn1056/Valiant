@@ -13,7 +13,7 @@ has account => (
   default=>sub($self) { $self->ctx->user->account },
 );
 
-sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(Components::Account) ($self, $c) { }
+sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(HTML::Account) ($self, $c) { }
 
   sub GET :Action ($self, $c) { return $c->res->code(200) }
 

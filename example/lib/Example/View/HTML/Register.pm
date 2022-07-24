@@ -1,18 +1,17 @@
-package Example::HTML::Components::Register;
+package Example::View::HTML::Register;
 
-use Moo;
-use Example::HTML::Components 'Layout', 'FormFor';
-use Valiant::HTML::TagBuilder ':html';
+use Moose;
 use Example::Syntax;
+use Valiant::HTML::TagBuilder 'div', 'fieldset';
+use Valiant::HTML::Form 'form_for';
 
-with 'Valiant::HTML::Component';
+extends 'Example::View::HTML';
 
-has 'ctx' => (is=>'ro', required=>1);
 has 'registration' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx->controller->registration });
 
-sub render($self) {
-  Layout 'Register',
-    FormFor $self->registration, +{method=>'POST', style=>'width:35em; margin:auto'}, sub ($fb) {
+sub render($self, $c) {
+  $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
+    form_for $self->registration, +{method=>'POST', style=>'width:35em; margin:auto', csrf_token=>$c->csrf_token }, sub ($fb) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -44,7 +43,8 @@ sub render($self) {
         ],
         $fb->submit('Register for Account', +{class=>'btn btn-lg btn-primary btn-block'}),
       ],
-    };
+    },
+  });
 }
 
-1;
+__PACKAGE__->meta->make_immutable();

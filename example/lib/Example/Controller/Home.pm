@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub root :Chained(/auth) PathPart('') Args(0) Does(Verbs) View(Components::Home) Name(home) ($self, $c) { }
+sub root :Chained(/auth) PathPart('') Args(0) Name(home) Does(Verbs) View(HTML::Home)  ($self, $c) { }
 
   sub GET :Action ($self, $c) {
     $c->view->info('The time is '. localtime);

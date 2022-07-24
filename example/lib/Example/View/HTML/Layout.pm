@@ -1,23 +1,14 @@
-package Example::HTML::Components::Layout;
+package Example::View::HTML::Layout;
 
-use Moo;
-use Valiant::HTML::TagBuilder ':html';
+use Moose;
 use Example::Syntax;
-
-with 'Valiant::HTML::ContentComponent';
+use Valiant::HTML::TagBuilder qw(html head title meta link body script);
+ 
+extends 'Example::View::HTML';
 
 has 'page_title' => (is=>'ro', required=>1);
-has 'css' => (is=>'ro', required=>1, default=>'');
 
-sub prepare_args($class, @args) {
-  if(ref(\$args[0]) eq 'SCALAR') {
-    my $page_title = shift(@args);
-    return +{page_title=>$page_title}, @args;
-  }
-  return @args;
-}
-
-sub render($self, $content) {
+sub render($self, $c, $content) {
   return  html +{ lang=>'en' }, [
             head [
               title $self->page_title,
@@ -28,7 +19,7 @@ sub render($self, $content) {
                       href=>"https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css",
                       integrity=>"sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh",
                       crossorigin=>"anonymous" },
-              $self->css,
+              $self->content_for('css'),
             ],
             body [
               $content,

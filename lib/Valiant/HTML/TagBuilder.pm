@@ -159,7 +159,7 @@ sub otherwise {
   return (bless($code, 'Valiant::HTML::TagBuilder::otherwise'), @_);
 }
 
-sub over($&) {
+sub over {
   my $item_proto = shift;
   my $function = shift;
 

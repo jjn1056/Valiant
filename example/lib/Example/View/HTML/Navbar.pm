@@ -1,11 +1,10 @@
-package Example::HTML::Components::Navbar;
+package Example::View::HTML::Navbar;
 
-use Moo;
-use Example::HTML::Components 'Layout';
-use Valiant::HTML::TagBuilder 'nav', 'a', 'div', 'button', 'span';
+use Moose;
 use Example::Syntax;
+use Valiant::HTML::TagBuilder 'nav', 'a', 'div', 'button', 'span';
 
-with 'Valiant::HTML::Component';
+extends 'Example::View::HTML';
 
 has active_link => (is=>'ro', required=>1);
 
@@ -26,7 +25,7 @@ sub links($self) {
   } @links;
 }
 
-sub render($self) {
+sub render($self, $c) {
   nav +{ class=>"navbar navbar-expand-lg navbar-light bg-light" }, [
     a +{ class=>"navbar-brand", href=>"/" }, 'Example Application',
     button +{
@@ -40,7 +39,4 @@ sub render($self) {
   ];
 }
 
-1;
-
-
-# MPVA
+__PACKAGE__->meta->make_immutable();

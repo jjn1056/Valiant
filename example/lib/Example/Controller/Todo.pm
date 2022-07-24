@@ -8,7 +8,7 @@ extends 'Example::Controller';
 
 has todo => (is=>'rw');
 
-sub root :Chained(/auth) PathPart('todos') Args(1) Does(Verbs) View(Components::Todo) ($self, $c, $id) {
+sub root :Chained(/auth) PathPart('todos') Args(1) Does(Verbs) View(HTML::Todo) ($self, $c, $id) {
   $self->todo($c->user->todos->find($id) || return $c->detach_error(404));
 }
 

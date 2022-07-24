@@ -6,6 +6,8 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
+has 'list' => (is=>'rw', required=>1, lazy=>1, default=>sub($self) {$self->ctx->user->todos } );
+
 has todo => (
   is=>'ro',
   required=>1,
@@ -13,7 +15,10 @@ has todo => (
   default=>sub($self) { $self->ctx->user->new_todo },
 );
 
-sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) View(Components::Todos) ($self, $c) { }
+sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) View(HTML::Todos) RequestModel(TodosQuery) ($self, $c, $q) {
+  $self->list($self->list->completed) if $q->is_completed;
+  $self->list($self->list->active) if $q->is_active;
+}
 
   sub GET :Action ($self, $c) { return $c->res->code(200) }
 

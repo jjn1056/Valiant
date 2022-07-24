@@ -18,7 +18,7 @@ has registration => (
   default => sub($self) { $self->ctx->users->registration },
 );
 
-sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs) View(Components::Register)  ($self, $c) {
+sub root :Chained(/root) PathPart(register) Args(0) Does(Verbs) View(HTML::Register)  ($self, $c) {
   return $c->redirect_to_action('#home') && $c->detach if $c->user->registered;
 }
 
