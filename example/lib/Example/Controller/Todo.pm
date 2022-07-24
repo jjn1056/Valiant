@@ -9,7 +9,8 @@ extends 'Example::Controller';
 has todo => (is=>'rw');
 
 sub root :Chained(/auth) PathPart('todos') Args(1) Does(Verbs) View(HTML::Todo) ($self, $c, $id) {
-  $self->todo($c->user->todos->find($id) || return $c->detach_error(404));
+  $self->todo($c->user->todos->find($id) ||
+    return $c->detach_error(404, +{error=>"Todo id $id not found"}));
 }
 
   sub GET :Action ($self, $c) { return $c->res->code(200) }

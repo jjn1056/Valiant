@@ -90,6 +90,14 @@ sub new_todo($self) {
   return $self->todos->new_result(+{status=>'active'});
 }
 
+sub request_todos($self, $request) {
+  my $todos = $self->todos->newer_first;
+  $todos = $todos->filter_by_status($request->status) unless $request->status_none;
+  $todos = $todos->page($request->page);
+
+  return $todos;
+}
+
 # Update from request object methods
 
 sub register($self, $request) {

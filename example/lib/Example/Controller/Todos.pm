@@ -6,7 +6,13 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-has 'list' => (is=>'rw', required=>1, lazy=>1, default=>sub($self) {$self->ctx->user->todos } );
+has 'query' => (is=>'rw');
+
+has 'list' => (
+  is=>'ro',
+  required=>1,
+  lazy=>1, default=>sub($self) { $self->ctx->user->request_todos($self->query) }
+);
 
 has todo => (
   is=>'ro',
@@ -16,8 +22,7 @@ has todo => (
 );
 
 sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) View(HTML::Todos) RequestModel(TodosQuery) ($self, $c, $q) {
-  $self->list($self->list->completed) if $q->is_completed;
-  $self->list($self->list->active) if $q->is_active;
+  $self->query($q);
 }
 
   sub GET :Action ($self, $c) { return $c->res->code(200) }
