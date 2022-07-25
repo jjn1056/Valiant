@@ -18,10 +18,13 @@ sub render($self, $c) {
     form_for $self->todo, +{method=>'POST', style=>'width:35em; margin:auto', csrf_token=>$c->csrf_token }, sub ($fb) {
       fieldset [
         $fb->legend,
-        div +{ class=>'form-group' }, [
-          $fb->model_errors(+{class=>'alert alert-danger', role=>'alert', show_message_on_field_errors=>'Error Adding new Todo'}),
+          $fb->model_errors(+{
+            class=>'alert alert-danger', 
+            role=>'alert', 
+            show_message_on_field_errors=>'Error Adding new Todo',
+          }),
+
           $self->page_window_info,
-        ],
 
         table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
           thead
@@ -41,12 +44,8 @@ sub render($self, $c) {
                 [ "Page: ", $self->pagelist ],
           ],
         ],
-
-        div {style=>'text-align:center; margin-bottom: 1rem'}, [
-          a { href=>'todos', style=>'margin: .5rem'}, $self->status_label('all'),
-          a { href=>'?status=active', style=>'margin: .5rem'}, $self->status_label('active'),
-          a { href=>'?status=completed', style=>'margin: .5rem'}, $self->status_label('completed'),
-        ],
+        
+        $self->status_filter_box,
 
         div +{ class=>'form-group' }, [
           $fb->input('title', +{ class=>'form-control', placeholder=>'What needs to be done?', errors_classes=>'is-invalid' }),
@@ -77,6 +76,14 @@ sub pagelist($self) {
     push @page_html, a {href=>$query, style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;
+}
+
+sub status_filter_box($self) {
+  div {style=>'text-align:center; margin-bottom: 1rem'}, [
+    a { href=>'todos', style=>'margin: .5rem'}, $self->status_label('all'),
+    a { href=>'?status=active', style=>'margin: .5rem'}, $self->status_label('active'),
+    a { href=>'?status=completed', style=>'margin: .5rem'}, $self->status_label('completed'),
+  ],
 }
 
 sub status_label($self, $label) {

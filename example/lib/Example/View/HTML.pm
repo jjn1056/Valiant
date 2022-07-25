@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Catalyst::View::BasePerRequest';
 
-sub flatten_rendered_for_response_body($self, @rendered) {
+sub flatten_rendered($self, @rendered) {
   return concat grep { defined($_) } @rendered;
 }
 
