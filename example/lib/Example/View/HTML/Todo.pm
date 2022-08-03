@@ -3,7 +3,6 @@ package Example::View::HTML::Todo;
 use Moose;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder 'div', 'fieldset';
-use Valiant::HTML::Form 'form_for';
 
 extends 'Example::View::HTML';
 
@@ -20,7 +19,7 @@ sub status_options($self) {
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
     $c->view('HTML::Navbar' => active_link=>'/todos'),
-    form_for $self->todo, +{method=>'POST', style=>'width:35em; margin:auto', csrf_token=>$c->csrf_token }, sub ($fb) {
+    $c->view('HTML::Form', $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -39,7 +38,7 @@ sub render($self, $c) {
           ],
         $fb->submit('Update Todo', +{class=>'btn btn-lg btn-primary btn-block'}),
       ],
-    },
+    }),
   });
 }
 

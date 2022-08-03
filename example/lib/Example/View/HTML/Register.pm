@@ -3,15 +3,18 @@ package Example::View::HTML::Register;
 use Moose;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder 'div', 'fieldset';
-use Valiant::HTML::Form 'form_for';
 
 extends 'Example::View::HTML';
 
-has 'registration' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx->controller->registration });
+has 'registration' => (is=>'ro', required=>1);
+
+sub prepare_build_args($class, $c, @args) {
+  return registration => $c->controller->registration, @args;
+};
 
 sub render($self, $c) {
-  $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
-    form_for $self->registration, +{method=>'POST', style=>'width:35em; margin:auto', csrf_token=>$c->csrf_token }, sub ($fb) {
+  $c->view('HTML::Layout', page_title=>'Homepage', sub($layout) {
+    $c->view('HTML::Form', $self->registration, +{style=>'width:35em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -43,7 +46,7 @@ sub render($self, $c) {
         ],
         $fb->submit('Register for Account', +{class=>'btn btn-lg btn-primary btn-block'}),
       ],
-    },
+    }),
   });
 }
 

@@ -92,8 +92,7 @@ sub new_todo($self) {
 
 sub request_todos($self, $request) {
   my $todos = $self->todos->available->newer_first;
-  $todos = $todos->filter_by_status($request->status) unless $request->status_all;
-  $todos = $todos->page($request->page);
+  $todos = $todos->filter_by_request($request);
   return $todos;
 }
 

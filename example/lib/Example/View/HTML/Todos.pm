@@ -3,19 +3,18 @@ package Example::View::HTML::Todos;
 use Moose;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'td', 'th', 'a', 'b', 'u', ':utils';
-use Valiant::HTML::Form 'form_for';
 
 extends 'Example::View::HTML';
 
 has 'list' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->list } );
 has 'todo' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->todo } );
-has 'query' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->query } );
+has 'query' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->list->query } );
 has 'pager' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->list->pager } );
 
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
     $c->view('HTML::Navbar' => active_link=>'/todos'),
-    form_for $self->todo, +{method=>'POST', style=>'width:35em; margin:auto', csrf_token=>$c->csrf_token }, sub ($fb) {
+    $c->view('HTML::Form', $self->todo, +{style=>'width:20em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
           $fb->model_errors(+{
@@ -53,7 +52,7 @@ sub render($self, $c) {
         ],
         $fb->submit('Add Todo to List', +{class=>'btn btn-lg btn-primary btn-block'}),
       ],
-    }
+    }),
   });
 }
 

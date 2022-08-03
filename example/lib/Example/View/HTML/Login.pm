@@ -2,7 +2,6 @@ package Example::View::HTML::Login;
  
 use Moose;
 use Example::Syntax;
-use Valiant::HTML::Form 'form_for';
 use Valiant::HTML::TagBuilder qw(fieldset legend div a);
 
 extends 'Example::View::HTML';
@@ -11,7 +10,7 @@ has 'user' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx-
 
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Sign In', sub($layout) {
-    form_for $self->user, +{method=>'POST', style=>'width:20em; margin:auto', csrf_token=>$c->csrf_token }, sub ($fb) {
+    $c->view('HTML::Form', $self->user, +{style=>'width:20em; margin:auto'}, sub ($fb) {
       fieldset [
         legend 'Sign In',
         div +{ class=>'form-group' },
@@ -28,7 +27,7 @@ sub render($self, $c) {
       ],
       div +{ class=>'text-center' },
         a +{ href=>"/register" }, 'Register';    
-    };
+    });
   });
 }
  
