@@ -75,11 +75,22 @@ sub authenticated($self) {
   return $self->username && $self->in_storage ? 1:0;
 }
 
+sub authenticate($self, $request) {
+  my ($username, $password) = $request->get('username', 'password');
+  my $found = $self->result_source->resultset->find({username=>$username});
+  %$self = %$found if $found;
+
+  return 1 if $self->in_storage && $self->check_password($password);
+  $self->errors->add(undef, 'Invalid login credentials');
+  return 0;
+}
+
 sub registered($self) {
   return $self->username &&
     $self->first_name &&
     $self->last_name &&
-    $self->password ? 1:0;
+    $self->password &&
+    $self->in_storage ? 1:0;
 }
 
 sub account($self) {
@@ -104,6 +115,8 @@ sub register($self, $request) {
         person_roles=>[{role=>{label=>'user'}}],
       })
     ->insert_or_update;
+
+  return $self->registered;
 }
 
 sub update_account($self, $request) {

@@ -6,15 +6,11 @@ use Valiant::HTML::TagBuilder 'div', 'fieldset';
 
 extends 'Example::View::HTML';
 
-has 'registration' => (is=>'ro', required=>1);
-
-sub prepare_build_args($class, $c, @args) {
-  return registration => $c->controller->registration, @args;
-};
+has 'unregistered_user' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
   $c->view('HTML::Layout', page_title=>'Homepage', sub($layout) {
-    $c->view('HTML::Form', $self->registration, +{style=>'width:35em; margin:auto'}, sub ($fb) {
+    $c->view('HTML::Form', $self->unregistered_user, +{style=>'width:35em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },

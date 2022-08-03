@@ -6,22 +6,20 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-has account => (
-  is=>'ro',
-  required=>1,
-  lazy=>1,
-  default=>sub($self) { $self->ctx->user->account },
-);
+has account => (is=>'rw');
 
-sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(HTML::Account) ($self, $c) { }
+sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(HTML::Account) ($self, $c) {
+  $c->build_view(account => my $account = $c->user->account);
+  $self->account($account);
+}
 
-  sub GET :Action ($self, $c) { return $c->res->code(200) }
+  sub GET :Action ($self, $c) { return $c->view->set_http_ok }
 
   sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $request) {
     $self->account->update_account($request);
     return $self->account->valid ? 
-      $c->res->code(200) : 
-        $c->res->code(400);
+      $c->view->set_http_ok : 
+        $c->view->set_http_bad_request;
   }
 
 __PACKAGE__->meta->make_immutable;

@@ -6,7 +6,7 @@ use Valiant::HTML::TagBuilder 'div', 'fieldset';
 
 extends 'Example::View::HTML';
 
-has 'todo' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->todo } );
+has 'todo' => (is=>'ro', required=>1 );
 
 sub status_options($self) {
   return [qw/

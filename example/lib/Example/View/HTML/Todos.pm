@@ -6,10 +6,8 @@ use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody
 
 extends 'Example::View::HTML';
 
-has 'list' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->list } );
-has 'todo' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->ctx->controller->todo } );
-has 'query' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->list->query } );
-has 'pager' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) {$self->list->pager } );
+has 'list' => (is=>'ro', required=>1,  handles=>[qw/query pager/] );
+has 'todo' => (is=>'ro', required=>1 );
 
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {

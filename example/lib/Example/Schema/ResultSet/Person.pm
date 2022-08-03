@@ -7,20 +7,6 @@ sub find_by_id($self, $id) {
   return $self->find({id=>$id});
 }
 
-sub user_from_request($self, $request) {
-  my ($username, $password) = $request->get('username', 'password');
-  return $self->authenticate($username, $password);
-}
-
-sub authenticate($self, $username='', $password='') {
-  my $user = $self->find({username=>$username});
-  return $user if $user && $user->check_password($password);
-
-  $user = $self->new_result({username=>$username});
-  $user->errors->add(undef, 'Invalid login credentials');
-  return $user;
-}
-
 sub account_for($self, $user) {
   my $account = $self->find(
     { 'me.id' => $user->id },
@@ -31,12 +17,8 @@ sub account_for($self, $user) {
   return $account;
 }
 
-sub registration($self, $args=+{}) {
-  return $self->new_result($args);
-}
-
-sub unauthenticated_user($self) {
-  return $self->new_result(+{});  
+sub unauthenticated_user($self, $args=+{}) {
+  return $self->new_result($args);  
 }
 
 1;

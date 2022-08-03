@@ -60,14 +60,22 @@ sub remove_user_from_session($self) {
   delete $self->session->{user_id};
 }
 
-sub set_user ($self, $user) {
-  $self->persist_user_to_session($user);
-  $self->user($user);
+sub authenticate($self, @args) {
+  my $authenticated = $self->user->authenticate(@args);
+  $self->persist_user_to_session($self->user) if $authenticated;
+  return $authenticated;
 }
 
 sub logout($self) {
   $self->remove_user_from_session;
   $self->clear_user;
+}
+
+sub build_view($self, @args) {
+  my ($view_name) = @{$self->action->attributes->{View}};
+  my $view = $self->view($view_name, @args);
+  $self->stash(current_view_instance=>$view);
+  return $view;
 }
 
 __PACKAGE__->meta->make_immutable();

@@ -7,20 +7,18 @@ use Valiant::HTML::Form 'form_for';
 
 extends 'Example::View::HTML';
 
-has 'account' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx->controller->account } );
-
-# Putting this here rather than passing it from the controller means that
-# the controller needs to know less about its view and this view can control
-# its own data and data needs for display.
-
-has 'states' => (is=>'ro', lazy=>1, required=>1, default=>sub($self) { $self->account->available_states });
-has 'roles' => (is=>'ro', lazy=>1, required=>1, default=>sub($self) { $self->account->available_roles });
-has 'status_options' => (
-  is=>'ro',
-  lazy=>1,
+has 'account' => (
+  is=>'ro', 
   required=>1,
-  default=>sub($self) { [map { [ucfirst($_) => $_] } $self->account->profile->status_options ] },
+  handles=>{
+    states => 'available_states',
+    roles => 'available_roles',
+  },
 );
+
+sub status_options($self) {
+  return [map { [ucfirst($_) => $_] } $self->account->profile->status_options ];
+}
 
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {

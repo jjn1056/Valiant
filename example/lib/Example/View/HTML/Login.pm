@@ -6,7 +6,7 @@ use Valiant::HTML::TagBuilder qw(fieldset legend div a);
 
 extends 'Example::View::HTML';
   
-has 'user' => (is=>'ro', required=>1, lazy=>1, default=>sub($self) { $self->ctx->controller->user } );
+has 'user' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Sign In', sub($layout) {
