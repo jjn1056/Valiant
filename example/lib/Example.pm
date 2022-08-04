@@ -48,17 +48,13 @@ has user => (
 
 # This should probably return an empty user rather than undef
 sub get_user_from_session($self) {
-  my $id = $self->session->{user_id} // return $self->users->unauthenticated_user;
-  my $person = $self->users->find_by_id($id) // $self->remove_user_from_session && die "Bad ID '$id' in session";
+  my $id = $self->model('Session')->user_id // return $self->users->unauthenticated_user;
+  my $person = $self->users->find_by_id($id) // $self->logout && die "Bad ID '$id' in session";
   return $person;
 }
 
 sub persist_user_to_session ($self, $user) {
-  $self->session->{user_id} = $user->id;
-}
-
-sub remove_user_from_session($self) {
-  delete $self->session->{user_id};
+  $self->model('Session')->user_id($user->id);
 }
 
 sub authenticate($self, @args) {
@@ -68,7 +64,7 @@ sub authenticate($self, @args) {
 }
 
 sub logout($self) {
-  $self->remove_user_from_session;
+  $self->model('Session')->logout;
   $self->clear_user;
 }
 
