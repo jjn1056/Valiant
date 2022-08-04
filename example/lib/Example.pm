@@ -16,6 +16,7 @@ __PACKAGE__->setup_plugins([qw/
 /]);
 
 __PACKAGE__->config(
+  default_view => 'HTML',
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
   'Plugin::Session' => { storage_secret_key => 'abc123' },
@@ -73,6 +74,7 @@ sub logout($self) {
 
 sub build_view($self, @args) {
   my ($view_name) = @{$self->action->attributes->{View}};
+  die "no view" unless $view_name;
   my $view = $self->view($view_name, @args);
   $self->stash(current_view_instance=>$view);
   return $view;

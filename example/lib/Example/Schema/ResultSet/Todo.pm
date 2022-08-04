@@ -16,9 +16,9 @@ sub filter_by_request($self, $request) {
   my $todos = $request->status_all ?
     $self : $self->search_rs({status=>$request->status});
 
-  $todos = $todos->page($request->page);
+  $todos = $todos->set_page_or_last($request->page);  
   $todos->query($request);
-
+  
   return $todos;
 }
 

@@ -2,7 +2,7 @@ package Example::View::HTML::Todos;
 
 use Moose;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'td', 'th', 'a', 'b', 'u', ':utils';
+use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'td', 'th', 'a', 'b', 'u', 'span', ':utils';
 
 extends 'Example::View::HTML';
 
@@ -15,13 +15,17 @@ sub render($self, $c) {
     $c->view('HTML::Form', $self->todo, +{style=>'width:20em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
-          $fb->model_errors(+{
-            class=>'alert alert-danger', 
-            role=>'alert', 
-            show_message_on_field_errors=>'Error Adding new Todo',
-          }),
+        $fb->model_errors(+{
+          class=>'alert alert-danger', 
+          role=>'alert', 
+          show_message_on_field_errors=>'Error Adding new Todo',
+        }),
 
-          $self->page_window_info,
+        cond { $self->query->page > $self->pager->last_page}
+          div { class=>'alert alert-warning', role=>'alert' },
+            "The selected page is greater than the total number of pages available.  Showing the last page.",
+
+        $self->page_window_info,
 
         table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
           thead
@@ -36,7 +40,7 @@ sub render($self, $c) {
                td $todo->status,
               ],
             },
-            cond {$self->pager->last_page > 1  }
+            cond { $self->pager->last_page > 1  }
               trow td {colspan=>2, style=>'background:white'},
                 [ "Page: ", $self->pagelist ],
           ],
@@ -56,11 +60,10 @@ sub render($self, $c) {
 
 sub page_window_info($self) {
   cond {$self->pager->total_entries > 0 }
-    cond {$self->pager->last_page == 1} 
-      div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
+    div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
+      cond {$self->pager->last_page == 1} 
         "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}",
-    cond {$self->pager->last_page > 1} 
-      div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
+      otherwise 
         "@{[ $self->pager->first]} to @{[ $self->pager->last ]} of @{[ $self->pager->total_entries ]}";
 }
 
@@ -77,17 +80,20 @@ sub pagelist($self) {
 
 sub status_filter_box($self) {
   div {style=>'text-align:center; margin-bottom: 1rem'}, [
-    a { href=>'todos', style=>'margin: .5rem'}, $self->status_label('all'),
-    a { href=>'?status=active', style=>'margin: .5rem'}, $self->status_label('active'),
-    a { href=>'?status=completed', style=>'margin: .5rem'}, $self->status_label('completed'),
-  ],
+    map { $self->status_href($_) } qw/all active completed/,
+  ];
 }
 
-sub status_label($self, $label) {
-  return b u $label if $label eq 'all' and $self->query->status_all;
-  return b u $label if $label eq 'active' and $self->query->status_active;
-  return b u $label if $label eq 'completed' and $self->query->status_completed;
-  return $label;
+sub status_href($self, $status) {
+  my @label = $self->status_label($status);
+  return span {style=>'margin: .5rem'}, \@label if $self->query->status eq $status;
+  return a { href=>"?status=$status;page=1", style=>'margin: .5rem'}, \@label;
+}
+
+
+sub status_label($self, $status) {
+  return b u $status if $status eq $self->query->status;
+  return $status;
 }
 
 __PACKAGE__->meta->make_immutable();
