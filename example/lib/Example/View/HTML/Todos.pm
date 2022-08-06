@@ -12,7 +12,7 @@ has 'todo' => (is=>'ro', required=>1 );
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
     $c->view('HTML::Navbar' => active_link=>'/todos'),
-    $c->view('HTML::Form', $self->todo, +{style=>'width:20em; margin:auto'}, sub ($fb) {
+    $c->view('HTML::Form', $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
         $fb->model_errors(+{
@@ -31,7 +31,7 @@ sub render($self, $c) {
           thead
             trow [
               th +{scope=>"col"},'Title',
-              th +{scope=>"col", style=>'width:6em'}, 'Status',
+              th +{scope=>"col", style=>'width:8em'}, 'Status',
             ],
           tbody [
             over $self->list, sub ($todo, $i) {

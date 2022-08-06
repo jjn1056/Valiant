@@ -32,12 +32,6 @@ __PACKAGE__->config(
 
 __PACKAGE__->setup();
   
-has users => (
-  is => 'ro',
-  lazy => 1,
-  default => sub($c) { $c->model('Schema::Person') },
-);
-
 has user => (
   is => 'rw',
   lazy => 1,
@@ -48,8 +42,8 @@ has user => (
 
 # This should probably return an empty user rather than undef
 sub get_user_from_session($self) {
-  my $id = $self->model('Session')->user_id // return $self->users->unauthenticated_user;
-  my $person = $self->users->find_by_id($id) // $self->logout && die "Bad ID '$id' in session";
+  my $id = $self->model('Session')->user_id // return $self->model('Schema::Person')->unauthenticated_user;
+  my $person = $self->model('Schema::Person')->find_by_id($id) // $self->logout && die "Bad ID '$id' in session";
   return $person;
 }
 
@@ -66,14 +60,6 @@ sub authenticate($self, @args) {
 sub logout($self) {
   $self->model('Session')->logout;
   $self->clear_user;
-}
-
-sub build_view($self, @args) {
-  my ($view_name) = @{$self->action->attributes->{View}};
-  die "no view" unless $view_name;
-  my $view = $self->view($view_name, @args);
-  $self->stash(current_view_instance=>$view);
-  return $view;
 }
 
 __PACKAGE__->meta->make_immutable();

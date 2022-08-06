@@ -34,6 +34,8 @@ sub _instantiate_builder {
   $args{namespace} = $options->{namespace} if exists $options->{namespace};
   $args{id} = $options->{id} if exists $options->{id};
   $args{index} = $options->{index} if exists $options->{index};
+  $args{parent_builder} = $options->{parent_builder} if exists $options->{parent_builder};
+
   return Module::Runtime::use_module($builder)->new(%args);
 }
 

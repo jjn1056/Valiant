@@ -735,6 +735,7 @@ sub collection_checkbox {
 
     $checkbox_builder_options->{index} = $index;
     $checkbox_builder_options->{checked} = $checked;
+    $checkbox_builder_options->{parent_builder} = $self;
 
     my $checkbox_fb = Valiant::HTML::Form::_instantiate_builder($name, $checkbox_model, $checkbox_builder_options);
     push @checkboxes, $codeblock->($checkbox_fb);
@@ -1826,6 +1827,24 @@ L<Valiant::HTML::FormBuilder::Checkbox>):
 In addition to overriding C<checkbox> and C<label> to already contain value and state (if its checked or
 not) information.   This special builder contains some additional methods of possible use, you should see
 the documentation of L<Valiant::HTML::FormBuilder::Checkbox> for more.
+
+If provided C<%options> is a hashref of the following optional values
+
+=over 4
+
+=item include_hidden
+
+Defaults to whatever the method C<default_collection_checkbox_include_hidden> returns.  In the core code
+the returns true.   If true will include a hidden field set to the name of the collection, which is uses
+to indicate 'no checked values' since HTML will send nothing by default if there's no checked values.  It
+will add this hidden field for each checkbox item to represent the 'off' value.
+
+=item builder
+
+Defaults to the values of C<DEFAULT_COLLECTION_CHECKBOX_BUILDER> method.  In core code this is
+L<Valiant::HTML::FormBuilder::Checkbox>.  Overide if you need to make a custom builder (tricky work).
+
+=back
 
 =head2 collection_radio_buttons
 

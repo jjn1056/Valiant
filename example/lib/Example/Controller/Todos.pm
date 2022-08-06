@@ -8,8 +8,8 @@ extends 'Example::Controller';
 
 has todo => (is=>'rw');
 
-sub root :Chained(/auth) PathPart('todos') Args(0) Does(Verbs) View(HTML::Todos) RequestModel(TodosQuery) ($self, $c, $q) {
-  $c->build_view(
+sub root :Chained(/auth) PathPart('todos') Args(0) Verbs(GET,POST) RequestModel(TodosQuery) ($self, $c, $q) {
+  $c->view('HTML::Todos',
     list => $c->user->request_todos($q),
     todo => my $todo = $c->user->new_todo,
   );

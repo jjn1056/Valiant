@@ -8,12 +8,10 @@ extends 'Example::Controller';
 
 has account => (is=>'rw');
 
-sub root :Chained(/auth) PathPart('account') Args(0) Does(Verbs) View(HTML::Account) ($self, $c) {
-  $c->build_view(account => my $account = $c->user->account);
+sub root :Chained(/auth) PathPart('account') Args(0) Verbs(GET,PATCH) ($self, $c) {
+  $c->view('HTML::Account', account => my $account = $c->user->account);
   $self->account($account);
 }
-
-  sub GET :Action ($self, $c) { return $c->view->set_http_ok }
 
   sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $request) {
     $self->account->update_account($request);

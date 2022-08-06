@@ -9,7 +9,7 @@ requires 'Catalyst::View::MojoTemplate', '0.004';
 requires 'Catalyst::Plugin::Session';
 requires 'Catalyst::Action::RenderView';
 requires 'Catalyst::TraitFor::Request::StructuredParameters', '0.006';
-requires 'Catalyst::Plugin::CurrentComponents', '0.009';
+requires 'Catalyst::Plugin::CurrentComponents', '0.010';
 requires 'Catalyst::Plugin::ServeFile', '0.004';
 requires 'Catalyst::Plugin::CSRFToken', '0.001';
 requires 'CatalystX::Errors', '0.001009';

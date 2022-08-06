@@ -1,5 +1,9 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001016 TBD
+          - Improved Formbuilder documentation
+          - clarified the use of the parent_builder option for some Formbuilder methods
+
 0.001015 2022 August 3
           - lots of cleanup and changes to the example Catalyst application as well as
             more testing of the DBIC wrapper for Valiant Validations.

@@ -6,8 +6,8 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub root :Chained(/auth) PathPart('') Args(0) Name(home) Does(Verbs) View(HTML::Home) ($self, $c) {
-  $c->build_view;
+sub root :Chained(/auth) PathPart('') Args(0) Name(home) Verbs(GET) ($self, $c) {
+  $c->view('HTML::Home');
 }
 
   sub GET :Action ($self, $c) {

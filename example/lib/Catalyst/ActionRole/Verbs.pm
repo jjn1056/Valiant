@@ -38,7 +38,12 @@ has allowed_verbs => (
   sub _build_allowed_verbs {
     my $self = shift;
     my @core_allowed = $self->can('allowed_http_methods') ? $self->allowed_http_methods : ();
-    my %allow = map { $_=~s/^\s+|\s+$//g; $_=>1  } map { split(',',$_) } (@{$self->attributes->{Allow} || []}, @core_allowed);
+    my %allow = map { $_=~s/^\s+|\s+$//g; $_=>1;  } map { 
+      split(',',$_) } (
+      @{$self->attributes->{Verbs} || []}, 
+      @{$self->attributes->{Allow} || []}, 
+      @core_allowed );
+
     my @verbs =
       grep { 
         $self->class->can("${_}_${\$self->name}")
