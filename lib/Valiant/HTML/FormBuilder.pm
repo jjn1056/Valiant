@@ -45,8 +45,8 @@ sub sanitized_object_name {
   return $self->{__cached_sanitized_object_name} if exists $self->{__cached_sanitized_object_name};
 
   my $value = $self->name;
-  $value =~ s/\]//g;
-  $value =~ s/[^a-zA-Z0-9:-]/_/g; # Different from Rails since I use foo.bar instead of foo[bar]
+  $value =~ s/\]\[|[^a-zA-Z0-9:-]/_/g;
+  $value =~s/_$//;
   $self->{__cached_sanitized_object_name} = $value;
   return $value;
 }

@@ -8,6 +8,7 @@ use Scalar::Util 'blessed';
 
 our $ATTRIBUTE_SEPARATOR = ' ';
 our %SUBHASH_ATTRIBUTES = map { $_ => 1} qw(data aria);
+our %ARRAY_ATTRIBUTES = map { $_ => 1 } qw(class);
 our %HTML_VOID_ELEMENTS = map { $_ => 1 } qw(area base br col circle embed hr img input keygen link meta param source track wbr);
 our %BOOLEAN_ATTRIBUTES = map { $_ => 1 } qw(
   allowfullscreen allowpaymentrequest async autofocus autoplay checked compact controls declare default
@@ -64,6 +65,9 @@ sub _tag_options {
       foreach my $subkey (sort keys %{$attrs{$attr}}) {
         push @attrs, _tag_option("${attr}-@{[ _dasherize $subkey ]}", $attrs{$attr}{$subkey});
       }
+    } elsif($ARRAY_ATTRIBUTES{$attr}) {
+      my $class = ((ref($attrs{$attr})||'') eq 'ARRAY') ? join(' ', @{$attrs{$attr}}) : $attrs{$attr};
+      push @attrs, _tag_option($attr, $class);
     } else {
       push @attrs, _tag_option($attr, $attrs{$attr});
     }
