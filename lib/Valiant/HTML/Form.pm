@@ -35,6 +35,11 @@ sub _instantiate_builder {
   $args{id} = $options->{id} if exists $options->{id};
   $args{index} = $options->{index} if exists $options->{index};
   $args{parent_builder} = $options->{parent_builder} if exists $options->{parent_builder};
+  $args{theme} = $options->{theme} if exists $options->{theme};
+
+  if( exists($options->{parent_builder}) && exists($options->{parent_builder}{theme}) ) {
+    $args{theme} = +{ %{$args{theme}||+{}}, %{$options->{parent_builder}{theme}} };
+  }
 
   return Module::Runtime::use_module($builder)->new(%args);
 }

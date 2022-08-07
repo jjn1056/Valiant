@@ -9,7 +9,8 @@ extends 'Example::Controller';
 sub root :Chained(/root) PathPart(register) Args(0) Verbs(GET, POST) ($self, $c) {
   return $c->redirect_to_action('#home') && $c->detach
     if $c->user->registered;
-  $c->view('HTML::Register', unregistered_user => $c->user);
+
+  $c->view('HTML::Register', registration => $c->model('RegistrationForm', model=>$c->user));
 }
 
   sub POST :Action RequestModel(RegistrationRequest) ($self, $c, $request) {    

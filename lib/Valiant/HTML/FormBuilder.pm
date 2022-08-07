@@ -24,6 +24,7 @@ has name => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1, default => sub { +{} } );  
 has index => ( is => 'ro', required => 0, predicate => 'has_index' );
 has namespace => ( is => 'ro', required => 0, predicate => 'has_namespace' );
+has _theme => ( is => 'rw', required => 1, init_arg=>'theme', default => sub { +{} } );
 has _nested_child_index => (is=>'rw', init_arg=>undef, required=>1, default=>sub { +{} });
 
 around BUILDARGS => sub {
@@ -39,6 +40,12 @@ sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return 'Your form has errors' }
 sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return 'invalid_form' }
 sub DEFAULT_COLLECTION_CHECKBOX_BUILDER { return 'Valiant::HTML::FormBuilder::Checkbox' }
 sub DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER { return 'Valiant::HTML::FormBuilder::RadioButton' }
+
+sub theme {
+  my ($self) = @_;
+  my $default_theme = $self->can('default_theme') ? $self->default_theme : +{};
+  return +{ %$default_theme, %{$self->_theme} };
+}
 
 sub sanitized_object_name {
   my $self = shift;
@@ -107,10 +114,12 @@ sub attribute_has_errors {
 sub model_errors {
   my ($self) = shift;
   my ($options, $content) = (+{}, undef);
+
   while(my $arg = shift) {
     $options = $arg if (ref($arg)||'') eq 'HASH';
     $content = $arg if (ref($arg)||'') eq 'CODE';
   }
+  $options = $self->merge_theme_field_opts('model_errors', undef, $options);
 
   my @errors = $self->_get_model_errors;
 
@@ -159,6 +168,24 @@ sub _default_model_errors_content {
   }
 }
 
+sub merge_theme {
+  my ($self, %theme) = @_;
+  $self->_theme(+{ %{$self->_theme}, %theme });
+}
+
+sub merge_theme_field_opts {
+  my ($self, $type, $attribute, $existing) = @_;
+  my $theme = $self->theme;
+
+  if(exists $theme->{$type}) {
+    $existing = +{ %{$theme->{$type}}, %$existing };
+  }
+  if($attribute && exists $theme->{attributes}{$attribute}{$type}) {
+    $existing = +{ %{$theme->{attributes}{$attribute}{$type}}, %$existing };
+  }
+  return $existing;
+}
+
 # $fb->label($attribute)
 # $fb->label($attribute, \%options)
 # $fb->label($attribute, $content)
@@ -176,6 +203,8 @@ sub label {
   }
 
   set_unless_defined(for => $options, $self->tag_id_for_attribute($attribute));
+
+  $options = $self->merge_theme_field_opts(label=>$attribute, $options);
 
   if((ref($content)||'') eq 'CODE') {
     return Valiant::HTML::FormTags::label_tag($attribute, $options, sub { $content->($translated_attribute) } );
@@ -196,6 +225,7 @@ sub errors_for {
     $options = $arg if (ref($arg)||'') eq 'HASH';
     $content = $arg if (ref($arg)||'') eq 'CODE';
   }
+  $options = $self->merge_theme_field_opts(errors_for=>$attribute, $options);
 
   die "Can't display errors on a model that doesn't support the errors method" unless $self->model->can('errors');
 
@@ -246,6 +276,7 @@ sub process_options {
 
 sub input {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
+  $options = $self->merge_theme_field_opts($options->{type} || 'input', $attribute, $options);
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   
@@ -256,6 +287,7 @@ sub input {
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
   set_unless_defined(name => $options, $self->tag_name_for_attribute($attribute));
   $options->{value} = $self->tag_value_for_attribute($attribute) unless defined($options->{value});
+
 
   return Valiant::HTML::FormTags::input_tag $attribute, $self->process_options($attribute, $options);
 }
@@ -275,6 +307,7 @@ sub hidden {
 
 sub text_area {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
+  $options = $self->merge_theme_field_opts('text_area', $attribute, $options);
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
@@ -291,6 +324,8 @@ sub text_area {
 sub checkbox {
   my ($self, $attribute) = (shift, shift);
   my $options = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+  $options = $self->merge_theme_field_opts('checkbox', $attribute, $options);
+
   my $checked_value = @_ ? shift : 1;
   my $unchecked_value = @_ ? shift : 0;
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
@@ -330,6 +365,8 @@ sub checkbox {
 sub radio_button {
   my ($self, $attribute) = (shift, shift);
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  $options = $self->merge_theme_field_opts('radio_button', $attribute, $options);
+
   my $value = @_ ? shift : undef;
 
   $options->{type} = 'radio';
@@ -379,6 +416,8 @@ sub submit {
   my ($self) = shift;
   my $options = pop(@_) if (ref($_[-1])||'') eq 'HASH';
   my $value = @_ ? shift(@_) : $self->_submit_default_value;
+  $options = $self->merge_theme_field_opts('submit', undef, $options);
+
   return Valiant::HTML::FormTags::submit_tag($value, $options);
 }
 
@@ -423,6 +462,7 @@ sub button {
   $attrs->{value} = $self->tag_value_for_attribute($attribute) unless exists($attrs->{value});
   $attrs->{name} = $self->tag_name_for_attribute($attribute) unless exists($attrs->{name});
   $attrs->{id} = $self->tag_id_for_attribute($attribute) unless exists($attrs->{id});
+  $attrs = $self->merge_theme_field_opts('button', $attribute, $attrs);
 
   return ref($content) ?
     Valiant::HTML::FormTags::button_tag($attrs, $content) :
@@ -449,6 +489,7 @@ sub legend_for {
   my $content = @_ ? shift(@_) : $self->human_name_for_attribute($attribute);
 
   $attrs->{id} = "@{[ $self->tag_id_for_attribute($attribute) ]}_legend" unless exists($attrs->{id});
+  $attrs = $self->merge_theme_field_opts('legend_for', $attribute, $attrs);
 
   return Valiant::HTML::FormTags::legend_tag($attrs, $content);
 }
@@ -560,6 +601,8 @@ sub select {
   my ($self, $attribute_proto) = (shift, shift);
   my $block = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  $options = $self->merge_theme_field_opts('select', undef, $options);
+
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   my $include_hidden = exists($options->{include_hidden}) ? $options->{include_hidden} : 1;
   my $unselected_default = exists($options->{unselected_value}) ? delete($options->{unselected_value}) : undef;
@@ -624,6 +667,8 @@ sub select {
 sub collection_select {
   my ($self, $method_proto, $collection) = (shift, shift, shift);
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  $options = $self->merge_theme_field_opts('collection_select', undef, $options);
+
   my ($value_method, $label_method) = (@_, 'value', 'label');
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1; 
@@ -687,6 +732,8 @@ sub collection_checkbox {
   my ($self, $attribute_spec, $collection) = (shift, shift, shift);
   my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  $options = $self->merge_theme_field_opts('collection_checkbox', undef, $options);
+
   my $value_method = @_ ? shift(@_) : 'value';
   my $label_method = @_ ? shift(@_) : 'label';
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
@@ -760,6 +807,8 @@ sub collection_radio_buttons {
   my ($self, $attribute, $collection) = (shift, shift, shift);
   my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
+  $options = $self->merge_theme_field_opts('radio_button', $attribute, $options);
+
   my $value_method = @_ ? shift(@_) : 'value';
   my $label_method = @_ ? shift(@_) : 'label';
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;

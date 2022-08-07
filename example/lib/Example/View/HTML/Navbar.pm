@@ -6,7 +6,7 @@ use Valiant::HTML::TagBuilder 'nav', 'a', 'div', 'button', 'span';
 
 extends 'Example::View::HTML';
 
-has active_link => (is=>'ro', required=>1);
+has active_link => (is=>'ro', required=>1, default=>sub($self) { $self->ctx->req->uri->path });
 
 our @links = (
   +{ href => '/', title => 'Home' },
