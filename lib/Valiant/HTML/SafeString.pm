@@ -9,7 +9,6 @@ use Scalar::Util ();
 use overload 
   bool => sub {1}, 
   '""' => sub { shift->to_string },
-  ###'.' => sub { shift->concat(shift) },
   fallback => 1;
 
 our @EXPORT_OK = qw(raw flattened_raw safe flattened_safe is_safe escape_html concat);
@@ -48,7 +47,7 @@ sub is_safe {
 }
 
 sub safe {
-  if(scalar(@_) == 1) {;
+  if(scalar(@_) == 1) {
     return is_safe($_[0]) ? $_[0] : _make_safe(escape_html($_[0]))
   } else {
     return map { is_safe($_) ? $_ : _make_safe(escape_html($_)) } @_;

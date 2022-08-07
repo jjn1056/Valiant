@@ -70,9 +70,7 @@ sub page_window_info($self) {
 sub pagelist($self) {
   my @page_html = ();
   foreach my $page (1..$self->pager->last_page) {
-    my $query = "?page=${page}";
-    $query .= ";status=active" if $self->query->status_active;
-    $query .= ";status=completed" if $self->query->status_completed;
+    my $query = "?page=${page};status=@{[ $self->query->status ]}";
     push @page_html, a {href=>$query, style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;
@@ -80,11 +78,11 @@ sub pagelist($self) {
 
 sub status_filter_box($self) {
   div {style=>'text-align:center; margin-bottom: 1rem'}, [
-    map { $self->status_href($_) } qw/all active completed/,
+    map { $self->status_link($_) } qw/all active completed/,
   ];
 }
 
-sub status_href($self, $status) {
+sub status_link($self, $status) {
   my @label = $self->status_label($status);
   return span {style=>'margin: .5rem'}, \@label if $self->query->status eq $status;
   return a { href=>"?status=$status;page=1", style=>'margin: .5rem'}, \@label;
