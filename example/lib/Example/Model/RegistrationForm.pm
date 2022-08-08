@@ -1,12 +1,11 @@
-package Example::Model::RegistrationForm;
-
 {
-  package Valiant::HTML::FormBuilderAdaptor::Input;
+  package Valiant::HTML::FormBuilderAdapter::Input;
 
   use Moo;
 
   has _fb => (is=>'ro', init_arg=>'fb', required=>1);
   has attribute_name => (is=>'ro', required=>1);
+  has caller => (is=>'ro', required=>1);
 
   sub label {
     my ($self, @args) = @_;
@@ -21,12 +20,13 @@ package Example::Model::RegistrationForm;
     $self->_fb->errors_for($self->attribute_name, @args);
   }
 
-  package Valiant::HTML::FormBuilderAdaptor::Password;
+  package Valiant::HTML::FormBuilderAdapter::Password;
 
   use Moo;
 
   has _fb => (is=>'ro', init_arg=>'fb', required=>1);
   has attribute_name => (is=>'ro', required=>1);
+  has caller => (is=>'ro', required=>1);
 
   sub label {
     my ($self, @args) = @_;
@@ -41,30 +41,116 @@ package Example::Model::RegistrationForm;
     $self->_fb->errors_for($self->attribute_name, @args);
   }
 
-  package Valiant::HTML::FormBuilderAdaptor;
+  package Valiant::HTML::FormBuilderAdapter;
+
+  use Moo::Role;
+  use String::CamelCase 'camelize';
+  use Sub::Util 'set_subname';
+  use Module::Runtime 'use_module';
+  use Valiant::HTML::Form 'form_for';
+
+  has _fb => (is=>'rw');
+  has model => (is=>'ro');
+  
+  sub ADAPTER_NS { 'Valiant::HTML::FormBuilderAdapter' }
+
+  sub _build_adapters {
+    my ($class) = @_;
+    my %fields = $class->fields;
+
+    foreach my $attr (keys %fields) {
+      my $type = $fields{$attr}->{type};
+      my $package_affix = camelize $type;
+      my $method = set_subname "${class}::${attr}" => sub {
+        my ($self, $cb) = @_;
+        my $adapter_class = $self->_find_adapter_class($package_affix);
+        my $adapter = $self->_build_adapter($adapter_class, $attr);
+        return $self->_execute_cb($cb, $adapter);
+      };
+      no strict 'refs';
+      *{"${class}::${attr}"} = $method;
+    }
+  }
+
+  sub _find_adapter_class {
+    my ($self, $package_affix) = @_;
+    my $adapter_class = use_module("@{[ $self->ADAPTER_NS ]}::${package_affix}");
+    return $adapter_class;
+  }
+
+  sub _build_adapter {
+    my ($self, $adapter_class, $attr) = @_;
+    my $adapter = $adapter_class->new(attribute_name=>$attr, caller=>$self, fb=>$self->_fb);
+    return $adapter;
+  }
+
+  sub _execute_cb {
+    my ($self, $cb, $adapter) = @_;
+    return $cb->($adapter);
+  }
+
+  sub form {
+    my ($self, @args) = @_;
+    my $options = ((ref($args[0])||'') eq 'HASH') ? shift(@args) : +{};
+    my $cb = shift(@args);
+
+    $options = $self->process_form_options($options)
+      if $self->can('process_form_options');
+
+    return form_for $self->model, $options, $self->form_callback($cb, $options);
+  }
+
+  sub form_callback {
+    my ($self, $cb, $options) = @_;
+    return sub {
+      my ($fb, @args) = @_;
+      $self->_fb($fb);
+      return $cb->($self, $fb, @args),
+    };  
+  }
+
+  package Catalyst::Model::Valiant::HTML::FormBuilderAdapter;
 
   use Moo;
+
+  extends 'Catalyst::Model';
+  with 'Valiant::HTML::FormBuilderAdapter';
   
-  has _fb => (is=>'ro', init_arg=>'fb', required=>1);
+  has ctx => (is=>'ro');
 
-  sub _input_adaptor {
-    my ($self, $attr_name, $cb) = @_;
-    my $fb = Valiant::HTML::FormBuilderAdaptor::Input->new(attribute_name=>$attr_name, fb=>$self->_fb);
-    return $cb->($fb);
+  sub COMPONENT {
+    my ($class, $app, $args) = @_;
+    $args = $class->merge_config_hashes($class->config, $args);
+    $class->_build_adapters;
+    return bless $args, $class;
   }
 
-  sub _password_adaptor {
-    my ($self, $attr_name, $cb) = @_;
-    my $fb = Valiant::HTML::FormBuilderAdaptor::Password->new(attribute_name=>$attr_name, fb=>$self->_fb);
-    return $cb->($fb);
+  sub ACCEPT_CONTEXT {
+    my $self = shift;
+    my $c = shift;
+    my %args = (%$self, ctx=>$c, @_);  
+
+    return ref($self)->new(%args);
   }
+
+  sub process_form_options {
+    my ($self, $options) = @_;
+    return +{ 
+      action => $self->ctx->req->uri, 
+      csrf_token => $self->ctx->csrf_token,
+      %$options,
+    },
+  }
+
 }
+
+
+package Example::Model::RegistrationForm;
 
 use Moose;
 use Example::Syntax;
-use Valiant::HTML::Form 'form_for';
 
-extends 'Catalyst::Model';
+extends 'Catalyst::Model::Valiant::HTML::FormBuilderAdapter';
 
 sub fields {
   return
@@ -73,70 +159,6 @@ sub fields {
     last_name => {type=>'input'},
     password => {type=>'password'},
     password_confirmation => {type=>'password'},
-}
-
-has ctx => (is=>'ro');
-has model => (is=>'ro');
-has adaptor_class => (is=>'ro');
-
-sub COMPONENT {
-  my ($class, $app, $args) = @_;
-  $args = $class->merge_config_hashes($class->config, $args);
-  my $adaptor_class = $class->build_adaptor($app, $args);
-  $args->{adaptor_class} = $adaptor_class;
-  return bless $args, $class;
-}
-
-sub build_adaptor {
-  my ($class, $app, $args) = @_;
-  my $adaptor_class = "${class}::_Adaptor";
-
-  eval "
-    package $adaptor_class;
-    use Moo;
-    extends 'Valiant::HTML::FormBuilderAdaptor';
-  ";
-  die $@ if $@;
-
-  require Sub::Util;
-
-  my %fields = $class->fields;
-  foreach my $attr (keys %fields) {
-    my $type = $fields{$attr}->{type};
-    my $method = Sub::Util::set_subname "${adaptor_class}::${attr}" => sub {
-      my $adaptor = "_${type}_adaptor";
-      shift->$adaptor($attr, @_);
-    };
-    no strict 'refs';
-    *{"${adaptor_class}::${attr}"} = $method;
-  }
-
-  return $adaptor_class;
-}
- 
-## TODO handle if we are wrapping a model that already does ACCEPT_CONTEXT
-sub ACCEPT_CONTEXT {
-  my $self = shift;
-  my $c = shift;
- 
-  my $class = ref($self);
-  my %args = (%$self, class=>$class, ctx=>$c, @_);  
-
-  return $class->new(%args);
-}
-
-sub form($self, @args) {
-  my $options = ((ref($args[0])||'') eq 'HASH') ? shift(@args) : +{};
-  my $cb = shift(@args);
-
-  return form_for $self->model, +{ 
-    action => $self->ctx->req->uri, 
-    csrf_token => $self->ctx->csrf_token,
-    %$options, 
-  }, sub($fb) {
-      return $cb->($self->adaptor_class->new(fb=>$fb), $fb),
-  };
-
 }
 
 __PACKAGE__->meta->make_immutable();
