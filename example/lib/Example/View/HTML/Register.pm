@@ -12,7 +12,7 @@ sub theme($self) {
   return +{ 
     errors_for => +{ class=>'invalid-feedback' },
     input => +{ class=>'form-control', errors_classes=>'is-invalid' },
-    password => +{ class=>'form-control aaa', errors_classes=>'is-invalid' },
+    password => +{ class=>'form-control', errors_classes=>'is-invalid' },
     model_errors => +{ class=>'alert alert-danger', role=>'alert' },
     attributes => {
       password => {

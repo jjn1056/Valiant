@@ -1,7 +1,7 @@
 package Example::Model::RegistrationForm;
 
 {
-  package Example::FormBuilder::InputAdaptor;
+  package Valiant::HTML::FormBuilderAdaptor::Input;
 
   use Moo;
 
@@ -21,7 +21,7 @@ package Example::Model::RegistrationForm;
     $self->_fb->errors_for($self->attribute_name, @args);
   }
 
-  package Example::FormBuilder::PasswordAdaptor;
+  package Valiant::HTML::FormBuilderAdaptor::Password;
 
   use Moo;
 
@@ -41,7 +41,7 @@ package Example::Model::RegistrationForm;
     $self->_fb->errors_for($self->attribute_name, @args);
   }
 
-  package Example::Model::RegistrationForm::FormBuilderAdaptor;
+  package Valiant::HTML::FormBuilderAdaptor;
 
   use Moo;
   
@@ -49,22 +49,15 @@ package Example::Model::RegistrationForm;
 
   sub _input_adaptor {
     my ($self, $attr_name, $cb) = @_;
-    my $fb = Example::FormBuilder::InputAdaptor->new(attribute_name=>$attr_name, fb=>$self->_fb);
+    my $fb = Valiant::HTML::FormBuilderAdaptor::Input->new(attribute_name=>$attr_name, fb=>$self->_fb);
     return $cb->($fb);
   }
 
   sub _password_adaptor {
     my ($self, $attr_name, $cb) = @_;
-    my $fb = Example::FormBuilder::PasswordAdaptor->new(attribute_name=>$attr_name, fb=>$self->_fb);
+    my $fb = Valiant::HTML::FormBuilderAdaptor::Password->new(attribute_name=>$attr_name, fb=>$self->_fb);
     return $cb->($fb);
   }
-
-  sub username { shift->_input_adaptor('username', @_) }
-  sub first_name { shift->_input_adaptor('first_name', @_) }
-  sub last_name { shift->_input_adaptor('last_name', @_) }
-  sub password { shift->_password_adaptor('password', @_) }
-  sub password_confirmation { shift->_password_adaptor('password_confirmation', @_) }
-
 }
 
 use Moose;
@@ -72,13 +65,64 @@ use Example::Syntax;
 use Valiant::HTML::Form 'form_for';
 
 extends 'Catalyst::Model';
-with 'Catalyst::Component::InstancePerContext';
+
+sub fields {
+  return
+    username => {type=>'input'},
+    first_name => {type=>'input'},
+    last_name => {type=>'input'},
+    password => {type=>'password'},
+    password_confirmation => {type=>'password'},
+}
 
 has ctx => (is=>'ro');
 has model => (is=>'ro');
+has adaptor_class => (is=>'ro');
 
-sub build_per_context_instance($self, $c, %args) {
-  return ref($self)->new(ctx=>$c, %args);  
+sub COMPONENT {
+  my ($class, $app, $args) = @_;
+  $args = $class->merge_config_hashes($class->config, $args);
+  my $adaptor_class = $class->build_adaptor($app, $args);
+  $args->{adaptor_class} = $adaptor_class;
+  return bless $args, $class;
+}
+
+sub build_adaptor {
+  my ($class, $app, $args) = @_;
+  my $adaptor_class = "${class}::_Adaptor";
+
+  eval "
+    package $adaptor_class;
+    use Moo;
+    extends 'Valiant::HTML::FormBuilderAdaptor';
+  ";
+  die $@ if $@;
+
+  require Sub::Util;
+
+  my %fields = $class->fields;
+  foreach my $attr (keys %fields) {
+    my $type = $fields{$attr}->{type};
+    my $method = Sub::Util::set_subname "${adaptor_class}::${attr}" => sub {
+      my $adaptor = "_${type}_adaptor";
+      shift->$adaptor($attr, @_);
+    };
+    no strict 'refs';
+    *{"${adaptor_class}::${attr}"} = $method;
+  }
+
+  return $adaptor_class;
+}
+ 
+## TODO handle if we are wrapping a model that already does ACCEPT_CONTEXT
+sub ACCEPT_CONTEXT {
+  my $self = shift;
+  my $c = shift;
+ 
+  my $class = ref($self);
+  my %args = (%$self, class=>$class, ctx=>$c, @_);  
+
+  return $class->new(%args);
 }
 
 sub form($self, @args) {
@@ -90,7 +134,7 @@ sub form($self, @args) {
     csrf_token => $self->ctx->csrf_token,
     %$options, 
   }, sub($fb) {
-      return $cb->( Example::Model::RegistrationForm::FormBuilderAdaptor->new(fb=>$fb), $fb)
+      return $cb->($self->adaptor_class->new(fb=>$fb), $fb),
   };
 
 }
