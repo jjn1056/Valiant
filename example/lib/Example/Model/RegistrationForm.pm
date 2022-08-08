@@ -64,7 +64,7 @@
       my $method = set_subname "${class}::${attr}" => sub {
         my ($self, $cb) = @_;
         my $adapter_class = $self->_find_adapter_class($package_affix);
-        my $adapter = $self->_build_adapter($adapter_class, $attr);
+        my $adapter = $self->_build_adapter($adapter_class, $attr, $fields{$attr});
         return $self->_execute_cb($cb, $adapter);
       };
       no strict 'refs';
@@ -79,8 +79,8 @@
   }
 
   sub _build_adapter {
-    my ($self, $adapter_class, $attr) = @_;
-    my $adapter = $adapter_class->new(attribute_name=>$attr, caller=>$self, fb=>$self->_fb);
+    my ($self, $adapter_class, $attr, $args) = @_;
+    my $adapter = $adapter_class->new(attribute_name=>$attr, caller=>$self, fb=>$self->_fb, %$args);
     return $adapter;
   }
 
@@ -141,9 +141,7 @@
       %$options,
     },
   }
-
 }
-
 
 package Example::Model::RegistrationForm;
 
