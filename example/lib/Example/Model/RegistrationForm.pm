@@ -20,6 +20,13 @@
     $self->_fb->errors_for($self->attribute_name, @args);
   }
 
+  sub default_cb {
+    my $fb = shift;
+    return $fb->label,
+      $fb->input,
+      $fb->errors_for;
+  }
+
   package Valiant::HTML::FormBuilderAdapter::Password;
 
   use Moo;
@@ -41,6 +48,14 @@
     $self->_fb->errors_for($self->attribute_name, @args);
   }
 
+  sub default_cb {
+    my $fb = shift;
+    return $fb->label,
+      $fb->password,
+      $fb->errors_for;
+  }
+
+
   package Valiant::HTML::FormBuilderAdapter;
 
   use Moo::Role;
@@ -48,6 +63,7 @@
   use Sub::Util 'set_subname';
   use Module::Runtime 'use_module';
   use Valiant::HTML::Form 'form_for';
+  use Valiant::HTML::SafeString 'concat';
 
   has _fb => (is=>'rw');
   has model => (is=>'ro');
@@ -62,9 +78,11 @@
       my $type = $fields{$attr}->{type};
       my $package_affix = camelize $type;
       my $method = set_subname "${class}::${attr}" => sub {
-        my ($self, $cb) = @_;
+        my ($self, @args) = @_;
+        my %args = (ref($args[0])||'') eq 'HASH' ? shift(@args) : ();
         my $adapter_class = $self->_find_adapter_class($package_affix);
-        my $adapter = $self->_build_adapter($adapter_class, $attr, $fields{$attr});
+        my $adapter = $self->_build_adapter($adapter_class, $attr, +{ %{$fields{$attr}}, %args });
+        my $cb = ref($args[0]||'') eq 'CODE' ? shift(@args) : sub { $adapter->default_cb(shift) };
         return $self->_execute_cb($cb, $adapter);
       };
       no strict 'refs';
@@ -86,7 +104,7 @@
 
   sub _execute_cb {
     my ($self, $cb, $adapter) = @_;
-    return $cb->($adapter);
+    return concat $cb->($adapter);
   }
 
   sub form {
@@ -94,7 +112,7 @@
     my $options = ((ref($args[0])||'') eq 'HASH') ? shift(@args) : +{};
     my $cb = shift(@args);
 
-    $options = $self->process_form_options($options)
+    $options = +{ $self->process_form_options(%$options) }
       if $self->can('process_form_options');
 
     return form_for $self->model, $options, $self->form_callback($cb, $options);
@@ -134,12 +152,11 @@
   }
 
   sub process_form_options {
-    my ($self, $options) = @_;
-    return +{ 
+    my ($self, %options) = @_;
+    return
       action => $self->ctx->req->uri, 
       csrf_token => $self->ctx->csrf_token,
-      %$options,
-    },
+      %options,
   }
 }
 
