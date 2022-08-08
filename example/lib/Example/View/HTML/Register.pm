@@ -13,13 +13,12 @@ sub render($self, $c) {
     $self->registration->form( +{style=>'width:35em; margin:auto', theme=>$self->theme}, sub ($reg, $fb) {
       fieldset [
         $fb->legend,
-
         div +{ class=>'form-group' }, $fb->model_errors,
         div +{ class=>'form-group' }, $reg->first_name,
         div +{ class=>'form-group' }, $reg->last_name,
         div +{ class=>'form-group' }, $reg->username,
         div +{ class=>'form-group' }, $reg->password,
-        div +{ class=>'form-group' }, $reg->password_confirmation,
+        div +{ class=>'form-group' }, $reg->password_confirmation
 
         $fb->submit('Register for Account', +{class=>'btn btn-lg btn-primary btn-block'}),
       ],

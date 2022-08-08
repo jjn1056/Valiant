@@ -55,7 +55,6 @@
       $fb->errors_for;
   }
 
-
   package Valiant::HTML::FormBuilderAdapter;
 
   use Moo::Role;
