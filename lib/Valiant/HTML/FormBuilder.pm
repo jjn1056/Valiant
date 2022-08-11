@@ -414,7 +414,7 @@ sub time_field {
 
 sub submit {
   my ($self) = shift;
-  my $options = pop(@_) if (ref($_[-1])||'') eq 'HASH';
+  my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my $value = @_ ? shift(@_) : $self->_submit_default_value;
   $options = $self->merge_theme_field_opts('submit', undef, $options);
 

@@ -104,7 +104,7 @@ sub form_for {
   my $content_block_coderef = pop; # required; at the end
   my $options = @_ ? shift : +{};
   my $model_name = exists $options->{as} ? $options->{as} : _model_name_from_object_or_class($model)->param_key;
-  
+   
   _apply_form_options($model, $options);
 
   my $html_options = $options->{html};

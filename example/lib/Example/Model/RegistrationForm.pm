@@ -155,6 +155,7 @@
     return
       action => $self->ctx->req->uri, 
       csrf_token => $self->ctx->csrf_token,
+      builder => 'Example::Utils::FormBuilder',
       %options,
   }
 }
