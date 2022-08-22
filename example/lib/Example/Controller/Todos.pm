@@ -9,9 +9,12 @@ extends 'Example::Controller';
 has todo => (is=>'rw');
 
 sub root :Chained(/auth) PathPart('todos') Args(0) Verbs(GET,POST) RequestModel(TodosQuery) ($self, $c, $q) {
+  my ($list, $pager) = $c->user->request_todos($q);
   $c->view('HTML::Todos',
-    list => $c->user->request_todos($q),
     todo => my $todo = $c->user->new_todo,
+    list => $list,
+    pager => $pager,
+    status => $q->status,
   );
   $self->todo($todo);
 }

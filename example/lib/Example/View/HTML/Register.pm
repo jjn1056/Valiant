@@ -8,8 +8,12 @@ extends 'Example::View::HTML';
 
 has 'registration' => (is=>'ro', required=>1, handles=>[qw/form/]);
 
+__PACKAGE__->views(
+  layout => 'HTML::Layout',
+);
+
 sub render($self, $c) {
-  $c->view('HTML::Layout', page_title=>'Homepage', sub($layout) {
+  $self->layout( page_title=>'Homepage', sub($layout) {
     $self->form(sub ($reg, $fb) {
       fieldset [
         $fb->legend,

@@ -1,18 +1,26 @@
 package Example::View::HTML::Todos;
 
-use Moose;
+use Moo;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'td', 'th', 'a', 'b', 'u', 'span', ':utils';
 
 extends 'Example::View::HTML';
 
-has 'list' => (is=>'ro', required=>1,  handles=>[qw/query pager/] );
+has 'list' => (is=>'ro', required=>1);
+has 'pager' => (is=>'ro', required=>1);
+has 'status' => (is=>'ro', required=>1);
 has 'todo' => (is=>'ro', required=>1 );
 
+__PACKAGE__->views(
+  layout => 'HTML::Layout',
+  navbar => 'HTML::Navbar',
+  form => 'HTML::Form',
+);
+
 sub render($self, $c) {
-  $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
-    $c->view('HTML::Navbar' => active_link=>'/todos'),
-    $c->view('HTML::Form', $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb) {
+  $self->layout(page_title=>'Todo List', sub($layout) {
+    $self->navbar(active_link=>'/todos'),
+    $self->form($self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb) {
       fieldset [
         $fb->legend,
         $fb->model_errors(+{
@@ -21,7 +29,7 @@ sub render($self, $c) {
           show_message_on_field_errors=>'Error Adding new Todo',
         }),
 
-        cond { $self->query->page > $self->pager->last_page}
+        cond { $self->pager->current_page > $self->pager->last_page}
           div { class=>'alert alert-warning', role=>'alert' },
             "The selected page is greater than the total number of pages available.  Showing the last page.",
 
@@ -70,7 +78,7 @@ sub page_window_info($self) {
 sub pagelist($self) {
   my @page_html = ();
   foreach my $page (1..$self->pager->last_page) {
-    my $query = "?page=${page};status=@{[ $self->query->status ]}";
+    my $query = "?page=${page};status=@{[ $self->status ]}";
     push @page_html, a {href=>$query, style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;
@@ -84,14 +92,14 @@ sub status_filter_box($self) {
 
 sub status_link($self, $status) {
   my @label = $self->status_label($status);
-  return span {style=>'margin: .5rem'}, \@label if $self->query->status eq $status;
+  return span {style=>'margin: .5rem'}, \@label if $self->status eq $status;
   return a { href=>"?status=$status;page=1", style=>'margin: .5rem'}, \@label;
 }
 
 
 sub status_label($self, $status) {
-  return b u $status if $status eq $self->query->status;
+  return b u $status if $status eq $self->status;
   return $status;
 }
 
-__PACKAGE__->meta->make_immutable();
+1;

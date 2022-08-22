@@ -27,9 +27,6 @@ around 'parse_content_body', sub ($orig, $self, $c, @args) {
   }
   $c->model('Session')->todo_query(\%session_args);
 
-  use Devel::Dwarn;
-  Dwarn $c->session;
-
   return %request_args;
 };
 

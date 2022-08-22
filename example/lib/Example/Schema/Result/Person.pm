@@ -104,7 +104,7 @@ sub new_todo($self) {
 sub request_todos($self, $request) {
   my $todos = $self->todos->available->newer_first;
   $todos = $todos->filter_by_request($request);
-  return $todos;
+  return $todos, $todos->pager;
 }
 
 # Update from request object methods
