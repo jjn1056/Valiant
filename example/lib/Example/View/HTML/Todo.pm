@@ -6,15 +6,7 @@ use Valiant::HTML::TagBuilder 'div', 'fieldset';
 
 extends 'Example::View::HTML';
 
-has 'todo' => (is=>'ro', required=>1 );
-
-sub status_options($self) {
-  return [qw/
-    active
-    completed
-    archived
-  /];
-}
+has 'todo' => (is=>'ro', required=>1, handles=>[qw/status_options/] );
 
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
@@ -24,18 +16,18 @@ sub render($self, $c) {
         $fb->legend,
         div +{ class=>'form-group' },
           $fb->model_errors(+{class=>'alert alert-danger', role=>'alert'}),
-          div +{ class=>'form-row' }, [
-            div +{ class=>'col form-group col-9' }, [
-              $fb->label('title'),
-              $fb->input('title', +{ class=>'form-control', errors_classes=>'is-invalid' }),
-              $fb->errors_for('ztitleip', +{ class=>'invalid-feedback' }),
-            ],
-            div +{ class=>'col form-group col-3' }, [
-              $fb->label('status'),
-              $fb->select('status', $self->status_options, id=>'name', +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'}),
-              $fb->errors_for('status', +{ class=>'invalid-feedback' }),
-            ],
+        div +{ class=>'form-row' }, [
+          div +{ class=>'col form-group col-9' }, [
+            $fb->label('title'),
+            $fb->input('title', +{ class=>'form-control', errors_classes=>'is-invalid' }),
+            $fb->errors_for('title', +{ class=>'invalid-feedback' }),
           ],
+          div +{ class=>'col form-group col-3' }, [
+            $fb->label('status'),
+            $fb->select('status', $self->status_options, +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'}),
+            $fb->errors_for('status', +{ class=>'invalid-feedback' }),
+          ],
+        ],
         $fb->submit('Update Todo', +{class=>'btn btn-lg btn-primary btn-block'}),
       ],
     }),

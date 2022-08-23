@@ -6,6 +6,7 @@ extends 'Valiant::HTML::FormBuilder';
 sub default_theme($self) {
   return +{ 
     errors_for => +{ class=>'invalid-feedback' },
+    label => +{ class=>'form-label' },
     input => +{ class=>'form-control', errors_classes=>'is-invalid' },
     password => +{ class=>'form-control', errors_classes=>'is-invalid' },
     submit => +{ class=>'btn btn-lg btn-primary btn-block' },

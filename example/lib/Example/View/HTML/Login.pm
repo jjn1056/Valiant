@@ -8,22 +8,27 @@ extends 'Example::View::HTML';
   
 has 'user' => (is=>'ro', required=>1);
 
+__PACKAGE__->views(
+  layout => 'HTML::Layout',
+  form => 'HTML::Form',
+);
+
 sub render($self, $c) {
-  $c->view('HTML::Layout' => page_title=>'Sign In', sub($layout) {
-    $c->view('HTML::Form', $self->user, +{style=>'width:20em; margin:auto'}, sub ($fb) {
+  $self->layout(page_title => 'Sign In', sub($layout) {
+    $self->form($self->user, +{class=>'mx-auto', style=>'width:25em'}, sub ($fb) {
       fieldset [
         legend 'Sign In',
         div +{ class=>'form-group' },
-          $fb->model_errors(+{class=>'alert alert-danger', role=>'alert'}),
+          $fb->model_errors(),
         div +{ class=>'form-group' }, [
           $fb->label('username'),
-          $fb->input('username', +{class=>'form-control'}),
+          $fb->input('username'),
         ],
         div +{ class=>'form-group' }, [
           $fb->label('password'),
-          $fb->password('password', +{class=>'form-control'}),
+          $fb->password('password'),
         ],
-        $fb->submit('Sign In', +{class=>'btn btn-lg btn-primary btn-block'}),
+        $fb->submit('Sign In'),
       ],
       div +{ class=>'text-center' },
         a +{ href=>"/register" }, 'Register';    

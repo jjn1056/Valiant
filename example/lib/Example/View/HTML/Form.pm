@@ -18,6 +18,7 @@ sub execute_code_callback {
   return form_for $self->model, +{ 
     action => $self->ctx->req->uri, 
     csrf_token => $self->ctx->csrf_token,
+    builder => 'Example::Utils::FormBuilder',
     %{$self->options}, 
   }, $self->code;
 }
