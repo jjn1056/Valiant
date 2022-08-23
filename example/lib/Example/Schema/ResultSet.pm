@@ -26,7 +26,7 @@ sub debug($self) {
   return $self;
 }
 
-sub set_page_or_last($self, $page) {
+sub page_or_last($self, $page) {
   my $paged_resultset = $self->page($page);
   my $last_page = $paged_resultset->pager->last_page;
 

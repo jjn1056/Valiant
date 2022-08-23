@@ -6,9 +6,7 @@ use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody
 
 extends 'Example::View::HTML';
 
-has 'list' => (is=>'ro', required=>1);
-has 'pager' => (is=>'ro', required=>1);
-has 'status' => (is=>'ro', required=>1);
+has 'list' => (is=>'ro', required=>1, handles=>[qw/pager status/]);
 has 'todo' => (is=>'ro', required=>1 );
 
 __PACKAGE__->views(
