@@ -28,7 +28,7 @@ requires 'Module::Runtime';
 requires 'experimental', '0.020';
 requires 'DBIx::Class::EncodedColumn';
 requires 'Catalyst::Plugin::InjectionHelpers';
-requires 'Catalyst::Plugin::Session::Store::Cookie', '0.004';
+requires 'Catalyst::Plugin::Session::Store::Cookie', '0.005';
 requires 'Catalyst::Plugin::Session::State::Cookie';
 requires 'App::Sqitch';
 requires 'DBD::Pg';
