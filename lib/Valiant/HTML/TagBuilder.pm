@@ -45,6 +45,7 @@ our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
   utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL],
   html => \@ALL_HTML_TAGS,
+  table => [qw/table td th tbody thead tfoot trow caption/],
 );
 
 sub _dasherize {

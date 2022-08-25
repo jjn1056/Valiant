@@ -45,6 +45,13 @@ __PACKAGE__->has_many(
   { 'foreign.person_id' => 'self.id' }
 );
 
+__PACKAGE__->has_many(
+  contacts =>
+  'Example::Schema::Result::Contact',
+  { 'foreign.person_id' => 'self.id' }
+);
+
+
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
 __PACKAGE__->validates( password => (presence=>1, confirmation => 1,  on=>'create' ));
 __PACKAGE__->validates( password => (confirmation => { 
@@ -60,6 +67,7 @@ __PACKAGE__->accept_nested_for('credit_cards', +{allow_destroy=>1});
 
 __PACKAGE__->validates(person_roles => (set_size=>{min=>1}, on=>'account' ));
 __PACKAGE__->accept_nested_for('person_roles', {allow_destroy=>1});
+__PACKAGE__->accept_nested_for('contacts', {allow_destroy=>1});
 
 __PACKAGE__->accept_nested_for('profile');
 
@@ -120,6 +128,12 @@ sub register($self, $request) {
 
 sub update_account($self, $request) {
   $self->context('account')->update($request->nested_params);
+}
+
+# Contacts
+
+sub new_contact($self) {
+  return $self->contacts->new_result(+{});
 }
 
 1;

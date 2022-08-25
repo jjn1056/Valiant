@@ -12,6 +12,7 @@ our @links = (
   +{ href => '/', title => 'Home' },
   +{ href => '/account', title => 'Account Details' },
   +{ href => '/todos', title => 'Todo List' },
+  +{ href => '/contacts', title => 'Contact List' },
   +{ href => '/logout', title => 'Logout' },
 );
 

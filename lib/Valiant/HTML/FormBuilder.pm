@@ -587,7 +587,7 @@ sub fields_for_nested_model {
 
   return Valiant::HTML::Form::fields_for($name, $model, $options, sub {
     my $fb = shift;
-    my $output = Valiant::HTML::FormTags::capture($codeblock, $fb);
+    my $output = Valiant::HTML::FormTags::capture($codeblock, $fb, $model);
     if($output && $emit_hidden_id && $model->can('primary_columns')) {
       foreach my $id_field ($model->primary_columns) {
         $output = $output->concat($fb->hidden($id_field)); #TODO this cant be right...
@@ -1538,24 +1538,27 @@ $attribute.  Allows you to pass some additional HTML attributes to the legend ta
 =head2 fields_for
 
     $fb->fields_for($attribute, sub {
-      my $nested_$fb = shift;
+      my ($nested_fb, $model) = @_;
     });
 
     $fb->fields_for($attribute, \%options, sub {
-      my $nested_$fb = shift;
+      my ($nested_fb, $model) = @_;
     });
 
     # With a 'finally' block when $attribute is a collection
 
     $fb->fields_for($attribute, sub {
-      my $nested_$fb = shift;
+      my ($nested_fb, $model) = @_;
     }, sub {
-      my $finally_$fb = shift;
+      my ($nested_fb, $new_model) = @_;
     });
 
 
 Used to create sub form builders under the current one for nested models (either a collection of models
-or a single model.)
+or a single model.)  This sub form builder will be passed as the first argument to the enclosing subref
+and will encapsulate any indexing or namespacing; its model will be set to the sub model.   You also get
+a second argument which is the sub model for ease of access.  Note that if the $attribute refers to a collection
+then $model will be set to the current item model of that collection.
 
 When the $attribute refers to a collection the collection object must provide a C<next> method which should
 iterate thru the collection in the order desired and return C<undef> to indicate all records have been rolled
