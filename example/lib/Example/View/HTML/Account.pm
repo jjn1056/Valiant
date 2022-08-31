@@ -49,7 +49,7 @@ sub render($self, $c) {
       fieldset [
         legend $self->account->human_attribute_name('profile'),
         $fb->errors_for('profile', +{ class=>'alert alert-danger', role=>'alert' }),
-        $fb->fields_for('profile', sub ($fb_profile) {
+        $fb->fields_for('profile', sub ($fb_profile, $profile) {
           div +{ class=>'form-group' }, [
             $fb_profile->label('address'),
             $fb_profile->input('address', +{ class=>'form-control', errors_classes=>'is-invalid' }),
@@ -121,7 +121,7 @@ sub render($self, $c) {
         legend $self->account->human_attribute_name('credit_cards'),
         div +{ class=>'form-group' }, [
           $fb->errors_for('credit_cards', +{ class=>'alert alert-danger', role=>'alert' }),
-          $fb->fields_for('credit_cards', sub($fb_cc) {
+          $fb->fields_for('credit_cards', sub($fb_cc, $cc) {
             div +{ class=>'form-row' }, [
               div +{ class=>'col form-group' }, [
                 $fb_cc->label('card_number'),
@@ -138,7 +138,7 @@ sub render($self, $c) {
                 $fb_cc->checkbox('_delete', +{ checked=>$fb_cc->model->is_marked_for_deletion }),
               ],
             ]
-          }, sub ($fb_final) {
+          }, sub ($fb_final, $new_cc) {
             $fb_final->button( '_add', +{ class=>'btn btn-lg btn-primary btn-block', value=>1 }, 'Add Credit Card')
           }),
         ],

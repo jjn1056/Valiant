@@ -12,9 +12,7 @@ extends 'Example::Controller';
 ## RequestModel needs "type Object" 'type Array'
 
 sub root :Chained(/auth) PathPart('contacts') Args(0) Verbs(GET) Name(contacts) ($self, $c) {
-  $c->view('HTML::Contacts',
-    list => my $list = $c->user->contacts,
-  );
+  $c->view('HTML::Contacts', list => $c->user->contacts);
 }
 
   sub GET :Action ($self, $c) { return $c->view->set_http_ok }

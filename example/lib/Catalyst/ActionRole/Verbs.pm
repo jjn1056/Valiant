@@ -116,7 +116,10 @@ sub _dispatch_to_verb {
   my ($self, $ctx, $action_handler, @return) = @_;
 
   ## TODO @return seems to contain undef when it really means empty.
+  $ctx->stats->profile(begin =>  '-dispatch HTTP method');
   return $ctx->forward($action_handler, [@return]);
+  $ctx->stats->profile(end =>  '-dispatch HTTP method');
+
   #return $ctx->forward($action_handler, $ctx->req->args)
 }
 

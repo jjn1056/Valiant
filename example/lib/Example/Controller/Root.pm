@@ -18,7 +18,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { }
   }
   
   sub auth: Chained(root) PathPart('') CaptureArgs() ($self, $c) {
-    return if $c->user->authenticated;
+    return $c->next_action($c->user) if $c->user->authenticated;
     return $c->redirect_to_action('#login') && $c->detach;
   }
 

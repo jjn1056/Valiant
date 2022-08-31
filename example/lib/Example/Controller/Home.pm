@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub root :Chained(/auth) PathPart('') Args(0) Name(home) Verbs(GET) ($self, $c) {
+sub root :Chained(/auth) PathPart('') Args(0) Name(home) Verbs(GET) ($self, $c, $user) {
   $c->view('HTML::Home');
 }
 

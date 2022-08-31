@@ -62,4 +62,10 @@ sub logout($self) {
   $self->clear_user;
 }
 
+sub next_action($self, @args) {
+  my @existing_args = exists($self->stash->{__received_args}) ?
+    @{$self->stash->{__received_args}} : ();
+  $self->stash->{__received_args} = [@existing_args, @args];
+}
+
 __PACKAGE__->meta->make_immutable();
