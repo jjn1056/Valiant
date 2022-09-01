@@ -130,10 +130,4 @@ sub update_account($self, $request) {
   $self->context('account')->update($request->nested_params);
 }
 
-# Contacts
-
-sub new_contact($self) {
-  return $self->contacts->new_result(+{});
-}
-
 1;

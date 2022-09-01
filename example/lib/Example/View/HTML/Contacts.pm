@@ -19,8 +19,8 @@ sub render($self, $c) {
   $self->layout(page_title=>'Contact List', sub($layout) {
     $self->navbar(active_link=>'/contacts'),
     $self->form($self->ctx->user, +{style=>'width: 35em; margin:auto'}, sub($fb) {
+      $fb->legend('Contact List'),
       table +{class=>'table table-striped table-bordered'}, [
-        h1 'Contact List',
         thead
           trow [
             th +{scope=>"col"},'Name',
@@ -30,14 +30,13 @@ sub render($self, $c) {
           $fb->fields_for('contacts', sub($contact_fb, $contact) {
             trow [
               td a +{ href=>"/contacts/@{[ $contact->id ]}" }, $contact->last_name .', '.$contact->first_name,
-              td $contact_fb->button( '_delete', +{ value=>1 }, 'Delete'),
+              td {style=>'padding:6'}, $contact_fb->button( '_delete', +{  class=>'btn btn-danger btn-sm btn-block', value=>1 }, 'Delete'),
             ],
           }),
         ],
-        tfoot [
-          trow td {colspan=>2}, a {href=>'/contacts/new', role=>'button', class=>'btn btn-lg btn-primary btn-block'}, "Create a new Contact",
-        ],
       ],
+      a {href=>'/contacts/new', role=>'button', class=>'btn btn-lg btn-primary btn-block'}, "Create a new Contact",
+
     }),
   });
 }

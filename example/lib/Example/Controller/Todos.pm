@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub setup_collection :Chained(/auth) PathPart('todos') CaptureArgs(0) ($self, $c, $user) {
+sub setup_collection :Chained(../auth) PathPart('todos') CaptureArgs(0) ($self, $c, $user) {
   my $collection = $user->todos;
   $c->next_action($collection);
 }
