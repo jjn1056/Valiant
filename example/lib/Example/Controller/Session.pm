@@ -6,9 +6,9 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub login : Chained(/root) Args(0) Verbs(GET,POST) Name(login) ($self, $c) {
-  $c->redirect_to_action('#home') && $c->detach if $c->user->authenticated; # Don't bother if already logged in
-  $c->view('HTML::Login', user => $c->user);
+sub login : Chained(../public) Args(0) Verbs(GET,POST) Name(login) ($self, $c, $user) {
+  $c->redirect_to_action('#home') && $c->detach if $user->authenticated; # Don't bother if already logged in
+  $c->view('HTML::Login', user => $user);
 }
 
   sub POST :Action RequestModel(LoginRequest) ($self, $c, $request) {
@@ -17,8 +17,8 @@ sub login : Chained(/root) Args(0) Verbs(GET,POST) Name(login) ($self, $c) {
         $c->view->set_http_bad_request 
   }
 
-  sub logout : Chained(/auth) PathPart(logout) Args(0) ($self, $c) {
-    return $c->logout && $c->redirect_to_action('#login');
-  }
+sub logout : Chained(../auth) PathPart(logout) Args(0) ($self, $c, $user) {
+  return $c->logout && $c->redirect_to_action('#login');
+}
 
 __PACKAGE__->meta->make_immutable;

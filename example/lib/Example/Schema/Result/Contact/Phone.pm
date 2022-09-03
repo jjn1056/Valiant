@@ -20,4 +20,10 @@ __PACKAGE__->belongs_to(
   { 'foreign.id' => 'self.contact_id' }
 );
 
+__PACKAGE__->validates(phone_number => (
+    presence => 1,
+    length => [3,24],
+    numericality => 'positive_integer')
+);
+
 1;

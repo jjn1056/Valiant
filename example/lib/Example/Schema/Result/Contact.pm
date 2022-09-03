@@ -37,16 +37,13 @@ __PACKAGE__->has_many(
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
+__PACKAGE__->accept_nested_for('emails', +{allow_destroy=>1});
+__PACKAGE__->accept_nested_for('phones', +{allow_destroy=>1});
+
 sub set_from_request($self, $r) {
   $self->set_columns_recursively($r->nested_params)
       ->insert_or_update;
   return $self->valid;
-}
-
-sub load_from_id($self, $id) {
-  my $found = $self->result_source->resultset->find({id=>$id});
-  %$self = %$found if $found;
-  return $self->in_storage;
 }
 
 1;

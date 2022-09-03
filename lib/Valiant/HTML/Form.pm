@@ -137,7 +137,7 @@ sub form_for {
   }
 
   return Valiant::HTML::FormTags::form_tag $html_options, sub { 
-    my $captured = Valiant::HTML::FormTags::capture($content_block_coderef, $builder);
+    my $captured = Valiant::HTML::FormTags::capture($content_block_coderef, $builder, $model);
     $captured = $captured->concat(Valiant::HTML::FormTags::hidden_tag('csrf_token', {value=>$csrf_token})) if $csrf_token; 
     return $captured;
   };
@@ -183,7 +183,7 @@ Wrap a formbuilder object around it and generate HTML form field controls:
     my $person = Local::Person->new(first_name=>'J', last_name=>'Napiorkowski');
     $person->validate;
 
-    form_for($person, sub($fb) {
+    form_for($person, sub($fb, $person) {
       return  $fb->label('first_name'),
               $fb->input('first_name'),
               $fb->errors_for('first_name', +{ class=>'invalid-feedback' }),
@@ -291,7 +291,7 @@ The following functions can be exported by this library
 
 =head2 form_for
 
-    form_for($person, sub($fb) {
+    form_for($person, sub($fb, $person) {
       $fb->input('name');
       $fb->label('name');
     });
@@ -367,7 +367,7 @@ encoding issues.
 
 =head2 fields_for
 
-    fields_for($sub_model_name, $model, $options, sub($fb) {
+    fields_for($sub_model_name, $model, $options, sub($fb, $model) {
       $fb->input($field);
     });
 
@@ -377,6 +377,9 @@ with a parent model under an attribute of that parent.
 Unless you are doing very customized form generation you'll probably use this as a method of a formbuilder
 such as L<Valiant::HTML::FormBuilder>.  However there was no reason for me to not expose the method
 publically for users who need it.
+
+The second argument for the callback subroutine reference is the current model.  If the passed model is
+a collection this will always be the current one.
 
 =head1 SEE ALSO
  

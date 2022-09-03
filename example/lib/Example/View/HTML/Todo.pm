@@ -2,7 +2,7 @@ package Example::View::HTML::Todo;
 
 use Moose;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'fieldset';
+use Valiant::HTML::TagBuilder 'div', 'fieldset', 'a';
 
 extends 'Example::View::HTML';
 
@@ -11,7 +11,7 @@ has 'todo' => (is=>'ro', required=>1, handles=>[qw/status_options/] );
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
     $c->view('HTML::Navbar' => active_link=>'/todos'),
-    $c->view('HTML::Form', $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb) {
+    $c->view('HTML::Form', $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -29,6 +29,7 @@ sub render($self, $c) {
           ],
         ],
         $fb->submit('Update Todo', +{class=>'btn btn-lg btn-primary btn-block'}),
+        a {href=>'/todos', class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Todo List',
       ],
     }),
   });

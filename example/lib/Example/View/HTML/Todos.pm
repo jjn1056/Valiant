@@ -18,7 +18,7 @@ __PACKAGE__->views(
 sub render($self, $c) {
   $self->layout(page_title=>'Todo List', sub($layout) {
     $self->navbar(active_link=>'/todos'),
-    $self->form($self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb) {
+    $self->form($self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
       fieldset [
         $fb->legend,
         $fb->model_errors(+{

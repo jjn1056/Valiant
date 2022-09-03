@@ -120,7 +120,7 @@
   sub form_callback {
     my ($self, $cb, $options) = @_;
     return sub {
-      my ($fb, @args) = @_;
+      my ($fb, $model, @args) = @_;
       $self->_fb($fb);
       return $cb->($self, $fb, @args),
     };  

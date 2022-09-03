@@ -12,14 +12,17 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { }
     return $c->detach_error(404, +{error=>"Requested URL not found: @{[ $c->req->uri ]}"});
   }
 
-  sub public :Chained(root) PathPart('public') Args {
+  sub static :Chained(root) PathPart('static') Args {
     my ($self, $c, @args) = @_;
-    return $c->serve_file('public', @args) || $c->detach_error(404);
+    return $c->serve_file('static', @args) || $c->detach_error(404);
+  }
+
+  sub public :Chained(root) PathPart('') CaptureArgs() ($self, $c) {
+    return $c->next_action($c->user);
   }
   
-  sub auth: Chained(root) PathPart('') CaptureArgs() ($self, $c) {
-    return $c->next_action($c->user) if $c->user->authenticated;
-    return $c->redirect_to_action('#login') && $c->detach;
+  sub auth :Chained(root) PathPart('') CaptureArgs() Does(Authenticated) ($self, $c) {
+    return $c->next_action($c->user);
   }
 
 sub end :Action Does(RenderView) Does(RenderErrors) {}

@@ -20,4 +20,9 @@ __PACKAGE__->belongs_to(
   { 'foreign.id' => 'self.contact_id' }
 );
 
+__PACKAGE__->validates(address => (
+  presence => 1,
+  format => 'email')
+);
+
 1;

@@ -4,6 +4,8 @@ use Example::Syntax;
 use base 'Example::Schema::ResultSet';
 
 sub new_contact($self) {
-  return $self->new_result(+{});
+  my $contact =  $self->new_result(+{});
+  return $contact;
 }
+
 1;

@@ -15,7 +15,7 @@ __PACKAGE__->views(
 
 sub render($self, $c) {
   $self->layout(page_title => 'Sign In', sub($layout) {
-    $self->form($self->user, +{class=>'mx-auto', style=>'width:25em'}, sub ($fb) {
+    $self->form($self->user, +{class=>'mx-auto', style=>'width:25em'}, sub ($fb, $u) {
       fieldset [
         legend 'Sign In',
         div +{ class=>'form-group' },

@@ -18,7 +18,7 @@ __PACKAGE__->views(
 sub render($self, $c) {
   $self->layout(page_title=>'Contact List', sub($layout) {
     $self->navbar(active_link=>'/contacts'),
-    $self->form($self->ctx->user, +{style=>'width: 35em; margin:auto'}, sub($fb) {
+    $self->form($self->ctx->user, +{style=>'width: 35em; margin:auto'}, sub($fb, $u) {
       $fb->legend('Contact List'),
       table +{class=>'table table-striped table-bordered'}, [
         thead

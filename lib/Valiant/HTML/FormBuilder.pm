@@ -504,7 +504,7 @@ sub _legend_default_value {
 
   return "@{[ _humanize($key) ]} ${model_placeholder}" unless $self->model->can('i18n');
 
-  push @defaults, _t "formbuilder.legend.@{[ $self->name ]}.${key}";
+  push @defaults, _t "formbuilder.legend.@{[ $self->model_name->i18n_key ]}.${key}";
   push @defaults, _t "formbuilder.legend.${key}";
   push @defaults, "@{[ _humanize($key) ]} ${model_placeholder}";
 

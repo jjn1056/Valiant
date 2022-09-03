@@ -23,7 +23,7 @@ sub status_options($self) {
 sub render($self, $c) {
   $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
     $c->view('HTML::Navbar' => active_link=>'/account'),
-    $c->view('HTML::Form', $self->account, +{style=>'width:35em; margin:auto'}, sub ($fb) {
+    $c->view('HTML::Form', $self->account, +{style=>'width:35em; margin:auto'}, sub ($fb, $account) {
      cond { $self->account->validated && !$self->account->has_errors }
         div +{ class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
