@@ -2,7 +2,7 @@ package Example::View::HTML::Todos;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'td', 'th', 'a', 'b', 'u', 'span', ':utils';
+use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'tfoot', 'td', 'th', 'a', 'b', 'u', 'span', ':utils';
 
 extends 'Example::View::HTML';
 
@@ -21,16 +21,9 @@ sub render($self, $c) {
     $self->form($self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
       fieldset [
         $fb->legend,
-        $fb->model_errors(+{
-          class=>'alert alert-danger', 
-          role=>'alert', 
-          show_message_on_field_errors=>'Error Adding new Todo',
-        }),
+        $fb->model_errors,
 
-        cond { $self->pager->current_page > $self->pager->last_page}
-          div { class=>'alert alert-warning', role=>'alert' },
-            "The selected page is greater than the total number of pages available.  Showing the last page.",
-
+        $self->last_page_warning,
         $self->page_window_info,
 
         table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
@@ -39,17 +32,15 @@ sub render($self, $c) {
               th +{scope=>"col"},'Title',
               th +{scope=>"col", style=>'width:8em'}, 'Status',
             ],
-          tbody [
-            over $self->list, sub ($todo, $i) {
-              trow [
-               td a +{ href=>"/todos/@{[ $todo->id ]}" }, $todo->title,
-               td $todo->status,
-              ],
-            },
-            cond { $self->pager->last_page > 1  }
-              trow td {colspan=>2, style=>'background:white'},
-                [ "Page: ", $self->pagelist ],
-          ],
+          tbody { repeat=>$self->list }, sub ($todo, $i) {
+            trow [
+             td a +{ href=>"/todos/@{[ $todo->id ]}" }, $todo->title,
+             td $todo->status,
+            ],
+          },
+          tfoot { cond=>$self->pager->last_page > 1  },
+            td {colspan=>2, style=>'background:white'},
+              ["Page: ", $self->pagelist ],
         ],
         
         $self->status_filter_box,
@@ -64,13 +55,18 @@ sub render($self, $c) {
   });
 }
 
+sub last_page_warning($self) {
+  div { cond=> $self->pager->current_page > $self->pager->last_page, class=>'alert alert-warning', role=>'alert' },
+    "The selected page is greater than the total number of pages available.  Showing the last page.",
+}
+
 sub page_window_info($self) {
-  cond {$self->pager->total_entries > 0 }
-    div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, 
-      cond {$self->pager->last_page == 1} 
-        "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}",
-      otherwise 
-        "@{[ $self->pager->first]} to @{[ $self->pager->last ]} of @{[ $self->pager->total_entries ]}";
+  return '' unless $self->pager->total_entries > 0;
+  my $message = $self->pager->last_page == 1 ?
+    "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}" :
+    "@{[ $self->pager->first]} to @{[ $self->pager->last ]} of @{[ $self->pager->total_entries ]}";
+
+  return div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, $message;
 }
 
 sub pagelist($self) {

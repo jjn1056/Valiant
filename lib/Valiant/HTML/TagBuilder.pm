@@ -101,10 +101,23 @@ sub capture {
   return flattened_safe $block->(@_);
 }
 
+## TODO map, like repar but for inner
+## trinary or some sort of otherwise for cond
+## omit_tag seems useful
+## better $index for things like is_last is_first is_even/odd, etc
+
 sub html_content_tag {
   my $tag = shift;
   my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
   my $content;
+
+  if(exists $attrs->{cond}) {
+    my $cond = delete $attrs->{cond};
+    unless($cond) {
+      shift @_; # throw away the content
+      return @_;
+    }
+  }
 
   if( (ref(\$_[0])||'') eq 'SCALAR' ) {  # or isa SafeString...
     $content = shift(@_);
@@ -113,8 +126,26 @@ sub html_content_tag {
   } elsif( (ref($_[0])||'') eq 'ARRAY' ) {
     $content = concat(@{shift(@_)});
   } elsif( (ref($_[0])||'') eq 'CODE' ) {
-    $content = concat(shift->());
+    my $code = shift;
+    if(my $repeated = delete $attrs->{repeat}) {
+      my $index = 0;
+      my @content = ();
+      if(blessed($repeated) && $repeated->can('next')) {
+        while (my $next = $repeated->next) {
+          push @content, $code->($next, $index);
+          $index++;
+        }
+      } else {
+        foreach my $item (@$repeated) {
+          push @content, $code->($item, $index);
+          $index++;
+        }
+      }
+      $content = concat(@content);
+    }
+    $content = concat(shift->()) unless $content;
   }
+
 
   return defined($content) ?
     (content_tag($tag, $content, $attrs), @_) :

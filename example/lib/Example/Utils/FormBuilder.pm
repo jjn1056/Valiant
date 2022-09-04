@@ -5,6 +5,10 @@ use Example::Syntax;
 
 extends 'Valiant::HTML::FormBuilder';
 
+sub successfully_updated($self) {
+  return $self->model->validated && !$self->model->has_errors;
+}
+
 sub default_theme($self) {
   return +{ 
     errors_for => +{ class=>'invalid-feedback' },

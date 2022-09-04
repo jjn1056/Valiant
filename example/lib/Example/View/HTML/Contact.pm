@@ -18,9 +18,7 @@ sub render($self, $c) {
   $self->layout(page_title=>'Contact List', sub($layout) {
     $self->navbar(active_link=>'/contacts'),
     $self->form($self->contact, +{style=>'width:35em; margin:auto'}, sub ($fb, $contact) {
-     cond { $self->contact->validated && !$self->contact->has_errors }
-        div +{ class=>'alert alert-success', role=>'alert' }, 'Successfully Saved!',
-
+      div +{ cond=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Saved!',
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -88,8 +86,7 @@ sub render($self, $c) {
 
       $fb->submit(),
       a {href=>'/contacts', class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
-      cond { $self->contact->in_storage }
-        button {formaction=>'?x-tunneled-method=delete', formmethod=>'POST', class=>'btn btn-danger btn-lg btn-block'}, 'Delete Contact',
+      button { cond=>$contact->in_storage, formaction=>'?x-tunneled-method=delete', formmethod=>'POST', class=>'btn btn-danger btn-lg btn-block'}, 'Delete Contact',
     }),
   });
 }

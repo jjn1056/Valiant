@@ -2,7 +2,7 @@ package Example::View::HTML::Contacts;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'legend', 'a', 'button', ':table', 'div', ':utils';
+use Valiant::HTML::TagBuilder 'legend', 'a', 'button', ':table', 'div', 'ul', 'li', ':utils';
 use Valiant::HTML::SafeString ':all';
 
 extends 'Example::View::HTML';
@@ -18,22 +18,20 @@ __PACKAGE__->views(
 sub render($self, $c) {
   $self->layout(page_title=>'Contact List', sub($layout) {
     $self->navbar(active_link=>'/contacts'),
-      div {style=>'width: 35em; margin:auto'}, [
+      div { style=>'width: 35em; margin:auto' }, [
         legend 'Contact List',
-        table +{class=>'table table-striped table-bordered'}, [
+        table +{ class=>'table table-striped table-bordered' }, [
           thead
             trow [
-              th +{scope=>"col"},'Name',
+              th +{ scope=>"col" }, 'Name',
             ],
-          tbody [
-            over $self->list, sub ($contact, $idx) {
-              trow [
-                td a +{ href=>"/contacts/@{[ $contact->id ]}" }, $contact->last_name .', '.$contact->first_name,
-              ],
-            },
-          ],
+          tbody { repeat=>$self->list }, sub ($contact, $i) {
+            trow [
+              td a +{ href=>"/contacts/@{[ $contact->id ]}" }, $contact->first_name .' '.$contact->last_name,
+            ],
+          },
         ],
-        a {href=>'/contacts/new', role=>'button', class=>'btn btn-lg btn-primary btn-block'}, "Create a new Contact",
+        a { href=>'/contacts/new', role=>'button', class=>'btn btn-lg btn-primary btn-block' }, "Create a new Contact",
      ],
   });
 }
