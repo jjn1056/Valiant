@@ -2,7 +2,7 @@ package Example::View::HTML::Todos;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'tfoot', 'td', 'th', 'a', 'b', 'u', 'span', ':utils';
+use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'tfoot', 'td', 'th', 'a', 'b', 'u', 'span', ':utils', 'ul', 'li';
 
 extends 'Example::View::HTML';
 

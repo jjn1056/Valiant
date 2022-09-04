@@ -45,6 +45,8 @@ our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
   utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL],
   html => \@ALL_HTML_TAGS,
+  form =>[qw/form input select options button datalist fieldset label legend meter optgroup output progress textarea/]
+  headers => [qw/h1 h2 h3 h4 5 h6 header/]
   table => [qw/table td th tbody thead tfoot trow caption/],
 );
 
@@ -83,6 +85,11 @@ sub _tag_option {
 
 sub tag {
   my ($name, $attrs) = (@_, +{});
+  if(exists $attrs->{omit_tag}) {
+    my $omit_tag = delete $attrs->{omit_tag};
+    return '' if $omit_tag;
+  }
+
   die "'$name' is not a valid VOID HTML element" unless $HTML_VOID_ELEMENTS{$name};
   return raw "<${name}@{[ _tag_options(%{$attrs}) ]}/>";
 }
@@ -93,6 +100,12 @@ sub content_tag {
   my $block = ref($_[-1]) eq 'CODE' ? pop(@_) : undef;
   my $attrs = ref($_[-1]) eq 'HASH' ? pop(@_) : +{};
   my $content = flattened_safe(defined($block) ? $block->() : (shift || ''));
+
+  if(exists $attrs->{omit_tag}) {
+    my $omit_tag = delete $attrs->{omit_tag};
+    return $content if $omit_tag;
+  }
+
   return raw "<${name}@{[ _tag_options(%{$attrs}) ]}>$content</${name}>";
 }
 
@@ -101,9 +114,8 @@ sub capture {
   return flattened_safe $block->(@_);
 }
 
-## TODO map, like repar but for inner
+## TODO 
 ## trinary or some sort of otherwise for cond
-## omit_tag seems useful
 ## better $index for things like is_last is_first is_even/odd, etc
 
 sub html_content_tag {
@@ -114,9 +126,29 @@ sub html_content_tag {
   if(exists $attrs->{cond}) {
     my $cond = delete $attrs->{cond};
     unless($cond) {
-      shift @_; # throw away the content
+      shift @_ unless $HTML_VOID_ELEMENTS{$tag}; # throw away the content if a content tag
       return @_;
     }
+  }
+
+  if(exists $attrs->{map}) {
+    my $map = delete $attrs->{map};
+    my $code = shift @_; # must be code.
+
+    my $index = 0;
+    my @content = ();
+    if(blessed($map) && $map->can('next')) {
+      while (my $next = $map->next) {
+        push @content, content_tag($tag, $code->($next, $index), $attrs);
+        $index++;
+      }
+    } else {
+      foreach my $item (@$map) {
+        push @content, content_tag($tag, $code->($item, $index), $attrs);
+        $index++;
+      }
+    }
+    return \@content, @_;
   }
 
   if( (ref(\$_[0])||'') eq 'SCALAR' ) {  # or isa SafeString...
