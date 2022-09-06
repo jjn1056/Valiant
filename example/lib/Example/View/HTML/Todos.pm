@@ -2,7 +2,7 @@ package Example::View::HTML::Todos;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'fieldset', 'table', 'thead','trow', 'tbody', 'tfoot', 'td', 'th', 'a', 'b', 'u', 'span', ':utils', 'ul', 'li';
+use Valiant::HTML::TagBuilder qw(:table div fieldset a b u span);
 
 extends 'Example::View::HTML';
 
@@ -46,10 +46,10 @@ sub render($self, $c) {
         $self->status_filter_box,
 
         div +{ class=>'form-group' }, [
-          $fb->input('title', +{ class=>'form-control', placeholder=>'What needs to be done?', errors_classes=>'is-invalid' }),
-          $fb->errors_for('title', +{ class=>'invalid-feedback' }),
+          $fb->input('title', +{ placeholder=>'What needs to be done?' }),
+          $fb->errors_for('title'),
         ],
-        $fb->submit('Add Todo to List', +{class=>'btn btn-lg btn-primary btn-block'}),
+        $fb->submit('Add Todo to List'),
       ],
     }),
   });
