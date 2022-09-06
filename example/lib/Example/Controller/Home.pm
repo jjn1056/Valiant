@@ -12,11 +12,11 @@ extends 'Example::Controller';
 sub root :Chained(../unauth) PathPart('') CaptureArgs(0) ($self, $c, $user) { }
 
   # Nothing here for now so just redirect to login
-  sub public_home :Chained(root) PathPart('') Args(0) ($self, $c) {
+  sub public_home :GET Chained(root) PathPart('') Args(0) ($self, $c) {
     return $c->redirect_to_action('#login') && $c->detach;
   }
 
-  sub user_home :Chained(root) PathPart('') Args(0) Name(home) Does(Authenticated) ($self, $c) {
+  sub user_home :GET Chained(root) PathPart('') Args(0) Name(home) Does(Authenticated) ($self, $c) {
     $c->view('HTML::Home');
     $c->view->info('The time is '. localtime);
   }

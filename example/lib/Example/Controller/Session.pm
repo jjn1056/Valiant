@@ -21,7 +21,7 @@ sub login : Chained(../root) Args(0) Verbs(GET,POST) Name(login) ($self, $c) {
     return $c->redirect_to_action('#home');
   }
 
-sub logout : Chained(../auth) PathPart(logout) Args(0) ($self, $c, $user) {
+sub logout :GET Chained(../auth) PathPart(logout) Args(0) ($self, $c, $user) {
   return $c->logout && $c->redirect_to_action('#login');
 }
 

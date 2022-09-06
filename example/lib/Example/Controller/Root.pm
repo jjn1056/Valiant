@@ -12,7 +12,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { }
     return $c->detach_error(404, +{error=>"Requested URL not found: @{[ $c->req->uri ]}"});
   }
 
-  sub static :Chained(root) PathPart('static') Args {
+  sub static :GET Chained(root) PathPart('static') Args {
     my ($self, $c, @args) = @_;
     return $c->serve_file('static', @args) // $c->detach_error(404, +{error=>"Requested URL not found: @{[ $c->req->uri ]}"});
   }
