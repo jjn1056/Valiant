@@ -124,8 +124,9 @@ sub model_errors {
   my @errors = $self->_get_model_errors;
 
   if(
-    $self->model->has_errors &&
-    (my $tag = delete $options->{show_message_on_field_errors})
+    $self->model->has_errors &&     # We have errors
+    !scalar(@errors) &&             # but no model errors
+    (my $tag = delete $options->{show_message_on_field_errors})   # And a default model error
   ) {
     unshift @errors, $self->_generate_default_model_error($tag);
   }

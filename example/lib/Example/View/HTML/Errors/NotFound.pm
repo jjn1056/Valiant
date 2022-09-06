@@ -1,4 +1,4 @@
-package Example::View::Errors::NotFound;
+package Example::View::HTML::Errors::NotFound;
 
 use Moose;
 use Example::Syntax;

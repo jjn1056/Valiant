@@ -45,8 +45,8 @@ our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
   utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL],
   html => \@ALL_HTML_TAGS,
-  form =>[qw/form input select options button datalist fieldset label legend meter optgroup output progress textarea/]
-  headers => [qw/h1 h2 h3 h4 5 h6 header/]
+  form =>[qw/form input select options button datalist fieldset label legend meter optgroup output progress textarea/],
+  headers => [qw/h1 h2 h3 h4 5 h6 header/],
   table => [qw/table td th tbody thead tfoot trow caption/],
 );
 
@@ -169,6 +169,7 @@ sub html_content_tag {
         }
       } else {
         foreach my $item (@$repeated) {
+
           push @content, $code->($item, $index);
           $index++;
         }
@@ -187,6 +188,39 @@ sub html_content_tag {
 sub html_tag {
   my $tag = shift;
   my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
+
+  if(exists $attrs->{cond}) {
+    my $cond = delete $attrs->{cond};
+    unless($cond) {
+      shift @_ unless $HTML_VOID_ELEMENTS{$tag}; # throw away the content if a content tag
+      return @_;
+    }
+  }
+
+  if(exists $attrs->{map}) {
+    my $map = delete $attrs->{map};
+    my $index = 0;
+    my @content = ();
+    if(blessed($map) && $map->can('next')) {
+      while (my $next = $map->next) {
+        foreach my $key (keys %$attrs) {
+          $attrs->{$key} = $attrs->{$key}->($next, $index) if (ref($attrs->{$_})||'') eq 'CODE';
+        }
+        push @content, tag($tag, $attrs);
+        $index++;
+      }
+    } else {
+      foreach my $item (@$map) {
+        foreach my $key (keys %$attrs) {
+          $attrs->{$key} = $attrs->{$key}->($item, $index) if (ref($attrs->{$_})||'') eq 'CODE';
+        }
+        push @content, tag($tag, $attrs);
+        $index++;
+      }
+    }
+    return \@content, @_;
+  }
+
   return (tag($tag, $attrs), @_);
 }
 

@@ -86,11 +86,15 @@ sub authenticated($self) {
 sub authenticate($self, $request) {
   my ($username, $password) = $request->get('username', 'password');
   my $found = $self->result_source->resultset->find({username=>$username});
-  %$self = %$found if $found;
 
-  return 1 if $self->in_storage && $self->check_password($password);
-  $self->errors->add(undef, 'Invalid login credentials');
-  return 0;
+  if($found && $found->in_storage && $found->check_password($password)) {
+    %$self = %$found;
+    return $self;
+  } else {
+    $self->errors->add(undef, 'Invalid login credentials');
+    $self->username($username) if defined($username);
+    return 0;
+  }
 }
 
 sub registered($self) {
