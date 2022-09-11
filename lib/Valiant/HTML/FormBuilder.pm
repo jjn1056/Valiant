@@ -122,13 +122,14 @@ sub model_errors {
   $options = $self->merge_theme_field_opts('model_errors', undef, $options);
 
   my @errors = $self->_get_model_errors;
+  my $show_message_on_field_errors = delete $options->{show_message_on_field_errors};
 
   if(
     $self->model->has_errors &&     # We have errors
-    !scalar(@errors) &&             # but no model errors
-    (my $tag = delete $options->{show_message_on_field_errors})   # And a default model error
+    # !scalar(@errors) &&             # but no model errors
+    ($show_message_on_field_errors)   # And a default model error
   ) {
-    unshift @errors, $self->_generate_default_model_error($tag);
+    unshift @errors, $self->_generate_default_model_error($show_message_on_field_errors);
   }
   return '' unless @errors;
 
@@ -524,6 +525,7 @@ sub fields_for {
   my $finally_block = (ref($_[0])||'') eq 'CODE' ? shift(@_) : undef;
 
   $options->{builder} = $self->options->{builder} if !exists($options->{builder}) && !defined($options->{builder}) && defined($self->options->{builder});
+  $options->{include_id} = $self->options->{include_id} if !exists($options->{include_id}) && !defined($options->{include_id}) && defined($self->options->{include_id});
   $options->{namespace} = $self->namespace if $self->has_namespace;
   $options->{parent_builder} = $self;
 
@@ -1032,6 +1034,9 @@ add a model error if there's field errors (although it would be easy for you to 
 with a model validation) so this makes it easy to display such a message.  If a string or translation
 tag then show that, if its a '1' the show the default message, which is "Form has errors" unless
 you overide it.
+
+This can be a useful option when you have a long form and you want a user to know there's errors
+possibly off the browser screen.
 
 =back
 

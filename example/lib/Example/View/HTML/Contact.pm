@@ -11,13 +11,13 @@ has 'contact' => (is=>'ro', required=>1);
 __PACKAGE__->views(
   layout => 'HTML::Layout',
   navbar => 'HTML::Navbar',
-  form => 'HTML::Form',
+  form_for => 'HTML::FormFor',
 );
 
 sub render($self, $c) {
   $self->layout(page_title=>'Contact List', sub($layout) {
     $self->navbar(active_link=>'/contacts'),
-    $self->form($self->contact, +{style=>'width:35em; margin:auto'}, sub ($fb, $contact) {
+    $self->form_for($self->contact, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $contact) {
       div +{ cond=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Saved!',
       fieldset [
         $fb->legend,

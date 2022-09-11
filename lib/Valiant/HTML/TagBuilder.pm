@@ -142,6 +142,7 @@ sub html_content_tag {
         push @content, content_tag($tag, $code->($next, $index), $attrs);
         $index++;
       }
+      $map->reset if $map->can('reset');
     } else {
       foreach my $item (@$map) {
         push @content, content_tag($tag, $code->($item, $index), $attrs);
@@ -167,6 +168,7 @@ sub html_content_tag {
           push @content, $code->($next, $index);
           $index++;
         }
+        $repeated->reset if $repeated->can('reset');
       } else {
         foreach my $item (@$repeated) {
 
@@ -209,6 +211,7 @@ sub html_tag {
         push @content, tag($tag, $attrs);
         $index++;
       }
+      $map->reset if $map->can('reset');
     } else {
       foreach my $item (@$map) {
         foreach my $key (keys %$attrs) {

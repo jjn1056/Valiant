@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub register :Chained(../public) CaptureArgs(0) ($self, $c, $user) {
+sub register :Chained(../unauth) CaptureArgs(0) ($self, $c, $user) {
   return $c->redirect_to_action('#home') && $c->detach if $user->registered;
   $c->next_action($user);
 }

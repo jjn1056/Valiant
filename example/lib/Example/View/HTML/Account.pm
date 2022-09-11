@@ -7,6 +7,12 @@ use Valiant::HTML::Form 'form_for';
 
 extends 'Example::View::HTML';
 
+__PACKAGE__->views(
+  layout => 'HTML::Layout',
+  navbar => 'HTML::Navbar',
+  form_for => 'HTML::FormFor',
+);
+
 has 'account' => (
   is=>'ro', 
   required=>1,
@@ -21,9 +27,9 @@ sub status_options($self) {
 }
 
 sub render($self, $c) {
-  $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
-    $c->view('HTML::Navbar' => active_link=>'/account'),
-    $c->view('HTML::Form', $self->account, +{style=>'width:35em; margin:auto'}, sub ($fb, $account) {
+  $self->layout(page_title=>'Homepage', sub($layout) {
+    $self->navbar(active_link=>'/account'),
+    $self->form_for($self->account, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $account) {
       div +{ cond=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
         $fb->legend,

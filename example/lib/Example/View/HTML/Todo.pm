@@ -6,12 +6,18 @@ use Valiant::HTML::TagBuilder 'div', 'fieldset', 'a';
 
 extends 'Example::View::HTML';
 
+__PACKAGE__->views(
+  layout => 'HTML::Layout',
+  form_for => 'HTML::FormFor',
+  navbar => 'HTML::Navbar',
+);
+
 has 'todo' => (is=>'ro', required=>1, handles=>[qw/status_options/] );
 
 sub render($self, $c) {
-  $c->view('HTML::Layout' => page_title=>'Homepage', sub($layout) {
-    $c->view('HTML::Navbar' => active_link=>'/todos'),
-    $c->view('HTML::Form', $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
+  $self->layout(page_title=>'Homepage', sub($layout) {
+    $self->navbar(active_link=>'/todos'),
+    $self->form_for($self->todo, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $todo) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },

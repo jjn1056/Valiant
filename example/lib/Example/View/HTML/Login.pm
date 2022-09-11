@@ -11,12 +11,12 @@ has 'post_login_redirect' => (is=>'rw', predicate=>'has_post_login_redirect');
 
 __PACKAGE__->views(
   layout => 'HTML::Layout',
-  form => 'HTML::Form',
+  form_for => 'HTML::FormFor',
 );
 
 sub render($self, $c) {
   $self->layout(page_title => 'Sign In', sub($layout) {
-    $self->form($self->user, +{action_bak=>$c->uri('#login'), class=>'mx-auto', style=>'width:25em'}, sub ($fb, $u) {
+    $self->form_for($self->user, +{action_bak=>$c->uri('#login'), class=>'mx-auto', style=>'width:25em'}, sub ($ff, $fb, $u) {
       fieldset [
         legend 'Sign In',
         div +{ class=>'form-group' },

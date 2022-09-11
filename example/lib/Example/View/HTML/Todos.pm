@@ -3,6 +3,7 @@ package Example::View::HTML::Todos;
 use Moo;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder qw(:table div fieldset a b u span);
+use Valiant::HTML::Form 'fields_for';
 
 extends 'Example::View::HTML';
 
@@ -12,13 +13,15 @@ has 'todo' => (is=>'ro', required=>1 );
 __PACKAGE__->views(
   layout => 'HTML::Layout',
   navbar => 'HTML::Navbar',
-  form => 'HTML::Form',
+  form_for => 'HTML::FormFor',
 );
+
+## TODO add bulk operations
 
 sub render($self, $c) {
   $self->layout(page_title=>'Todo List', sub($layout) {
     $self->navbar(active_link=>'/todos'),
-    $self->form($self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
+    $self->form_for($self->todo, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $todo) {
       fieldset [
         $fb->legend,
         $fb->model_errors,
@@ -56,7 +59,7 @@ sub render($self, $c) {
 }
 
 sub last_page_warning($self) {
-  div { cond=> $self->pager->current_page > $self->pager->last_page, class=>'alert alert-warning', role=>'alert' },
+  div { cond=>$self->pager->current_page > $self->pager->last_page, class=>'alert alert-warning', role=>'alert' },
     "The selected page is greater than the total number of pages available.  Showing the last page.",
 }
 
@@ -89,7 +92,6 @@ sub status_link($self, $status) {
   return span {style=>'margin: .5rem'}, \@label if $self->status eq $status;
   return a { href=>"?status=$status;page=1", style=>'margin: .5rem'}, \@label;
 }
-
 
 sub status_label($self, $status) {
   return b u $status if $status eq $self->status;

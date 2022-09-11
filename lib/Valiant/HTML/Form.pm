@@ -27,7 +27,7 @@ sub _instantiate_builder {
   
   my %args = (
     model => $object,
-    name => $model_name,
+    name => ($model_name // _model_name_from_object_or_class($object)->param_key),
     options => $options
   );
 
@@ -144,11 +144,20 @@ sub form_for {
 }
 
 #fields_for($name, $model, $options, sub {
-
 sub fields_for {
-  my ($name, $model, $options, $block) = @_;
+  my ($name, $model);
+  my $proto = shift;
+  if( Scalar::Util::blessed $proto ) {
+    $model = $proto;
+  } else {
+    $name = $proto;
+    $model = shift;
+  }
+  my $block = pop @_;
+  my $options = @_ ? shift(@_) : +{};
+  
   my $builder = _instantiate_builder($name, $model, $options);
-  return Valiant::HTML::FormTags::capture($block, $builder); 
+  return Valiant::HTML::FormTags::capture($block, $builder, $model); 
 }
 
 1;
