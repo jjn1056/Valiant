@@ -18,7 +18,7 @@ sub render($self, $c) {
       fieldset [
         $fb->legend,
         map { div +{ class=>'form-group' }, $_ }
-          $fb->model_errors,
+          $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
           $reg->first_name,
           $reg->last_name,
           $reg->username,

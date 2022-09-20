@@ -24,7 +24,7 @@ sub render($self, $c) {
     $self->form_for($self->todo, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $todo) {
       fieldset [
         $fb->legend,
-        $fb->model_errors,
+        $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
 
         $self->last_page_warning,
         $self->page_window_info,

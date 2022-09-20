@@ -2,8 +2,7 @@ package Example::View::HTML::Contacts;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'legend', 'a', 'button', ':table', 'div', 'ul', 'li', ':utils';
-use Valiant::HTML::SafeString ':all';
+use Valiant::HTML::TagBuilder qw(legend a button :table div $sf);
 
 extends 'Example::View::HTML';
 
@@ -27,7 +26,7 @@ sub render($self, $c) {
             ],
           tbody { repeat=>$self->list }, sub ($contact, $i) {
             trow [
-              td a +{ href=>"/contacts/@{[ $contact->id ]}" }, $contact->first_name .' '.$contact->last_name,
+              td a +{ href=>$contact->$sf('/contacts/{:id}') }, $contact->$sf('{:first_name} {:last_name}'),
             ],
           },
         ],

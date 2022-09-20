@@ -18,7 +18,7 @@ sub default_theme($self) {
     submit => +{ class=>'btn btn-lg btn-primary btn-block' },
     button => +{ class=>'btn btn-lg btn-primary btn-block' },
     text_area => +{ class=>'form-control' },
-    model_errors => +{ class=>'alert alert-danger', role=>'alert', show_message_on_field_errors=>'Please fix the listed errors.' },
+    model_errors => +{ class=>'alert alert-danger', role=>'alert' },
     attributes => {
       password => {
         password => { autocomplete=>'new-password' }

@@ -22,7 +22,7 @@ sub render($self, $c) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
-          $fb->model_errors(),
+          $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
         div +{ class=>'form-group' }, [
           $fb->label('first_name'),
           $fb->input('first_name'),
