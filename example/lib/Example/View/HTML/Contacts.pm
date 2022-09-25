@@ -2,7 +2,7 @@ package Example::View::HTML::Contacts;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder qw(legend a button :table div $sf);
+use Valiant::HTML::TagBuilder qw(legend a button :table div $sf default_case hr);
 
 extends 'Example::View::HTML';
 

@@ -17,7 +17,6 @@ sub login : Chained(../root) Args(0) Verbs(GET,POST) Name(login) ($self, $c) {
 
     return $c->view->set_http_bad_request unless $c->authenticate($request->person);
     return $c->res->redirect($request->post_login_redirect) if $request->has_post_login_redirect;
-    return $c->res->redirect($c->req->uri) if $c->action ne $self->action_for('login');  # ->detach case from the auth action
     return $c->redirect_to_action('#home');
   }
 
