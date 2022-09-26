@@ -22,7 +22,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { }
   
   sub auth :Chained(root) PathPart('') CaptureArgs() ($self, $c) {
     return $c->next_action($c->user) if $c->user->authenticated;
-    return $c->redirect_to_action('#login') && $c->detach;
+    return $c->redirect_to_action('#login', +{post_login_redirect=>$c->req->uri}) && $c->detach;
   }
 
 sub end :Action Does(RenderErrors) Does(RenderView) { }  # The order of the Action Roles is important!!
