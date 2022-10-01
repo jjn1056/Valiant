@@ -606,6 +606,11 @@ sub select {
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   $options = $self->merge_theme_field_opts('select', undef, $options);
 
+  my ($attribute) = (ref($attribute_proto)||'') eq 'HASH' ? %$attribute_proto : $attribute_proto;
+  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef; 
+  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
+    if $errors_classes && $self->model->can('errors') && $self->model->errors->where($attribute);
+
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   my $include_hidden = exists($options->{include_hidden}) ? $options->{include_hidden} : 1;
   my $unselected_default = exists($options->{unselected_value}) ? delete($options->{unselected_value}) : undef;
