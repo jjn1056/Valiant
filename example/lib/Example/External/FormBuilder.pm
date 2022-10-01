@@ -1,4 +1,4 @@
-package Example::Utils::FormBuilder;
+package Example::External::FormBuilder;
 
 use Moo;
 use Example::Syntax;

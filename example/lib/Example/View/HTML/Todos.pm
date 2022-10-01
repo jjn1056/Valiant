@@ -37,7 +37,7 @@ sub render($self, $c) {
             ],
           tbody { repeat=>$self->list }, sub ($todo, $i) {
             trow [
-             td a +{ href=>"/todos/@{[ $todo->id ]}" }, $todo->title,
+             td a +{ href=>$self->link('#TodoEdit', [$todo->id]) }, $todo->title,
              td $todo->status,
             ],
           },
@@ -75,8 +75,7 @@ sub page_window_info($self) {
 sub pagelist($self) {
   my @page_html = ();
   foreach my $page (1..$self->pager->last_page) {
-    my $query = "?page=${page};status=@{[ $self->status ]}";
-    push @page_html, a {href=>$query, style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
+    push @page_html, a {href=>$self->link('#TodosList', +{page=>$page, status=>$self->status}), style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;
 }
@@ -90,7 +89,7 @@ sub status_filter_box($self) {
 sub status_link($self, $status) {
   my @label = $self->status_label($status);
   return span {style=>'margin: .5rem'}, \@label if $self->status eq $status;
-  return a { href=>"?status=$status;page=1", style=>'margin: .5rem'}, \@label;
+  return a { href=>$self->link('#TodosList', +{page=>1, status=>$self->status}), style=>'margin: .5rem'}, \@label;
 }
 
 sub status_label($self, $status) {

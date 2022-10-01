@@ -8,7 +8,7 @@ extends 'Example::View::HTML';
 
 has 'model' => (is=>'ro', required=>1);
 has 'options' => (is=>'ro', required=>1);
-has 'form_builder' => (is=>'rw', required=>0, predicate=>'has_form_builder');
+has 'form_builder' => (is=>'rw', required=>0, predicate=>'has_form_builder', handles=>[qw/legend input errors_for model_errors/]);
 
 ## This is a good place to put any code that needs to wrap formbuilder methods with
 ## context / request related information and other methods that should be scoped
@@ -24,7 +24,7 @@ sub execute_code_callback {
   return form_for $self->model, +{ 
     action => $self->ctx->req->uri, 
     csrf_token => $self->ctx->csrf_token,
-    builder => "@{[ $self->app ]}::Utils::FormBuilder",
+    builder => "@{[ $self->app ]}::External::FormBuilder",
     %{$self->options}, 
   }, sub($ff, $model) {
     $self->form_builder($ff);

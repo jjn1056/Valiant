@@ -8,8 +8,10 @@ use base 'DBIx::Class';
 __PACKAGE__->load_components(qw/
   Valiant::Result
   BcryptColumn
+  ResultClass::TrackColumns
   Core
-  InflateColumn::DateTime/);
+  InflateColumn::DateTime
+  /);
 
 sub debug {
   my ($self) = @_;

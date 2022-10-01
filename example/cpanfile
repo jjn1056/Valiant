@@ -23,6 +23,8 @@ requires 'DBIx::Class::Schema::Loader', '0.07046';
 requires 'DBIx::Class::TimeStamp', '0.14';
 requires 'DBIx::Class::BcryptColumn', '0.001003';
 requires 'DBIx::Class::ResultSet::SetControl';
+requires 'DBIx::Class::ResultClass::TrackColumns';
+
 requires 'Gazelle', '0.46';
 requires 'Module::Runtime';
 requires 'experimental', '0.020';
