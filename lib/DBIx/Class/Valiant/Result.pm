@@ -25,7 +25,6 @@ __PACKAGE__->mk_classdata( auto_validation => 1 );
 __PACKAGE__->mk_classdata( _nested => [] );
 __PACKAGE__->mk_classdata( _src_info => '' );
 
-
 sub many_to_many {
   my $class = shift;
   my ($meth_name, $link, $far_side) = @_;
