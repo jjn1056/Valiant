@@ -31,6 +31,9 @@ has ['type', 'raw_type'] => (
 # a model error (an error on the model itself in general).
 has attribute => (is=>'ro', required=>0, predicate=>'has_attribute');
 
+# The value which caused the error.
+has bad_value => (is=>'ro', required=>1);
+
 # A hashref of extra meta info (it is allowed to be an empty hash)
 has options => (is=>'ro', required=>1);
 
@@ -47,7 +50,7 @@ around BUILDARGS => sub {
   my $options = $class->$orig(@args);
 
   # Pull the main attributes out of the options hashref
-  my ($object, $attribute, $type, $i18n, $set_options) = delete @{$options}{qw/object attribute type i18n options/};
+  my ($object, $attribute, $type, $i18n, $set_options, $bad_value) = delete @{$options}{qw/object attribute type i18n options bad_value/};
 
   # Get the i18n from options if passed, otherwise from the model if the model so
   # defines it, lastly just make one if we need it.
@@ -60,12 +63,21 @@ around BUILDARGS => sub {
     $type = $i18n->make_tag('invalid');
   }
 
+  unless(defined($bad_value)) {
+    if($attribute) {
+      $bad_value = $object->read_attribute_for_validation($attribute);
+    } else {
+      $bad_value = $object; # Its a model error
+    }
+  }
+
   return +{
     object => $object,
     attribute => $attribute,
     type => $type,
     i18n => $i18n,
     raw_type => $type,
+    bad_value => $bad_value,
     options => +{
       %{$options||{}}, 
       %{$set_options||{}}

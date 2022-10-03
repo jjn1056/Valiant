@@ -65,11 +65,29 @@ __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 __PACKAGE__->validates(credit_cards => (set_size=>{min=>2, max=>4}, on=>'account' ));
 __PACKAGE__->accept_nested_for('credit_cards', +{allow_destroy=>1});
 
-__PACKAGE__->validates(person_roles => (set_size=>{min=>1}, on=>'account' ));
+__PACKAGE__->validates(person_roles => (set_size=>{min=>1}, with=>'validate_roles', on=>'account' ));
 __PACKAGE__->accept_nested_for('person_roles', {allow_destroy=>1});
 __PACKAGE__->accept_nested_for('contacts', {allow_destroy=>1});
 
 __PACKAGE__->accept_nested_for('profile');
+
+sub validate_roles($self, $attribute_name, $value, $opt) {
+
+  # Tricky since you want to use the cached rows.  This could likely be optimized
+  # to avoid hitting the DB to get role labels but this is example code I don't
+  # want to preoptimize.
+
+  my %names = map {
+    $_->role->label => 1
+  } @{ $value->get_cache || [] };
+
+  if($names{guest}) {
+    $self->errors->add($attribute_name, "'guest' is exclusive", $opt) if scalar(keys %names) > 1;
+  }
+  if($names{admin} && $names{superuser}) {
+    $self->errors->add($attribute_name, "can't be both 'admin' and 'superuser'", $opt) 
+  }
+}
 
 sub available_states($self) {
   return $self->result_source->schema->resultset('State');

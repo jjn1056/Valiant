@@ -1,12 +1,14 @@
 {
   en => {
     attributes => {
-      state_id => "State",
+      username => "User Name",
     },
     valiant => {
-      models => { 
-        Authenticate => 'Sign In',
-      },
+      attributes => {
+        'example/model/schema/person' => {
+          person_roles => "Roles",
+        }
+      }
     }
   },
 };

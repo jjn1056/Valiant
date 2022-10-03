@@ -16,7 +16,7 @@ __PACKAGE__->add_columns(
   birthday => { data_type => 'date', is_nullable => 1, datetime_undef_if_invalid => 1 },
   phone_number => { data_type => 'varchar', is_nullable => 1, size => 32 },
   registered => { data_type => 'boolean', is_nullable => 0 },
-  status => { data_type => 'enum', is_nullable => 0 }
+  status => { data_type => 'enum', is_nullable => 0, track_storage => 1 }
 );
 
 __PACKAGE__->set_primary_key("id");
@@ -46,6 +46,28 @@ __PACKAGE__->validates(birthday => (
     }
   )
 );
+
+__PACKAGE__->validates(status => (
+    presence => 1,
+    inclusion => [qw/pending active inactive/],
+    with => {
+      method => 'valid_status',
+      on => 'update',
+      if => 'is_column_changed', # This method defined by DBIx::Class::Row
+    },
+  )
+);
+
+sub valid_status($self, $attribute_name, $value, $opt) {
+  my $old = $self->get_column_storage($attribute_name);
+  if($old eq 'active') {
+    $self->errors->add($attribute_name, "can't become pending once active", $opt) if $value eq 'pending';
+  }
+  if($old eq 'inactive') {
+    $self->errors->add($attribute_name, "can't become pending once inactive", $opt) if $value eq 'pending';
+  }
+}
+
 
 sub status_options($self) {
   return qw( pending active inactive );

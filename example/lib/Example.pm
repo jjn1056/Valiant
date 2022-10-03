@@ -3,6 +3,7 @@ package Example;
 use Catalyst;
 use Moose;
 use Example::Syntax;
+use Valiant::I18N; # Needed to load $HOME/locale
 
 __PACKAGE__->setup_plugins([qw/
   Session

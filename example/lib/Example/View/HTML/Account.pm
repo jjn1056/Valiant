@@ -89,38 +89,44 @@ sub render($self, $c) {
               $fb_profile->errors_for('birthday', +{ class=>'invalid-feedback' }),
             ],
           ],
-           div +{ class=>'form-row' }, [
-            div +{ class=>'col form-group' }, [
-              div + { class=>'form-check' }, [
-                $fb_profile->checkbox('registered', +{ class=>'form-check-input', errors_classes=>'is-invalid' }),
-                $fb_profile->label('registered', +{ class=>'form-check-label'}),
-                $fb_profile->errors_for('registered', +{ class=>'invalid-feedback' }),
+          div +{ class=>'form-row' }, [
+            div +{ class=>'col' }, [
+              fieldset [
+                legend $self->account->human_attribute_name('person_roles'),
+                $fb->errors_for('person_roles', +{ class=>'alert alert-danger', role=>'alert' }),
+                div +{ class=>'form-group' },
+                  $fb->collection_checkbox({person_roles => 'role_id'}, $self->roles, id=>'label', sub ($fb_roles) {
+                    div +{class=>'form-check'}, [
+                      $fb_roles->checkbox({class=>'form-check-input'}),
+                      $fb_roles->label({class=>'form-check-label'}),
+                    ],
+                  }),
               ],
             ],
-            div +{ class=>'col form-group' }, [
+            div +{ class=>'col' }, [
               fieldset [
                 $fb_profile->legend_for('status'),
-                $fb_profile->radio_buttons('status', $self->status_options, sub ($fb_status) {
-                  div +{class=>'form-check'}, [
-                    $fb_status->radio_button({class=>'form-check-input'}),
-                    $fb_status->label({class=>'form-check-label'}),
+                $fb_profile->radio_buttons('status', $self->status_options, +{errors_classes=>'is-invalid'}, sub ($fb_status) {
+                  div +{class=>'custom-control custom-radio'}, [
+                    $fb_status->radio_button({class=>'custom-control-input', errors_classes=>'is-invalid'}),
+                    $fb_status->label({class=>'custom-control-label'}),
                   ],
                 }),
+                $fb_profile->errors_for('status', +{ class=>'invalid-feedback' }),
               ]
             ],
           ],
-        }),
-      ],
-      fieldset [
-        legend $self->account->human_attribute_name('roles'),
-        $fb->errors_for('person_roles', +{ class=>'alert alert-danger', role=>'alert' }),
-        div +{ class=>'form-group' },
-          $fb->collection_checkbox({person_roles => 'role_id'}, $self->roles, id=>'label', sub ($fb_roles) {
-            div +{class=>'form-check'}, [
-              $fb_roles->checkbox({class=>'form-check-input'}),
-              $fb_roles->label({class=>'form-check-label'}),
+          div +{ class=>'form-group' }, [
+            fieldset [
+              legend $self->account->human_attribute_name('Registration'),
+                div + { class=>'form-check' }, [
+                  $fb_profile->checkbox('registered', +{ class=>'form-check-input', errors_classes=>'is-invalid' }),
+                  $fb_profile->label('registered', +{ class=>'form-check-label'}),
+                  $fb_profile->errors_for('registered', +{ class=>'invalid-feedback' }),
+                ], 
             ],
-          }),
+          ],
+        }),
       ],
       fieldset [
         legend $self->account->human_attribute_name('credit_cards'),

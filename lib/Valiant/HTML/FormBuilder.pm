@@ -73,7 +73,7 @@ sub tag_id_for_attribute {
   $id .= $self->has_index ?
     "@{[$self->sanitized_object_name]}_@{[ $self->index ]}_${attribute}" :
     "@{[$self->sanitized_object_name]}_${attribute}";
-  $id = join('_', $id, @extra) if @extra;
+  $id = join('_', $id, @extra) if scalar @extra;
   return $id;
 }
 
@@ -281,7 +281,7 @@ sub input {
   $options = $self->merge_theme_field_opts($options->{type} || 'input', $attribute, $options);
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
-  
+ 
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
     if $errors_classes && $model->can('errors') && $model->errors->where($attribute);
 
@@ -289,7 +289,6 @@ sub input {
   set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
   set_unless_defined(name => $options, $self->tag_name_for_attribute($attribute));
   $options->{value} = $self->tag_value_for_attribute($attribute) unless defined($options->{value});
-
 
   return Valiant::HTML::FormTags::input_tag $attribute, $self->process_options($attribute, $options);
 }
@@ -374,7 +373,7 @@ sub radio_button {
   $options->{type} = 'radio';
   $options->{value} = $value unless exists($options->{value});
   $options->{checked} = do { $self->tag_value_for_attribute($attribute) eq $value ? 1:0 } unless exists($options->{checked});
-  $options->{id} = $self->tag_id_for_attribute($attribute, $value);
+  $options->{id} = $self->tag_id_for_attribute($attribute, $value) unless exists($options->{id});
 
   return $self->input($attribute, $self->process_options($attribute, $options));
 }
@@ -815,24 +814,26 @@ sub collection_radio_buttons {
   my ($self, $attribute, $collection) = (shift, shift, shift);
   my $codeblock = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : undef;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
-  $options = $self->merge_theme_field_opts('radio_button', $attribute, $options);
+  $options = $self->merge_theme_field_opts('collection_radio_buttons', $attribute, $options);
 
   my $value_method = @_ ? shift(@_) : 'value';
   my $label_method = @_ ? shift(@_) : 'label';
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
-  my $checked_value = exists($options->{checked_value}) ? $options->{checked_value} : $self->tag_value_for_attribute($attribute);
+  my $checked_value = exists($options->{checked_value}) ? delete($options->{checked_value}) : $self->tag_value_for_attribute($attribute);
   my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : $self->default_collection_radio_buttons_include_hidden;
-
+  my $container_tag = exists($options->{container_tag}) ? delete($options->{container_tag}) : 'div';
 
   $codeblock = $self->_default_collection_radio_buttons_content unless defined($codeblock);
 
   my @radio_buttons = ();
   my $radio_buttons_builder_options = +{
-    builder => (exists($options->{builder}) ? $options->{builder} : $self->DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER),
+    builder => (exists($options->{builder}) ? delete($options->{builder}) : $self->DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER),
     value_method => $value_method,
     label_method => $label_method,
     checked_value => $checked_value,
     parent_builder => $self,
+    attribute => $attribute,
+    errors => [$model->errors->where($attribute)],
   };
   $radio_buttons_builder_options->{namespace} = $self->namespace if $self->has_namespace;
 
@@ -851,7 +852,16 @@ sub collection_radio_buttons {
     push @radio_buttons, $codeblock->($radio_button_fb);
   }
   $collection->reset if $collection->can('reset');
-  return shift(@radio_buttons)->concat(@radio_buttons);
+  my $radios = shift(@radio_buttons)->concat(@radio_buttons);
+
+  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
+  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
+    if $errors_classes && $model->can('errors') && $model->errors->where($attribute);
+
+  return Valiant::HTML::TagBuilder::content_tag $container_tag, $radios, +{
+    id => $self->tag_id_for_attribute($attribute),
+    %$options,
+  }; 
 }
 
 sub _default_collection_radio_buttons_content {
@@ -1944,17 +1954,52 @@ L<Valiant::HTML::FormBuilder::RadioButton>):
       return  $fb_states->radio_button({class=>'form-check-input'}),
               $fb_states->label({class=>'form-check-label'});  
     });
-    # <input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/>
-    # <input checked class="form-check-input" id="person_state_id_1_1" name="person.state_id" type="radio" value="1"/>
-    # <label class="form-check-label" for="person_state_id_1">TX</label>
-    # <input class="form-check-input" id="person_state_id_2_2" name="person.state_id" type="radio" value="2"/>
-    # <label class="form-check-label" for="person_state_id_2">NY</label>
-    # <input class="form-check-input" id="person_state_id_3_3" name="person.state_id" type="radio" value="3"/>
-    # <label class="form-check-label" for="person_state_id_3">CA</label>
+    # <div id='person_state_id'>
+    #   <input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/>
+    #   <input checked class="form-check-input" id="person_state_id_1_1" name="person.state_id" type="radio" value="1"/>
+    #   <label class="form-check-label" for="person_state_id_1">TX</label>
+    #   <input class="form-check-input" id="person_state_id_2_2" name="person.state_id" type="radio" value="2"/>
+    #   <label class="form-check-label" for="person_state_id_2">NY</label>
+    #   <input class="form-check-input" id="person_state_id_3_3" name="person.state_id" type="radio" value="3"/>
+    #   <label class="form-check-label" for="person_state_id_3">CA</label>
+    # </div>
 
 In addition to overriding C<radio_button> and C<label> to already contain value and state (if its checked or
 not) information.   This special builder contains some additional methods of possible use, you should see
 the documentation of L<Valiant::HTML::FormBuilder::RadioButton> for more.
+
+Please note that the generated radio inputs will be wrapped in a containing C<div> tag.  You can change this tag
+using the C<container_tag> option.  For example:
+
+    $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', +{container_tag=>'span'} sub {
+      my $fb_states = shift;
+      return  $fb_states->radio_button({class=>'form-check-input'}),
+              $fb_states->label({class=>'form-check-label'});  
+    });
+
+Here's all the values for the '%options' argument.  Any options that are not one of these will be passed to 
+the container tag as html attributes:
+
+=over4
+
+=item checked_value
+
+This is the current value of the attribute.  By default its the attribute value (via L<\tag_value_for_attribute>)
+but you can override as needed.
+
+=item include_hidden.
+
+Defaults to true.  The value returned if you don't check one of the radio buttons.  
+
+=item container_tag
+
+The tag that contains the generated radio buttons.
+
+=item builder
+
+The builder subclass used in the radio input generator.
+
+=back
 
 =head2 radio_buttons
 
