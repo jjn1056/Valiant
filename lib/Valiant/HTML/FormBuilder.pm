@@ -745,6 +745,7 @@ sub collection_checkbox {
   my $label_method = @_ ? shift(@_) : 'label';
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : $self->default_collection_checkbox_include_hidden;
+  my $container_tag = exists($options->{container_tag}) ? delete($options->{container_tag}) : 'div';
 
   # It's either +{ person_roles => role_id } or roles 
   my ($attribute, $attribute_value_method) = ();
@@ -768,11 +769,13 @@ sub collection_checkbox {
 
   my @checkboxes = ();
   my $checkbox_builder_options = +{
-    builder => (exists($options->{builder}) ? $options->{builder} : $self->DEFAULT_COLLECTION_CHECKBOX_BUILDER),
+    builder => (exists($options->{builder}) ? delete($options->{builder}) : $self->DEFAULT_COLLECTION_CHECKBOX_BUILDER),
     value_method => $value_method,
     label_method => $label_method,
     attribute_value_method => $attribute_value_method,
     parent_builder => $self,
+    attribute => $attribute,
+    errors => [$model->errors->where($attribute)],
   };
   $checkbox_builder_options->{namespace} = $self->namespace if $self->has_namespace;
 
@@ -795,7 +798,16 @@ sub collection_checkbox {
     push @checkboxes, $codeblock->($checkbox_fb);
   }
   $collection->reset if $collection->can('reset');
-  return shift(@checkboxes)->concat(@checkboxes);
+  my $checkbox_content = shift(@checkboxes)->concat(@checkboxes);
+
+  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
+  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
+    if $errors_classes && $model->can('errors') && $model->errors->where($attribute);
+
+  return Valiant::HTML::TagBuilder::content_tag $container_tag, $checkbox_content, +{
+    id => $self->tag_id_for_attribute($attribute),
+    %$options,
+  }; 
 }
 
 sub _default_collection_checkbox_content {

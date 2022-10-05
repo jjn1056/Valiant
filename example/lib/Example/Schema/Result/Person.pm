@@ -79,7 +79,9 @@ sub validate_roles($self, $attribute_name, $value, $opt) {
 
   my %names = map {
     $_->role->label => 1
-  } @{ $value->get_cache || [] };
+  } grep {
+    ! $_->is_marked_for_deletion;
+  }@{ $value->get_cache || [] };
 
   if($names{guest}) {
     $self->errors->add($attribute_name, "'guest' is exclusive", $opt) if scalar(keys %names) > 1;

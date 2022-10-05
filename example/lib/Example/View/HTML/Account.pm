@@ -90,20 +90,19 @@ sub render($self, $c) {
             ],
           ],
           div +{ class=>'form-row' }, [
-            div +{ class=>'col' }, [
+            div +{ class=>'col form-group' }, [
               fieldset [
-                legend $self->account->human_attribute_name('person_roles'),
-                $fb->errors_for('person_roles', +{ class=>'alert alert-danger', role=>'alert' }),
-                div +{ class=>'form-group' },
-                  $fb->collection_checkbox({person_roles => 'role_id'}, $self->roles, id=>'label', sub ($fb_roles) {
+                $fb->legend_for('person_roles'),
+                  $fb->collection_checkbox({person_roles => 'role_id'}, $self->roles, id=>'label', +{errors_classes=>'is-invalid'}, sub ($fb_roles) {
                     div +{class=>'form-check'}, [
-                      $fb_roles->checkbox({class=>'form-check-input'}),
+                      $fb_roles->checkbox({class=>'form-check-input', errors_classes=>'is-invalid'}),
                       $fb_roles->label({class=>'form-check-label'}),
                     ],
                   }),
+                  $fb->errors_for('person_roles', +{ class=>'invalid-feedback' }),
               ],
             ],
-            div +{ class=>'col' }, [
+            div +{ class=>'col form-group' }, [
               fieldset [
                 $fb_profile->legend_for('status'),
                 $fb_profile->radio_buttons('status', $self->status_options, +{errors_classes=>'is-invalid'}, sub ($fb_status) {
