@@ -381,7 +381,7 @@ sub radio_button {
 sub date_field {
   my ($self, $attribute, $options) = (@_, +{});
   my $value = $self->tag_value_for_attribute($attribute);
-
+  $options = $self->merge_theme_field_opts('date_field', $attribute, $options);
   $options->{type} = 'date';
   $options->{value} ||= Scalar::Util::blessed($value) ? $value->ymd : $value;
   $options->{min} = $options->{min}->ymd if exists($options->{min}) && Scalar::Util::blessed($options->{min});
@@ -393,6 +393,7 @@ sub date_field {
 sub datetime_local_field {
   my ($self, $attribute, $options) = (@_, +{});
   my $value = $self->tag_value_for_attribute($attribute);
+  $options = $self->merge_theme_field_opts('datetime_local_field', $attribute, $options);
 
   $options->{type} = 'datetime-local';
   $options->{value} ||= Scalar::Util::blessed($value) ? $value->strftime('%Y-%m-%dT%T') : $value;
@@ -405,6 +406,7 @@ sub datetime_local_field {
 sub time_field {
   my ($self, $attribute, $options) = (@_, +{});
   my $value = $self->tag_value_for_attribute($attribute);
+  $options = $self->merge_theme_field_opts('time_field', $attribute, $options);
   my $format = (exists($options->{include_seconds}) && !delete($options->{include_seconds})) ? '%H:%M' : '%T.%3N';
 
   $options->{type} = 'time';

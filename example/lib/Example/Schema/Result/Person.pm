@@ -81,7 +81,7 @@ sub validate_roles($self, $attribute_name, $value, $opt) {
     $_->role->label => 1
   } grep {
     ! $_->is_marked_for_deletion;
-  }@{ $value->get_cache || [] };
+  } @{ $value->get_cache || [] };
 
   if($names{guest}) {
     $self->errors->add($attribute_name, "'guest' is exclusive", $opt) if scalar(keys %names) > 1;
@@ -91,12 +91,12 @@ sub validate_roles($self, $attribute_name, $value, $opt) {
   }
 }
 
-sub available_states($self) {
-  return $self->result_source->schema->resultset('State');
-}
-
-sub available_roles($self) {
-  return $self->result_source->schema->resultset('Role');
+sub role_options($self) {
+  return (
+    $self->result_source->schema->resultset('Role'),
+    id=>'label'
+  );
+  #->options_for_radio_collection;
 }
 
 sub authenticated($self) {

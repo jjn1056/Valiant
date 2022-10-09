@@ -5,6 +5,11 @@ extends 'Valiant::HTML::FormBuilder';
 
 has 'parent_builder' => (is=>'ro', required=>1);
 
+sub default_theme {
+  my $self = shift;
+  return $self->parent_builder->default_theme;
+}
+
 sub text { 
   my $self = shift;
   return $self->tag_value_for_attribute($self->options->{label_method});
@@ -32,6 +37,7 @@ around 'radio_button', sub {
   $attrs->{name} = $self->name;
   $attrs->{checked} = $self->checked;
   $attrs->{id} = $self->tag_id_for_attribute($self->value);
+  $attrs = $self->merge_theme_field_opts(radio_button=>$attrs->{attribute}, $attrs);
 
   my $has_error = 0;
   if(my $errors = $self->options->{errors}) {

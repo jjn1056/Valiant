@@ -6,6 +6,11 @@ extends 'Valiant::HTML::FormBuilder';
 
 has 'parent_builder' => (is=>'ro', required=>1);
 
+sub default_theme {
+  my $self = shift;
+  return $self->parent_builder->default_theme;
+}
+
 sub text { 
   my $self = shift;
   return $self->tag_value_for_attribute($self->options->{label_method});
@@ -34,6 +39,7 @@ around 'checkbox', sub {
   $attrs->{id} = $self->tag_id_for_attribute($self->options->{attribute_value_method});
   $attrs->{include_hidden} = 0;
   $attrs->{checked} = $self->checked;
+  $attrs = $self->merge_theme_field_opts(checkbox=>$attrs->{attribute}, $attrs);
 
   my $has_error = 0;
   my $attribute_value_method = $self->options->{attribute_value_method};

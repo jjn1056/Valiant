@@ -105,7 +105,7 @@ sub full_message {
     Module::Runtime::use_module($self->i18n_class);
 
   return $message unless defined($attribute);
-  
+
   my @defaults = ();
   if($object->can('i18n_scope')) {
     $attribute =~s/\.\d+//g;
@@ -118,12 +118,14 @@ sub full_message {
     if($namespace) {
       @defaults = map {
         my $class = $_;
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.attributes.${attribute_name}.format/@{[ $self->type ]}",
         "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.attributes.${attribute_name}.format",
         "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.format";      
       } grep { $_->model_name->can('i18n_key') } $object->i18n_lookup;
     } else {
       @defaults = map {
         my $class = $_;
+        "${attributes_scope}.${\$class->model_name->i18n_key}.attributes.${attribute_name}.format/@{[ $self->type ]}",
         "${attributes_scope}.${\$class->model_name->i18n_key}.attributes.${attribute_name}.format",
         "${attributes_scope}.${\$class->model_name->i18n_key}.format";    
       } grep { $_->model_name->can('i18n_key') } $object->i18n_lookup;
