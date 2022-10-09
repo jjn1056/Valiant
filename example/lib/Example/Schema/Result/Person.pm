@@ -92,11 +92,7 @@ sub validate_roles($self, $attribute_name, $value, $opt) {
 }
 
 sub role_options($self) {
-  return (
-    $self->result_source->schema->resultset('Role'),
-    id=>'label'
-  );
-  #->options_for_radio_collection;
+  return my $rs = $self->result_source->schema->resultset('Role')->as_checkbox_options;
 }
 
 sub authenticated($self) {

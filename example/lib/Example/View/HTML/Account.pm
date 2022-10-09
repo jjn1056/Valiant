@@ -57,7 +57,7 @@ sub render($self, $c) {
           div +{ class=>'form-row' }, [
             div +{ class=>'col form-group' }, [
               $fb_profile->label('state_id'),
-              $fb_profile->select('state_id', $profile->state_options, +{ include_blank=>1 }),
+              $fb_profile->collection_select('state_id', $profile->state_options, +{ include_blank=>1 }),
               $fb_profile->errors_for('state_id'),
             ],
             div +{ class=>'col form-group' }, [
@@ -88,7 +88,7 @@ sub render($self, $c) {
                       $fb_roles->label({class=>'form-check-label'}),
                     ],
                   }),
-                  $fb->errors_for('person_roles', +{ class=>'invalid-feedback' }),
+                  $fb->errors_for('person_roles'),
               ],
             ],
             div +{ class=>'col form-group' }, [
@@ -100,7 +100,7 @@ sub render($self, $c) {
                     $fb_status->label({class=>'custom-control-label'}),
                   ],
                 }),
-                $fb_profile->errors_for('status', +{ class=>'invalid-feedback' }),
+                $fb_profile->errors_for('status'),
               ]
             ],
             div +{ class=>'col form-group' }, [

@@ -295,7 +295,7 @@ sub options_from_collection_for_select {
   @selected = ($selected_proto) if ((ref(\$selected_proto)||'') eq 'SCALAR') && defined($selected_proto);
 
   while(my $item = $collection->next) {
-    push @options, [ $item->$label_method => $item->$value_method, option_html_attributes($item) ];
+    push @options, [ field_value($item,$label_method),  field_value($item, $value_method), option_html_attributes($item) ];
     push @selected, $item->$value_method if ((ref($selected_proto)||'') eq 'CODE') && $selected_proto->($item);
   }
 

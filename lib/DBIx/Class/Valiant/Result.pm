@@ -349,7 +349,11 @@ sub read_attribute_for_validation {
   debug 2, "Failing back @{[ $self->can($attribute) ? 'succeeds':'failed' ]}";
 
   return $self->$attribute if $self->can($attribute); 
+  my %columns = $self->get_columns;
+  return $columns{$attribute} if exists($columns{$attribute});
 }
+
+sub read_attribute_for_html { shift->read_attribute_for_validation(@_) }
 
 # Provide basic uniqueness checking for columns.  This is basically a dumb DB lookup.  
 # Its probably fine for light work but you'll need something more performant when your

@@ -784,7 +784,10 @@ sub collection_checkbox {
   while (my $checkbox_model = $collection->next) {
     my $index = $self->nested_child_index($attribute); 
     my $name = "@{[ $self->name ]}.${attribute}";
-    my $checked = grep { $_ eq $checkbox_model->$value_method } @checked_values;
+    my $checked = grep {
+      my $current_value = $checkbox_model->can('read_attribute_for_html') ? $checkbox_model->read_attribute_for_html($value_method) : $checkbox_model->$value_method;
+      $_ eq $current_value;
+    } @checked_values;
 
     if($include_hidden && !scalar(@checkboxes)) { # Add nop as first to handle empty list
       my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $value_collection->build, {index=>$index});
@@ -853,7 +856,8 @@ sub collection_radio_buttons {
 
   while (my $radio_button_model = $collection->next) {
     my $name = "@{[ $self->name ]}.${attribute}";
-    my $checked = $radio_button_model->$value_method eq ($checked_value||'') ? 1:0;
+    my $current_value = $radio_button_model->can('read_attribute_for_html') ? $radio_button_model->read_attribute_for_html($value_method) : $radio_button_model->$value_method;
+    my $checked = $current_value eq ($checked_value||'') ? 1:0;
 
     if($include_hidden && !scalar(@radio_buttons) ) { # Add nop as first to handle empty list
       my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $model);

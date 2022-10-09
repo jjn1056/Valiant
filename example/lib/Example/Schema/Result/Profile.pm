@@ -112,16 +112,11 @@ sub status_options($self) {
 }
 
 sub employment_options($self) {
-  return (
-    $self->result_source->schema->resultset('Employment'),
-    id=>'label'
-  );
-  #->options_for_radio_collection;
+  return my $rs = $self->result_source->schema->resultset('Employment')->as_radio_options;
 }
 
 sub state_options($self) {
-  my @states = $self->result_source->schema->resultset('State')->all;
-  return [map {[ucfirst($_->name) => $_->id] } @states];
+  return my $rs = $self->result_source->schema->resultset('State')->as_select_options;
 }
 
 1;
