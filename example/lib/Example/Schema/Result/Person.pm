@@ -39,6 +39,8 @@ __PACKAGE__->has_many(
   { 'foreign.person_id' => 'self.id' }
 );
 
+__PACKAGE__->many_to_many( roles => 'person_roles', 'role');
+
 __PACKAGE__->has_many(
   todos =>
   'Example::Schema::Result::Todo',
@@ -89,10 +91,6 @@ sub validate_roles($self, $attribute_name, $value, $opt) {
   if($names{admin} && $names{superuser}) {
     $self->errors->add($attribute_name, "can't be both 'admin' and 'superuser'", $opt) 
   }
-}
-
-sub role_options($self) {
-  return my $rs = $self->result_source->schema->resultset('Role')->as_checkbox_options;
 }
 
 sub authenticated($self) {
@@ -148,6 +146,19 @@ sub register($self, $request) {
 
 sub update_account($self, $request) {
   $self->context('account')->update($request->nested_params);
+}
+
+sub role_checkbox_options($self) {
+  return $self->result_source->schema->resultset('Role')
+    ->search_rs(
+      +{}, 
+      +{
+        columns => [
+          { value=>'id' },
+          { label=>'label' },
+        ]
+      }
+    );
 }
 
 1;

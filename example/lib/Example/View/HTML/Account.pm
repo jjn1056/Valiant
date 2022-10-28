@@ -57,7 +57,7 @@ sub render($self, $c) {
           div +{ class=>'form-row' }, [
             div +{ class=>'col form-group' }, [
               $fb_profile->label('state_id'),
-              $fb_profile->collection_select('state_id', $profile->state_options, +{ include_blank=>1 }),
+              $fb_profile->collection_select(state_id => 'state_select_options', +{ include_blank=>1 }),
               $fb_profile->errors_for('state_id'),
             ],
             div +{ class=>'col form-group' }, [
@@ -82,7 +82,7 @@ sub render($self, $c) {
             div +{ class=>'col form-group' }, [
               fieldset [
                 $fb->legend_for('person_roles'),
-                  $fb->collection_checkbox({person_roles => 'role_id'}, $account->role_options, sub ($fb_roles) {
+                  $fb->collection_checkbox({person_roles => 'role_id'}, 'role_checkbox_options', sub ($fb_roles) {
                     div +{class=>'form-check'}, [
                       $fb_roles->checkbox(),
                       $fb_roles->label({class=>'form-check-label'}),
@@ -94,7 +94,7 @@ sub render($self, $c) {
             div +{ class=>'col form-group' }, [
               fieldset [
                 $fb_profile->legend_for('status'),
-                $fb_profile->radio_buttons('status', $profile->status_options, sub ($fb_status) {
+                $fb_profile->radio_buttons(status => 'status_options', sub ($fb_status) {
                   div +{class=>'custom-control custom-radio'}, [
                     $fb_status->radio_button(),
                     $fb_status->label({class=>'custom-control-label'}),
@@ -106,7 +106,7 @@ sub render($self, $c) {
             div +{ class=>'col form-group' }, [
               fieldset [
                 $fb_profile->legend_for('employment_id'),
-                $fb_profile->collection_radio_buttons('employment_id', $profile->employment_options, sub ($fb_emp) {
+                $fb_profile->collection_radio_buttons(employment_id => 'employment_radio_options', sub ($fb_emp) {
                   div +{class=>'custom-control custom-radio'}, [
                     $fb_emp->radio_button(),
                     $fb_emp->label({class=>'custom-control-label'}),
@@ -146,13 +146,13 @@ sub render($self, $c) {
               ],
               div +{ class=>'col form-group col-2' }, [
                 div + { class=>'form-check' }, [
-                  $fb_cc->checkbox('_delete', +{ checked=>$cc->is_marked_for_deletion }),
+                  $fb_cc->checkbox('_delete'),
                   $fb_cc->label('_delete'),
                 ],
               ],
             ]
           }, sub ($fb_final, $new_cc) {
-            $fb_final->button( '_add', +{ value=>1 }, 'Add Credit Card')
+            $fb_final->button( '_add', 'Add Credit Card')
           }),
         ],
       ],

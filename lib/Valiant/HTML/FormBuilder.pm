@@ -24,6 +24,7 @@ has name => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1, default => sub { +{} } );  
 has index => ( is => 'ro', required => 0, predicate => 'has_index' );
 has namespace => ( is => 'ro', required => 0, predicate => 'has_namespace' );
+has view => ( is => 'ro', required => 0, predicate => 'has_view' );
 has _theme => ( is => 'rw', required => 1, init_arg=>'theme', default => sub { +{} } );
 has _nested_child_index => (is=>'rw', init_arg=>undef, required=>1, default=>sub { +{} });
 
@@ -176,14 +177,14 @@ sub merge_theme {
 }
 
 sub merge_theme_field_opts {
-  my ($self, $type, $attribute, $existing) = @_;
+  my ($self, $tag_type, $attribute, $existing) = @_;
   my $theme = $self->theme;
 
-  if(exists $theme->{$type}) {
-    $existing = +{ %{$theme->{$type}}, %$existing };
+  if(exists $theme->{$tag_type}) {
+    $existing = +{ %{$theme->{$tag_type}}, %$existing };
   }
-  if($attribute && exists $theme->{attributes}{$attribute}{$type}) {
-    $existing = +{ %{$theme->{attributes}{$attribute}{$type}}, %$existing };
+  if($attribute && exists $theme->{attributes}{$attribute}{$tag_type}) {
+    $existing = +{ %{$theme->{attributes}{$attribute}{$tag_type}}, %$existing };
   }
   return $existing;
 }
@@ -529,6 +530,7 @@ sub fields_for {
   $options->{include_id} = $self->options->{include_id} if !exists($options->{include_id}) && !defined($options->{include_id}) && defined($self->options->{include_id});
   $options->{namespace} = $self->namespace if $self->has_namespace;
   $options->{parent_builder} = $self;
+  $options->{view} = $self->view if $self->has_view;
 
   my $related_record = $self->tag_value_for_attribute($related_attribute);
   my $name = "@{[ $self->name ]}.@{[ $related_attribute ]}";
@@ -677,11 +679,12 @@ sub collection_select {
   my ($self, $method_proto, $collection) = (shift, shift, shift);
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   $options = $self->merge_theme_field_opts('collection_select', undef, $options);
-
+  
   my ($value_method, $label_method) = (@_, 'value', 'label');
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
-  my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1; 
-  
+  my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1;
+  $collection = $model->$collection unless Scalar::Util::blessed($collection); 
+
   my (@selected, $name, $id) = @_;
   if(ref $method_proto) {
     $options->{multiple} = 1 unless exists($options->{multiple});
@@ -780,6 +783,9 @@ sub collection_checkbox {
     errors => [$model->errors->where($attribute)],
   };
   $checkbox_builder_options->{namespace} = $self->namespace if $self->has_namespace;
+  $checkbox_builder_options->{view} = $self->view if $self->has_view;
+
+  $collection = $model->$collection unless Scalar::Util::blessed($collection);
 
   while (my $checkbox_model = $collection->next) {
     my $index = $self->nested_child_index($attribute); 
@@ -790,7 +796,7 @@ sub collection_checkbox {
     } @checked_values;
 
     if($include_hidden && !scalar(@checkboxes)) { # Add nop as first to handle empty list
-      my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $value_collection->build, {index=>$index});
+      my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $value_collection->build, {%$checkbox_builder_options, index=>$index});
       push @checkboxes, $hidden_fb->hidden('_nop', +{value=>'1'});
       $index = $self->nested_child_index($attribute);
     }
@@ -798,7 +804,6 @@ sub collection_checkbox {
     $checkbox_builder_options->{index} = $index;
     $checkbox_builder_options->{checked} = $checked;
     $checkbox_builder_options->{parent_builder} = $self;
-
     my $checkbox_fb = Valiant::HTML::Form::_instantiate_builder($name, $checkbox_model, $checkbox_builder_options);
     push @checkboxes, $codeblock->($checkbox_fb);
   }
@@ -853,6 +858,9 @@ sub collection_radio_buttons {
     errors => [$model->errors->where($attribute)],
   };
   $radio_buttons_builder_options->{namespace} = $self->namespace if $self->has_namespace;
+  $radio_buttons_builder_options->{view} = $self->view if $self->has_view;
+
+  $collection = $model->$collection unless Scalar::Util::blessed($collection);
 
   while (my $radio_button_model = $collection->next) {
     my $name = "@{[ $self->name ]}.${attribute}";
@@ -860,7 +868,7 @@ sub collection_radio_buttons {
     my $checked = $current_value eq ($checked_value||'') ? 1:0;
 
     if($include_hidden && !scalar(@radio_buttons) ) { # Add nop as first to handle empty list
-      my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $model);
+      my $hidden_fb = Valiant::HTML::Form::_instantiate_builder($name, $model, $radio_buttons_builder_options);
       push @radio_buttons, $hidden_fb->hidden($name, +{name=>$name, id=>$self->tag_id_for_attribute($attribute).'_hidden', value=>''});
     }
 
@@ -894,6 +902,7 @@ sub _default_collection_radio_buttons_content {
 
 sub radio_buttons {
   my ($self, $attribute, $collection_proto) = (shift, shift, shift);
+  $collection_proto = $self->model->$collection_proto unless (ref($collection_proto)||'') eq 'ARRAY';
   my $collection = Valiant::HTML::Util::Collection->new(@$collection_proto);
   return $self->collection_radio_buttons($attribute, $collection, @_);
 }
@@ -1030,6 +1039,11 @@ The current index of a collection for which the current formbuilder is one item 
 =head2 namespace
 
 Used to add a prefix to the ID for your form elements.
+
+=head2 view
+
+Optional.  The view or template object that is using the formbuilder.  If available can be used to
+influence how the HTML for controls are created.
 
 =head1 METHODS
 
@@ -1827,9 +1841,10 @@ Where C<$attribute_proto> is one of:
                               # and a $method to be called on the value of that sub model (
                               # or on each item sub model if the $attribute is a collection).
 
-Similar to L</select> but works with a $collection instead of delineated options.  Its a type of
-shortcut to reduce boilerplate at the expense of some flexibility (if you need that you'll need
-to use L</select>).  Examples:
+Similar to L</select> but works with a $collection instead of delineated options.  The collection can be
+an actual collection object, or the string name of a method on the model which provides the actual
+collection objection.  Its a type of shortcut to reduce boilerplate at the expense of some flexibility (
+if you need that you'll need to use L</select>).  Examples:
 
     $fb->collection_select('state_id', $states_collection, id=>'name');
     # <select id="person.state_id" name="person.state_id">
@@ -1882,6 +1897,9 @@ Examples:
 Where the $attribute C<roles> refers to a collection of sub models, each of which provides a method C<id>
 which is used to fetch a matching value and $roles_collection refers to the full set of available roles
 which can be added or removed from the parent model.
+
+In these examples C<$collection> and C<$roles_collection> can be either a collection object or a string
+which is the method name on the current model which provides the collection.
 
     $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'); 
     # <input id="person_roles_0__nop" name="person.roles[0]._nop" type="hidden" value="1"/>

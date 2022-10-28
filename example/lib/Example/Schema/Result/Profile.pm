@@ -27,7 +27,8 @@ __PACKAGE__->add_unique_constraint(['id','person_id']);
 __PACKAGE__->belongs_to(
   state =>
   'Example::Schema::Result::State',
-  { 'foreign.id' => 'self.state_id' }
+  { 'foreign.id' => 'self.state_id' },
+  { proxy_select_options => {value=>'id', label=>'name'} },
 );
 
 __PACKAGE__->belongs_to(
@@ -39,7 +40,8 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   employment =>
   'Example::Schema::Result::Employment',
-  { 'foreign.id' => 'self.employment_id' }
+  { 'foreign.id' => 'self.employment_id' },
+  { proxy_radio_options => {value=>'id', label=>'label'} },
 );
 
 __PACKAGE__->validates(address => (presence=>1, length=>[2,48]));
@@ -109,14 +111,6 @@ sub status_list($self) {
 
 sub status_options($self) {
   return [map { [ucfirst($_) => $_] } $self->status_list ];
-}
-
-sub employment_options($self) {
-  return my $rs = $self->result_source->schema->resultset('Employment')->as_radio_options;
-}
-
-sub state_options($self) {
-  return my $rs = $self->result_source->schema->resultset('State')->as_select_options;
 }
 
 1;
