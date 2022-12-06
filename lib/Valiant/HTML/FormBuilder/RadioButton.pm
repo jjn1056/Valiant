@@ -7,7 +7,9 @@ has 'parent_builder' => (is=>'ro', required=>1);
 
 sub default_theme {
   my $self = shift;
-  return $self->parent_builder->default_theme;
+  return $self->parent_builder->can('default_theme') ?
+    $self->parent_builder->default_theme :
+    +{};
 }
 
 sub text { 

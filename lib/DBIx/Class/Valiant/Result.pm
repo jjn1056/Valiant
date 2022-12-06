@@ -322,6 +322,11 @@ sub inject_attribute {
   die $@ if $@;
 }
 
+sub is_attribute_changed {
+  my ($self, $attr) = @_;
+  return $self->is_column_changed($attr);
+}
+
 # We override here because we really want the uninflated values for the columns.
 # Otherwise if we try to inflate first we can get an error since the value has not
 # been validated and may not inflate.  We see this very commonly on date type columns

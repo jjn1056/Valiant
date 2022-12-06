@@ -48,17 +48,6 @@ sub theme {
   return +{ %$default_theme, %{$self->_theme} };
 }
 
-sub sanitized_object_name {
-  my $self = shift;
-  return $self->{__cached_sanitized_object_name} if exists $self->{__cached_sanitized_object_name};
-
-  my $value = $self->name;
-  $value =~ s/\]\[|[^a-zA-Z0-9:-]/_/g;
-  $value =~s/_$//;
-  $self->{__cached_sanitized_object_name} = $value;
-  return $value;
-}
-
 sub nested_child_index {
   my ($self, $attribute) = @_;
   if(exists($self->_nested_child_index->{$attribute})) {
@@ -70,23 +59,21 @@ sub nested_child_index {
 
 sub tag_id_for_attribute {
   my ($self, $attribute, @extra) = @_;
-  my $id = $self->has_namespace ? $self->namespace . '_' : '';
-  $id .= $self->has_index ?
-    "@{[$self->sanitized_object_name]}_@{[ $self->index ]}_${attribute}" :
-    "@{[$self->sanitized_object_name]}_${attribute}";
-  $id = join('_', $id, @extra) if scalar @extra;
-  return $id;
+  my $opts = +{};
+  $opts->{namespace} = $self->namespace if $self->has_namespace;
+  $opts->{index} = $self->index if $self->has_index;
+
+  return Valiant::HTML::FormTags::field_id($self->name, $attribute, $opts, @extra);
 }
 
 # $self->tag_name_for_attribute($attribute, +{ multiple=>1 });
 sub tag_name_for_attribute {
-  my ($self, $attribute, $opts) = @_;  
-  my $name = $self->has_index ?
-    "@{[$self->name]}\[@{[ $self->index ]}\].${attribute}" :
-    "@{[$self->name]}.${attribute}";
-  $name .= '[]' if $opts->{multiple};
+  my ($self, $attribute, $opts, @extra) = @_;
+  $opts = +{} unless defined $opts;
+  $opts->{namespace} = $self->namespace if $self->has_namespace;
+  $opts->{index} = $self->index if $self->has_index;
 
-  return $name;
+  return Valiant::HTML::FormTags::field_name($self->name, $attribute, $opts, @extra);
 }
 
 sub tag_value_for_attribute {
@@ -2007,7 +1994,7 @@ the documentation of L<Valiant::HTML::FormBuilder::RadioButton> for more.
 Please note that the generated radio inputs will be wrapped in a containing C<div> tag.  You can change this tag
 using the C<container_tag> option.  For example:
 
-    $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', +{container_tag=>'span'} sub {
+    $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', +{container_tag=>'span'}, sub {
       my $fb_states = shift;
       return  $fb_states->radio_button({class=>'form-check-input'}),
               $fb_states->label({class=>'form-check-label'});  

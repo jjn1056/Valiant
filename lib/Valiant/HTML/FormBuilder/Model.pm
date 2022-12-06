@@ -1,19 +1,44 @@
-package Valiant::HTML::FormBuilder::Model::TextField;
+package Valiant::HTML::FormBuilder::Model;
 
 use Moo;
 
+has attribute_name => (is=>'ro', required=>1);
 
-
-# value, is_changed?, old_value?, enabled , errors, has_errors
+has model => (is=>'ro', required=>1);
 
 has formbuilder => (
   is=>'ro',
   required=>1,
-  handles=>[qw(tag_id_for_attribute tag_name_for_attribute tag_value_for_attribute)],
+  handles=>[qw(
+    tag_id_for_attribute
+    tag_name_for_attribute
+    tag_value_for_attribute
+  )],
 );
 
-has attribute_name => (is=>'ro', required=>1);
-has model => (is=>'ro', required=>1);
+has _options => (
+  is => 'ro',
+  init_arg => 'value',
+  required => 1,
+  lazy => 1,
+  builder => '_build_options',
+);
+
+  sub _build_options { return +{} }
+  sub options { return shift->_options }
+
+
+around BUILDARGS => sub {
+  my ( $orig, $class, @args ) = @_;
+  my $args = $class->$orig(@args);
+
+  return $args;
+};
+
+
+
+
+
 
 has _enabled => (
   is => 'ro',
@@ -59,16 +84,6 @@ has _value => (
   sub _build_value { return $_[0]->tag_value_for_attribute($_[0]->attribute_name) }
   sub value { return shift->_value }
 
-has _options => (
-  is => 'ro',
-  init_arg => 'value',
-  required => 1,
-  lazy => 1,
-  builder => '_build_options',
-);
-
-  sub _build_options { return +{} }
-  sub options { return shift->_options }
 
 sub type { return 'text' }
 
