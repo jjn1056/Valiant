@@ -761,7 +761,8 @@ sub set_multi_related_from_params {
 
       if($was_add) {
         debug 3, "Since @{[ ref $related_model]} was an _add we won't validate since its empty";
-        $related_model->skip_validate;
+        #$related_model->errors->add(undef, 'newwww');
+        #$related_model->skip_validate;   Need to leave this off for now because doesn't play well with new models
         $related_model->{__valiant_donot_insert} = 1;
       }
 

@@ -82,19 +82,14 @@ sub pagelist($self) {
 
 sub status_filter_box($self) {
   div {style=>'text-align:center; margin-bottom: 1rem'}, [
-    map { $self->status_link($_) } qw/all active completed/,
+    map { $self->status_filter($_) } qw/all active completed/,
   ];
 }
 
-sub status_link($self, $status) {
-  my @label = $self->status_label($status);
-  return span {style=>'margin: .5rem'}, \@label if $self->status eq $status;
-  return a { href=>$self->link('#TodosList', +{page=>1, status=>$self->status}), style=>'margin: .5rem'}, \@label;
+sub status_filter($self, $status) {
+  return span {style=>'margin: .5rem'}, [b u $status] if $self->status eq $status;
+  return a { href=>$self->link('#TodosList', +{page=>1, status=>$status}), style=>'margin: .5rem'}, $status;
 }
 
-sub status_label($self, $status) {
-  return b u $status if $status eq $self->status;
-  return $status;
-}
 
 1;

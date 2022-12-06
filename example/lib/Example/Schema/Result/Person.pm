@@ -82,7 +82,7 @@ sub validate_roles($self, $attribute_name, $value, $opt) {
   my %names = map {
     $_->role->label => 1
   } grep {
-    ! $_->is_marked_for_deletion;
+    ! $_->is_marked_for_deletion;  # In this case the validations only want proposed new selected roles
   } @{ $value->get_cache || [] };
 
   if($names{guest}) {
