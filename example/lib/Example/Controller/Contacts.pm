@@ -11,8 +11,9 @@ sub contacts :Chained(../auth) CaptureArgs(0) ($self, $c, $user) {
   $c->next_action($collection);
 }
 
-  sub list :GET Chained(contacts) PathPart('') Args(0)  Name(contacts) ($self, $c, $collection) {
-    $c->view('HTML::Contacts', list => $collection);
+  sub list :GET Chained(contacts) PathPart('') Args(0) RequestModel(ContactsQuery)  Name(ContactsList) ($self, $c, $contacts_query, $collection) {
+    my $sessioned_query = $c->model('ContactsQuery::Session', $contacts_query);
+    $c->view('HTML::Contacts', list => $collection->filter_by_request($sessioned_query));
   }
 
 __PACKAGE__->meta->make_immutable;

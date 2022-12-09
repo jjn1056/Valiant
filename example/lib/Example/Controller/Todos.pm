@@ -11,8 +11,8 @@ sub todos :Chained(../auth) CaptureArgs(0) ($self, $c, $user) {
   $c->next_action($collection);
 }
 
-  sub list :Chained(todos) PathPart('') Args(0) Verbs(GET,POST) RequestModel(TodosQuery) Name(TodosList) ($self, $c, $q, $collection) {
-    my $sessioned_query = $c->model('TodosQuery::Session', $q);
+  sub list :Chained(todos) PathPart('') Args(0) Verbs(GET,POST) RequestModel(TodosQuery) Name(TodosList) ($self, $c, $todo_query, $collection) {
+    my $sessioned_query = $c->model('TodosQuery::Session', $todo_query);
     $c->view('HTML::Todos',
       todo => my $todo = $c->user->new_todo,
       list => $collection->filter_by_request($sessioned_query),

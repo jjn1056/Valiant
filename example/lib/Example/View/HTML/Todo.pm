@@ -25,16 +25,16 @@ sub render($self, $c) {
         div +{ class=>'form-row' }, [
           div +{ class=>'col form-group col-9' }, [
             $fb->label('title'),
-            $fb->input('title', +{ class=>'form-control', errors_classes=>'is-invalid' }),
-            $fb->errors_for('title', +{ class=>'invalid-feedback' }),
+            $fb->input('title'),
+            $fb->errors_for('title'),
           ],
           div +{ class=>'col form-group col-3' }, [
             $fb->label('status'),
-            $fb->select('status', $self->status_options, +{ include_blank=>1, class=>'form-control', errors_classes=>'is-invalid'}),
-            $fb->errors_for('status', +{ class=>'invalid-feedback' }),
+            $fb->select('status', $self->status_options, +{ include_blank=>1}),
+            $fb->errors_for('status'),
           ],
         ],
-        $fb->submit('Update Todo', +{class=>'btn btn-lg btn-primary btn-block'}),
+        $fb->submit('Update Todo'),
         a {href=>'/todos', class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Todo List',
       ],
     }),

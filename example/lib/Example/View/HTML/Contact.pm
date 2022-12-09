@@ -54,11 +54,11 @@ sub render($self, $c) {
               ],
               div +{ class=>'col form-group col-2' }, [
                 $fb_e->label('_delete'), br,
-                $fb_e->checkbox('_delete', +{ checked=>$e->is_marked_for_deletion }),
+                $fb_e->checkbox('_delete'),
               ],
             ]
           }, sub ($fb_final, $new_e) {
-            $fb_final->button( '_add', +{ value=>1 }, 'Add Email Address');
+            $fb_final->button( '_add', 'Add Email Address');
           }),
         ],
       ],
@@ -76,18 +76,23 @@ sub render($self, $c) {
               ],
               div +{ class=>'col form-group col-2' }, [
                 $fb_e->label('_delete'), br,
-                $fb_e->checkbox('_delete', +{ checked=>$e->is_marked_for_deletion }),
+                $fb_e->checkbox('_delete'),
               ],
             ]
           }, sub ($fb_final, $new_e) {
-            $fb_final->button( '_add', +{ value=>1 }, 'Add Phone Number');
+            $fb_final->button( '_add', 'Add Phone Number');
           }),
         ],
       ],
 
       $fb->submit(),
       a {href=>'/contacts', class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
-      button { cond=>$contact->in_storage, formaction=>'?x-tunneled-method=delete', formmethod=>'POST', class=>'btn btn-danger btn-lg btn-block'}, 'Delete Contact',
+      button {
+        cond=>$contact->in_storage, 
+        formaction=>'?x-tunneled-method=delete',
+        formmethod=>'POST',
+        class=>'btn btn-danger btn-lg btn-block'
+      }, 'Delete Contact',
     }),
   });
 }

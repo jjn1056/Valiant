@@ -35,7 +35,7 @@ sub contact :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $colle
     }
 
     sub DELETE_edit :Action ($self, $c, $contact) {
-      return $contact->delete && $c->redirect_to_action('#contacts');
+      return $contact->delete && $c->redirect_to_action('#ContactsList');
     }
 
 __PACKAGE__->meta->make_immutable;
