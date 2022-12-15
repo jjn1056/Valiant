@@ -10,10 +10,10 @@ sub login : Chained(../root) Args(0) Verbs(GET,POST) Name(login) RequestModel(Lo
   $c->redirect_to_action('#home') && $c->detach if $c->user->authenticated; # Don't bother if already logged in
   $c->view('HTML::Login', user => $c->user);
   $c->view->post_login_redirect($q->post_login_redirect) if $q->has_post_login_redirect;
-  $c->next_action($q);
+  $c->next_action($c, $q);
 }
 
-  sub POST :Action RequestModel(LoginRequest) ($self, $c, $request, $q) {
+  sub POST :Action RequestModel(LoginRequest) ($self, $c, $q, $request) {
     return $c->view->set_http_bad_request unless $c->authenticate($request->person);
     return $c->res->redirect($q->post_login_redirect) if $q->has_post_login_redirect;
     return $c->redirect_to_action('#home');

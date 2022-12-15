@@ -15,12 +15,11 @@ sub account :Chained(../auth) CaptureArgs(0)  ($self, $c, $user) {
     $c->next_action($account);
   }
 
-    sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $request, $account) {
+    sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $account, $request) {
       $account->update_account($request);
-      return $account->valid ? 
+      return return $account->valid ? 
         $c->view->set_http_ok : 
           $c->view->set_http_bad_request;
     }
 
 __PACKAGE__->meta->make_immutable;
-

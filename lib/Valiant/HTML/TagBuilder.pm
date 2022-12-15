@@ -40,15 +40,20 @@ our %HTML_CONTENT_ELEMENTS = map { $_ => 1 } qw(
 
 our @ALL_HTML_TAGS = ('trow', keys(%HTML_VOID_ELEMENTS), keys(%HTML_CONTENT_ELEMENTS));
 our @ALL_FLOW_CONTROL = (qw(cond otherwise over loop default_case));
-our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS, @ALL_FLOW_CONTROL, '$sf');
+our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS, @ALL_FLOW_CONTROL, '$sf', 'text');
 our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
-  utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL, '$sf'],
+  utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL, '$sf', 'text'],
   html => \@ALL_HTML_TAGS,
   form =>[qw/form input select options button datalist fieldset label legend meter optgroup output progress textarea/],
   headers => [qw/h1 h2 h3 h4 5 h6 header/],
   table => [qw/table td th tbody thead tfoot trow caption/],
 );
+
+sub text {
+  my ($text, @rest) = @_;
+  return (safe($text), @rest);
+}
 
 our $sf = sub {
   if(blessed $_[0]) {
@@ -313,10 +318,6 @@ foreach my $e (keys %HTML_CONTENT_ELEMENTS) {
   eval "sub $e { html_content_tag('$e', \@_) }";
 }
 
-sub divb($$) {
-  return html_content_tag('div', @_);
-}
-
 foreach my $e (keys %HTML_VOID_ELEMENTS) {
   eval "sub $e { html_tag('$e', \@_) }";
   die $@ if $@; 
@@ -395,15 +396,6 @@ sub loop(&;@) {
 
   return (concat(@items), @_);
 }
-
-
-sub css { }
-sub js { }
-
-# a, img select ul ol ?? dl???
-#       ul \%attrs, \@items, sub {
-#         li "item# $_[0]";
-#       },
 
 1;
 

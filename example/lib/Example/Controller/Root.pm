@@ -17,7 +17,7 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) { }
   }
 
   sub unauth :Chained(root) PathPart('') CaptureArgs() ($self, $c) {
-    return $c->next_action($c->user);
+    $c->next_action($c->user);
   }
   
   sub auth :Chained(root) PathPart('') CaptureArgs() ($self, $c) {

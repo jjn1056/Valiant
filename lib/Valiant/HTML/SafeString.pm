@@ -55,7 +55,7 @@ sub safe {
 }
 
 sub flattened_safe {
-  my $string = join '', map { is_safe($_) ? $_->to_string : escape_html($_) } @_;
+  my $string = join '', map { is_safe($_) ? $_->to_string : escape_html($_) } grep { defined($_) } @_;
   return _make_safe $string;
 }
 

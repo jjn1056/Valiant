@@ -14,6 +14,7 @@ __PACKAGE__->setup_plugins([qw/
   Errors
   ServeFile
   CSRFToken
+  NextAction
 /]);
 
 __PACKAGE__->config(
@@ -60,10 +61,6 @@ sub authenticate($self, @args) {
 sub logout($self) {
   $self->model('Session')->logout;
   $self->clear_user;
-}
-
-sub next_action($self, @args) {
-  $self->stash->{__received_args} = [@args];
 }
 
 __PACKAGE__->meta->make_immutable();

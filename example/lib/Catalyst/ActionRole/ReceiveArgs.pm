@@ -1,5 +1,4 @@
-package # hide from PAUSE
-  Catalyst::ActionRole::ReceiveArgs;
+package Catalyst::ActionRole::ReceiveArgs;
 
 use Moose::Role;
 use Catalyst::Utils;

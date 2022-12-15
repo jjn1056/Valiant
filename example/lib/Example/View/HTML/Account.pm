@@ -3,7 +3,6 @@ package Example::View::HTML::Account;
 use Moose;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder 'div', 'fieldset', 'legend', 'br', ':utils';
-use Valiant::HTML::Form 'form_for';
 
 extends 'Example::View::HTML';
 

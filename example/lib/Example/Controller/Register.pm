@@ -8,15 +8,16 @@ extends 'Example::Controller';
 
 sub register :Chained(../unauth) CaptureArgs(0) ($self, $c, $user) {
   return $c->redirect_to_action('#home') && $c->detach if $user->registered;
-  $c->next_action($user);
+  $c->next_action($c, $user);
 }
 
   sub create :Chained(register) Args(0) PathPart('') Verbs(GET, POST) ($self, $c, $user) {
     $c->view('HTML::Register', registration => $user);
+    $c->next_action($c, $user);
   }
 
-    sub POST :Action RequestModel(RegistrationRequest) ($self, $c, $request) {    
-      return $c->user->register($request) ?
+    sub POST :Action RequestModel(RegistrationRequest) ($self, $c, $user, $request) {    
+      return $user->register($request) ?
         $c->redirect_to_action('#login') :
           $c->view->set_http_bad_request;
     }

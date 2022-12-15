@@ -2,7 +2,7 @@ package Example::View::HTML::Home;
 
 use Moose;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'blockquote', 'cond';
+use Valiant::HTML::TagBuilder 'div', 'blockquote', 'text';
 
 extends 'Example::View::HTML';
 

@@ -50,7 +50,7 @@ sub page_window_info($self) {
   return '' unless $self->pager->total_entries > 0;
   my $message = $self->pager->last_page == 1 ?
     "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}" :
-    "@{[ $self->pager->first]} to @{[ $self->pager->last ]} of @{[ $self->pager->total_entries ]}";
+    $self->pager->$sf('{:first} to {:last} of {:total_entries}');
 
   return div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, $message;
 }

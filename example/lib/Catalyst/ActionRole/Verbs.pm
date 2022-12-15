@@ -105,26 +105,34 @@ around 'execute', sub {
 around 'dispatch', sub {
   my ($orig, $self, $ctx, @args) = @_;
   my $ret = $self->$orig($ctx, @args);
-  my $method = $ctx->req->method;
   my @return = grep { defined $_ } @{ delete $ctx->stash->{__execute}||[] };
+  return $self->_dispatch($ctx, $ret);
+ };
 
+sub _dispatch {
+  my ($self, $ctx, $ret, @args) = @_;
+  my $method = $ctx->req->method;
   return $ret unless my $action_handler = $self->verb_action_handlers->{$method};
-  return $self->_dispatch_to_verb($ctx, $action_handler); # @return
-};
+  return $self->_dispatch_to_verb($ctx, $action_handler, @args); 
+}
 
 sub _dispatch_to_verb {
   my ($self, $ctx, $action_handler, @return) = @_;
-
+  return if $ctx->stash->{__action_verbs_done}{$self->name};
   # We do this dance to make sure this works properly when someone ->detaches to this
   my ($controller_name) = ($self->class =~m/Controller\:\:(.+)$/);
   my $action = $ctx->controller($controller_name)->action_for($action_handler);
 
   ## TODO @return seems to contain undef when it really means empty.
+  $ctx->stash->{__action_verbs_done}{$self->name} = 1;
   $ctx->stats->profile(begin =>  '-dispatch HTTP method');
   return $ctx->forward($action, [@return]);
   $ctx->stats->profile(end =>  '-dispatch HTTP method');
+}
 
-  #return $ctx->forward($action_handler, $ctx->req->args)
+sub next {
+  my ($self, $ctx, @args) = @_;
+  return $self->_dispatch($ctx, undef, @args);
 }
 
 1;
