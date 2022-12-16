@@ -47,7 +47,7 @@ sub _dispatch_chain_actions {
     }
     if(exists($c->stash->{_action_chain_last_action})) {
       $c->request->{arguments} = delete $c->stash->{_action_chain_original_args};
-      push @{$c->request->{arguments}}, @{delete $c->stash->{_action_chain_next_args}} if exists $c->stash->{_action_chain_next_args};
+      unshift @{$c->request->{arguments}}, @{delete $c->stash->{_action_chain_next_args}} if exists $c->stash->{_action_chain_next_args};
       my $last_action = delete $c->stash->{_action_chain_last_action};
       $last_action->dispatch($c);
     }
@@ -60,7 +60,7 @@ sub _dispatch_chain_action {
     if (my $cap = $action->number_of_captures) {
         @args = splice(@{ $c->stash->{_action_chain_captures}||[] }, 0, $cap);
     }
-    push @args, @{delete $c->stash->{_action_chain_next_args}} if exists $c->stash->{_action_chain_next_args};
+    unshift @args, @{delete $c->stash->{_action_chain_next_args}} if exists $c->stash->{_action_chain_next_args};
     local $c->request->{arguments} = \@args;
     $action->dispatch( $c );
 }

@@ -6,11 +6,11 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub login : Chained(../root) Args(0) Verbs(GET,POST) Name(login) RequestModel(LoginQuery) ($self, $c, $q) {
-  $c->redirect_to_action('#home') && $c->detach if $c->user->authenticated; # Don't bother if already logged in
-  $c->view('HTML::Login', user => $c->user);
+sub login : Chained(../root) Args(0) Verbs(GET,POST) Name(login) RequestModel(LoginQuery) ($self, $c, $user, $q) {
+  $c->redirect_to_action('#home') && $c->detach if $user->authenticated; # Don't bother if already logged in
+  $c->view('HTML::Login', user => $user);
   $c->view->post_login_redirect($q->post_login_redirect) if $q->has_post_login_redirect;
-  $c->next_action($c, $q);
+  $c->next_action($q);
 }
 
   sub POST :Action RequestModel(LoginRequest) ($self, $c, $q, $request) {

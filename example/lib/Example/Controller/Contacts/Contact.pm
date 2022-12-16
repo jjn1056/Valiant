@@ -13,7 +13,7 @@ sub contact :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $colle
   sub create :Chained(contact) PathPart(new) Args(0) Verbs(GET,POST) ($self, $c, $collection) {
     my $contact = $collection->new_contact;
     $c->view('HTML::Contact', contact => $contact);
-    $c->next_action($c, $contact);
+    $c->next_action($$contact);
   }
 
     sub POST_create :Action RequestModel(ContactRequest) ($self, $c, $contact, $r ) {
@@ -22,10 +22,10 @@ sub contact :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $colle
           $c->view->set_http_bad_request;
     }
 
-  sub edit :Chained(contact) PathPart('') Args(1) Verbs(GET,PATCH,DELETE) ($self, $c, $id, $collection) {
+  sub edit :Chained(contact) PathPart('') Args(1) Verbs(GET,PATCH,DELETE) ($self, $c, $collection, $id) {
     my $contact = $collection->find($id) // $c->detach_error(404, +{error=>"Contact id $id not found"});
     $c->view('HTML::Contact', contact => $contact);
-    $c->action->next($c, $contact);
+    $c->next_action($contact);
   }
 
     sub PATCH_edit :Action RequestModel(ContactRequest) ($self, $c, $contact, $r) {

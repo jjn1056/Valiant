@@ -8,16 +8,16 @@ extends 'Example::Controller';
 
 sub todos :Chained(../auth) CaptureArgs(0) ($self, $c, $user) {
   my $collection = $user->todos;
-  $c->next_action($c, $collection);
+  $c->next_action($collection);
 }
 
-  sub list :Chained(todos) PathPart('') Args(0) Verbs(GET,POST) RequestModel(TodosQuery) Name(TodosList) ($self, $c, $collection,  $todo_query) {
+  sub list :Chained(todos) PathPart('') Args(0) Verbs(GET,POST) RequestModel(TodosQuery) Name(TodosList) ($self, $c, $collection, $todo_query) {
     my $sessioned_query = $c->model('TodosQuery::Session', $todo_query);
     $c->view('HTML::Todos',
       todo => my $todo = $c->user->new_todo,
       list => $collection->filter_by_request($sessioned_query),
     );
-    $c->action->next($c, $todo);
+    $c->next_action($todo);
   }
 
     sub POST :Action RequestModel(TodoRequest) ($self, $c, $todo, $request) {
