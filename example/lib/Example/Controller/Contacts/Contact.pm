@@ -7,13 +7,13 @@ use Example::Syntax;
 extends 'Example::Controller';
 
 sub contact :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $collection) {
-  $c->next_action($collection);
+  $c->action->next($collection);
 }
 
   sub create :Chained(contact) PathPart(new) Args(0) Verbs(GET,POST) ($self, $c, $collection) {
     my $contact = $collection->new_contact;
     $c->view('HTML::Contact', contact => $contact);
-    $c->next_action($$contact);
+    $c->action->next($contact);
   }
 
     sub POST_create :Action RequestModel(ContactRequest) ($self, $c, $contact, $r ) {
@@ -25,7 +25,7 @@ sub contact :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $colle
   sub edit :Chained(contact) PathPart('') Args(1) Verbs(GET,PATCH,DELETE) ($self, $c, $collection, $id) {
     my $contact = $collection->find($id) // $c->detach_error(404, +{error=>"Contact id $id not found"});
     $c->view('HTML::Contact', contact => $contact);
-    $c->next_action($contact);
+    $c->action->next($contact);
   }
 
     sub PATCH_edit :Action RequestModel(ContactRequest) ($self, $c, $contact, $r) {

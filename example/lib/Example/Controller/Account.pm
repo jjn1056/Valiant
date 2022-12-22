@@ -7,12 +7,12 @@ use Example::Syntax;
 extends 'Example::Controller';
 
 sub account :Chained(../auth) CaptureArgs(0)  ($self, $c, $user) {
-  $c->next_action($user->account);
+  $c->action->next($user->account);
 }
 
   sub edit :Chained(account) PathPart('') Verbs(GET,PATCH) Args(0) ($self, $c, $account) {
     $c->view('HTML::Account', account => $account);
-    $c->next_action($account);
+    $c->action->next($account);
   }
 
     sub PATCH :Action RequestModel(AccountRequest) ($self, $c, $account, $request) {

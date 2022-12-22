@@ -7,7 +7,7 @@ use Example::Syntax;
 extends 'Catalyst::Controller';
 
 sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) {
-  $c->next_action($c->user);
+  $c->action->next($c->user);
 }
 
   sub not_found :Chained(root) PathPart('') Args ($self, $c, $user, @args) {
@@ -19,11 +19,11 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) ($self, $c) {
   }
 
   sub unauth :Chained(root) PathPart('') CaptureArgs() ($self, $c, $user) {
-    $c->next_action($user);
+    $c->action->next($user);
   }
   
   sub auth :Chained(root) PathPart('') CaptureArgs() ($self, $c, $user) {
-    return $c->next_action($user) if $user->authenticated;
+    return $c->action->next($user) if $user->authenticated;
     return $c->redirect_to_action('#login', +{post_login_redirect=>$c->req->uri}) && $c->detach;
   }
 
