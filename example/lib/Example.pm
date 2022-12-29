@@ -14,7 +14,6 @@ __PACKAGE__->setup_plugins([qw/
   Errors
   ServeFile
   CSRFToken
-  NextAction
 /]);
 
 __PACKAGE__->config(

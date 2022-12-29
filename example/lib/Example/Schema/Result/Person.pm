@@ -123,10 +123,6 @@ sub account($self) {
   $self->result_source->resultset->account_for($self);
 }
 
-sub new_todo($self) {
-  return $self->todos->new_result(+{status=>'active'});
-}
-
 sub request_todos($self, $request) {
   my $todos = $self->todos->available->newer_first;
   return $todos = $todos->filter_by_request($request);
@@ -146,6 +142,7 @@ sub register($self, $request) {
 
 sub update_account($self, $request) {
   $self->context('account')->update($request->nested_params);
+  return $self;
 }
 
 sub role_checkbox_options($self) {
