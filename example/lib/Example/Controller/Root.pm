@@ -22,9 +22,9 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Name(Root) ($self, $c) {
     $c->action->next($user);
   }
   
-  sub auth :Chained(root) PathPart('') CaptureArgs() Name(Auth) ($self, $c, $user) {
+  sub secured :Chained(root) PathPart('') CaptureArgs() Name(Secured) ($self, $c, $user) {
     return $c->action->next($user) if $user->authenticated;
-    return $c->redirect_to_action('#login', +{post_login_redirect=>$c->req->uri}) && $c->detach;
+    return $c->redirect_to_action('*Login', +{post_login_redirect=>$c->req->uri}) && $c->detach;
   }
 
 sub end :Action Does(RenderErrors) Does(RenderView) { }  # The order of the Action Roles is important!!

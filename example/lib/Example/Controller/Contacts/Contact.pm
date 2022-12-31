@@ -25,7 +25,7 @@ sub root :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $collecti
           $c->view->set_http_bad_request;
     }
 
-  sub setup_edit :Chained(root) PathPart('') Args(1) ($self, $c, $collection, $id) {
+  sub setup_edit :Chained(root) PathPart('') CaptureArgs(1) ($self, $c, $collection, $id) {
     my $contact = $collection->find($id) // $c->detach_error(404, +{error=>"Contact id $id not found"});
     $c->view('HTML::Contact', contact => $contact);
     $c->action->next($contact);
@@ -42,7 +42,7 @@ sub root :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $collecti
     }
 
     sub delete_contact :DELETE Chained(setup_edit) PathPart('') Args(0) ($self, $c, $contact) {
-      return $contact->delete && $c->redirect_to_action('#ContactsList');
+      return $contact->delete && $c->redirect_to_action('*ContactsList');
     }
 
 __PACKAGE__->meta->make_immutable;

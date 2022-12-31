@@ -9,10 +9,7 @@ around gather_default_action_roles => sub {
   push @roles, 'Catalyst::ActionRole::CurrentView'
     if $args{attributes}->{View};
   push @roles, 'Catalyst::ActionRole::RequestModel'
-    if $args{attributes}->{RequestModel};
-  push @roles, 'Catalyst::ActionRole::Verbs'
-    if $args{attributes}->{Verbs} || $args{attributes}->{Allow};
-
+    if $args{attributes}->{RequestModel} || $args{attributes}->{QueryModel};
   return @roles;
 };
 

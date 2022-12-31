@@ -75,7 +75,7 @@ sub page_window_info($self) {
 sub pagelist($self) {
   my @page_html = ();
   foreach my $page (1..$self->pager->last_page) {
-    push @page_html, a {href=>$self->link('*TodosList', +{page=>$page, status=>$self->status}), style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
+    push @page_html, a {href=>$self->link('*TodosList', +{'todo.page'=>$page, 'todo.status'=>$self->status}), style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;
 }
@@ -88,7 +88,7 @@ sub status_filter_box($self) {
 
 sub status_filter($self, $status) {
   return span {style=>'margin: .5rem'}, [b u $status] if $self->status eq $status;
-  return a { href=>$self->link('*TodosList', +{page=>1, status=>$status}), style=>'margin: .5rem'}, $status;
+  return a { href=>$self->link('*TodosList', +{'todo.page'=>1, 'todo.status'=>$status}), style=>'margin: .5rem'}, $status;
 }
 
 

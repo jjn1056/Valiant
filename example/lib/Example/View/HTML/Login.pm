@@ -16,8 +16,8 @@ __PACKAGE__->views(
 
 sub action_link($self) {
   return $self->has_post_login_redirect ?
-    $self->ctx->uri('*login', +{post_login_redirect=>$self->post_login_redirect}) :
-    $self->ctx->uri('*login');
+    $self->ctx->uri('*Login', +{post_login_redirect=>$self->post_login_redirect}) :
+    $self->ctx->uri('*Login');
 }
 
 sub render($self, $c) {
