@@ -21,7 +21,7 @@ sub root :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $collecti
 
     sub create :POST Chained(setup_new) PathPart('') Args(0) RequestModel(ContactRequest) ($self, $c, $new_contact, $r) {
       return $new_contact->set_from_request($r) ?
-        $c->redirect_to($self->action_for('edit'), $new_contact->id) : 
+        $c->redirect_to_action($self->action_for('edit'), [$new_contact->id]) : 
           $c->view->set_http_bad_request;
     }
 

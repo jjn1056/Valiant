@@ -24,9 +24,4 @@ sub new_todo($self) {
   return $self->new_result(+{status=>'active'});
 }
 
-sub create_from_request($self, $request) {
-  return $self->new_todo
-    ->set_from_request($request);
-}
-
 1;
