@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub root :Chained(../contacts) PathPart('') CaptureArgs(0) ($self, $c, $collection) {
+sub root :Chained(../root) PathPart('') CaptureArgs(0) ($self, $c, $collection) {
   $c->action->next($collection);
 }
 

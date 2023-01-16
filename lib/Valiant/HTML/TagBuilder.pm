@@ -140,7 +140,9 @@ sub capture {
 ## ??? better $index for things like is_last is_first is_even/odd, etc ???
 
 our @_SWITCH_CTX = ();
+
 sub default_case { return default_case=>1 }
+
 sub html_content_tag {
   my $tag = shift;
   my $attrs = (ref($_[0])||'') eq 'HASH' ? shift(@_) : +{};
@@ -261,8 +263,6 @@ sub html_tag {
 
   if(exists $attrs->{case}) {
     my $case = delete $attrs->{case};
-    warn "$tag $case";
-    use Devel::Dwarn; Dwarn @_SWITCH_CTX;
     if($case) {
       if($HTML_VOID_ELEMENTS{$tag}) {
         unshift @_SWITCH_CTX, [$tag, $attrs];

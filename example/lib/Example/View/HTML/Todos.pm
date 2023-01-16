@@ -25,8 +25,6 @@ sub render($self, $c) {
       fieldset [
         $fb->legend,
         $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
-
-        $self->last_page_warning,
         $self->page_window_info,
 
         table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
@@ -56,11 +54,6 @@ sub render($self, $c) {
       ],
     }),
   });
-}
-
-sub last_page_warning($self) {
-  div { cond=>$self->pager->current_page > $self->pager->last_page, class=>'alert alert-warning', role=>'alert' },
-    "The selected page is greater than the total number of pages available.  Showing the last page.",
 }
 
 sub page_window_info($self) {
