@@ -10,15 +10,15 @@ sub root :Chained(/) PathPart('') CaptureArgs(0) Name(Root) ($self, $c) {
   $c->action->next($c->user);
 }
 
-  sub not_found :Chained(*Root) PathPart('') Args ($self, $c, $user, @args) {
+  sub not_found :Chained(root) PathPart('') Args ($self, $c, $user, @args) {
     return $c->detach_error(404, +{error=>"Requested URL not found: @{[ $c->req->uri ]}"});
   }
 
-  sub static :GET Chained(*Root) PathPart('static') Args ($self, $c, $user, @args) {
+  sub static :GET Chained(root) PathPart('static') Args ($self, $c, $user, @args) {
     return $c->serve_file('static', @args) // $c->detach_error(404, +{error=>"Requested URL not found: @{[ $c->req->uri ]}"});
   }
 
-  sub public :Chained(*Root) PathPart('') CaptureArgs() Name(Public) ($self, $c, $user) {
+  sub public :Chained(root) PathPart('') CaptureArgs() Name(Public) ($self, $c, $user) {
     $c->action->next($user);
   }
   

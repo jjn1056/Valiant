@@ -7,9 +7,14 @@ use Example::Syntax;
 extends 'Example::Controller';
 
 sub root :Chained(*Secured) PathPart('account') CaptureArgs(0)  ($self, $c, $user) {
-  $c->view('HTML::Account', account => my $account = $user->account);
+  my $account = $user->account;
   $c->action->next($account);
 }
+
+  sub setup :Chained(root) PathPart('') CaptureArgs(0) ($self, $c, $account) { 
+    $c->view('HTML::Account', account => $account);
+    $c->action->next($account);
+  }
 
   sub view :GET Chained(root) PathPart('') Args(0) ($self, $c, $account) {
     return  $c->view->set_http_ok;

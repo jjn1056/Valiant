@@ -145,17 +145,4 @@ sub update_account($self, $request) {
   return $self;
 }
 
-sub role_checkbox_options($self) {
-  return $self->result_source->schema->resultset('Role')
-    ->search_rs(
-      +{}, 
-      +{
-        columns => [
-          { value=>'id' },
-          { label=>'label' },
-        ]
-      }
-    );
-}
-
 1;

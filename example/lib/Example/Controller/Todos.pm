@@ -6,12 +6,12 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub todos :Chained(*Secured) CaptureArgs(0) Name(TodosRoot) ($self, $c, $user) {
+sub root :Chained(*Secured) PathPart('todos') CaptureArgs(0) ($self, $c, $user) {
   my $collection = $user->todos;
   $c->action->next($collection);
 }
 
-  sub setup :Chained(todos) PathPart('') CaptureArgs(0) QueryModel(TodosQuery) ($self, $c, $collection, $todo_query) {
+  sub setup :Chained(root) PathPart('') CaptureArgs(0) QueryModel(TodosQuery) ($self, $c, $collection, $todo_query) {
     my $sessioned_query = $c->model('TodosQuery::Session', $todo_query);
     my $list = $collection->filter_by_request($sessioned_query);
     $c->view('HTML::Todos',
