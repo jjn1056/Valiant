@@ -16,11 +16,11 @@ sub root :Chained(*Secured) PathPart('account') CaptureArgs(0)  ($self, $c, $use
     $c->action->next($account);
   }
 
-  sub view :GET Chained(root) PathPart('') Args(0) ($self, $c, $account) {
+  sub view :GET Chained(setup) PathPart('') Args(0) ($self, $c, $account) {
     return  $c->view->set_http_ok;
   }
 
-  sub edit :PATCH Chained(root) PathPart('') Args(0) RequestModel(AccountRequest) ($self, $c, $account, $r) {
+  sub edit :PATCH Chained(setup) PathPart('') Args(0) RequestModel(AccountRequest) ($self, $c, $account, $r) {
     return $account->update_account($r)->valid ?
       $c->view->set_http_ok : 
         $c->view->set_http_bad_request;

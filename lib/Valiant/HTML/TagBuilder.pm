@@ -110,9 +110,12 @@ sub tag {
     my $omit_tag = delete $attrs->{omit_tag};
     return '' if $omit_tag;
   }
-
+  my $view = exists $attrs->{view} ? delete $attrs->{view} : undef;
+  
   die "'$name' is not a valid VOID HTML element" unless $HTML_VOID_ELEMENTS{$name};
-  return raw "<${name}@{[ _tag_options(%{$attrs}) ]}/>";
+  my $tag = "<${name}@{[ _tag_options(%{$attrs}) ]}/>";
+  return $view ? $view->raw($tag) : raw $tag;
+
 }
 
 sub content_tag {
@@ -120,14 +123,18 @@ sub content_tag {
   die "'$name' is a VOID HTML element" if $HTML_VOID_ELEMENTS{$name};
   my $block = ref($_[-1]) eq 'CODE' ? pop(@_) : undef;
   my $attrs = ref($_[-1]) eq 'HASH' ? pop(@_) : +{};
-  my $content = flattened_safe(defined($block) ? $block->() : (shift || ''));
+  my $view = exists $attrs->{view} ? delete $attrs->{view} : undef;
+  my @content = defined($block) ? $block->() : (shift || '');
 
   if(exists $attrs->{omit_tag}) {
     my $omit_tag = delete $attrs->{omit_tag};
     return $content if $omit_tag;
   }
-
-  return raw "<${name}@{[ _tag_options(%{$attrs}) ]}>$content</${name}>";
+  if($view) {
+    return $view->raw("<${name}@{[ _tag_options(%{$attrs}) ]}>@{[ $view->flattened_safe @content ]}</${name}>");
+  } else {
+    return raw "<${name}@{[ _tag_options(%{$attrs}) ]}>@{[ flattened_safe @content ]}</${name}>";
+  }
 }
 
 sub capture {

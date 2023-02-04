@@ -24,7 +24,7 @@ has name => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1, default => sub { +{} } );  
 has index => ( is => 'ro', required => 0, predicate => 'has_index' );
 has namespace => ( is => 'ro', required => 0, predicate => 'has_namespace' );
-has view => ( is => 'ro', required => 0, predicate => 'has_view' );
+has view => ( is => 'ro', required => 1, predicate => 'has_view' );
 has _theme => ( is => 'rw', required => 1, init_arg=>'theme', default => sub { +{} } );
 has _nested_child_index => (is=>'rw', init_arg=>undef, required=>1, default=>sub { +{} });
 
@@ -195,6 +195,7 @@ sub label {
   set_unless_defined(for => $options, $self->tag_id_for_attribute($attribute));
 
   $options = $self->merge_theme_field_opts(label=>$attribute, $options);
+  $options->{view} = $self->view if $self->has_view;
 
   if((ref($content)||'') eq 'CODE') {
     return Valiant::HTML::FormTags::label_tag($attribute, $options, sub { $content->($translated_attribute) } );
@@ -1031,6 +1032,41 @@ Used to add a prefix to the ID for your form elements.
 
 Optional.  The view or template object that is using the formbuilder.  If available can be used to
 influence how the HTML for controls are created.
+
+Generally used to provide HTML escaping and safe string tagging methods that are compatible with
+your template system.  For example L<Mojo::Template> provides its own system for marking strings
+safe for template display.  I you don't provide a view then we will use L<Valiant::HTML::SafeString>
+for automatic HTML escaping.  If you are not using a view or template system (for example like
+L<Template::Toolkit> ) that does automatic escaping then the built in escaping features are probably
+fine.
+
+If you provide a view it should provide the following API methods:
+
+=over
+
+=item raw
+
+given a string or an array of strings concatenate them into a single tagged object which is marked
+as safe for display.  Do not do any HTML escaping on the strings.  This is used when you want to pass
+strings straight to display and that you know is safe.  Be careful with this to avoid HTML injection
+attacks.
+
+=item safe
+
+given a string or an array of strings concatenate them into a single tagged object which is marked
+as safe for display. For each item perform html escaping and mark the string as safe unless its already
+been done (no double escaping).
+
+=item html_escape
+
+Given a string or array of strings return a single string that has been HTML escaped.
+
+=back
+
+Both C<raw> and C<safe> should return a 'tagged' object which is specific to your view or template system.
+However this object must 'stringify' to the safe version of the string to be displayed.
+
+B<NOTE>: In the future the view API might change so keep an eye on this spot.
 
 =head1 METHODS
 
