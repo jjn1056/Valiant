@@ -105,7 +105,7 @@ sub form_for {
   my $content_block_coderef = pop; # required; at the end
   my $options = @_ ? shift : +{};
   my $model_name = exists $options->{as} ? $options->{as} : _model_name_from_object_or_class($model)->param_key;
-   
+  my $view = exists $options->{view} ? $options->{view} : undef;
   _apply_form_options($model, $options);
 
   my $html_options = $options->{html};
@@ -117,6 +117,7 @@ sub form_for {
   $html_options->{data} = $options->{data} if exists $options->{data};
   $html_options->{class} = join(' ', (grep { defined $_ } $html_options->{class}, $options->{class}, @extra_classes)) if exists($options->{class}) || @extra_classes;
   $html_options->{style} = join(' ', (grep { defined $_ } $html_options->{style}, $options->{style})) if exists $options->{style};
+  $html_options->{view} = $view if $view; # Needs to be passed down if we have it
 
   if( ($html_options->{method} ne 'get') && ($html_options->{method} ne 'post') ) {
     my $uri = URI->new( $html_options->{action}||'' );
@@ -137,10 +138,11 @@ sub form_for {
     $csrf_token = $model->csrf_token;
   }
 
-  return Valiant::HTML::FormTags::form_tag $html_options, sub { 
-    my $captured = Valiant::HTML::FormTags::capture($content_block_coderef, $builder, $model);
-    $captured = $captured->concat(Valiant::HTML::FormTags::hidden_tag('csrf_token', {value=>$csrf_token})) if $csrf_token; 
-    return $captured;
+  return Valiant::HTML::FormTags::form_tag $html_options, sub {
+    my @content = $content_block_coderef->($builder, $model);
+    push @content, Valiant::HTML::FormTags::hidden_tag('csrf_token', {value=>$csrf_token, view=>$view}) if $csrf_token;
+    my $content = $builder->safe_concat(@content);
+    return $content;
   };
 }
 
@@ -158,7 +160,10 @@ sub fields_for {
   my $options = @_ ? shift(@_) : +{};
   
   my $builder = _instantiate_builder($name, $model, $options);
-  return Valiant::HTML::FormTags::capture($block, $builder, $model); 
+  my @fields_for_content = $block->($builder, $model);
+  my $content = $builder->view->safe_concat(@fields_for_content);
+
+  return $content;
 }
 
 1;

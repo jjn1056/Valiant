@@ -40,15 +40,90 @@ our %HTML_CONTENT_ELEMENTS = map { $_ => 1 } qw(
 
 our @ALL_HTML_TAGS = ('trow', keys(%HTML_VOID_ELEMENTS), keys(%HTML_CONTENT_ELEMENTS));
 our @ALL_FLOW_CONTROL = (qw(cond otherwise over loop default_case));
-our @EXPORT_OK = (qw(tag content_tag capture), @ALL_HTML_TAGS, @ALL_FLOW_CONTROL, '$sf', 'text');
+our @EXPORT_OK = (qw(tag content_tag concat_tags), @ALL_HTML_TAGS, @ALL_FLOW_CONTROL, '$sf', 'text');
 our %EXPORT_TAGS = (
   all => \@EXPORT_OK,
-  utils => ['tag', 'content_tag', 'capture', @ALL_FLOW_CONTROL, '$sf', 'text'],
+  utils => ['tag', 'content_tag', 'concat_tags', @ALL_FLOW_CONTROL, '$sf', 'text'],
   html => \@ALL_HTML_TAGS,
   form =>[qw/form input select options button datalist fieldset label legend meter optgroup output progress textarea/],
   headers => [qw/h1 h2 h3 h4 5 h6 header/],
   table => [qw/table td th tbody thead tfoot trow caption/],
 );
+
+sub tag {
+  my ($name, $attrs) = (@_, +{});
+  if(exists $attrs->{omit_tag}) {
+    my $omit_tag = delete $attrs->{omit_tag};
+    return '' if $omit_tag;
+  }
+  my $view = exists $attrs->{view} ? delete $attrs->{view} : undef;
+  
+  die "'$name' is not a valid VOID HTML element" unless $HTML_VOID_ELEMENTS{$name};
+  my $tag = "<${name}@{[ _tag_options(%{$attrs}) ]}/>";
+  return $view ? $view->raw($tag) : raw $tag;
+}
+
+sub content_tag {
+  my $name = shift;
+  die "'$name' is a VOID HTML element" if $HTML_VOID_ELEMENTS{$name};
+  my $block = ref($_[-1]) eq 'CODE' ? pop(@_) : undef;
+  my $attrs = ref($_[-1]) eq 'HASH' ? pop(@_) : +{};
+  my $view = exists $attrs->{view} ? delete $attrs->{view} : undef;
+  my @content = defined($block) ? $block->() : (shift || '');
+  my $content = $view ? $view->safe_concat(@content) : safe_concat(@content);
+
+  if(exists $attrs->{omit_tag}) {
+    my $omit_tag = delete $attrs->{omit_tag};
+    return $content if $omit_tag;  # ?? Does this need to be raw $content ??
+  }
+
+  my $tag = "<${name}@{[ _tag_options(%{$attrs}) ]}>${content}</${name}>";
+  return $view ? $view->raw($tag) : raw($tag);
+}
+
+sub concat_tags {
+  my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop @_ : +{};
+  return exists $attrs->{view} ? $attrs->{view}->safe_concat(@_) : safe_concat(@_);
+}
+
+sub _tag_options {
+  my (%attrs) = @_;
+  return '' unless %attrs;
+  my @attrs = ('');
+  foreach my $attr (sort keys %attrs) {
+    if($BOOLEAN_ATTRIBUTES{$attr}) {
+      push @attrs, $attr if $attrs{$attr};
+    } elsif($SUBHASH_ATTRIBUTES{$attr}) {
+      foreach my $subkey (sort keys %{$attrs{$attr}}) {
+        push @attrs, _tag_option("${attr}-@{[ _dasherize($subkey) ]}", $attrs{$attr}{$subkey});
+      }
+    } elsif($ARRAY_ATTRIBUTES{$attr}) {
+      my $class = ((ref($attrs{$attr})||'') eq 'ARRAY') ? join(' ', @{$attrs{$attr}}) : $attrs{$attr};
+      push @attrs, _tag_option($attr, $class);
+    } else {
+      push @attrs, _tag_option($attr, $attrs{$attr});
+    }
+  }
+  return join $ATTRIBUTE_SEPARATOR, @attrs;
+}
+
+sub _dasherize {
+  my $value = shift;
+  my $copy = $value;
+  $copy =~s/_/-/g;
+  return $copy;
+}
+
+sub _tag_option {
+  my ($attr, $value) = @_;
+  return qq[${attr}="@{[ escape_html(( defined($value) ? $value : '' )) ]}"];
+}
+
+
+
+## TODO ??
+## else for if, finally for repeat
+## ??? better $index for things like is_last is_first is_even/odd, etc ???
 
 sub text {
   my ($text, @rest) = @_;
@@ -70,81 +145,6 @@ our $sf = sub {
     return safe($format);
   }
 };
-
-sub _dasherize {
-  my $value = shift;
-  my $copy = $value;
-  $copy =~s/_/-/g;
-  return $copy;
-}
-
-sub _tag_options {
-  my (%attrs) = @_;
-  return '' unless %attrs;
-  my @attrs = ('');
-  foreach my $attr (sort keys %attrs) {
-    if($BOOLEAN_ATTRIBUTES{$attr}) {
-      push @attrs, $attr if $attrs{$attr};
-    } elsif($SUBHASH_ATTRIBUTES{$attr}) {
-      foreach my $subkey (sort keys %{$attrs{$attr}}) {
-        push @attrs, _tag_option("${attr}-@{[ _dasherize $subkey ]}", $attrs{$attr}{$subkey});
-      }
-    } elsif($ARRAY_ATTRIBUTES{$attr}) {
-      my $class = ((ref($attrs{$attr})||'') eq 'ARRAY') ? join(' ', @{$attrs{$attr}}) : $attrs{$attr};
-      push @attrs, _tag_option($attr, $class);
-    } else {
-      push @attrs, _tag_option($attr, $attrs{$attr});
-    }
-  }
-  return join $ATTRIBUTE_SEPARATOR, @attrs;
-}
-
-sub _tag_option {
-  my ($attr, $value) = @_;
-  return qq[${attr}="@{[ escape_html(( defined($value) ? $value : '' )) ]}"];
-}
-
-sub tag {
-  my ($name, $attrs) = (@_, +{});
-  if(exists $attrs->{omit_tag}) {
-    my $omit_tag = delete $attrs->{omit_tag};
-    return '' if $omit_tag;
-  }
-  my $view = exists $attrs->{view} ? delete $attrs->{view} : undef;
-  
-  die "'$name' is not a valid VOID HTML element" unless $HTML_VOID_ELEMENTS{$name};
-  my $tag = "<${name}@{[ _tag_options(%{$attrs}) ]}/>";
-  return $view ? $view->raw($tag) : raw $tag;
-
-}
-
-sub content_tag {
-  my $name = shift;
-  die "'$name' is a VOID HTML element" if $HTML_VOID_ELEMENTS{$name};
-  my $block = ref($_[-1]) eq 'CODE' ? pop(@_) : undef;
-  my $attrs = ref($_[-1]) eq 'HASH' ? pop(@_) : +{};
-  my $view = exists $attrs->{view} ? delete $attrs->{view} : undef;
-  my @content = defined($block) ? $block->() : (shift || '');
-
-  if(exists $attrs->{omit_tag}) {
-    my $omit_tag = delete $attrs->{omit_tag};
-    return $content if $omit_tag;
-  }
-  if($view) {
-    return $view->raw("<${name}@{[ _tag_options(%{$attrs}) ]}>@{[ $view->flattened_safe @content ]}</${name}>");
-  } else {
-    return raw "<${name}@{[ _tag_options(%{$attrs}) ]}>@{[ flattened_safe @content ]}</${name}>";
-  }
-}
-
-sub capture {
-  my $block = shift;
-  return flattened_safe $block->(@_);
-}
-
-## TODO ??
-## else for if, finally for repeat
-## ??? better $index for things like is_last is_first is_even/odd, etc ???
 
 our @_SWITCH_CTX = ();
 
@@ -233,7 +233,7 @@ sub html_content_tag {
           $index++;
         }
       }
-      $content = concat(@content);
+      $content = safe_concat(@content);
     }
     if(defined(my $switch = delete $attrs->{switch})) {
       local @_SWITCH_CTX = ();
@@ -245,10 +245,10 @@ sub html_content_tag {
       }
     }
     if(defined(my $scope = delete $attrs->{scope})) {
-      $content = concat($code->($scope));
+      $content = safe_concat($code->($scope));
     }
 
-    $content = concat($code->()) unless $content;
+    $content = safe_concat($code->()) unless $content;
   }
 
   return defined($content) ?
@@ -378,7 +378,7 @@ sub over {
     die "Not sure how to loop over $item_proto";
   }
 
-  return (concat(@items), @_);
+  return (safe_concat(@items), @_);
 }  
 
 sub loop(&;@) {
@@ -401,7 +401,7 @@ sub loop(&;@) {
     die "Not sure how to loop over $item_proto";
   }
 
-  return (concat(@items), @_);
+  return (safe_concat(@items), @_);
 }
 
 1;
@@ -464,28 +464,6 @@ safe by the user.  Example:
 For the block version of thie function, the coderef is permitted to return an array of strings
 all of which we processed for safeness and finally everything will be concatenated into a single
 string encapulated by L<Valiant::HTML::SafeString>.
-
-=head2 capture
-
-  capture \&block;
-  capture \&block, @args;
-
-Returns a L<Valiant::HTML::SafeString> encapsulated string which is the return value (or array of
-values) returned by C<block>. Any additional arguments passed to the function will be passed to the 
-coderef at execution time.  Useful when you need to have some custom logic in your tag building
-code.  Example:
-
-    capture sub {
-      if(shift) {
-        return content_tag 'a', +{ href=>'profile.html' };
-      } else {
-        return content_tag 'a', +{ href=>'login.html' };
-      }
-    }, 1;
-
-Would return:
-
-    <a href="profile.html">Profile</a>
 
 =head1 SEE ALSO
  

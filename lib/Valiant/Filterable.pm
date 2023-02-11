@@ -115,9 +115,6 @@ sub filters {
   foreach my $info(@filter_info) {
     my ($package_part, $args) = @$info;
     my $filter_package = $self->_filter_package($package_part);
-
-    use Devel::Dwarn;
-    Dwarn [$info, $package_part => $filter_package];
     
     unless( (ref($args)||'') eq 'HASH') {
       $args = $filter_package->normalize_shortcut($args);

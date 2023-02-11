@@ -1,5 +1,5 @@
 use Test::Most;
-use Valiant::HTML::TagBuilder 'tag', 'content_tag', 'capture';
+use Valiant::HTML::TagBuilder 'tag', 'content_tag';
 
 is tag('hr'), '<hr/>';
 is tag('hr', +{id=>'foo', class=>'bar', required=>1}), '<hr class="bar" id="foo" required/>';
@@ -19,15 +19,5 @@ my $block = content_tag div => +{id=>'top'}, sub {
 
 is ref($block), 'Valiant::HTML::SafeString';
 is $block, '<div id="top"><hr/>Content with evil &lt;a href&gt;aaa&lt;/a&gt;<input name="user" type="text"/><div id="inner">stuff</div></div>';
-
-my $capture = capture sub {
-  if(shift) {
-    return content_tag 'a', 'Profile', +{ href=>'profile.html' };
-  } else {
-    return content_tag 'a', 'Login', +{ href=>'login.html' };
-  }
-}, 1;
-
-is $capture, '<a href="profile.html">Profile</a>';
 
 done_testing;

@@ -2,9 +2,8 @@ package Valiant::HTML::FormTags;
 
 use warnings;
 use strict;
-use Exporter 'import'; # gives you Exporter's import() method directly
-use Valiant::HTML::TagBuilder ':all';
-use Valiant::HTML::Util::Collection;
+use Exporter 'import';
+use Valiant::HTML::TagBuilder 'tag', 'content_tag', 'concat_tags';
 use Scalar::Util (); 
 use Module::Runtime ();
 
@@ -213,21 +212,25 @@ sub select_tag {
   my $include_hidden = exists($attrs->{include_hidden}) ? delete($attrs->{include_hidden}) : 1;
   if(my $include_blank = delete $attrs->{include_blank}) {
     my $options_for_blank_options_tag = +{ value => '' };
+    $options_for_blank_options_tag->{view} = $attrs->{view} if exists $attrs->{view};
     if($include_blank eq '1') {
       $include_blank = '';
       $options_for_blank_options_tag->{label} = ' ';
     }
-    $option_tags = content_tag('option', $include_blank, $options_for_blank_options_tag)->concat($option_tags);
+    my $blank_options = content_tag('option', $include_blank, $options_for_blank_options_tag);
+    $option_tags = concat_tags($blank_options, $option_tags, $attrs);
   }
   if(my $prompt = delete $attrs->{prompt}) {
-      $option_tags = content_tag('option', $prompt, +{value=>''})->concat($option_tags);
+      my $prompt = content_tag('option', $prompt, +{value=>''});
+      $option_tags = concat_tags($prompt, $option_tags, $attrs);
   }
 
   $attrs = _merge_attrs(+{ name=>$html_name, id=>"@{[ _sanitize_to_id($name) ]}" }, $attrs);
   my $select_tag = content_tag('select', $option_tags, $attrs);
 
   if($attrs->{multiple} && $include_hidden) {
-    $select_tag = hidden_tag($html_name, '', +{id=>$attrs->{id}.'_hidden', value=>1})->concat($select_tag);    
+    my $hidden = hidden_tag($html_name, '', +{id=>$attrs->{id}.'_hidden', value=>1});
+    $select_tag = concat_tags($hidden, $select_tag, $attrs);
   }
   return $select_tag;
 }
@@ -252,9 +255,10 @@ sub options_for_select {
   my %selected_lookup = @selected_values ? (map { $_=>1 } @selected_values) : ();
   my %disabled_lookup = @disabled_values ? (map { $_=>1 } @disabled_values) : ();
 
-  my ($first, @options_for_select) = map { option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes) } @options;
+  my (@options_for_select) = map { option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes) } @options;
 
-  return  $first->concat(@options_for_select);
+  return $global_attributes{view}->safe_concat(@options_for_select) if exists $global_attributes{view};
+  return concat_tags(@options_for_select);
 }
 
 sub _normalize_options_for_select {
@@ -300,7 +304,7 @@ sub options_from_collection_for_select {
   }
 
   $collection->reset if $collection->can('reset');
-  return options_for_select \@options, +{ selected=>\@selected, disabled=>\@disabled, %global_attributes};
+  return options_for_select(\@options, +{ selected=>\@selected, disabled=>\@disabled, %global_attributes});
 }
 
 my %_sanitized_name_cache = ();

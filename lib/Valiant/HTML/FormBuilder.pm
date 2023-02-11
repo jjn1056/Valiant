@@ -1,13 +1,16 @@
 package Valiant::HTML::FormBuilder;
 
 use Moo;
+
 use Valiant::HTML::FormTags ();
 use Valiant::HTML::Form ();
 use Valiant::HTML::TagBuilder ();
 use Valiant::HTML::Util::Collection;
-
+use Valiant::HTML::Util::View;
 use Valiant::I18N;
+
 use Scalar::Util (); 
+use Module::Runtime ();
 
 with 'Valiant::Naming';
 
@@ -24,7 +27,7 @@ has name => ( is => 'ro', required => 1 );
 has options => ( is => 'ro', required => 1, default => sub { +{} } );  
 has index => ( is => 'ro', required => 0, predicate => 'has_index' );
 has namespace => ( is => 'ro', required => 0, predicate => 'has_namespace' );
-has view => ( is => 'ro', required => 1, predicate => 'has_view' );
+has view => ( is => 'ro', required => 1, lazy=>1, builder=>'_build_view' );
 has _theme => ( is => 'rw', required => 1, init_arg=>'theme', default => sub { +{} } );
 has _nested_child_index => (is=>'rw', init_arg=>undef, required=>1, default=>sub { +{} });
 
@@ -37,10 +40,17 @@ around BUILDARGS => sub {
   return $options;
 };
 
+sub _build_view {
+  my $self = shift;
+  return Module::Runtime::use_module($self->DEFAULT_VIEW)->new;
+}
+
 sub DEFAULT_MODEL_ERROR_MSG_ON_FIELD_ERRORS { return 'Your form has errors' }
 sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return 'invalid_form' }
 sub DEFAULT_COLLECTION_CHECKBOX_BUILDER { return 'Valiant::HTML::FormBuilder::Checkbox' }
 sub DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER { return 'Valiant::HTML::FormBuilder::RadioButton' }
+sub DEFAULT_VIEW { return 'Valiant::HTML::Util::View' }
+
 
 sub theme {
   my ($self) = @_;
@@ -114,7 +124,7 @@ sub model_errors {
 
   if(
     $self->model->has_errors &&     # We have errors
-    # !scalar(@errors) &&             # but no model errors
+    # !scalar(@errors) &&             # but no model errorsS_VIEW
     ($show_message_on_field_errors)   # And a default model error
   ) {
     unshift @errors, $self->_generate_default_model_error($show_message_on_field_errors);
@@ -148,6 +158,7 @@ sub _generate_default_model_error {
 
 sub _default_model_errors_content {
   my ($self, $options) = @_;
+  $options->{view} = $self->view;
   return sub {
     my (@errors) = @_;
     if( scalar(@errors) == 1 ) {
@@ -195,12 +206,12 @@ sub label {
   set_unless_defined(for => $options, $self->tag_id_for_attribute($attribute));
 
   $options = $self->merge_theme_field_opts(label=>$attribute, $options);
-  $options->{view} = $self->view if $self->has_view;
+  $options->{view} = $self->view;
 
   if((ref($content)||'') eq 'CODE') {
-    return Valiant::HTML::FormTags::label_tag($attribute, $options, sub { $content->($translated_attribute) } );
+    return Valiant::HTML::FormTags::label_tag($attribute, $self->process_options($attribute, $options), sub { $content->($translated_attribute) } );
   } else {
-    return Valiant::HTML::FormTags::label_tag($attribute, $content, $options);
+    return Valiant::HTML::FormTags::label_tag($attribute, $content, $self->process_options($attribute, $options));
   }
 }
 
@@ -225,7 +236,7 @@ sub errors_for {
   
   my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
   @errors = @errors[0..($max_errors-1)] if($max_errors);
-  $content = $self->_default_errors_for_content($options) unless defined($content);
+  $content = $self->_default_errors_for_content($self->process_options($attribute, $options)) unless defined($content);
 
   return $content->(@errors);  
 }
@@ -244,6 +255,8 @@ sub _default_errors_for_content {
 
 sub process_options {
   my ($self, $attribute, $options) = @_;
+  $options->{view} = $self->view;
+
   if( ($self->attribute_has_errors($attribute)) && (my $errors_attrs = delete $options->{errors_attrs})) {
     foreach my $key(keys %$errors_attrs) {
       if(exists $options->{$key}) {
@@ -345,7 +358,8 @@ sub checkbox {
 
   if($show_hidden_unchecked) {
     my $hidden_name = exists($options->{name}) ? $options->{name} : $name;
-    $checkbox = Valiant::HTML::TagBuilder::tag('input', +{type=>'hidden', name=>$hidden_name, value=>$unchecked_value})->concat($checkbox);
+    my $hidden_checkbox = Valiant::HTML::TagBuilder::tag('input', +{type=>'hidden', name=>$hidden_name, value=>$unchecked_value});
+    $checkbox = $self->view->safe_concat($hidden_checkbox, $checkbox);
   }
 
   return $checkbox;
@@ -518,7 +532,7 @@ sub fields_for {
   $options->{include_id} = $self->options->{include_id} if !exists($options->{include_id}) && !defined($options->{include_id}) && defined($self->options->{include_id});
   $options->{namespace} = $self->namespace if $self->has_namespace;
   $options->{parent_builder} = $self;
-  $options->{view} = $self->view if $self->has_view;
+  $options->{view} = $self->view;
 
   my $related_record = $self->tag_value_for_attribute($related_attribute);
   my $name = "@{[ $self->name ]}.@{[ $related_attribute ]}";
@@ -531,7 +545,7 @@ sub fields_for {
 
   # Ok is the related record a collection or something else.
   if($related_record->can('next')) {
-    my $output = undef;
+    my @output = ();
     my $explicit_child_index = exists($options->{child_index}) ? $options->{child_index} : undef;
 
     while(my $child_model = $related_record->next) {
@@ -541,12 +555,7 @@ sub fields_for {
         $options->{child_index} = $self->nested_child_index($related_attribute); 
       }
       my $nested = $self->fields_for_nested_model("${name}[@{[ $options->{child_index} ]}]", $child_model, $options, $codeblock);
-
-      if(defined $output) {
-        $output = $output->concat($nested);
-      } else {
-        $output = $nested;
-      }
+      push @output, $nested;
     }
     $related_record->reset if $related_record->can('reset');
     if($finally_block) {
@@ -557,14 +566,9 @@ sub fields_for {
         $options->{child_index} = $self->nested_child_index($related_attribute); 
       }
       my $finally_content = $self->fields_for_nested_model("${name}[@{[ $options->{child_index} ]}]", $finally_model, $options, $finally_block);
-      if(defined $output) {
-        $output = $output->concat($finally_content);
-      } else {
-        $output = $finally_content;
-      }
-
+      push @output, $finally_content;
     }
-    return defined($output) ? $output : '';
+    return $self->view->safe_concat(@output);
   } else {
     return $self->fields_for_nested_model($name, $related_record, $options, $codeblock);
   }
@@ -575,19 +579,20 @@ sub fields_for_nested_model {
   my $emit_hidden_id = 0;
   $model = $model->to_model if $model->can('to_model');
 
+  $options->{view} = $self->view unless exists $options->{view};
   if($model->can('in_storage') && $model->in_storage) {
     $emit_hidden_id = exists($options->{include_id}) ? $options->{include_id} : 1;
   }
 
   return Valiant::HTML::Form::fields_for($name, $model, $options, sub {
     my $fb = shift;
-    my $output = Valiant::HTML::FormTags::capture($codeblock, $fb, $model);
-    if($output && $emit_hidden_id && $model->can('primary_columns')) {
+    my @output = $codeblock->($fb, $model);
+    if(@output && $emit_hidden_id && $model->can('primary_columns')) {
       foreach my $id_field ($model->primary_columns) {
-        $output = $output->concat($fb->hidden($id_field)); #TODO this cant be right...
+        push @output, $fb->hidden($id_field); #TODO this cant be right...
       }
     }
-    return $output;
+    return $self->view->safe_concat(@output);
   });
 }
 
@@ -640,13 +645,13 @@ sub select {
     my $option_tags_proto = @_ ? shift : ();
     my @disabled = ( @{delete($options->{disabled})||[]});
     @selected = @{ delete($options->{selected})||[]} if exists($options->{selected});
-
     $options_tags = Valiant::HTML::FormTags::options_for_select($option_tags_proto, +{
       selected => \@selected,
       disabled => \@disabled,
+      view => $self->view,
     });
   } else {
-    $options_tags = Valiant::HTML::FormTags::capture($block, $model, $attribute_proto, @selected);
+    $options_tags = $self->view->safe_concat($block->($model, $attribute_proto, @selected));
   }
 
   $options->{include_hidden} = 0 if $options->{multiple};
@@ -654,9 +659,11 @@ sub select {
   if($include_hidden && $options->{multiple}) {
     if(ref($attribute_proto)) {
       my ($bridge, $value_method) = %$attribute_proto;
-      $select_tag = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'})->concat($select_tag);
+      my $hidden = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'});
+      $select_tag = $self->view->safe_concat($hidden, $select_tag);
     } elsif(defined $unselected_default) {
-      $select_tag = $self->hidden("${attribute_proto}[0]", +{value=>$unselected_default, id=>$options->{id}.'_hidden'})->concat($select_tag)
+      my $hidden = $self->hidden("${attribute_proto}[0]", +{value=>$unselected_default, id=>$options->{id}.'_hidden'});
+      $select_tag = $self->view->safe_concat($hidden, $select_tag);
     }
   }
   return $select_tag;
@@ -718,7 +725,8 @@ sub collection_select {
 
   if($include_hidden && ref($method_proto)) {
     my ($bridge, $value_method) = %$method_proto;
-    $select_tag = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'})->concat($select_tag);    
+    my $hidden = $self->hidden("${bridge}[0]._nop", +{value=>1, id=>$options->{id}.'_hidden'});
+    $select_tag = $self->view->safe_concat($hidden, $select_tag);    
   }
 
   return $select_tag;
@@ -768,10 +776,10 @@ sub collection_checkbox {
     attribute_value_method => $attribute_value_method,
     parent_builder => $self,
     attribute => $attribute,
+    view => $self->view,
     errors => [$model->errors->where($attribute)],
   };
   $checkbox_builder_options->{namespace} = $self->namespace if $self->has_namespace;
-  $checkbox_builder_options->{view} = $self->view if $self->has_view;
 
   $collection = $model->$collection unless Scalar::Util::blessed($collection);
 
@@ -796,7 +804,7 @@ sub collection_checkbox {
     push @checkboxes, $codeblock->($checkbox_fb);
   }
   $collection->reset if $collection->can('reset');
-  my $checkbox_content = shift(@checkboxes)->concat(@checkboxes);
+  my $checkbox_content = $self->view->safe_concat(@checkboxes);
 
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
@@ -814,7 +822,7 @@ sub _default_collection_checkbox_content {
     my ($fb) = @_;
     my $label = $fb->label;
     my $checkbox = $fb->checkbox;
-    return $label->concat($checkbox);
+    return $self->view->safe_concat($label, $checkbox);
   };
 }
 
@@ -843,10 +851,10 @@ sub collection_radio_buttons {
     checked_value => $checked_value,
     parent_builder => $self,
     attribute => $attribute,
+    view => $self->view,
     errors => [$model->errors->where($attribute)],
   };
   $radio_buttons_builder_options->{namespace} = $self->namespace if $self->has_namespace;
-  $radio_buttons_builder_options->{view} = $self->view if $self->has_view;
 
   $collection = $model->$collection unless Scalar::Util::blessed($collection);
 
@@ -866,7 +874,7 @@ sub collection_radio_buttons {
     push @radio_buttons, $codeblock->($radio_button_fb);
   }
   $collection->reset if $collection->can('reset');
-  my $radios = shift(@radio_buttons)->concat(@radio_buttons);
+  my $radios = $self->view->safe_concat(@radio_buttons);
 
   my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
   $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
@@ -884,7 +892,7 @@ sub _default_collection_radio_buttons_content {
     my ($fb) = @_;
     my $label = $fb->label();
     my $checkbox = $fb->radio_button();
-    return $label->concat($checkbox);
+    return $self->view->safe_concat($label, $checkbox);
   };
 }
 
@@ -1046,25 +1054,35 @@ If you provide a view it should provide the following API methods:
 
 =item raw
 
-given a string or an array of strings concatenate them into a single tagged object which is marked
-as safe for display.  Do not do any HTML escaping on the strings.  This is used when you want to pass
-strings straight to display and that you know is safe.  Be careful with this to avoid HTML injection
-attacks.
+given a string return a single tagged object which is marked as safe for display.  Do not do any HTML 
+escaping on the string.  This is used when you want to pass strings straight to display and that you 
+know is safe.  Be careful with this to avoid HTML injection attacks.
 
 =item safe
 
-given a string or an array of strings concatenate them into a single tagged object which is marked
-as safe for display. For each item perform html escaping and mark the string as safe unless its already
-been done (no double escaping).
+given a string return a single tagged object which is marked as safe for display.  First HTML escape the
+string as safe unless its already been done (no double escaping).
+
+=item safe_concat
+
+Same as C<safe> but instead works an an array of strings (or mix of strings and safe string objects) and
+concatenates them all into one big safe marked string.
 
 =item html_escape
 
-Given a string or array of strings return a single string that has been HTML escaped.
+Given a string return string that has been HTML escaped.
+
+=item read_attribute_for_view
+
+Given an attribute name return the value that the view has defined for it.  
 
 =back
 
-Both C<raw> and C<safe> should return a 'tagged' object which is specific to your view or template system.
-However this object must 'stringify' to the safe version of the string to be displayed.
+Both C<raw>, C<safe> and C<safe_concat> should return a 'tagged' object which is specific to your view or
+template system. However this object must 'stringify' to the safe version of the string to be displayed.  See
+L<Valiant::HTML::SafeString> for example API.  We use <Valiant::HTML::SafeString> internally to provide
+safe escaping if you're view doesn't do automatic escaping, as many older template systems like Template
+Toolkit.
 
 B<NOTE>: In the future the view API might change so keep an eye on this spot.
 

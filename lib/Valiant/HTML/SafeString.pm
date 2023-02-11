@@ -11,8 +11,8 @@ use overload
   '""' => sub { shift->to_string },
   fallback => 1;
 
-our @EXPORT_OK = qw(raw flattened_raw safe flattened_safe is_safe escape_html concat);
-our %EXPORT_TAGS = (all => \@EXPORT_OK);
+our @EXPORT_OK = qw(raw flattened_raw safe flattened_safe is_safe escape_html safe_concat concat);
+our %EXPORT_TAGS = (all => \@EXPORT_OK, core => ['raw', 'safe', 'escape_html', 'safe_concat']);
 
 sub _make_safe {
   my $string_to_make_safe = shift;
@@ -53,6 +53,8 @@ sub safe {
     return map { is_safe($_) ? $_ : _make_safe(escape_html($_)) } @_;
   }
 }
+
+sub safe_concat { return flattened_safe(@_) }
 
 sub flattened_safe {
   my $string = join '', map { is_safe($_) ? $_->to_string : escape_html($_) } grep { defined($_) } @_;
