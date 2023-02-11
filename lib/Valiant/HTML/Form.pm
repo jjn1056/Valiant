@@ -141,7 +141,7 @@ sub form_for {
   return Valiant::HTML::FormTags::form_tag $html_options, sub {
     my @content = $content_block_coderef->($builder, $model);
     push @content, Valiant::HTML::FormTags::hidden_tag('csrf_token', {value=>$csrf_token, view=>$view}) if $csrf_token;
-    my $content = $builder->safe_concat(@content);
+    my $content = $builder->view->safe_concat(@content);
     return $content;
   };
 }

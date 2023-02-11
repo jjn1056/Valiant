@@ -19,13 +19,12 @@ sub prepare_build_args($class, $c, $model, $options={}, @args) {
   return model => $model, options => $options, @args;
 };
 
-sub execute_code_callback {
-  my ($self, @args) = @_;
+sub execute_code_callback($self, @args) {
   return form_for $self->model, +{ 
     action => $self->ctx->req->uri, 
     csrf_token => $self->ctx->csrf_token,
     builder => "@{[ $self->app ]}::FormBuilder",
-    view => $self->root,
+    ##view => $self->root,
     %{$self->options}, 
   }, sub($ff, $model) {
     $self->form_builder($ff);

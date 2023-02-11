@@ -42,7 +42,7 @@ sub root :Chained(../root) PathPart('') CaptureArgs(0) ($self, $c, $collection) 
     }
 
     sub delete_contact :DELETE Chained(setup_edit) PathPart('') Args(0) ($self, $c, $contact) {
-      return $contact->delete && $c->redirect_to_action('*ContactsList');
+      return $contact->delete && $c->redirect_to_action('../list');
     }
 
 __PACKAGE__->meta->make_immutable;
