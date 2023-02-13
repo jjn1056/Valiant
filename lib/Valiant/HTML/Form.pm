@@ -101,11 +101,13 @@ sub _model_id_for_dom_id {
 # html: additional hash of values for html attributes
 
 sub form_for {
-  my $model = shift; # required; at the start
+  my $model_proto = shift; # required; at the start
   my $content_block_coderef = pop; # required; at the end
   my $options = @_ ? shift : +{};
-  my $model_name = exists $options->{as} ? $options->{as} : _model_name_from_object_or_class($model)->param_key;
   my $view = exists $options->{view} ? $options->{view} : undef;
+  my $model = Scalar::Util::blessed($model_proto) ? $model_proto : $view->read_attribute_for_view($model_proto);
+  my $model_name = exists $options->{as} ? $options->{as} : _model_name_from_object_or_class($model)->param_key;
+  
   _apply_form_options($model, $options);
 
   my $html_options = $options->{html};
@@ -318,6 +320,12 @@ The following functions can be exported by this library
 
 =head2 form_for
 
+    form_for $model, \%options, \&block;
+    form_for $model, \&block;
+
+Example.  C<$person> is either an object or the name of an attribute on the C<$view> that
+will supply the object.
+
     form_for($person, sub($fb, $person) {
       $fb->input('name');
       $fb->label('name');
@@ -334,6 +342,8 @@ Given a model as described above, wrap a L<Valiant::HTML::FormBuilder> instance 
 provides methods for generating valid HTML form output.  This provides a view logic centered
 method for creating sensible and reusable form controls which include server generated error
 output from validation.
+
+The
 
 See L<Valiant::HTML::FormBuilder> for more on the formbuilder API.
 
@@ -383,6 +393,10 @@ model.
 
 The form builder.   Defaults to L<Valiant::HTML::FormBuilder>.  You can set this if you
 create your own formbuilder subclass and want to use that.
+
+=item view
+
+The view or template object to which the form is attached.
 
 =back
 

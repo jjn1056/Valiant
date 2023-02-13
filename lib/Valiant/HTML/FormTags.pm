@@ -256,9 +256,7 @@ sub options_for_select {
   my %disabled_lookup = @disabled_values ? (map { $_=>1 } @disabled_values) : ();
 
   my (@options_for_select) = map { option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes) } @options;
-
-  return $global_attributes{view}->safe_concat(@options_for_select) if exists $global_attributes{view};
-  return concat_tags(@options_for_select);
+  return concat_tags(@options_for_select, \%global_attributes);
 }
 
 sub _normalize_options_for_select {

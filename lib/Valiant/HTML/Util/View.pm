@@ -72,7 +72,7 @@ Given an attribute name return the value that the view has defined for it.
 
 =head1 SEE ALSO
 
-L<Valiant>, L<Valiant::HTML::SafeString>, L<Valiant::HTML::Formbuilder>
+L<Valiant>, L<Valiant::HTML::SafeString>, L<Valiant::HTML::FormBuilder>
 
 =head1 AUTHOR
  

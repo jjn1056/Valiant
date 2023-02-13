@@ -911,7 +911,7 @@ sub radio_buttons {
 
 =head1 NAME
 
-Valiant::HTML::Formbuilder - General HTML Forms
+Valiant::HTML::FormBuilder - General HTML Forms
 
 =head1 SYNOPSIS
 

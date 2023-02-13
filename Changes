@@ -35,7 +35,7 @@ The following logs changes for the CPAN distribution Valiant
           - New DBIC result method set_columns_recursively
           - Move the DBIC resultset validator for set size into its own module (SetSize)
           - Valiant::HTML::Form checks its model for a csrf_token
-          - numerous non breaking bug fixes to Valiant::HTML::Formbuilder
+          - numerous non breaking bug fixes to Valiant::HTML::FormBuilder
           - 'read_attribute_for_html' allows a model to tell the formbuilder how to
             read attributes for display purposes.  Useful for deflating or reformatting
           - enhancements to Valiant::HTML::Tagbuilder
