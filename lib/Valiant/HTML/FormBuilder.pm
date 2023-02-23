@@ -860,7 +860,9 @@ sub collection_radio_buttons {
 
   while (my $radio_button_model = $collection->next) {
     my $name = "@{[ $self->name ]}.${attribute}";
-    my $current_value = $radio_button_model->can('read_attribute_for_html') ? $radio_button_model->read_attribute_for_html($value_method) : $radio_button_model->$value_method;
+    my $current_value = $radio_button_model->can('read_attribute_for_html') ?
+      $radio_button_model->read_attribute_for_html($value_method) :
+      $radio_button_model->$value_method;
     my $checked = $current_value eq ($checked_value||'') ? 1:0;
 
     if($include_hidden && !scalar(@radio_buttons) ) { # Add nop as first to handle empty list
@@ -1036,6 +1038,23 @@ The current index of a collection for which the current formbuilder is one item 
 
 Used to add a prefix to the ID for your form elements.
 
+=head2 allow_method_names_outside_model
+
+Default is false.  Generally we expect C<method_name> to be an actual method on the
+C<model> and if its not we expect an exception.  This helps to prevent typos from
+leading to unexpected results.  However sometimes you may wish create a form field that
+has a name that isn't on the model but still respects the current namespace and index.
+These names would appear in the POST request body and could be used for things other than
+updating or creating a model.
+
+=head2 skip_default_ids
+
+Defaults to false.  Generally we create an html C<id> attribute for the field based
+on a convention which includes the model name, index and method name.  Setting this
+to true prevents that so you should set C<id> manually unless you don't want them.
+Please note that even if this is false, you can always override the C<id> on a per
+field basis by setting it manually.
+
 =head2 view
 
 Optional.  The view or template object that is using the formbuilder.  If available can be used to
@@ -1050,7 +1069,7 @@ fine.
 
 If you provide a view it should provide the following API methods:
 
-=over
+=over 4
 
 =item raw
 

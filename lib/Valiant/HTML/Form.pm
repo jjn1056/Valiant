@@ -107,6 +107,8 @@ sub form_for {
   my $view = exists $options->{view} ? $options->{view} : undef;
   my $model = Scalar::Util::blessed($model_proto) ? $model_proto : $view->read_attribute_for_view($model_proto);
   my $model_name = exists $options->{as} ? $options->{as} : _model_name_from_object_or_class($model)->param_key;
+
+  $options->{allow_method_names_outside_object} = 1 unless exists $options->{allow_method_names_outside_object};
   
   _apply_form_options($model, $options);
 

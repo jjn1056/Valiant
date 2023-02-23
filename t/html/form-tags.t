@@ -80,6 +80,12 @@ is password_tag('user_id', 100), '<input id="user_id" name="user_id" type="passw
 is password_tag('user_id'), '<input id="user_id" name="user_id" type="password"/>';
 is password_tag({class=>'foo'}), '<input class="foo" type="password"/>';
 
+is legend_tag('test', +{class=>'foo'}), '<legend class="foo">test</legend>';
+is legend_tag('test'), '<legend>test</legend>';
+is legend_tag({class=>'foo'}, sub { 'test' }), '<legend class="foo">test</legend>';
+is legend_tag(sub { 'test' }), '<legend>test</legend>';
+is legend_tag({class=>['foo']}, sub { 'test' }), '<legend class="foo">test</legend>';
+
 is select_tag("people", raw("<option>David</option>")),
   '<select id="people" name="people"><option>David</option></select>';
 
@@ -124,11 +130,5 @@ is options_from_collection_for_select($collection, 'value', 'label', +{selected=
 
 is options_from_collection_for_select($collection, 'value', 'label', sub { shift->value eq 'a'} ),
   '<option value="value">label</option><option selected value="a">A</option><option value="b">B</option><option value="c">C</option>';
-
-is legend_tag('test', +{class=>'foo'}), '<legend class="foo">test</legend>';
-is legend_tag('test'), '<legend>test</legend>';
-is legend_tag({class=>'foo'}, sub { 'test' }), '<legend class="foo">test</legend>';
-is legend_tag(sub { 'test' }), '<legend>test</legend>';
-is legend_tag({class=>['foo']}, sub { 'test' }), '<legend class="foo">test</legend>';
 
 done_testing;

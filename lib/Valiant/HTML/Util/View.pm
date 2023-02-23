@@ -7,7 +7,7 @@ use Valiant::HTML::SafeString ();
 sub safe { shift; return Valiant::HTML::SafeString::safe(@_) }
 sub raw { shift; return Valiant::HTML::SafeString::raw(@_) }
 sub safe_concat { shift; return Valiant::HTML::SafeString::safe_concat(@_) }
-sub html_escape { shift; return Valiant::HTML::SafeString::html_escape(@_) }
+sub escape_html { shift; return Valiant::HTML::SafeString::escape_html(@_) }
 
 sub read_attribute_for_view {
   my ($self, $attribute) = @_;
@@ -62,7 +62,7 @@ string as safe unless its already been done (no double escaping).
 Same as C<safe> but instead works an an array of strings (or mix of strings and safe string objects) and
 concatenates them all into one big safe marked string.
 
-=head2 html_escape
+=head2 escape_html
 
 Given a string return string that has been HTML escaped.
 

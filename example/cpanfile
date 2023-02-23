@@ -15,7 +15,7 @@ requires 'Catalyst::Plugin::CSRFToken', '0.001';
 requires 'CatalystX::Errors', '0.001009';
 requires 'CatalystX::RequestModel', '0.012';
 requires 'Catalyst::ControllerPerContext', '0.002';
-requires 'Catalyst::View::BasePerRequest', '0.009';
+requires 'Catalyst::View::BasePerRequest', '0.010';
 requires 'Catalyst::ActionRole::RenderView', '0.001';
 
 requires 'DBIx::Class', '0.082840';
