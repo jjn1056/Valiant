@@ -51,6 +51,7 @@ sub DEFAULT_COLLECTION_CHECKBOX_BUILDER { return 'Valiant::HTML::FormBuilder::Ch
 sub DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER { return 'Valiant::HTML::FormBuilder::RadioButton' }
 sub DEFAULT_VIEW { return 'Valiant::HTML::Util::View' }
 
+sub id { return shift->options->{id} }
 
 sub theme {
   my ($self) = @_;
@@ -104,6 +105,7 @@ sub attribute_has_errors {
 }
 
 # Public methods for HTML generation
+
 # $fb->model_errors()
 # $fb->model_errors(\%options)
 # $fb->model_errors(\%options, \&template)

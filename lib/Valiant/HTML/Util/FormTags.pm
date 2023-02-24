@@ -2,6 +2,8 @@ package Valiant::HTML::Util::FormTags;
 
 use Moo;
 use Valiant::HTML::Util::Collection;
+use Scalar::Util;
+use URI;
 
 extends 'Valiant::HTML::Util::TagBuilder';
 
@@ -29,7 +31,7 @@ sub _humanize {
 
 sub _prepend_block {
   my ($self, $block, @bits) = @_;
-  return sub { return @bits, $block->() };
+  return sub { return @bits, $block->($self) };
 }
 
 # _merge_attrs does a smart merge of two hashrefs that represent HTML tag attributes.  This
@@ -110,12 +112,17 @@ sub fieldset_tag {
   return $self->tags->fieldset($attrs, $block);
 }
 
+# $tb->form_tag($url_info, \%attrs, \&content);
+# $tb->form_tag($url_info, \&content);
+
 sub form_tag {
   my $self = shift;
   my $content = pop @_; # required
   my $attrs = ref($_[-1])||'' eq 'HASH' ? pop(@_) : +{};
   my $url_info = @_ ? shift : undef;
   $attrs = $self->_process_form_attrs($url_info, $attrs);
+  $content = $self->_process_content($content, $attrs);
+
   return $self->tags->form($attrs, $content);
 }
 
@@ -124,7 +131,28 @@ sub _process_form_attrs {
   $attrs->{action} = $url_info if $url_info;
   $attrs->{method} ||= 'post';
   $attrs->{'accept-charset'} ||= 'UTF-8';
+  $self->_process_method($attrs);
   return $attrs;
+}
+
+sub _process_method {
+  my ($self, $attrs) = @_;
+  return unless delete $attrs->{tunneled_method};
+  return if (lc($attrs->{method}) eq 'post') || (lc($attrs->{method}) eq 'get');
+
+  my $uri = Scalar::Util::blessed($attrs->{action}||'') ? $attrs->{action} : URI->new( $attrs->{action}||'');
+  my $params = $uri->query_form_hash;
+
+  $params->{'x-tunneled-method'} = $attrs->{method};
+  $uri->query_form($params);
+  $attrs->{action} = $uri;
+  $attrs->{method} = 'post';
+}
+
+sub _process_content {
+  my ($self, $content, $attrs) = @_;
+  return $content unless my $csrf_token = delete $attrs->{csrf_token};
+  return $self->_prepend_block($content, $self->hidden_tag('csrf_token', $csrf_token));
 }
 
 sub label_tag {
@@ -169,8 +197,15 @@ sub radio_button_tag {
   my ($name, $value) = (shift @_, shift @_);
   my $attrs = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   my $checked = @_ ? shift(@_) : 0;
-  $attrs = $self->_merge_attrs(+{type=>'radio', name=>$name, value=>$value, id=>"@{[ $self->_sanitize_to_id($name) ]}_@{[ $self->_sanitize_to_id($value) ]}" }, $attrs);
+
+  $attrs = $self->_merge_attrs(+{
+    type=>'radio', 
+    name=>$name, 
+    value=>$value, 
+    id=>"@{[ $self->_sanitize_to_id($name) ]}_@{[ $self->_sanitize_to_id($value) ]}"
+  }, $attrs);
   $attrs->{checked} = 'checked' if $checked;
+
   return $self->input_tag($attrs);
 }
 
@@ -200,6 +235,7 @@ sub submit_tag {
 
 # legend_tag $value, \%attrs
 # legend_tag \%attrs, \&block
+
 sub legend_tag {
   my $self = shift;
   my $content = (ref($_[-1])||'') eq 'CODE' ? pop(@_) : shift(@_);
@@ -267,8 +303,10 @@ sub options_for_select {
   
   my %selected_lookup = @selected_values ? (map { $_=>1 } @selected_values) : ();
   my %disabled_lookup = @disabled_values ? (map { $_=>1 } @disabled_values) : ();
+  my (@options_for_select) = map {
+    $self->option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes);
+    } @options;
 
-  my (@options_for_select) = map { $self->option_for_select($_, \%selected_lookup, \%disabled_lookup, \%global_attributes) } @options;
   return $self->join_tags(@options_for_select);
 }
 
@@ -332,11 +370,17 @@ sub _sanitize {
 
 sub field_value {
   my ($self, $model, $attribute) = @_;
-  return  $model->can('read_attribute_for_html') ? $model->read_attribute_for_html($attribute) : $model->$attribute;
+  return  $model->can('read_attribute_for_html') ? 
+    $model->read_attribute_for_html($attribute) :
+      $model->$attribute;
 }
 
 sub field_id {
-  my ($self, $model_name, $attribute, $options, @extra) = @_;
+  my ($self, $model_or_model_name, $attribute, $options, @extra) = @_;
+  my $model_name = Scalar::Util::blessed($model_or_model_name) ? 
+    $model_or_model_name->model_name->singular : 
+      $model_or_model_name;
+
   my $sanitized_object_name = $self->_sanitize($model_name);
   my $id = exists($options->{namespace}) ? $options->{namespace} . '_' : '';
 
@@ -362,6 +406,8 @@ sub field_name {
 1;
 
 =head1 NAME
+
+
 
 Valiant::HTML::Util::FormTags - HTML Form Tags
 
@@ -426,6 +472,8 @@ L<Valiant::HTML::SafeString> for example API.  We use L<Valiant::HTML::SafeStrin
 safe escaping if you're view doesn't do automatic escaping, as many older template systems like Template
 Toolkit.
 
+See L<Valiant::HTML::Util::View> for a simple view object that provides these methods.
+
 =head1 INHERITANCE
 
 This class extends L<Valiant::HTML::Util::TagBuilder> and inherits all methods from that class.
@@ -487,7 +535,7 @@ Create a C<fieldset> with inner content.  Example:
     $tb->legend_tag($legend);
     $tb->legend_tag(\%html_attrs, \&content_block);
     $tb->legend_tag(\&content_block);
-B
+
 Create an HTML form legend tag and content.  Examples:
 
     $tb->legend_tag('test', +{class=>'foo'});
@@ -519,6 +567,48 @@ Produces:
       <input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/>
     </form>';
 
+In general C<\%attrs> are expected to be HTML attributes.  However, the following special attributes
+are supported:
+
+=over 4
+
+=item csrf_token
+
+If set, will use the value given to generate a hidden input tag with the name C<csrf_token> and the value.
+Example:
+
+    my $csrf_token = "1234567890";
+    $tb->form_tag('/user', +{ csrf_token=>$csrf_token }, sub {
+      $tb->checkbox_tag('username', +{class=>'aaa'});
+    });
+
+Produces:
+  
+    <form accept-charset="UTF-8" action="/user" class="form" method="POST">
+      <input class="aaa" id="username" name="username" type="checkbox" value="1"/>
+      <input name="csrf_token" type="hidden" value="1234567890"/>
+    </form>';
+
+=item tunneled_method
+
+If set, will change any C<method> attribute to C<POST> and add a query parameter to
+the action URL with the name C<_method> and the value of the C<method> attribute.  Example:
+
+    $tb->form_tag('/user', +{ method=>'DELETE', tunneled_method=>1 }, sub {
+      $tb->checkbox_tag('username', +{class=>'aaa'});
+    });
+
+Produces:
+  
+    <form accept-charset="UTF-8" action="/user?_method=DELETE" class="form" method="POST">
+      <input class="aaa" id="username" name="username" type="checkbox" value="1"/>
+    </form>';
+
+Useful for browsers that don't support C<PUT> or C<DELETE> methods in forms (which is most of them).
+
+=back
+
+These special attributes will be removed from the attributes list before generating the HTML tag
 
 =head2 label_tag
 

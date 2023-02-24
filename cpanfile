@@ -20,7 +20,7 @@ requires 'overload';
 requires 'DBIx::Class';
 requires 'Sub::Util';
 requires 'HTML::Escape';
-requires 'URI';
+requires 'URI', '5.17';
 requires 'Module::Pluggable::Object';
 requires 'Class::Method::Modifiers';
 

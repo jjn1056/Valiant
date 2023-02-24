@@ -133,4 +133,19 @@ is $tb->options_from_collection_for_select($collection, 'value', 'label', +{sele
 is $tb->options_from_collection_for_select($collection, 'value', 'label', sub { shift->value eq 'a'} ),
   '<option value="value">label</option><option selected value="a">A</option><option value="b">B</option><option value="c">C</option>';
 
+is $tb->form_tag('/user', +{ class=>'form', method=>'put', csrf_token=>'toke-me' }, sub {
+  my $form_tb = shift;
+  is ref($form_tb), 'Valiant::HTML::Util::FormTags';
+    $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
+  }), '<form accept-charset="UTF-8" action="/user" class="form" method="put">'.
+      '<input id="csrf_token" name="csrf_token" type="hidden" value="toke-me"/>'.
+      '<input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
+
+is $tb->form_tag('/user', +{ class=>'form', method=>'put', tunneled_method=>1 }, sub {
+  my $form_tb = shift;
+  is ref($form_tb), 'Valiant::HTML::Util::FormTags';
+    $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
+  }), '<form accept-charset="UTF-8" action="/user?x-tunneled-method=put" class="form" method="post">'.
+      '<input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
+
 done_testing;
