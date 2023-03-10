@@ -518,13 +518,13 @@ attribute will default to '1' and the control is unchecked by default.
 Create a C<fieldset> with inner content.  Example:
 
     $tb->fieldset_tag(sub {
-      button_tag 'username';
+      $tb->button_tag('username');
     });
 
     # <fieldset><button name="button">username</button></fieldset>
   
     $tb->fieldset_tag('Info', sub {
-      button_tag 'username';
+      $tb->button_tag('username');
     });
 
     # <fieldset><legend>Info</legend><button name="button">username</button></fieldset>
@@ -553,7 +553,7 @@ Create an HTML form legend tag and content.  Examples:
 =head2 form_tag
 
     $tb->form_tag('/signup', \%attrs, \&content)
-    $tb->form_tag(\@args, +{ uri_for=>sub {...}, %attrs }, \&content)
+    $tb->form_tag(\@args, \%attrs, \&content)
 
 Create a form tag with inner content.  Example:
 
@@ -608,7 +608,7 @@ Useful for browsers that don't support C<PUT> or C<DELETE> methods in forms (whi
 
 =back
 
-These special attributes will be removed from the attributes list before generating the HTML tag
+These special attributes will be removed from the attributes list before generating the HTML tag.
 
 =head2 label_tag
 
