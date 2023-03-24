@@ -3,7 +3,6 @@ package Example::View::HTML::Todos;
 use Moo;
 use Example::Syntax;
 use Valiant::HTML::TagBuilder qw(:table div fieldset a b u span);
-use Valiant::HTML::Form 'fields_for';
 
 extends 'Example::View::HTML';
 

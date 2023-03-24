@@ -24,7 +24,6 @@ update: update_cpanlib update_db
 server:
 	@DBIC_TRACE=1 perl -Ilib -I ../lib/ \
 	-I /Users/jnapiorkowski/Desktop/Catalyst/Catalyst-Runtime/lib \
-	-I /Users/jnapiorkowski/Desktop/Catalyst-View-BasePerRequest/lib \
 	./lib/Example/PSGI.pm
 
 dependencies:

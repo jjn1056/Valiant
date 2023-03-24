@@ -141,7 +141,8 @@ sub register($self, $request) {
 }
 
 sub update_account($self, $request) {
-  $self->context('account')->update($request->nested_params);
+  $self->context('account')->set_columns_recursively($request->nested_params);
+ $self->context('account')->update; 
   return $self;
 }
 

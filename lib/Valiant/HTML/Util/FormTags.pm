@@ -40,13 +40,16 @@ sub _prepend_block {
 # first (unless its a special attributes like 'data' or 'class'
 
 sub _merge_attrs {
-  my ($self, $attrs1, $attrs2) = @_;
-  foreach my $key (keys %{$attrs2||{}}) {
+  my ($self, $attrs1, $attrs2, @list) = @_;
+  my $overide = @list ? 0 : 1;
+  @list = keys %{$attrs2||{}} unless @list;
+  foreach my $key (@list) {
+    next unless exists $attrs2->{$key}; # Don't create from @list, don't bother if not existing
     if( ($key eq 'data') || ($key eq 'aria')) {
       my $data1 = exists($attrs1->{$key}) ? $attrs1->{$key} : +{};
       my $data2 = exists($attrs2->{$key}) ? $attrs2->{$key} : +{};
       $attrs1->{$key} = +{ %$data1, %$data2 };
-    } elsif($key eq 'class') {
+    } elsif($key eq 'class' || $key eq 'style') {
       my $data = $attrs2->{$key};
       my @data = ref($data) ? @$data : ($data);
       if(exists $attrs1->{$key}) {
@@ -56,10 +59,10 @@ sub _merge_attrs {
           $attrs1->{$key} = [$attrs1->{$key}, @data];
         }
       } else {
-        $attrs1->{$key} = $attrs2->{$key};
+        $attrs1->{$key} = $attrs2->{$key} if($overide || !exists $attrs1->{$key});
       }
     } else {
-      $attrs1->{$key} = $attrs2->{$key};
+      $attrs1->{$key} = $attrs2->{$key} if($overide || !exists $attrs1->{$key});
     }
   }
   return $attrs1;
@@ -132,6 +135,9 @@ sub _process_form_attrs {
   $attrs->{method} ||= 'post';
   $attrs->{'accept-charset'} ||= 'UTF-8';
   $self->_process_method($attrs);
+  $attrs->{enctype} ||= $attrs->{method} eq 'get' ?
+    'application/x-www-form-urlencoded' :
+      'application/x-www-form-urlencoded'; ##'multipart/form-data';
   return $attrs;
 }
 
@@ -359,6 +365,7 @@ sub options_from_collection_for_select {
 my %_sanitized_name_cache = ();
 sub _sanitize {
   my ($self, $value) = (shift(), shift());
+  return unless defined($value);
   return $_sanitized_name_cache{$value} if exists $_sanitized_name_cache{$value};
 
   my $original_value = $value;
@@ -370,9 +377,9 @@ sub _sanitize {
 
 sub field_value {
   my ($self, $model, $attribute) = @_;
-  return  $model->can('read_attribute_for_html') ? 
-    $model->read_attribute_for_html($attribute) :
-      $model->$attribute;
+  return $model->read_attribute_for_html($attribute) if $model->can('read_attribute_for_html');
+  return $model->$attribute if $model->can($attribute);
+  return ''; # TODO should look at $formbuilder->options->{allow_method_names_outside_object}
 }
 
 sub field_id {
@@ -384,9 +391,13 @@ sub field_id {
   my $sanitized_object_name = $self->_sanitize($model_name);
   my $id = exists($options->{namespace}) ? $options->{namespace} . '_' : '';
 
-  $id .= exists($options->{index}) ?
-    "@{[ $sanitized_object_name ]}_@{[ $options->{index} ]}_${attribute}" :
-    "@{[ $sanitized_object_name ]}_${attribute}";
+  if($sanitized_object_name) {
+    $id .= exists($options->{index}) ?
+      "@{[ $sanitized_object_name ]}_@{[ $options->{index} ]}_${attribute}" :
+      "@{[ $sanitized_object_name ]}_${attribute}";
+  } else {
+    $id .= $attribute;
+  }
 
   $id = join('_', $id, @extra) if scalar @extra;
   return $id;
@@ -395,9 +406,15 @@ sub field_id {
 sub field_name {
   my ($self, $model_name, $attribute, $options, @names) = @_;
   my $names = @names ? join("", map { "[$_]" } @names) : '';
-  my $name = exists($options->{index}) ?
-    "@{[ $model_name ]}\[@{[ $options->{index}]}\].${attribute}${names}" :
-    "@{[ $model_name ]}.${attribute}${names}";
+
+  my $name;
+  if($model_name) {
+    $name = exists($options->{index}) ?
+      "@{[ $model_name ]}\[@{[ $options->{index}]}\].${attribute}${names}" :
+      "@{[ $model_name ]}.${attribute}${names}";
+  } else {
+    $name = "${attribute}${names}";
+  }
   $name .= '[]' if $options->{multiple};
 
   return $name;
@@ -460,9 +477,13 @@ concatenates them all into one big safe marked string.
 
 Given a string return string that has been HTML escaped.
 
-=item read_attribute_for_view
+=item read_attribute_for_html
 
 Given an attribute name return the value that the view has defined for it.  
+
+=item attribute_exists_for_html
+
+Given an attribute name return true if the view has defined it.
 
 =back
 

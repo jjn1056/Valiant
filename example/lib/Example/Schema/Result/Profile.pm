@@ -75,7 +75,8 @@ sub status_list($self) { return qw( pending active inactive ) }
 
 sub valid_employment_registration($self, $opts) {
   if(
-    $self->employment->label eq 'unemployed'
+    $self->employment # because this is optional relationship
+    && $self->employment->label eq 'unemployed'
     && $self->registered
   ) {
     $self->errors->add('registered', "can't be selected if unemployed", $opts) if $self->is_column_changed('registered');
@@ -85,7 +86,8 @@ sub valid_employment_registration($self, $opts) {
 
 sub valid_state_registration($self, $opts) {
   if(
-    $self->state->abbreviation eq 'NY'
+    $self->state # because this is optional relationship
+    && $self->state->abbreviation eq 'NY'
     && $self->registered
   ) {
     $opts->{state} = 'New York';

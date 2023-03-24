@@ -2,8 +2,9 @@ package Example::View::HTML::FormFor;
 
 use Moose;
 use Example::Syntax;
-use Valiant::HTML::Form 'form_for';
- 
+use Valiant::HTML::Util::Form;
+use Valiant::HTML::Util::View;
+
 extends 'Example::View::HTML';
 
 has 'model' => (is=>'ro', required=>1);
@@ -20,7 +21,8 @@ sub prepare_build_args($class, $c, $model, $options={}, @args) {
 };
 
 sub execute_code_callback($self, @args) {
-  return form_for $self->model, +{ 
+  my $f = Valiant::HTML::Util::Form->new(view=>Valiant::HTML::Util::View->new);
+  return $f->form_for($self->model, +{ 
     action => $self->ctx->req->uri, 
     csrf_token => $self->ctx->csrf_token,
     builder => "@{[ $self->app ]}::FormBuilder",
@@ -29,7 +31,7 @@ sub execute_code_callback($self, @args) {
   }, sub($ff, $model) {
     $self->form_builder($ff);
     return $self->code->($self, $ff, $model);
-  };
+  });
 }
 
 sub render($self, $c, $content) {

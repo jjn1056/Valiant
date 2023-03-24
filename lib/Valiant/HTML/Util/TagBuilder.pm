@@ -41,9 +41,9 @@ our %HTML_CONTENT_ELEMENTS = map { $_ => 1 } qw(
   var video);
 
 has view => (
-  is => 'bare',
+  is => 'ro',
   required => 1,
-  handles => [qw(safe raw escape_html safe_concat read_attribute_for_view)],
+  handles => [qw(safe raw escape_html safe_concat)],
 );
 
 sub import { shift->_install_tags }
@@ -216,9 +216,13 @@ concatenates them all into one big safe marked string.
 
 Given a string return string that has been HTML escaped.
 
-=item read_attribute_for_view
+=item read_attribute
 
 Given an attribute name return the value that the view has defined for it.  
+
+=item attribute_exists
+
+Given an attribute name return true if the view has defined a value for it.
 
 =back
 
@@ -299,8 +303,6 @@ refer to your view for more.
 =head2 escape_html
 
 =head2 safe_concat
-
-=head2 read_attribute_for_view
 
 =head1 AUTHOR
 

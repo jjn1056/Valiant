@@ -9,11 +9,20 @@ sub raw { shift; return Valiant::HTML::SafeString::raw(@_) }
 sub safe_concat { shift; return Valiant::HTML::SafeString::safe_concat(@_) }
 sub escape_html { shift; return Valiant::HTML::SafeString::escape_html(@_) }
 
-sub read_attribute_for_view {
+sub read_attribute_for_html {
   my ($self, $attribute) = @_;
   return unless defined $attribute;
   return my $value = $self->$attribute if $self->can($attribute);
   return $self->{$attribute} if exists $self->{$attribute};
+  die "No such attribute '$attribute' for view"; 
+}
+
+sub attribute_exists_for_html {
+  my ($self, $attribute) = @_;
+  return unless defined $attribute;
+  return 1 if $self->can($attribute);
+  return 1 if exists $self->{$attribute};
+  return;
 }
 
 sub new {
@@ -66,9 +75,13 @@ concatenates them all into one big safe marked string.
 
 Given a string return string that has been HTML escaped.
 
-=head2 read_attribute_for_view
+=head2 read_attribute_for_html
 
 Given an attribute name return the value that the view has defined for it.  
+
+=head2 attribute_exists_for_html
+
+Given an attribute name return true if the view has defined it.
 
 =head1 SEE ALSO
 

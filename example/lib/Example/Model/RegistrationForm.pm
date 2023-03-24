@@ -65,7 +65,6 @@
   use String::CamelCase 'camelize';
   use Sub::Util 'set_subname';
   use Module::Runtime 'use_module';
-  use Valiant::HTML::Form 'form_for';
   use Valiant::HTML::SafeString 'safe_concat';
 
   has _fb => (is=>'rw');
@@ -118,7 +117,7 @@
     $options = +{ $self->process_form_options(%$options) }
       if $self->can('process_form_options');
 
-    return form_for $self->model, $options, $self->form_callback($cb, $options);
+    ##return form_for $self->model, $options, $self->form_callback($cb, $options);
   }
 
   sub form_callback {

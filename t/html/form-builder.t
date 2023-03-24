@@ -2,7 +2,8 @@ use Test::Most;
 use Valiant::HTML::FormBuilder;
 use DateTime;
 use Valiant::HTML::Util::Collection;
-use Valiant::HTML::FormTags 'option_tag';
+use Valiant::HTML::Util::View;
+use Valiant::HTML::Util::Form;
 
 {
   package Local::Role;
@@ -146,6 +147,7 @@ is $fb->label('first_name', sub {
   return "$translated_attribute ",
     $fb->input('first_name');
 }), '<label for="person_first_name">First Name <input id="person_first_name" name="person.first_name" type="text" value="J"/></label>';
+
 is $fb->label('first_name', +{class=>'foo'}, sub {
   my $translated_attribute = shift;
   return "$translated_attribute ",
@@ -260,7 +262,7 @@ is $fb->select('state_id', sub {
   my ($model, $attribute, $value) = @_;
   return map {
     my $selected = $_->id eq $value ? 1:0;
-    option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
+    $fb->tag_helpers->option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
   } $states_collection->all;
 }), '<select id="person_state_id" name="person.state_id"><option class="foo" selected value="1">TX</option><option class="foo" value="2">NY</option><option class="foo" value="3">CA</option></select>';
 
@@ -268,7 +270,7 @@ is $fb->select('state_id', +{multiple=>1}, sub {
   my ($model, $attribute, $value) = @_;
   return map {
     my $selected = $_->id eq $value ? 1:0;
-    option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
+    $fb->tag_helpers->option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
   } $states_collection->all;
 }),
   '<select id="person_state_id" multiple name="person.state_id[]">'.

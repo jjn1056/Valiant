@@ -35,7 +35,7 @@ is $tb->fieldset_tag(+{id=>100},sub {
 
 is $tb->form_tag('/user', +{ class=>'form' }, sub {
     $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
-  }), '<form accept-charset="UTF-8" action="/user" class="form" method="post"><input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
+  }), '<form accept-charset="UTF-8" action="/user" class="form" enctype="multipart/form-data" method="post"><input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
 is $tb->label_tag('user_name'), '<label for="user_name">User name</label>';
 is $tb->label_tag('name', 'Info'), '<label for="name">Info</label>';
@@ -137,7 +137,7 @@ is $tb->form_tag('/user', +{ class=>'form', method=>'put', csrf_token=>'toke-me'
   my $form_tb = shift;
   is ref($form_tb), 'Valiant::HTML::Util::FormTags';
     $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
-  }), '<form accept-charset="UTF-8" action="/user" class="form" method="put">'.
+  }), '<form accept-charset="UTF-8" action="/user" class="form" enctype="multipart/form-data" method="put">'.
       '<input id="csrf_token" name="csrf_token" type="hidden" value="toke-me"/>'.
       '<input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
@@ -145,7 +145,7 @@ is $tb->form_tag('/user', +{ class=>'form', method=>'put', tunneled_method=>1 },
   my $form_tb = shift;
   is ref($form_tb), 'Valiant::HTML::Util::FormTags';
     $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
-  }), '<form accept-charset="UTF-8" action="/user?x-tunneled-method=put" class="form" method="post">'.
+  }), '<form accept-charset="UTF-8" action="/user?x-tunneled-method=put" class="form" enctype="multipart/form-data" method="post">'.
       '<input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
 done_testing;

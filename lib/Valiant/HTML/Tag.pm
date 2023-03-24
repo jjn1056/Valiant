@@ -7,15 +7,14 @@ use Moo;
 
 has 'model_name' => (is=>'ro', coerce=>sub { $_[0]=~s/\[\]$// || $_[0]=~s/\[\]\]$/]/; $_[0]  }, required=>1);
 has 'method_name' => (is=>'ro', required=>1);
-has 'view' => (is=>'ro', required=>1);
+has 'tag_helpers' => (is=>'ro', required=>1);
 has 'options' => (is=>'ro', required=>1, default=>sub { +{} });
 
 has 'model' => (
   is=>'ro',
-  required => 0,
+  required => 1,
   lazy => 1,
   builder => '_build_model',
-  predicate => 'has_model',
 );
 
   sub _build_model {
@@ -45,10 +44,10 @@ sub _retrieve_object {
   my ($self, $object) = @_;
   if ($object) {
     return $object;
-  } elsif ($self->view->can("read_attribute_for_view")) {
-    $object = $self->view->read_attribute_for_view($self->model_name);
+  } elsif ($self->tag_helpers->attribute_for_view_exists($self->model_name)) {
+    $object = $self->tag_helpers->read_attribute_for_view($self->model_name);
     return $object if defined($object);
-    return;
+    return bless +{}, 'Valiant::HTML::Tag::DefaultModel';
   }
 }
 
@@ -57,7 +56,7 @@ sub render { die "Not implemented!" }
 sub value {
   my $self = shift;
   my $method_name = $self->method_name;
-  if $self->allow_method_names_outside_object {
+  if($self->allow_method_names_outside_object){
     $self->model->$method_name if $self->has_model && $self->model->can($method_name);
   } else {
     $self->model->$method_name if $self->has_model;

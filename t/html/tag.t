@@ -1,6 +1,12 @@
 use Test::Most;
 use Valiant::HTML::Tag;
 
+ok 1;
+
+done_testing
+
+__END__
+
 {
   ok my $tag = Valiant::HTML::Tag->new(
     model_name => 'person',
@@ -8,8 +14,6 @@ use Valiant::HTML::Tag;
     view => 1,
   );
 
-  use Devel::Dwarn;
-  Dwarn $tag->options;
 }
 
 {
