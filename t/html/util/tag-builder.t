@@ -1,6 +1,7 @@
 use Test::Most;
 use Valiant::HTML::Util::TagBuilder;
 use Valiant::HTML::Util::View;
+use Valiant::HTML::Util::Collection;
 
 ok my $view = Valiant::HTML::Util::View->new(aaa=>1,bbb=>2);
 ok my $tb = Valiant::HTML::Util::TagBuilder->new(view=>$view);
@@ -18,11 +19,27 @@ ok my $block = $tb->content_tag(div => +{id=>'top'}, sub {
   $tb->tag('input', +{type=>'text', name=>'user'}),
   $tb->content_tag(div => +{id=>'inner'}, sub { "stuff" }),
 });
-
 is $block, '<div id="top"><hr/>Content with evil &lt;a href&gt;aaa&lt;/a&gt;<input name="user" type="text"/><div id="inner">stuff</div></div>';
+
+ok $block = $tb->content_tag(div => +{id=>'top'}, [
+  $tb->tag('hr'),
+  "Content with evil <a href>aaa</a>",
+  $tb->tag('input', +{type=>'text', name=>'user'}),
+  $tb->content_tag(div => +{id=>'inner'}, sub { "stuff" }),
+]);
+is $block, '<div id="top"><hr/>Content with evil &lt;a href&gt;aaa&lt;/a&gt;<input name="user" type="text"/><div id="inner">stuff</div></div>';
+
 is $tb->content_tag('a', 'the link<script>evil</script>', +{href=>'a.html'}), '<a href="a.html">the link&lt;script&gt;evil&lt;/script&gt;</a>';
 is $tb->join_tags($tb->content_tag(a => 'link1'), $tb->content_tag(a => 'link2')), '<a>link1</a><a>link2</a>';
 is $tb->join_tags( $tb->tag('hr'), $tb->tag('hr')), '<hr/><hr/>';
+
+ok $block = $tb->content_tag(div => +{id=>'top'},
+  $tb->tag('hr'),
+  "Content with evil <a href>aaa</a>",
+  $tb->tag('input', +{type=>'text', name=>'user'}),
+  $tb->content_tag(div => +{id=>'inner'}, sub { "stuff" }),
+);
+is $block, '<div id="top"><hr/>Content with evil &lt;a href&gt;aaa&lt;/a&gt;<input name="user" type="text"/><div id="inner">stuff</div></div>';
 
 is $tb->tags->hr({id=>'top'}), '<hr id="top"/>';
 is $tb->tags->hr(), '<hr/>';
@@ -44,4 +61,153 @@ is ref($tb->content_tag(a => 'link')), 'Valiant::HTML::SafeString';
 is ref($tb->tags->hr), 'Valiant::HTML::SafeString';
 is ref($tb->tags->a(sub {$tb->tags->hr, 'text'})), 'Valiant::HTML::SafeString';
 
+is $tb->tag('hr', +{id=>1, omit_tag=>1}), '';
+is $tb->content_tag('div', +{id=>1, omit_tag=>1}, 'Hello World'), 'Hello World';
+
+is $tb->sf('This {:aaa} is {:bbb} a test', aaa=>'foo', bbb=>'bar'), 'This foo is bar a test';
+is ref($tb->sf('This {:aaa} is {:bbb} a test', aaa=>'foo', bbb=>'bar')), 'Valiant::HTML::SafeString';
+
+my $tags = $tb->tags;
+
+warn $tags->div({id=>'one', with=>'two'}, sub {
+  my ($view, $var) = @_;
+  $tags->p($var);
+});
+
+warn $tags->div({id=>'one', with=>sub {'two'}}, sub {
+  my ($view, $var) = @_;
+  $tags->p($var);
+});
+
+warn $tags->div({id=>'one', if=>1}, sub {
+  my ($view) = @_;
+  $tags->p('hello');
+});
+warn $tags->div({id=>'one', if=>sub{1}}, sub {
+  my ($view) = @_;
+  $tags->p('hello');
+});
+warn $tags->div({id=>'one', if=>0}, sub {
+  my ($view) = @_;
+  $tags->p('hello');
+});
+warn $tags->div({id=>'one', if=>sub{0}}, sub {
+  my ($view) = @_;
+  $tags->p('hello');
+});
+
+ok my $collection = Valiant::HTML::Util::Collection->new(1,2,3);
+
+warn $tags->div({id=>'one', repeat=>$collection}, sub {
+  my ($view) = @_;
+  $tags->p('hello');
+});
+warn $tags->div({id=>'one', repeat=>[1,2,3]}, sub {
+  my ($view, $item, $idx) = @_;
+  $tags->p("hello[$idx] $item");
+});
+
+warn $tags->div({id=>sub {"one_${_}"}, map=>$collection}, sub {
+  my ($view) = @_;
+  $tags->p('hello');
+});
+warn $tags->div({id=>"aaa{:label}bbb{:value}ccc", map=>[1,2,3]}, sub {
+  my ($view, $item, $idx) = @_;
+  $tags->p("hello[$idx] $item");
+});
+
+warn $tags->li({id=>"aaa1{:label}bbb{:value}ccc", map=>[1,2,3]},sub {});
+warn $tags->li({id=>"aaa2{:label}bbb{:value}ccc", map=>[1,2,3]});
+
+warn $tags->hr({id=>"aaa2{:label}bbb{:value}ccc", map=>[1,2,3]});
+
+warn $tags->div({id=>'one', given=>'one'}, sub {
+  my ($view) = @_;
+  is $tags->{tb}{_given}{val}, 'one';
+  $tags->p({when=>'one'}, "hello one"),
+  $tags->p({when=>'two'}, "hello two"),
+  $tags->hr({when=>'three'}),
+  $tags->p({when_default=>1}, "hello four")
+});
+ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
+ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
+
+warn $tags->div({id=>'one', given=>'onex'}, sub {
+  my ($view) = @_;
+  is $tags->{tb}{_given}{val}, 'onex';
+  $tags->p({when=>'one'}, "hello one"),
+  $tags->p({when=>'two'}, "hello two"),
+  $tags->p({when=>'three'}, "hello three"),
+  $tags->p({when_default=>1}, "hello four")
+});
+ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
+ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
+
+warn $tags->div({id=>'one', given=>sub {'two'}}, sub {
+  my ($view) = @_;
+  is $tags->{tb}{_given}{val}, 'two';
+  $tags->p({when=>'one'}, "hello one"),
+  $tags->p({when=>sub {'two'}}, "hello two"),
+  $tags->p({when=>'three'}, "hello three"),
+  $tags->p({when_default=>1}, "hello four")
+});
+ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
+ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
+
+warn $tags->div({id=>'one', given=>'one'}, sub {
+  my ($view) = @_;
+  is $tags->{tb}{_given}{val}, 'one';
+  $tags->p({when=>'one', given=>'xxx'}, sub {
+    is $tags->{tb}{_given}{val}, 'xxx';
+    $tags->p({when=>'aaa'}, "hello aaa"),
+    $tags->p({when=>'xxx'}, "hello xxx"),
+    $tags->p({when_default=>1}, "hello default")  
+  }),
+  $tags->p({when=>'two'}, "hello two"),
+  $tags->p({when=>'three'}, "hello three"),
+  $tags->p({when_default=>1}, "hello four")
+});
+ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
+ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
+
+warn $tags->div({id=>'one', given=>'three'}, sub {
+  my ($view) = @_;
+  $tags->p({when=>'one'}, "hello one"),
+  $tags->p({when=>'two'}, "hello two"),
+  $tags->hr({when=>'three'}),
+  $tags->p({when_default=>1}, "hello four")
+});
+
 done_testing;
+
+__END__
+
+$resultset->$table(%attrs)
+  ->head(%attrs, sub ($tr) {
+    $tr->th(%attrs, sub ($th) {
+      $th->text('foo');
+    });
+  })
+
+
+
+
+<table>
+  <thead>
+    <tr>
+      <th>id</th>
+      <th>name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>foo</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>bar</td>
+    </tr>
+  </tbody>
+</table>
+

@@ -216,6 +216,12 @@ sub _html_options_for_form_with {
   $html_options->{tunneled_method} = 1 unless exists $html_options->{tunneled_method};
   $html_options->{method} = lc($html_options->{method}||'post'); # most common standards specify lowercase
 
+  # This is what Rails does but not sure I want to force that.  It might break a
+  # lot of existing code people try to shoehorn this stuff into.  
+  # $html_options->{enctype} ||= $html_options->{method} eq 'get' ?
+  #  'application/x-www-form-urlencoded' :
+  #    'multipart/form-data';
+
   return $html_options;
 }
 

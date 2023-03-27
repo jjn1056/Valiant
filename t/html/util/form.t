@@ -70,7 +70,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" class="new_local_person" enctype="multipart/form-data" id="new_local_person" method="post">' .
+    '<form accept-charset="UTF-8" class="new_local_person" enctype="application/x-www-form-urlencoded" id="new_local_person" method="post">' .
       '<label for="local_person_first_name">First Name</label>' .
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>' .
       '<div>First Name is too short (minimum is 3 characters)</div>' .
@@ -99,7 +99,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_local_person" enctype="multipart/form-data" id="edit_local_person" method="post">' .
+    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_local_person" enctype="application/x-www-form-urlencoded" id="edit_local_person" method="post">' .
       '<label for="local_person_first_name">First Name</label>' .
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>' .
       '<div>First Name is too short (minimum is 3 characters)</div>' .
@@ -128,7 +128,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_foo" enctype="multipart/form-data" id="edit_foo" method="post">' .
+    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_foo" enctype="application/x-www-form-urlencoded" id="edit_foo" method="post">' .
       '<label for="foo_first_name">First Name</label>' .
       '<input id="foo_first_name" name="foo.first_name" type="text" value="aa"/>' .
       '<div>First Name is too short (minimum is 3 characters)</div>' .
@@ -158,7 +158,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_person" enctype="multipart/form-data" id="edit_person" method="post">'.
+    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_person" enctype="application/x-www-form-urlencoded" id="edit_person" method="post">'.
       '<label for="person_first_name">First Name</label>'.
       '<input id="person_first_name" name="person.first_name" type="text" value="aa"/>'.
         '<div>First Name is too short (minimum is 3 characters)</div>'.
@@ -177,7 +177,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" action="post" enctype="multipart/form-data" method="post">'.
+    '<form accept-charset="UTF-8" action="post" enctype="application/x-www-form-urlencoded" method="post">'.
       '<input id="first_name" name="first_name" type="text" value=""/>'.
     '</form>'
 }
@@ -190,7 +190,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" enctype="multipart/form-data" method="post">'.
+    '<form accept-charset="UTF-8" enctype="application/x-www-form-urlencoded" method="post">'.
       '<input id="first_name" name="first_name" type="text" value=""/>'.
     '</form>'
 }
@@ -203,7 +203,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" action="posts" enctype="multipart/form-data" method="post">'.
+    '<form accept-charset="UTF-8" action="posts" enctype="application/x-www-form-urlencoded" method="post">'.
       '<input id="post_first_name" name="post.first_name" type="text" value=""/>'.
     '</form>'
 }
@@ -216,7 +216,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" action="posts" enctype="multipart/form-data" id="form1" method="post">'.
+    '<form accept-charset="UTF-8" action="posts" enctype="application/x-www-form-urlencoded" id="form1" method="post">'.
       '<input id="foo_post_first_name" name="post.first_name" type="text" value=""/>'.
     '</form>'
 }
@@ -229,7 +229,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" action="posts" class="new_local_person" enctype="multipart/form-data" id="new_local_person" method="post">'.
+    '<form accept-charset="UTF-8" action="posts" class="new_local_person" enctype="application/x-www-form-urlencoded" id="new_local_person" method="post">'.
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>'.
     '</form>'
 }
@@ -244,7 +244,7 @@ ok !$person->valid;
   $person->persisted(0);
 
   is $result,
-    '<form accept-charset="UTF-8" action="posts?x-tunneled-method=patch" class="edit_local_person" enctype="multipart/form-data" id="edit_local_person" method="post">'.
+    '<form accept-charset="UTF-8" action="posts?x-tunneled-method=patch" class="edit_local_person" enctype="application/x-www-form-urlencoded" id="edit_local_person" method="post">'.
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>'.
     '</form>'
 }
@@ -263,7 +263,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" action="posts" class="aaa new_local_person bbb ccc" enctype="multipart/form-data" id="new_local_person" method="post">'.
+    '<form accept-charset="UTF-8" action="posts" class="aaa new_local_person bbb ccc" enctype="application/x-www-form-urlencoded" id="new_local_person" method="post">'.
       '<input id="csrf_token" name="csrf_token" type="hidden" value="toke"/>'.
       '<input id="local_person_fake" name="local_person.fake" type="text" value=""/>'.
     '</form>'

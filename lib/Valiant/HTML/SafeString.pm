@@ -7,7 +7,7 @@ use HTML::Escape ();
 use Scalar::Util (); 
 
 use overload 
-  bool => sub {1}, 
+  bool => sub { shift->to_bool }, 
   '""' => sub { shift->to_string },
   fallback => 1;
 
@@ -69,6 +69,8 @@ sub new {
 sub concat { return flattened_safe(@_) }
 
 sub to_string { return ${$_[0]} }
+
+sub to_bool { return ${$_[0]} ? 1 : 0 }
 
 1;
 
@@ -143,9 +145,13 @@ altogether in a single safe string.
 
 Returns the raw string, suitable for display.
 
+=head2 to_bool
+
+Returns a boolean indicating if the string is empty or not.
+
 =head1 OVERLOADING
 
-String context calles C<to_string>; Boolean context returns 'true'.
+String context calles C<to_string>; Boolean context returns true unless the string is empty.
 
 =head1 SEE ALSO
  

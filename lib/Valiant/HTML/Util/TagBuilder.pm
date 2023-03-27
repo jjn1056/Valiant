@@ -2,6 +2,7 @@ package Valiant::HTML::Util::TagBuilder;
 
 use Moo;
 use Sub::Util;
+use Carp;
 use Scalar::Util;
 use overload 
   bool => sub {1}, 
@@ -85,25 +86,182 @@ sub tags {
   return bless +{ tb=>$self }, "${class}::_tags";
 }
 
-sub to_string { return shift->{tag_info} || '' }
+sub _omit_tag {
+  my ($self, $attrs) = @_;
+  return 0 unless exists $attrs->{omit_tag};
+
+  my $omit_tag = delete $attrs->{omit_tag};
+  if(ref($omit_tag) eq 'CODE') {
+    return $omit_tag->($self->view) ? 1 : 0;
+  } 
+  return $omit_tag ? 1 : 0;
+}
+
+sub _process_cb_attr {
+  my ($self, $attr_val) = @_;
+  return $attr_val->($self->view) if ref($attr_val) eq 'CODE';
+  return $attr_val;
+}
 
 sub tag {
-  my ($self, $name, $attrs) = (@_, +{});  
-  die "'$name' is not a valid VOID HTML element" unless $HTML_VOID_ELEMENTS{$name};
+  my ($self, $name, $attrs) = (@_, +{});
+  carp "'$name' is not a valid VOID HTML element" unless $HTML_VOID_ELEMENTS{$name};
+
+  # Handle given / when / when_default
+  if(exists $attrs->{when}) {
+    my $when = $self->_process_cb_attr(delete $attrs->{when});
+    return $self->raw('') unless $when eq $self->{_given}{val};
+    $self->{_given}{gone} = 1;
+  }
+  if(exists $attrs->{when_default}) {
+    return $self->raw('') if $self->{_given}{gone};
+    delete $attrs->{when_default};
+  }
+
+  # Handle 'map'
+  if(my $repeat_proto = $self->_process_cb_attr(delete $attrs->{map})) {
+    my $idx = 0;
+    my @repeated_content = ();
+    my $repeat = ref($repeat_proto) eq 'ARRAY' ? 
+      Valiant::HTML::Util::Collection->new(@$repeat_proto)
+        : $repeat_proto;
+    my @code_placeholder_attrs = grep { (ref($attrs->{$_})||'') eq 'CODE' } keys %$attrs;
+    my @template_placeholder_attrs = grep { $attrs->{$_} =~m/\{:.*?\}/ } keys %$attrs;
+    while(my $next = $repeat->next) {
+      my %expanded_attrs = (
+        %$attrs,
+        (map { my $key = $_; local $_ = $next; $key => $attrs->{$key}->($self->view, $next, $idx) } @code_placeholder_attrs),
+        (map { $_ => $self->sf($next, $attrs->{$_}) } @template_placeholder_attrs),
+      );
+      push @repeated_content, $self->tag($name, \%expanded_attrs);
+    }
+    $repeat->reset if $repeat->can('reset');
+    my $repeated_content = $self->safe_concat(@repeated_content);
+    return $repeated_content;
+  }
+  return $self->raw('') if $self->_omit_tag($attrs);
   return my $tag = $self->raw("<${name}@{[ $self->_tag_options(%{$attrs}) ]}/>");
 }
 
 sub content_tag {
   my $self = shift;
   my $name = shift;
-  die "'$name' is not a valid HTML content element" unless $HTML_CONTENT_ELEMENTS{$name};
+  carp "'$name' is not a valid HTML content element" unless $HTML_CONTENT_ELEMENTS{$name};
 
-  my $block = ref($_[-1]) eq 'CODE' ? pop(@_) : undef;
-  my $attrs = ref($_[-1]) eq 'HASH' ? pop(@_) : +{};
-  my @content = defined($block) ? $block->($self) : (shift || '');
-  my $content = $self->safe_concat(@content);
+  my ($code, $block);
+  if(ref($_[-1]) eq 'CODE') {
+    $code = pop(@_);
+  } elsif(ref($_[-1]) eq 'ARRAY') {
+    $block = $self->safe_concat(@{ pop @_ });
+  } elsif(ref(\$_[-1]) eq 'SCALAR') {
+    $block = pop @_;
+  } elsif(ref(\$_[0]) eq 'SCALAR') {
+    $block = shift @_;
+  }
+
+  my $attrs = +{};
+  if(ref($_[-1]) eq 'HASH') {
+    $attrs = pop(@_);
+  } elsif(ref($_[0]) eq 'HASH') {
+    $attrs = shift(@_);
+  }
+
+  $block = $self->safe_concat(@_) if @_;
+
+  my $content = $self->raw('');
+
+  # Handle 'if'
+  return $content if exists($attrs->{if}) && !$self->_process_cb_attr(delete $attrs->{if});
+  # Handle 'with'
+  my @args = ($self->view);
+  push @args, $self->_process_cb_attr(delete $attrs->{with}) if exists $attrs->{with};
+
+  # Handle given / when / when_default
+  if(exists $attrs->{when}) {
+    my $when = $self->_process_cb_attr(delete $attrs->{when});
+    return $content unless $when eq $self->{_given}{val};
+    $self->{_given}{gone} = 1;
+  }
+  if(exists $attrs->{when_default}) {
+    return $content if $self->{_given}{gone};
+    delete $attrs->{when_default};
+  }
+  local $self->{_given} = { val => $self->_process_cb_attr(delete $attrs->{given})} if exists $attrs->{given};
+
+  # Handle 'map'
+  if(my $repeat_proto = $self->_process_cb_attr(delete $attrs->{map})) {
+    my $idx = 0;
+    my @repeated_content = ();
+    my $repeat = ref($repeat_proto) eq 'ARRAY' ? 
+      Valiant::HTML::Util::Collection->new(@$repeat_proto)
+        : $repeat_proto;
+    my @code_placeholder_attrs = grep { (ref($attrs->{$_})||'') eq 'CODE' } keys %$attrs;
+    my @template_placeholder_attrs = grep { $attrs->{$_} =~m/\{:.*?\}/ } keys %$attrs;
+    while(my $next = $repeat->next) {
+      my %expanded_attrs = (
+        %$attrs,
+        (map { my $key = $_; local $_ = $next; $key => $attrs->{$key}->($self->view, $next, $idx) } @code_placeholder_attrs),
+        (map { $_ => $self->sf($next, $attrs->{$_}) } @template_placeholder_attrs),
+      );
+      if(defined $code) {
+        push @repeated_content, $self->content_tag($name, \%expanded_attrs, sub { $code->(@_, $next, $idx) } );
+      } elsif(defined $block) {
+        push @repeated_content, $self->content_tag($name, \%expanded_attrs, $block);
+      } else {
+        push @repeated_content, $self->content_tag($name, \%expanded_attrs, $content);
+      }
+    }
+    $repeat->reset if $repeat->can('reset');
+    my $repeated_content = $self->safe_concat(@repeated_content);
+    return $repeated_content;
+  }
+    
+  if(defined $code) {
+
+    # Handle 'repeat'
+    if(my $repeat_proto = $self->_process_cb_attr(delete $attrs->{repeat})) {
+      my $idx = 0;
+      my @repeated_content = ();
+      my $repeat = ref($repeat_proto) eq 'ARRAY' ? 
+        Valiant::HTML::Util::Collection->new(@$repeat_proto)
+          : $repeat_proto;
+      while(my $next = $repeat->next) {
+        push @repeated_content, $code->(@args, $next, $idx++);
+      }
+      $repeat->reset if $repeat->can('reset');
+      $content = $self->safe_concat(@repeated_content);
+    }
+    #prepare content
+    if(! "$content") {
+      my @return = $code->(@args);
+      $content = $self->safe_concat(@return);
+    }
+  } elsif(defined $block) {
+    $content = $self->safe_concat($block);
+  }
+
+  return $content if $self->_omit_tag($attrs);
   return my $tag = $self->raw("<${name}@{[ $self->_tag_options(%{$attrs}) ]}>${content}</${name}>");
 }
+
+# switch, repeat, map
+
+sub sf {
+  my $self = shift;
+  if(Scalar::Util::blessed $_[0]) {
+    my ($src_object, $format) = @_;
+    $format =~ s/\{(.*?)\:([^}]+)\}/ $src_object->can($2) ? ($1 ? sprintf($1,$src_object->$2) : $src_object->$2) : carp("Source object '@{[ ref $src_object ]}' has no method '$2'") /gex;
+    return $self->safe($format);
+  } else {
+    my ($format, %args) = @_;
+    my $collapse = delete $args{collapse};
+    $format =~ s/\{(.*?)\:([^}]+)\}/ exists($args{$2})? ($1 ? sprintf($1,$args{$2}) : $args{$2}) : carp("Source data has no value '$2'") /gex;
+    if($collapse) {
+      $format =~s/\s+/ /gsm;
+    }
+    return $self->safe($format);
+  }
+};
 
 sub join_tags {
   my $self = shift;
@@ -111,6 +269,8 @@ sub join_tags {
 }
 
 sub text { return shift->safe_concat(@_) }
+
+sub to_string { return shift->{tag_info} || '' }
 
 sub _tag_options {
   my $self = shift;

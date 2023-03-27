@@ -7,11 +7,15 @@ use Scalar::Util ();
 sub new {
   my ($class) = shift;
   my @items = map {
-    Scalar::Util::blessed($_) ?
-      $_ : 
-      bless $_, 'Valiant::HTML::Util::Collection::Item';
+    Scalar::Util::blessed($_) ? $_ : $class->_build_item($_)
     } @_;
   return bless +{ collection=>\@items, pointer=>0 }, $class;
+}
+
+sub _build_item {
+  my ($class, $item) = @_;
+  $item = [$item, $item] unless ref($item);
+  return bless $item, 'Valiant::HTML::Util::Collection::Item';
 }
 
 sub next {
@@ -40,6 +44,11 @@ sub reset { $_[0]->{pointer} = 0 }
 sub all { @{$_[0]->{collection}} }
 
 package Valiant::HTML::Util::Collection::Item;
+
+use overload 
+  bool => sub { shift->value }, 
+  '""' => sub { shift->value },
+  fallback => 1;
 
 sub label { return shift->[0] }
 sub value { return shift->[1] }

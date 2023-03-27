@@ -8,7 +8,7 @@ ok my $tb = Valiant::HTML::Util::FormTags->new(view=>$view);
 is $tb->button_tag(), '<button name="button">Button</button>';
 is $tb->button_tag('hello'), '<button name="button">hello</button>';
 is $tb->button_tag('hello' => {id=>123123}), '<button id="123123" name="button">hello</button>';
-is $tb->button_tag(sub { 'butttttton' }), '<button name="button">butttttton</button>';
+is $tb->button_tag(sub { is ref(shift), ref($view); 'butttttton' }), '<button name="button">butttttton</button>';
 is $tb->button_tag({id=>123123}, sub { 'butttttton' }), '<button id="123123" name="button">butttttton</button>';
 
 is $tb->checkbox_tag('ggg'), '<input id="ggg" name="ggg" type="checkbox" value="1"/>';
@@ -18,6 +18,7 @@ is $tb->checkbox_tag('user#ff', 100, 1), '<input checked id="user_ff" name="user
 is $tb->checkbox_tag('user', 100, 1, {class=>'foo'}), '<input checked class="foo" id="user" name="user" type="checkbox" value="100"/>';
 
 is $tb->fieldset_tag('Info<a href="">click</a>', +{class=>'foo'}, sub {
+  is ref(shift), ref($view);
   $tb->button_tag('username', +{class=>'aaa'});
 }), '<fieldset class="foo"><legend>Info&lt;a href=&quot;&quot;&gt;click&lt;/a&gt;</legend><button class="aaa" name="button">username</button></fieldset>';
 
@@ -26,6 +27,7 @@ is $tb->fieldset_tag('Info<a href="">click</a>', sub {
 }), '<fieldset><legend>Info&lt;a href=&quot;&quot;&gt;click&lt;/a&gt;</legend><button class="aaa" name="button">username</button></fieldset>';
 
 is $tb->fieldset_tag(sub {
+  is ref(shift), ref($view);
   $tb->button_tag('username', +{class=>'aaa'});
 }), '<fieldset><button class="aaa" name="button">username</button></fieldset>';
 
@@ -35,12 +37,13 @@ is $tb->fieldset_tag(+{id=>100},sub {
 
 is $tb->form_tag('/user', +{ class=>'form' }, sub {
     $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
-  }), '<form accept-charset="UTF-8" action="/user" class="form" enctype="multipart/form-data" method="post"><input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
+  }), '<form accept-charset="UTF-8" action="/user" class="form" enctype="application/x-www-form-urlencoded" method="post"><input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
 is $tb->label_tag('user_name'), '<label for="user_name">User name</label>';
 is $tb->label_tag('name', 'Info'), '<label for="name">Info</label>';
 is $tb->label_tag('name', +{ class=>'fff' }), '<label class="fff" for="name">Name</label>';
 is $tb->label_tag(user => +{ class=>'fff' }, sub {
+  is ref(shift), ref($view);
   $tb->checkbox_tag('person', +{class=>'aaa'});
 }), '<label class="fff" for="user"><input class="aaa" id="person" name="person" type="checkbox" value="1"/></label>';
 is $tb->label_tag('user_name', sub {
@@ -134,18 +137,16 @@ is $tb->options_from_collection_for_select($collection, 'value', 'label', sub { 
   '<option value="value">label</option><option selected value="a">A</option><option value="b">B</option><option value="c">C</option>';
 
 is $tb->form_tag('/user', +{ class=>'form', method=>'put', csrf_token=>'toke-me' }, sub {
-  my $form_tb = shift;
-  is ref($form_tb), 'Valiant::HTML::Util::FormTags';
+  is ref(shift), ref($view);
     $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
-  }), '<form accept-charset="UTF-8" action="/user" class="form" enctype="multipart/form-data" method="put">'.
+  }), '<form accept-charset="UTF-8" action="/user" class="form" enctype="application/x-www-form-urlencoded" method="put">'.
       '<input id="csrf_token" name="csrf_token" type="hidden" value="toke-me"/>'.
       '<input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
 is $tb->form_tag('/user', +{ class=>'form', method=>'put', tunneled_method=>1 }, sub {
-  my $form_tb = shift;
-  is ref($form_tb), 'Valiant::HTML::Util::FormTags';
+  is ref(shift), ref($view);
     $tb->checkbox_tag('person[1]username', +{class=>'aaa'});
-  }), '<form accept-charset="UTF-8" action="/user?x-tunneled-method=put" class="form" enctype="multipart/form-data" method="post">'.
+  }), '<form accept-charset="UTF-8" action="/user?x-tunneled-method=put" class="form" enctype="application/x-www-form-urlencoded" method="post">'.
       '<input class="aaa" id="person_1username" name="person[1]username" type="checkbox" value="1"/></form>';
 
 done_testing;

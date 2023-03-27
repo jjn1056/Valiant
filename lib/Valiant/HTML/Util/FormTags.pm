@@ -31,7 +31,7 @@ sub _humanize {
 
 sub _prepend_block {
   my ($self, $block, @bits) = @_;
-  return sub { return @bits, $block->($self) };
+  return sub { return @bits, $block->(@_) };
 }
 
 # _merge_attrs does a smart merge of two hashrefs that represent HTML tag attributes.  This
@@ -134,10 +134,9 @@ sub _process_form_attrs {
   $attrs->{action} = $url_info if $url_info;
   $attrs->{method} ||= 'post';
   $attrs->{'accept-charset'} ||= 'UTF-8';
+  $attrs->{enctype} ||= 'application/x-www-form-urlencoded';
   $self->_process_method($attrs);
-  $attrs->{enctype} ||= $attrs->{method} eq 'get' ?
-    'application/x-www-form-urlencoded' :
-      'application/x-www-form-urlencoded'; ##'multipart/form-data';
+
   return $attrs;
 }
 
