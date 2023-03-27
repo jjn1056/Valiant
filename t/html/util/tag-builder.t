@@ -69,92 +69,93 @@ is ref($tb->sf('This {:aaa} is {:bbb} a test', aaa=>'foo', bbb=>'bar')), 'Valian
 
 my $tags = $tb->tags;
 
-warn $tags->div({id=>'one', with=>'two'}, sub {
+is $tags->div({id=>'one', with=>'two'}, sub {
   my ($view, $var) = @_;
   $tags->p($var);
-});
+}), '<div id="one"><p>two</p></div>';
 
-warn $tags->div({id=>'one', with=>sub {'two'}}, sub {
+is $tags->div({id=>'one', with=>sub {'two'}}, sub {
   my ($view, $var) = @_;
   $tags->p($var);
-});
+}), '<div id="one"><p>two</p></div>';
 
-warn $tags->div({id=>'one', if=>1}, sub {
+is $tags->div({id=>'one', if=>1}, sub {
   my ($view) = @_;
   $tags->p('hello');
-});
-warn $tags->div({id=>'one', if=>sub{1}}, sub {
+}), '<div id="one"><p>hello</p></div>';
+is $tags->div({id=>'one', if=>sub{1}}, sub {
   my ($view) = @_;
   $tags->p('hello');
-});
-warn $tags->div({id=>'one', if=>0}, sub {
+}), '<div id="one"><p>hello</p></div>';
+is $tags->div({id=>'one', if=>0}, sub {
   my ($view) = @_;
   $tags->p('hello');
-});
-warn $tags->div({id=>'one', if=>sub{0}}, sub {
+}), '';
+is $tags->div({id=>'one', if=>sub{0}}, sub {
   my ($view) = @_;
   $tags->p('hello');
-});
+}), '';
 
 ok my $collection = Valiant::HTML::Util::Collection->new(1,2,3);
 
-warn $tags->div({id=>'one', repeat=>$collection}, sub {
+is $tags->div({id=>'one', repeat=>$collection}, sub {
   my ($view) = @_;
   $tags->p('hello');
-});
-warn $tags->div({id=>'one', repeat=>[1,2,3]}, sub {
+}), '<div id="one"><p>hello</p><p>hello</p><p>hello</p></div>';
+
+is $tags->div({id=>'one', repeat=>[1,2,3]}, sub {
   my ($view, $item, $idx) = @_;
   $tags->p("hello[$idx] $item");
-});
+}), '<div id="one"><p>hello[0] 1</p><p>hello[1] 2</p><p>hello[2] 3</p></div>';
 
-warn $tags->div({id=>sub {"one_${_}"}, map=>$collection}, sub {
+is $tags->div({id=>sub {"one_${_}"}, map=>$collection}, sub {
   my ($view) = @_;
   $tags->p('hello');
-});
-warn $tags->div({id=>"aaa{:label}bbb{:value}ccc", map=>[1,2,3]}, sub {
+}), '<div id="one_1"><p>hello</p></div><div id="one_2"><p>hello</p></div><div id="one_3"><p>hello</p></div>';
+
+is $tags->div({id=>"aaa{:label}bbb{:value}ccc", map=>[1,2,3]}, sub {
   my ($view, $item, $idx) = @_;
   $tags->p("hello[$idx] $item");
-});
+}), '<div id="aaa1bbb1ccc"><p>hello[0] 1</p></div><div id="aaa2bbb2ccc"><p>hello[1] 2</p></div><div id="aaa3bbb3ccc"><p>hello[2] 3</p></div>';
 
-warn $tags->li({id=>"aaa1{:label}bbb{:value}ccc", map=>[1,2,3]},sub {});
-warn $tags->li({id=>"aaa2{:label}bbb{:value}ccc", map=>[1,2,3]});
+is $tags->li({id=>"aaa1{:label}bbb{:value}ccc", map=>[1,2,3]},sub {}), '<li id="aaa11bbb1ccc"></li><li id="aaa12bbb2ccc"></li><li id="aaa13bbb3ccc"></li>';
+is $tags->li({id=>"aaa2{:label}bbb{:value}ccc", map=>[1,2,3]}), '<li id="aaa21bbb1ccc"></li><li id="aaa22bbb2ccc"></li><li id="aaa23bbb3ccc"></li>';
+is $tags->hr({id=>"aaa2{:label}bbb{:value}ccc", map=>[1,2,3]}), '<hr id="aaa21bbb1ccc"/><hr id="aaa22bbb2ccc"/><hr id="aaa23bbb3ccc"/>';
 
-warn $tags->hr({id=>"aaa2{:label}bbb{:value}ccc", map=>[1,2,3]});
-
-warn $tags->div({id=>'one', given=>'one'}, sub {
+is $tags->div({id=>'one', given=>'one'}, sub {
   my ($view) = @_;
   is $tags->{tb}{_given}{val}, 'one';
   $tags->p({when=>'one'}, "hello one"),
   $tags->p({when=>'two'}, "hello two"),
   $tags->hr({when=>'three'}),
   $tags->p({when_default=>1}, "hello four")
-});
+}), '<div id="one"><p>hello one</p></div>';
 ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
 ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
 
-warn $tags->div({id=>'one', given=>'onex'}, sub {
+is $tags->div({id=>'one', given=>'onex'}, sub {
   my ($view) = @_;
   is $tags->{tb}{_given}{val}, 'onex';
   $tags->p({when=>'one'}, "hello one"),
   $tags->p({when=>'two'}, "hello two"),
   $tags->p({when=>'three'}, "hello three"),
   $tags->p({when_default=>1}, "hello four")
-});
+}), '<div id="one"><p>hello four</p></div>';
 ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
 ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
 
-warn $tags->div({id=>'one', given=>sub {'two'}}, sub {
+is $tags->div({id=>'one', given=>sub {'two'}}, sub {
   my ($view) = @_;
   is $tags->{tb}{_given}{val}, 'two';
   $tags->p({when=>'one'}, "hello one"),
   $tags->p({when=>sub {'two'}}, "hello two"),
   $tags->p({when=>'three'}, "hello three"),
   $tags->p({when_default=>1}, "hello four")
-});
+}), '<div id="one"><p>hello two</p></div>';
 ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
 ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
 
-warn $tags->div({id=>'one', given=>'one'}, sub {
+is $tags->div({id=>'one', given=>'one'}, sub {
   my ($view) = @_;
   is $tags->{tb}{_given}{val}, 'one';
   $tags->p({when=>'one', given=>'xxx'}, sub {
@@ -166,17 +167,17 @@ warn $tags->div({id=>'one', given=>'one'}, sub {
   $tags->p({when=>'two'}, "hello two"),
   $tags->p({when=>'three'}, "hello three"),
   $tags->p({when_default=>1}, "hello four")
-});
+}), '<div id="one"><p><p>hello xxx</p></p></div>';
 ok !exists($tags->{tb}{_given}{val}), 'given went out of scope';
 ok !exists($tags->{tb}{_given}{gone}), 'given went out of scope';
 
-warn $tags->div({id=>'one', given=>'three'}, sub {
+is $tags->div({id=>'one', given=>'three'}, sub {
   my ($view) = @_;
   $tags->p({when=>'one'}, "hello one"),
   $tags->p({when=>'two'}, "hello two"),
   $tags->hr({when=>'three'}),
   $tags->p({when_default=>1}, "hello four")
-});
+}), '<div id="one"><hr/></div>';
 
 done_testing;
 

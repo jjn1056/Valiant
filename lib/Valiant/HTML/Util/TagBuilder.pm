@@ -134,6 +134,7 @@ sub tag {
         (map { $_ => $self->sf($next, $attrs->{$_}) } @template_placeholder_attrs),
       );
       push @repeated_content, $self->tag($name, \%expanded_attrs);
+      $idx++;
     }
     $repeat->reset if $repeat->can('reset');
     my $repeated_content = $self->safe_concat(@repeated_content);
@@ -204,7 +205,7 @@ sub content_tag {
         (map { $_ => $self->sf($next, $attrs->{$_}) } @template_placeholder_attrs),
       );
       if(defined $code) {
-        push @repeated_content, $self->content_tag($name, \%expanded_attrs, sub { $code->(@_, $next, $idx) } );
+        push @repeated_content, $self->content_tag($name, \%expanded_attrs, sub { $code->(@_, $next, $idx++) } );
       } elsif(defined $block) {
         push @repeated_content, $self->content_tag($name, \%expanded_attrs, $block);
       } else {
