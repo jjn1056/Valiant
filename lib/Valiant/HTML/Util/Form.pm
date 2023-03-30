@@ -3,6 +3,7 @@ package Valiant::HTML::Util::Form;
 use Moo;
 use Scalar::Util;
 use Module::Runtime;
+use Valiant::Naming;
 
 extends 'Valiant::HTML::Util::FormTags';
 
@@ -57,10 +58,12 @@ sub _to_model {
   return $model;
 }
 
+
 sub _model_name_from_object_or_class {
   my ($self, $proto) = @_;
   my $model = $self->_to_model($proto);
-  return $model->model_name;
+  return $model->model_name if $model->can('model_name');
+  return Valiant::Name->new(Valiant::Naming::prepare_model_name_args($model));
 }
 
 sub _apply_form_options {

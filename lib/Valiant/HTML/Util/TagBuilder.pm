@@ -70,14 +70,23 @@ sub _install_tags {
       my $self = shift;
       my $attrs = ((ref($_[0])||'') eq 'HASH') ? shift : +{};
       my $content = shift;
-      my @args = ((ref($content)||'') eq 'CODE') ?
+      my @args = (((ref($content)||'') eq 'CODE') || ((ref($content)||'') eq 'ARRAY')) ?
         ($e, $attrs, $content) :
           ($e, $content, $attrs);
 
       return $self->{tb}->content_tag(@args);
     };
   }
+}
 
+sub is_content_tag {
+  my ($self, $name) = @_;
+  return $HTML_CONTENT_ELEMENTS{$name} ? 1 : 0;
+}
+
+sub is_void_tag {
+  my ($self, $name) = @_;
+  return $HTML_VOID_ELEMENTS{$name} ? 1 : 0;
 }
 
 sub tags {

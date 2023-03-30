@@ -1,35 +1,46 @@
 package View::Example::View::Hello;
 
-use Moose;
+use Moo;
+use View::Example::View qw(div input hr button_tag form_for);
 
-extends 'Catalyst::View::BasePerRequest';
-
+view layout => 'Layout';
 has name => (is=>'ro', required=>1);
-
-sub prepare_build_args {
-  my ($class, $c, %args) = @_;
-  $args{name} = "prepared_$args{name}";
-  return %args;
-}
 
 sub render {
   my ($self, $c) = @_;
-  return $c->view(Layout => title=>'Hello', sub {
-    my $layout = shift;
-    $self->content_for('css', "<style>...</style>");
-    $self->content_prepend('css', '<!-- 111 -->');
-    $self->content_append('css', '<!-- 222 -->');
-    $self->content_around('css', sub {
-      my $css = shift;
-      return "wrapped $css end wrap";
+  return layout(page_title => 'Homepage', sub {
+    my ($layout) = @_;
+    return div +{id=>1}, "hi", 
+      div,
+      div +{id=>2}, "hello",
+      button_tag('fff'),
+      hr,
+      div +{id=>'morexxx'}, [
+        div +{id=>3}, "more",
+        div 'none',
+        hr +{id=>'hr'},
+        div +{id=>4}, "more",
+      ],
+      div +{id=>3}, sub {
+        my ($view) = @_;
+        div +{id=>'loop', repeat=>[1,2,3]}, sub {
+          my ($view, $item, $idx) = @_;
+          div +{id=>$item}, $item;
+        },
+      },
+      form_for('fff', sub {
+        my ($fb) = @_;
+        $fb->input('foo'),
+        $fb->input('bar'),
+      }),
+      form_for($self, +{}, sub {
+        my ($fb) = @_;
+        $fb->input('name'),
+      });
     });
-
-    return
-      $c->view(Factory => name=>"joe"),
-      $c->view(Factory => name=>"jon"),
-      "<div>Hello @{[ $self->name ]}!</div>";
-  });
 }
 
-__PACKAGE__->config(content_type=>'text/html', status_codes=>[200,201,400]);
-__PACKAGE__->meta->make_immutable();
+__PACKAGE__->config(
+  content_type=>'text/html', 
+  status_codes=>[200,201,400])
+;
