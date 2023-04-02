@@ -278,9 +278,22 @@ sub join_tags {
   return $self->safe_concat(@_);
 }
 
+sub to_string { return shift->{tag_info} || '' }
+
+# helpers
+
 sub text { return shift->safe_concat(@_) }
 
-sub to_string { return shift->{tag_info} || '' }
+sub link_to {
+  my $self = shift;
+  my $url = shift || carp 'link_to requires a url';
+  my $attrs = (ref($_[0]) eq 'HASH') ? shift : {};
+  my $content = @_ ? shift : $url;
+  $attrs->{href} = $url;
+  return $self->content_tag('a', $attrs, $content);
+}
+
+# private
 
 sub _tag_options {
   my $self = shift;
@@ -453,6 +466,15 @@ Joins multiple tags together and returns them as a single string.
 Generates a safe string of text.
 
    my $text = $tag_builder->text('Lorem ipsum dolor sit amet');
+
+=head2 link_to
+
+Helper method to generate a link tag.
+
+  my $link = $tag_builder->link_to($url, \%attrs, $content);
+
+C<$url> is the URL to link to and is required.  Both C<%attrs> and c<$content>
+are optional. If C<$content> is not provided, the link text will be the URL.
 
 =head2 to_string
 

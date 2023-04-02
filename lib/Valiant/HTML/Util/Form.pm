@@ -4,6 +4,7 @@ use Moo;
 use Scalar::Util;
 use Module::Runtime;
 use Valiant::Naming;
+use Carp;
 
 extends 'Valiant::HTML::Util::FormTags';
 
@@ -110,7 +111,7 @@ sub form_for {
   my $content_block_coderef = pop; # required; at the end
   my $options = ref($_[-1]||'') eq 'HASH' ? pop : +{};
 
-  die "You must provide a content block to form_for" unless ref($content_block_coderef) eq 'CODE';
+  carp "You must provide a content block to form_for" unless ref($content_block_coderef) eq 'CODE';
 
   my ($model, $object_name);
   if( ref(\$proto) eq 'SCALAR') {

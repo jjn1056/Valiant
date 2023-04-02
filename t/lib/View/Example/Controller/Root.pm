@@ -17,5 +17,10 @@ sub root :Chained('/') PathPart('') CaptureArgs(0) {
     $c->forward($c->view);
   }
 
+  sub dispatcher :Chained('root') PathPart('') Args(1) {
+    my ($self, $c, $name) = @_;
+    $c->res->body($c->view->$name);
+  }
+
 __PACKAGE__->config(namespace=>'');
 __PACKAGE__->meta->make_immutable;

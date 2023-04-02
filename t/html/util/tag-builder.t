@@ -179,6 +179,24 @@ is $tags->div({id=>'one', given=>'three'}, sub {
   $tags->p({when_default=>1}, "hello four")
 }), '<div id="one"><hr/></div>';
 
+{
+  use HTML::Entities;
+  # Test 1: link_to with URL only
+  my $url = 'http://example.com';
+  my $expected_output = '<a href="' . encode_entities($url) . '">' . encode_entities($url) . '</a>';
+  is($tb->link_to($url), $expected_output, 'link_to with URL only');
+
+  # Test 2: link_to with URL and content
+  my $content = 'Link Text';
+  $expected_output = '<a href="' . encode_entities($url) . '">' . encode_entities($content) . '</a>';
+  is($tb->link_to($url, $content), $expected_output, 'link_to with URL and content');
+
+  # Test 3: link_to with URL, content, and additional attributes
+  my $attrs = { class => 'link', target => '_blank' };
+  $expected_output = '<a class="link" href="' . encode_entities($url) . '" target="_blank">' . encode_entities($content) . '</a>';
+  is($tb->link_to($url, $attrs, $content), $expected_output, 'link_to with URL, content, and additional attributes');
+}
+
 done_testing;
 
 __END__
