@@ -6,6 +6,7 @@ use Valiant::HTML::Util::Form;
 use Valiant::HTML::Util::View;
 use Valiant::HTML::SafeString ();
 use Attribute::Handlers;
+use Carp;
 
 extends 'Catalyst::View::BasePerRequest';
 
@@ -13,21 +14,24 @@ my $view = Valiant::HTML::Util::View->new;
 my $form = Valiant::HTML::Util::Form->new(view=>$view); # Placeholder, this gets overwritten in the request
 
 ## Code Attributes
-sub Renders :ATTR(CODE) {
-  my ($package, $symbol, $referent) = @_;
-  my $wrapper = sub {
-    my ($self, @args) = @_;
-    local $form->{view} = $self; # Evil Hack lol
-    local $form->{context} = $self->ctx;
-    local $form->{controller} = $self->ctx->controller;
-    return $referent->(@_);
-  };
 
+sub Renders :ATTR(CODE) {
+  my ($package, $symbol, $referent, $attr, $data) = @_;
   my $name = *{$symbol}{NAME};
-  Moo::_Utils::_install_tracked($package, "__attr_${name}", $wrapper);
-  Moo::_Utils::_install_tracked($package, $name, sub {
-    return $package->can("__attr_${name}")->(@_);
-  });
+  unless($package->can("__attr_${name}")) {
+    my $wrapper = sub {
+      my ($self, @args) = @_;
+      carp "View method called without correct self" unless $self->isa($package);
+      local $form->{view} = $self; # Evil Hack lol
+      local $form->{context} = $self->ctx;
+      local $form->{controller} = $self->ctx->controller;
+      return $referent->(@_);
+    };
+    Moo::_Utils::_install_tracked($package, "__attr_${name}", $wrapper);
+    Moo::_Utils::_install_tracked($package, $name, sub {
+      return $package->can("__attr_${name}")->(@_);
+    });
+  }
 }
 
 sub import {
