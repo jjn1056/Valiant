@@ -18,12 +18,26 @@ sub bits :Renders {
   return fragments->stuff4;
 }
 
+sub bits2 {
+  my $self = shift;
+  return $self->fragments->stuff4;
+}
+
 sub stuff :Renders {
   my $self = shift;
-  return div "Hey", p [
+  return div "Hey" + p [
     div "there",
     div "you",
   ];
+}
+
+sub stuff_long {
+  my $self = shift;
+  my $t = $self->tags;
+  return $t->div("Hey") + $t->p(
+    $t->div("there"),
+    $t->div("you"),
+  );
 }
 
 sub render {
@@ -31,7 +45,7 @@ sub render {
   return div layout page_title => 'Homepage', sub {
     my ($layout) = @_;
     return
-      content_for css=>'sssssss',
+      $self->content_for(css=>'sssssss'),
       fragments->stuff4,
       div +{id=>1}, $self->$sf("Hello {:name}"),
       p p p, $self->stuff2,

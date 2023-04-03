@@ -158,7 +158,18 @@ sub _install_tags {
       die "No such tag '$tag' for view";
     }
 
+    # I do this dance so that the exported methods can be called as both a function
+    # and as a method on the target instance.
+
     Moo::_Utils::_install_tracked($target, $tag, $method);
+    Moo::_Utils::_install_tracked($target, "_tag_${tag}", \&{"${target}::${tag}"});
+    Moo::_Utils::_install_tracked($target, $tag, sub {
+      my $view = shift if Scalar::Util::blessed($_[0]) && $_[0]->isa($target);
+      local $form->{view} = $view if $view;
+      local $form->{context} = $view->ctx if $view;
+      local $form->{controller} = $view->ctx->controller if $view;
+      return $target->can("_tag_${tag}")->(@_);
+    });
   }
 }
 
@@ -173,6 +184,14 @@ sub _install_views {
       $form->view->ctx->view($view_info{$name}, @args);
     };
     Moo::_Utils::_install_tracked($target, $name, $method);
+    Moo::_Utils::_install_tracked($target, "_view_${name}", \&{"${target}::${name}"});
+    Moo::_Utils::_install_tracked($target, $name, sub {
+      my $view = shift if Scalar::Util::blessed($_[0]) && $_[0]->isa($target);
+      local $form->{view} = $view if $view;
+      local $form->{context} = $view->ctx if $view;
+      local $form->{controller} = $view->ctx->controller if $view;
+      return $target->can("_view_${name}")->(@_);
+    });
   }
 }
 

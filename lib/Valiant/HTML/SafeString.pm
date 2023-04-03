@@ -5,10 +5,19 @@ use strict;
 use Exporter 'import';
 use HTML::Escape ();
 use Scalar::Util (); 
+use Carp;
 
 use overload 
   bool => sub { shift->to_bool }, 
   '""' => sub { shift->to_string },
+  '+' => sub {
+    my ($self, $other, $reverse) = @_;
+    carp "Can only join two safe string objects" unless (ref($other) eq ref($self));
+  
+    return $reverse
+        ? raw("${other}${self}")
+        : raw("${self}${other}");
+  },
   fallback => 1;
 
 our @EXPORT_OK = qw(raw flattened_raw safe flattened_safe is_safe escape_html safe_concat concat);

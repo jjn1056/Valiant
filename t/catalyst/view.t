@@ -21,4 +21,14 @@ use Catalyst::Test 'View::Example';
   is $res->content, '<div>stuff4</div>';
 }
 
+{
+  ok my $res = request '/bits2';
+  is $res->content, '<div>stuff4</div>';
+}
+
+{
+  ok my $res = request '/stuff_long';
+  is $res->content, '<div>Hey</div><p><div>there</div></p>';
+}
+
 done_testing;
