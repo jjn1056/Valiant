@@ -1,10 +1,10 @@
 package Example::View::HTML::Navbar;
 
-use Moose;
+use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'nav', 'a', 'div', 'button', 'span';
-
-extends 'Example::View::HTML';
+use Example::View::HTML
+  -tags => qw(nav a div button span),
+  -util => qw($sf content_for path ),
 
 has active_link => (is=>'ro', required=>1, default=>sub($self) { $self->ctx->req->uri->path });
 
@@ -16,7 +16,7 @@ our @links = (
   +{ href => '/logout', title => 'Logout' },
 );
 
-sub links($self) {
+sub links :Renders ($self) {
   my $class = "nav-item nav-link";
   return map {
     a +{
@@ -40,4 +40,4 @@ sub render($self, $c) {
   ];
 }
 
-__PACKAGE__->meta->make_immutable();
+1;

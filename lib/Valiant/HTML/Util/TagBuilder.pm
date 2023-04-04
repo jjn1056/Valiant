@@ -53,20 +53,21 @@ sub _install_tags {
   my $class = shift;
 
   foreach my $e (keys %HTML_VOID_ELEMENTS) {
+    next if "${class}::_tags"->can($e);
     my $full_name = $class . "::_tags::$e";
-    no strict 'refs';
-    *$full_name = Sub::Util::set_subname $full_name => sub {
+    $full_name = Sub::Util::set_subname $full_name => sub {
       my ($self, $attrs) = @_;
       $attrs = +{} unless $attrs;
 
       return $self->{tb}->tag($e, $attrs);
     };
+    Moo::_Utils::_install_tracked("${class}::_tags", $e, $full_name);
   }
 
   foreach my $e (keys %HTML_CONTENT_ELEMENTS) {
+    next if "${class}::_tags"->can($e);
     my $full_name = $class . "::_tags::$e";
-    no strict 'refs';
-    *$full_name = Sub::Util::set_subname $full_name => sub {
+    $full_name = Sub::Util::set_subname $full_name => sub {
       my $self = shift;
       my $attrs = ((ref($_[0])||'') eq 'HASH') ? shift : +{};
       my $content = shift;
@@ -76,6 +77,7 @@ sub _install_tags {
 
       return $self->{tb}->content_tag(@args);
     };
+    Moo::_Utils::_install_tracked("${class}::_tags", $e, $full_name);
   }
 }
 
@@ -236,7 +238,7 @@ sub content_tag {
         Valiant::HTML::Util::Collection->new(@$repeat_proto)
           : $repeat_proto;
       while(my $next = $repeat->next) {
-        push @repeated_content, $code->(@args, $next, $idx++);
+        push @repeated_content, $code->($next, $idx++);
       }
       $repeat->reset if $repeat->can('reset');
       $content = $self->safe_concat(@repeated_content);

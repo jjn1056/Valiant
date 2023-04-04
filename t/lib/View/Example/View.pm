@@ -7,8 +7,8 @@ use Catalyst::View::Valiant
 sub stuff2 {
   my $self = shift;
   $self->label_tag('test', sub {
-    warn 'sssss'. ref shift;
-
+    my $view = shift;
+    die unless ref($view) eq ref($self);
   });
   return $self->tags->div('stuff2');
 }

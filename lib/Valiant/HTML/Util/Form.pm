@@ -8,7 +8,7 @@ use Carp;
 
 extends 'Valiant::HTML::Util::FormTags';
 
-has 'context' => (is=>'ro', required=>0);  # For the future
+has 'context' => (is=>'ro', required=>0, predicate=>'has_context');  # For the future
 has 'controller' => (is=>'ro', required=>0);  # For the future
 
 has 'form_with_generates_ids' => (
@@ -22,10 +22,15 @@ has 'form_with_generates_ids' => (
 has 'formbuilder_class' => (
   is => 'ro',
   required => 1,
+  lazy => 1,
   builder => '_default_formbuilder_class',
 );
 
-  sub _default_formbuilder_class { 'Valiant::HTML::FormBuilder' };
+  sub _default_formbuilder_class {
+    my $self = shift;
+    return $self->view->formbuilder_class if $self->view->can('formbuilder_class');
+    return 'Valiant::HTML::FormBuilder';
+  };
 
 # for class and subclasses
 
@@ -217,6 +222,8 @@ sub _html_options_for_form_with {
   $self->_merge_attrs($html_options, $options, qw(action method data id csrf_token class style));
 
   $html_options->{action} = $url if $url;
+  $html_options->{csrf_token} ||= $self->view->csrf_token if $self->view->can('csrf_token');
+  $html_options->{csrf_token} ||= $self->context->csrf_token if $self->has_context && $self->context->can('csrf_token');
   $html_options->{tunneled_method} = 1 unless exists $html_options->{tunneled_method};
   $html_options->{method} = lc($html_options->{method}||'post'); # most common standards specify lowercase
 
@@ -519,7 +526,17 @@ model.
 =item builder
 
 The form builder.   Defaults to L<Valiant::HTML::FormBuilder>.  You can set this if you
-create your own formbuilder subclass and want to use that.
+create your own formbuilder subclass and want to use that.  If you don't provide a value
+we also check the attached view object for a C<formbuilder_class> method and use that if it
+exists.
+
+=item csrf_token
+
+Optional.  If provided, will be used to generate a hidden field with the name C<csrf_token>.
+This is useful for CSRF protection.  If you don't provide a value we will try to use the
+C<csrf_token> method on the current view object.  If that doesn't exist we will try to use
+the C<csrf_token> method on the current context object (if one exists).  If you are using
+L<Catalyst> with this you can use L<Catalyst::Plugin::CSRFToken> to generate a token.
 
 =back
 

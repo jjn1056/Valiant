@@ -1,10 +1,10 @@
 package Example::View::HTML::Errors::NotFound;
 
-use Moose;
+use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'h1', 'p';
-
-extends 'Example::View::HTML';
+use Example::View::HTML
+  -tags => qw(div h1 p),
+  -views => 'HTML::Layout';
 
 has 'status_code' => (is=>'ro', required=>1);
 has 'message' => (is=>'ro', required=>1);
@@ -20,4 +20,4 @@ sub render($self, $c) {
   });
 }
 
-__PACKAGE__->meta->make_immutable;
+1;

@@ -2,25 +2,20 @@ package Example::View::HTML::Todos;
 
 use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder qw(:table div fieldset a b u span);
-
-extends 'Example::View::HTML';
+use Example::View::HTML
+  -tags => qw(div fieldset a b u span form_for table thead tbody tfoot trow th td),
+  -util => qw($sf path ),
+  -views => 'HTML::Layout', 'HTML::Navbar';
 
 has 'list' => (is=>'ro', required=>1, handles=>[qw/pager status/]);
 has 'todo' => (is=>'ro', required=>1 );
 
-__PACKAGE__->views(
-  layout => 'HTML::Layout',
-  navbar => 'HTML::Navbar',
-  form_for => 'HTML::FormFor',
-);
-
 ## TODO add bulk operations
 
 sub render($self, $c) {
-  $self->layout(page_title=>'Todo List', sub($layout) {
-    $self->navbar(active_link=>'/todos'),
-    $self->form_for($self->todo, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $todo) {
+  html_layout page_title=>'Todo List', sub($layout) {
+    html_navbar active_link=>'/todos',
+    form_for $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
       fieldset [
         $fb->legend,
         $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
@@ -34,7 +29,7 @@ sub render($self, $c) {
             ],
           tbody { repeat=>$self->list }, sub ($todo, $i) {
             trow [
-             td a +{ href=>$self->link('todo/view', [$todo->id]) }, $todo->title,
+             td a +{ href=>path('todo/view', [$todo->id]) }, $todo->title,
              td $todo->status,
             ],
           },
@@ -51,8 +46,8 @@ sub render($self, $c) {
         ],
         $fb->submit('Add Todo to List'),
       ],
-    }),
-  });
+    },
+  };
 }
 
 sub page_window_info($self) {
@@ -67,7 +62,7 @@ sub page_window_info($self) {
 sub pagelist($self) {
   my @page_html = ();
   foreach my $page (1..$self->pager->last_page) {
-    push @page_html, a {href=>$self->link('list', +{'todo.page'=>$page, 'todo.status'=>$self->status}), style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
+    push @page_html, a {href=>path('list', +{'todo.page'=>$page, 'todo.status'=>$self->status}), style=>'margin: .5rem'}, $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;
 }
@@ -80,8 +75,7 @@ sub status_filter_box($self) {
 
 sub status_filter($self, $status) {
   return span {style=>'margin: .5rem'}, [b u $status] if $self->status eq $status;
-  return a { href=>$self->link('list', +{'todo.page'=>1, 'todo.status'=>$status}), style=>'margin: .5rem'}, $status;
+  return a { href=>path('list', +{'todo.page'=>1, 'todo.status'=>$status}), style=>'margin: .5rem'}, $status;
 }
-
 
 1;

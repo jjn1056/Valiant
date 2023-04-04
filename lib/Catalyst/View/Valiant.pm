@@ -2,16 +2,27 @@ package Catalyst::View::Valiant;
 
 use Moo;
 use Sub::Util;
-use Valiant::HTML::Util::Form;
-use Valiant::HTML::Util::View;
 use Valiant::HTML::SafeString ();
 use Attribute::Handlers;
+use Module::Runtime;
 use Carp;
+use Catalyst::View::Valiant::Form;
 
 extends 'Catalyst::View::BasePerRequest';
 
-my $view = Valiant::HTML::Util::View->new;
-my $form = Valiant::HTML::Util::Form->new(view=>$view); # Placeholder, this gets overwritten in the request
+## Shared Form Object
+
+my $form;
+
+sub form_args { return () }
+
+sub _install_form {
+  my $class = shift;
+  my $target = shift;
+  my $form_class = shift;
+  my $view = Module::Runtime::use_module('Valiant::HTML::Util::View')->new; # Placeholder
+  $form = Catalyst::View::Valiant::Form->new(view=>$view, $class->form_args);
+}
 
 ## Code Attributes
 
@@ -47,10 +58,11 @@ sub import {
     } elsif($next eq '-views') {
       $which = 'views';
       next;
-    } elsif($next eq '-util') {
+    } elsif(($next eq '-util') || ($next eq '-utils')) {
       $which = 'util';
       next;
     }
+
     if($which eq 'tags') {
       push @tags, $next;
     } elsif($which eq 'views') {
@@ -59,12 +71,14 @@ sub import {
       $next =~s/(?<=[a-z])(?=[A-Z])/_/g;
       push @views, lc($next) => $key;
     } elsif($which eq 'util') {
-      push @utils,$next;
+      push @utils, $next;
     }
   }
 
   Moo->_set_superclasses($target, $class);
+  Moo->_maybe_reset_handlemoose($target);
 
+  $class->_install_form($target);
   $class->_install_tags($target, @tags);
   $class->_install_views($target, @views);
   $class->_install_utils($target, @utils);
@@ -105,7 +119,7 @@ sub _install_utils {
     } elsif($util eq 'path') {
       Moo::_Utils::_install_tracked($target, "__path", $target->can('path'));
       my $sub = sub {
-        if(Scalar::Util::blessed($_[0])) {
+        if(Scalar::Util::blessed($_[0]) && $_[0]->isa('Catalyst::View::Valiant')) {
           return $target->can("__path")->(@_);
         } else {
           return $target->can("__path")->($form->view, @_);
@@ -123,37 +137,66 @@ sub _install_tags {
   foreach my $tag (@_) {
     my $method;
     if($form->is_content_tag($tag)) {
-      $method = Sub::Util::set_subname "${target}::${tag}" => sub {
-        my ($args, $content) = (+{}, '');
-        $args = shift if ref $_[0] eq 'HASH';
-        if(defined($_[0])) {
-          if(Scalar::Util::blessed($_[0]) && $_[0]->isa($class)) {
-            $content = shift->get_rendered;
-          } else {
-            $content = shift;
+      if($target->can($tag)) {
+        $method = $target->can($tag);
+      } else {
+        $method = Sub::Util::set_subname "${target}::${tag}" => sub {
+          my ($args, $content) = (+{}, '');
+          $args = shift if ref $_[0] eq 'HASH';
+          if(defined($_[0])) {
+            if(Scalar::Util::blessed($_[0]) && $_[0]->isa($class)) {
+              $content = shift->get_rendered;
+            } else {
+              $content = shift;
+            }
           }
-        }
-        return $form->tags->$tag($args, $content), @_;
-      };
+          return $form->tags->$tag($args, $content), @_;
+        };
+      }
     } elsif($form->is_void_tag($tag)) {
-      $method = Sub::Util::set_subname "${target}::${tag}" => sub {
-        my $args = +{};
-        $args = shift if ref $_[0] eq 'HASH';
-        return $form->tags->$tag($args), @_;
-      };
+      if($target->can($tag) && $tag ne 'meta') { # meta is a special case 
+        $method = $target->can($tag);
+      } else {
+        $method = Sub::Util::set_subname "${target}::${tag}" => sub {
+          my $args = +{};
+          $args = shift if ref $_[0] eq 'HASH';
+          return $form->tags->$tag($args), @_;
+        };
+      }
+    } elsif($tag eq 'trow') {
+      if($target->can('tr') && $tag ne 'meta') { # meta is a special case 
+        $method = $target->can('tr');
+      } else {
+        $method = Sub::Util::set_subname "${target}::tr" => sub {
+          my ($args, $content) = (+{}, '');
+          $args = shift if ref $_[0] eq 'HASH';
+          if(defined($_[0])) {
+            if(Scalar::Util::blessed($_[0]) && $_[0]->isa($class)) {
+              $content = shift->get_rendered;
+            } else {
+              $content = shift;
+            }
+          }
+          return $form->content_tag('tr', $args, $content), @_;
+        };
+      }
     } elsif($form->can($tag)) {
-      $method = Sub::Util::set_subname "${target}::${tag}" => sub {
-        ## return $form->safe_concat($form->$tag(@_));
-        ## Will ponder this, it seems to be a performance hit
-        my @args = ();
-        while(@_) {
-          last if
-            !defined($_[0])
-            || (Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString';
-          push @args, shift;
-        }
-        return $form->$tag(@args), @_; 
-      };
+      if($target->can($tag)) {
+        $method = $target->can($tag);
+      } else {
+        $method = Sub::Util::set_subname "${target}::${tag}" => sub {
+          ## return $form->safe_concat($form->$tag(@_));
+          ## Will ponder this, it seems to be a performance hit
+          my @args = ();
+          while(@_) {
+            last if
+              !defined($_[0])
+              || (Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString';
+            push @args, shift;
+          }
+          return $form->$tag(@args), @_; 
+        };
+      }
     } else {
       die "No such tag '$tag' for view";
     }
@@ -180,8 +223,15 @@ sub _install_views {
 
   foreach my $name (keys %view_info) {
     my $method = Sub::Util::set_subname "${target}::${name}" => sub {
-      my (@args) = @_;
-      $form->view->ctx->view($view_info{$name}, @args);
+      my @args = ();
+      while(@_) {
+        last if
+          !defined($_[0])
+          || (Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString';
+        push @args, shift;
+      }
+      return $form->view->ctx->view($view_info{$name}, @args), @_ if @_;
+      return $form->view->ctx->view($view_info{$name}, @args);
     };
     Moo::_Utils::_install_tracked($target, $name, $method);
     Moo::_Utils::_install_tracked($target, "_view_${name}", \&{"${target}::${name}"});
@@ -231,6 +281,8 @@ sub path {
       unless my $uri = $c->uri_for($action_proto, @args);
     return $uri;
   }
+
+  return $action_proto if Scalar::Util::blessed($action_proto) && $action_proto->isa('URI'); # common error 
       
   # Hard error if the spec looks wrong...
   die "$action_proto is not a string" unless ref \$action_proto eq 'SCALAR';
@@ -268,7 +320,5 @@ around 'get_rendered' => sub {
   local $form->{controller} = $self->ctx->controller;
   return $self->$orig(@args);
 };
-
-
 
 __PACKAGE__->config(content_type=>'text/html');

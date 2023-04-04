@@ -15,7 +15,7 @@ sub account_for($self, $user) {
   $account->build_related_if_empty('profile'); # Needed since the relationship is optional
   $account->profile->build_related_if_empty('employment'); # Needed since the relationship is optional
   $account->profile->status('pending') unless defined($account->profile->status);
-  eturn $account;
+  return $account;
 }
 
 sub unauthenticated_user($self, $args=+{}) {

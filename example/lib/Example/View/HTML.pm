@@ -1,19 +1,23 @@
 package Example::View::HTML;
 
-use Moose;
-use Valiant::HTML::SafeString 'safe_concat';
+use Moo;
 use Example::Syntax;
+use Catalyst::View::Valiant -tags => qw(form_for p);
 
-extends 'Catalyst::View::BasePerRequest';
+sub formbuilder_class { 'Example::FormBuilder' }
 
-sub flatten_rendered($self, @rendered) {
-  return safe_concat @rendered;
+sub the_time :Renders ($self) {
+  return p {class=>'timestamp'}, scalar localtime;
 }
 
-sub link($self, @args) {
-  return $self->ctx->uri(@args);
-}
+__PACKAGE__->meta->make_immutable();
 
-__PACKAGE__->config(
-  content_type=>'text/html',
-);
+__END__
+
+around 'form_for' => sub {
+  my ($orig, $model) = (shift, shift); # required
+  my $cb = pop; # required
+  my $attrs = shift || +{}; # optional
+  $attrs->{builder} ||= 'Example::FormBuilder';
+  $orig->($model, $attrs, $cb);
+};

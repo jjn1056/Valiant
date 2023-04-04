@@ -25,7 +25,7 @@ sub bits2 {
 
 sub stuff :Renders {
   my $self = shift;
-  return div "Hey" + p [
+  return div "Hey", p [
     div "there",
     div "you",
   ];

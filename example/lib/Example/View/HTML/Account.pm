@@ -1,16 +1,10 @@
 package Example::View::HTML::Account;
 
-use Moose;
+use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'fieldset', 'legend', 'br';
-
-extends 'Example::View::HTML';
-
-__PACKAGE__->views(
-  layout => 'HTML::Layout',
-  navbar => 'HTML::Navbar',
-  form_for => 'HTML::FormFor',
-);
+use Example::View::HTML
+  -tags => qw(div a fieldset legend br form_for),
+  -views => 'HTML::Layout', 'HTML::Navbar';
 
 has 'account' => ( is=>'ro', required=>1 );
 has 'states' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { $self->ctx->model('Schema::State') } );
@@ -19,10 +13,10 @@ has 'status_list' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { [ma
 has 'employment_options' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { $self->ctx->model('Schema::Employment') } );
 
 sub render($self, $c) {
-  $self->layout(page_title=>'Homepage', sub($layout) {
-    $self->navbar(active_link=>'/account'),
-    $self->form_for($self->account, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $account) {
-      div +{ cond=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
+  html_layout page_title=>'Homepage', sub($layout) {
+    html_navbar active_link=>'/account',
+    form_for $self->account, +{style=>'width:35em; margin:auto'}, sub ($fb, $account) {
+      div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -160,8 +154,8 @@ sub render($self, $c) {
         ],
       ],
       fieldset $fb->submit(),
-    }),
-  });
+    },
+  };
 }
 
-__PACKAGE__->meta->make_immutable();
+1;

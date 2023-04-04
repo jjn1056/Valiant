@@ -1,21 +1,16 @@
 package Example::View::HTML::Register;
 
-use Moose;
+use Moo;
 use Example::Syntax;
-use Valiant::HTML::TagBuilder 'div', 'a', 'fieldset';
-
-extends 'Example::View::HTML';
+use Example::View::HTML
+  -tags => qw(div a fieldset form_for),
+  -views => 'HTML::Layout';
 
 has 'registration' => (is=>'ro', required=>1);
 
-__PACKAGE__->views(
-  layout => 'HTML::Layout',
-  form_for => 'HTML::FormFor',
-);
-
 sub render($self, $c) {
-  $self->layout( page_title=>'Homepage', sub($layout) {
-    $self->form_for($self->registration, +{style=>'width:35em; margin:auto'}, sub ($ff, $fb, $registration) {
+  html_layout page_title=>'Homepage', sub($layout) {
+    form_for $self->registration, +{style=>'width:35em; margin:auto'}, sub ($fb, $registration) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },
@@ -48,8 +43,8 @@ sub render($self, $c) {
       ],
       fieldset $fb->submit('Register for Account'),
       div { class=>'text-center' }, a { href=>'/login' }, 'Login to existing account.',
-    }),
-  }),
+    },
+  },
 }
 
-__PACKAGE__->meta->make_immutable();
+1;
