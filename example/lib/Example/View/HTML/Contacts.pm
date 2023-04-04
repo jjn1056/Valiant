@@ -7,7 +7,7 @@ use Example::View::HTML
   -util => qw(path $sf),
   -views => 'HTML::Layout', 'HTML::Navbar';
 
-has 'list' => (is=>'ro', required=>1, handles=>['pager']);
+has 'list' => (is=>'ro', required=>1, from=>'controller', handles=>['pager']);
 has 'child_controller' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
@@ -26,7 +26,7 @@ sub render($self, $c) {
               td a +{ href=>$self->child_link('show_edit', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
             ],
           },
-          tfoot { cond=>$self->pager->last_page > 1  },
+          tfoot { if=>$self->pager->last_page > 1  },
             td {colspan=>2, style=>'background:white'},
               ["Page: ", $self->pagelist ],
         ],

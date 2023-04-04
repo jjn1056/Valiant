@@ -322,3 +322,32 @@ around 'get_rendered' => sub {
 };
 
 __PACKAGE__->config(content_type=>'text/html');
+
+=head1 NAME
+
+Catalyst::View::Valiant - Per Request, strongly typed Views in code
+
+=head1 SYNOPSIS
+
+=head1 DESCRIPTION
+
+B<WARNINGS>: Experimental code that might break to fix issues and /or might be a
+terrible idea that I tell people not to use in the future.  I can't tell if this is
+cool / interesting or a worse version of Mason.
+
+=head1 EXAMPLE
+
+=head1 SEE ALSO
+ 
+L<Valiant>, L<Valiant::HTML::Util::Form>, L<Valiant::HTML::Util::FormTags>,
+L<Valiant::HTML::Util::Tagbuilder>,  L<Valiant::HTML::SafeString>.
+
+=head1 AUTHOR
+ 
+See L<Valiant>
+
+=head1 COPYRIGHT & LICENSE
+ 
+See L<Valiant>
+
+=cut

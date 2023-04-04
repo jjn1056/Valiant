@@ -33,7 +33,7 @@ sub render($self, $c) {
              td $todo->status,
             ],
           },
-          tfoot { cond=>$self->pager->last_page > 1  },
+          tfoot { if=>$self->pager->last_page > 1  },
             td {colspan=>2, style=>'background:white'},
               ["Page: ", $self->pagelist ],
         ],

@@ -82,7 +82,7 @@ sub render($self, $c) {
       $fb->submit(),
       a {href=>'/contacts', class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
       button {
-        cond=>$contact->in_storage, 
+        if=>$contact->in_storage, 
         formaction=>'?x-tunneled-method=delete',
         formmethod=>'POST',
         class=>'btn btn-danger btn-lg btn-block'
