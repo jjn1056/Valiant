@@ -315,9 +315,19 @@ sub path {
 
 around 'get_rendered' => sub {
   my ($orig, $self, @args) = @_;
+  $self->ctx->stash->{__view_for_code} = $self->form->view if $self->has_code;
   local $form->{view} = $self; # Evil Hack lol
   local $form->{context} = $self->ctx;
   local $form->{controller} = $self->ctx->controller;
+  return $self->$orig(@args);
+};
+
+around 'execute_code_callback' => sub {
+  my ($orig, $self, @args) = @_;
+  my $old_view = delete $self->ctx->stash->{__view_for_code};
+  local $form->{view} = $old_view; # Evil Hack lol
+  local $form->{context} = $old_view->ctx;
+  local $form->{controller} = $old_view->ctx->controller;
   return $self->$orig(@args);
 };
 

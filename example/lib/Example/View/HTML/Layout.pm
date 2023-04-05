@@ -10,6 +10,8 @@ use Example::View::HTML
 has 'page_title' => (is=>'ro', required=>1);
 
 sub render($self, $c, $content) {
+  warn '11'.$self->form->view;
+
   return  html +{ lang=>'en' }, [
             head [
               title $self->page_title,

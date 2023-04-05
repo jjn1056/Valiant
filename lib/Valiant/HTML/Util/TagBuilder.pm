@@ -99,9 +99,8 @@ sub tags {
 
 sub _omit_tag {
   my ($self, $attrs) = @_;
-  return 0 unless exists $attrs->{omit_tag};
-
-  my $omit_tag = delete $attrs->{omit_tag};
+  return 0 unless exists $attrs->{omit};
+  my $omit_tag = delete $attrs->{omit};
   if(ref($omit_tag) eq 'CODE') {
     return $omit_tag->($self->view) ? 1 : 0;
   } 
@@ -238,7 +237,7 @@ sub content_tag {
         Valiant::HTML::Util::Collection->new(@$repeat_proto)
           : $repeat_proto;
       while(my $next = $repeat->next) {
-        push @repeated_content, $code->($next, $idx++);
+        push @repeated_content, $code->($self->view, $next, $idx++);
       }
       $repeat->reset if $repeat->can('reset');
       $content = $self->safe_concat(@repeated_content);
@@ -377,7 +376,8 @@ This class has the following initialization attributes
 Object, Required.  This should be an object that provides methods for creating escaped
 strings for HTML display.  Many template systems provide a way to mark strings as safe
 for display, such as L<Mojo::Template>.  You will need to add the following proxy methods
-to your view / template to adapt it for use in creating safe strings.
+to your view / template to adapt it for use in creating safe strings that work in the way
+it expects.  If you're view doesn't need this you can just use L<Valiant::HTML::Util::View>.
 
 =over
 
@@ -413,7 +413,7 @@ Given an attribute name return true if the view has defined a value for it.
 
 Both C<raw>, C<safe> and C<safe_concat> should return a 'tagged' object which is specific to your view or
 template system. However this object must 'stringify' to the safe version of the string to be displayed.  See
-L<Valiant::HTML::SafeString> for example API.  We use <Valiant::HTML::SafeString> internally to provide
+L<Valiant::HTML::SafeString> for example API.  We use L<Valiant::HTML::SafeString> internally to provide
 safe escaping if you're view doesn't do automatic escaping, as many older template systems like Template
 Toolkit.
 
@@ -497,6 +497,27 @@ refer to your view for more.
 =head2 escape_html
 
 =head2 safe_concat
+
+=head1 LOGIC AND FLOW CONTROL
+
+L<Valiant::HTML::Util::TagBuilder> builds in some basic logic and control flow to
+make it easier to use in small places where a full on template system would be too much
+but you don't want ugly string concatenation.  This system works by adding a handful of
+custom html attributes to your tag declarations.   These custom tags are removed from
+the final output.
+
+=head2 omit
+
+    my $t = $tag_builder->tags;
+    say $t->hr({omit=>1}) +
+      $t->div({omit=>1}, 'Hello World!');
+
+If the value is true the tag is removed from the final output.  However any content
+is preserved.
+
+Value can be a scalar which will be evaluated as a boolean, or a coderef which will be called 
+and passed the current C<$view> as an argument).
+
 
 =head1 AUTHOR
 

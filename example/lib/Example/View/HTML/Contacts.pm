@@ -21,7 +21,7 @@ sub render($self, $c) {
             trow [
               th +{ scope=>"col" }, 'Name',
             ],
-          tbody { repeat=>$self->list }, sub ($item, $idx) {
+          tbody { repeat=>$self->list }, sub ($self, $item, $idx) {
             trow [
               td a +{ href=>$self->child_link('show_edit', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
             ],

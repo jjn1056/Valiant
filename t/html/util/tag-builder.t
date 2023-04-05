@@ -61,8 +61,8 @@ is ref($tb->content_tag(a => 'link')), 'Valiant::HTML::SafeString';
 is ref($tb->tags->hr), 'Valiant::HTML::SafeString';
 is ref($tb->tags->a(sub {$tb->tags->hr, 'text'})), 'Valiant::HTML::SafeString';
 
-is $tb->tag('hr', +{id=>1, omit_tag=>1}), '';
-is $tb->content_tag('div', +{id=>1, omit_tag=>1}, 'Hello World'), 'Hello World';
+is $tb->tag('hr', +{id=>1, omit=>1}), '';
+is $tb->content_tag('div', +{id=>1, omit=>1}, 'Hello World'), 'Hello World';
 
 is $tb->sf('This {:aaa} is {:bbb} a test', aaa=>'foo', bbb=>'bar'), 'This foo is bar a test';
 is ref($tb->sf('This {:aaa} is {:bbb} a test', aaa=>'foo', bbb=>'bar')), 'Valiant::HTML::SafeString';
@@ -196,6 +196,12 @@ is $tags->div({id=>'one', given=>'three'}, sub {
   $expected_output = '<a class="link" href="' . encode_entities($url) . '" target="_blank">' . encode_entities($content) . '</a>';
   is($tb->link_to($url, $attrs, $content), $expected_output, 'link_to with URL, content, and additional attributes');
 }
+
+is  $tags->hr({omit=>1}) +
+    $tags->div({omit=>1}, 'Hello World!'), 'Hello World!';
+
+is  $tags->hr({omit=>sub {1}}) +
+    $tags->div({omit=>sub{shift}}, 'Hello World!'), 'Hello World!';
 
 done_testing;
 

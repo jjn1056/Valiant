@@ -13,9 +13,12 @@ has 'todo' => (is=>'ro', required=>1 );
 ## TODO add bulk operations
 
 sub render($self, $c) {
+  warn '1'.$self->form->view;
   html_layout page_title=>'Todo List', sub($layout) {
+    warn '2'.$self->form->view;
+
     html_navbar active_link=>'/todos',
-    form_for $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
+    form_for 'todo', +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
       fieldset [
         $fb->legend,
         $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
@@ -27,16 +30,9 @@ sub render($self, $c) {
               th +{scope=>"col"},'Title',
               th +{scope=>"col", style=>'width:8em'}, 'Status',
             ],
-          tbody { repeat=>$self->list }, sub ($todo, $i) {
-            trow [
-             td a +{ href=>path('todo/view', [$todo->id]) }, $todo->title,
-             td $todo->status,
-            ],
-          },
-          tfoot { if=>$self->pager->last_page > 1  },
-            td {colspan=>2, style=>'background:white'},
-              ["Page: ", $self->pagelist ],
-        ],
+          tbody { repeat=>$self->list }, \&rows,
+          tfoot { if=>$self->pager->last_page > 1  }, \&pagelist_row,
+         ],
         
         $self->status_filter_box,
 
@@ -50,7 +46,19 @@ sub render($self, $c) {
   };
 }
 
-sub page_window_info($self) {
+sub rows :Renders ($self, $todo, $i) {
+  trow [
+   td a +{ href=>path('todo/view', [$todo->id]) }, $todo->title,
+   td $todo->status,
+  ],
+}
+
+sub pagelist_row :Renders ($self) {
+ td {colspan=>2, style=>'background:white'},
+    ["Page: ", $self->pagelist ],
+}
+
+sub page_window_info :Renders ($self) {
   return '' unless $self->pager->total_entries > 0;
   my $message = $self->pager->last_page == 1 ?
     "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}" :
