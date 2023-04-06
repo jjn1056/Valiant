@@ -361,31 +361,32 @@ Catalyst::View::Valiant - Per Request, strongly typed Views in code
           class=>"alert alert-primary", 
           role=>"alert" }, $self->info,
         div $self->person->$sf('Welcome {:first_name} {:last_name} to your Example Homepage');
-        div 'Please complete your profile to continue.'
-        form_for $self->person, sub ($self, $fb, $registration) {
-          fieldset [
-            $fb->legend,
-            div +{ class=>'form-group' },
-              $fb->model_errors(+{show_message_on_field_errors=>'Please fix validation errors'}),
-            div +{ class=>'form-group' }, [
-              $fb->label('username'),
-              $fb->input('username'),
-              $fb->errors_for('username'),
+        div {if=>$self->person->profile_incomplete}, [
+          blockquote {class=>"alert alert-primary", role=>"alert"}, 'Please complete your profile',
+          form_for $self->person, sub($self, $fb, $person) {
+            fieldset [
+              $fb->legend,
+              div +{ class=>'form-group' },
+                $fb->model_errors(+{show_message_on_field_errors=>'Please fix validation errors'}),
+              div +{ class=>'form-group' }, [
+                $fb->label('username'),
+                $fb->input('username'),
+                $fb->errors_for('username'),
+              ],
+              div +{ class=>'form-group' }, [
+                $fb->label('password'),
+                $fb->password('password'),
+                $fb->errors_for('password'),
+              ],
+              div +{ class=>'form-group' }, [
+                $fb->label('password_confirmation'),
+                $fb->password('password_confirmation'),
+                $fb->errors_for('password_confirmation'),
+              ],
             ],
-            div +{ class=>'form-group' }, [
-              $fb->label('password'),
-              $fb->password('password'),
-              $fb->errors_for('password'),
-            ],
-            div +{ class=>'form-group' }, [
-              $fb->label('password_confirmation'),
-              $fb->password('password_confirmation'),
-              $fb->errors_for('password_confirmation'),
-            ],
+            fieldset $fb->submit('Complete Account Setup'),
           ],
-          fieldset $fb->submit('Complete Account Setup'),
-        },
-
+        ],
       };
     }
 
@@ -393,13 +394,55 @@ Catalyst::View::Valiant - Per Request, strongly typed Views in code
 
 =head1 DESCRIPTION
 
-B<WARNINGS>: Experimental code that might break to fix issues and /or might be a
-terrible idea that I tell people not to use in the future.  I can't tell if this is
-cool / interesting or a worse version of Mason.
+B<WARNINGS>: Experimental code that I might need to break back compatibility in order
+to fix issues.  
 
 This is a L<Catalyst::View> subclass that provides a way to write views in code
 that are strongly typed and per request.  It also integrates with several of L<Valiant>'s
-HTML form generation code 
+HTML form generation code modules to make it easier to create HTML forms that properly
+synchronize with your L<Valiant> models for displaying errors and performing validation.
+
+Unlike most Catalyst views, this view is 'per request' in that it is instantiated for
+each request.  This allows you to store per request state in the view object as well as
+localize view specific logic to the view object.  In particular it allows you to avoid or
+reduce using the stash in order to pass values from the controller to the view.  I think
+this can make your views more robust and easier to support for the long term.  It builds
+upons L<Catalyst::View::BasePerRequest> which provides the per request behavior so you should
+take a look at the documentation and example controller integration in that module in
+order to get the idea.
+
+As a quick example here's a possible controller that might invoke the view given in the
+SYNOPSIS:
+
+    package Example::Controller::Home;
+
+    use Moose;
+    use MooseX::MethodAttributes;
+
+    extends 'Catalyst::Controller';
+
+    sub index($self, $c) {
+      my $view = $c->view('HTML::Home', person=>$c->user);
+      if( # Some condition ) {
+        $view->info('You have been logged in');
+      }
+    }
+
+    1;
+
+This will then work with the commonly used L<Catalyst::Action::RenderView> or my 
+L<Catalyst::ActionRole::RenderView> to produce a view response and set it as the
+response body.  
+
+Additionally, this view allows you to import HTML tags from L<Valiant::HTML::Util::TagBuilder>
+as well as HTML tag helper methods from L<Valiant::HTML::Util::FormTags> and
+L<Valiant::HTML::Util::Form> into your view code.  You should take a look at the
+documentation for those modules to see what is available.  Since L<Valiant::HTML::Util::TagBuilder>
+includes basic flow control and logic this gives you a bare minimum templating system
+that is completely in code.  You can import some utility methods as well as other views
+into your view (please see the L</EXPORTS> section below for more details).  This is currently
+lightly documented so I recommend also looking at the test cases as well as the example
+Catalyst application included in the distribution under the C<example/> directory.
 
 =head1 ATTRIBUTES
 
@@ -440,7 +483,15 @@ Given an attribute name, returns the value of that attribute if it exists.  If t
 
 =head2 attribute_exists_for_html
 
-Given an attribute name, returns true if the attribute exists and false if it does not.
+Given an attribute name, returns true if the attribute exists and false if it does notu.
+
+=head2 formbuilder_class 
+
+    sub formbuilder_class { 'Example::FormBuilder' }
+
+Provides an easy way to override the default formbuilder class.  By default it will use
+L<Valiant::HTML::FormBuilder>.  You can override this method to return a different class
+via a subclass of this view.
 
 =head1 EXPORTS
 
@@ -489,11 +540,100 @@ properly support relatively named actions.
 Create export wrappers for the named Catalyst views.  Export names will be snake cased versions
 of the given view names.
 
-=head1 EXAMPLE
-
 =head1 SUBCLASSING
 
+You can subclass this view in order to provide your own default behavior and additional methods.
+
+    package View::Example::View;
+
+    use Moo;
+    use Catalyst::View::Valiant
+      -tags => qw(blockquote label_tag);
+
+    sub formbuilder_class { 'Example::FormBuilder' }
+
+    sub stuff2 {
+      my $self = shift;
+      $self->label_tag('test', sub {
+        my $view = shift;
+        die unless ref($view) eq ref($self);
+      });
+      return $self->tags->div('stuff2');
+    }
+
+    sub stuff3 :Renders {
+      blockquote 'stuff3', 
+      shift->div('stuff333')
+    }
+
+    1;
+
+Then the view C<View::Example::View> can be used in exactly the same way as this view.
+
 =head1 TIPS & TRICKS
+
+=head2 Creating render methods
+
+Often you will want to break up your render method into smaller chunks.  You can do this by
+creating methods that return L<Valiant::HTML::SafeString> objects.  You can then call these
+methods from your render method.  Here's an example:
+
+    sub simple :Renders {
+      my $self = shift;
+      return div "Hey";
+    }
+
+You can then call this method from another render method:
+
+    sub complex :Renders {
+      my $self = shift;
+      return $self->simple;
+    }
+
+Or use it directly in your main render method:
+
+    sub render {
+      my $self = shift;
+      return $self->simple;
+    }
+
+Please note you need to add the ':Renders' attribute to your method in order for it to be
+exported as a render method.  You don't need to do that on the main render method in your
+class because we handle that for you.
+
+=head2 Calling for view fragments
+
+You can call for the response of any view's method wish is marked as a render method.
+
+  package Example::View::Fragments;
+
+    use Moo;
+    use Catalyst::View::Valiant
+      -tags => qw(div);
+
+    sub stuff4 :Renders { div 'stuff4' }
+
+    1;
+
+Then in your main view:
+
+  package Example::View::Hello;
+
+    use Moo;
+    use Catalyst::View::Valiant
+      -views => qw(Fragments);
+
+    sub render {
+      my $self = shift;
+      return fragment->stuff4;
+    }
+
+You can even call them in a controller:
+
+    sub index :Path {
+      my ($self, $c) = @_;
+      $c->res->body($c->view('Fragments')->stuff4);
+    }
 
 =head1 SEE ALSO
  
