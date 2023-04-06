@@ -2,7 +2,7 @@ package Example::View::HTML;
 
 use Moo;
 use Example::Syntax;
-use Catalyst::View::Valiant -tags => qw(form_for p);
+use Catalyst::View::Valiant -tags => qw(p);
 
 sub formbuilder_class { 'Example::FormBuilder' }
 

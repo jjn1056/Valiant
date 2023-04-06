@@ -232,6 +232,7 @@ is $fb->legend(sub { shift . " Info"}), '<legend>New Person Info</legend>';
 is $fb->legend({class=>'foo'}, sub {"Person"}), '<legend class="foo">Person</legend>';
 
 is $fb->fields_for('profile', sub {
+  my $view = shift;
   my $fb_profile = shift;
   return  $fb_profile->input('address'),
           $fb_profile->errors_for('address'),
@@ -240,11 +241,13 @@ is $fb->fields_for('profile', sub {
 }), '<input id="person_profile_address" name="person.profile.address" type="text" value="ab"/><div>Address is too short (minimum is 3 characters)</div><input id="person_profile_zip" name="person.profile.zip" type="text" value="78621"/>';
 
 is $fb->fields_for('credit_cards', sub {
+  my $view = shift;
   my $fb_cc = shift;
   return  $fb_cc->input('number'),
           $fb_cc->date_field('expiration'),
           $fb_cc->errors_for('expiration');
 }, sub {
+  my $view = shift;
   my $fb_finally = shift;
   return  $fb_finally->button('add', +{value=>1}, 'Add a New Credit Card');
 }), '<input id="person_credit_cards_0_number" name="person.credit_cards[0].number" type="text" value="234234223444"/><input id="person_credit_cards_0_expiration" name="person.credit_cards[0].expiration" type="date" value="'.$person->credit_cards->[0]->expiration->ymd.'"/><input id="person_credit_cards_1_number" name="person.credit_cards[1].number" type="text" value="342342342322"/><input id="person_credit_cards_1_expiration" name="person.credit_cards[1].expiration" type="date" value="'.$person->credit_cards->[1]->expiration->ymd.'"/><input id="person_credit_cards_2_number" name="person.credit_cards[2].number" type="text" value="111112222233"/><input id="person_credit_cards_2_expiration" name="person.credit_cards[2].expiration" type="date" value="'.$person->credit_cards->[2]->expiration->ymd.'"/><div>Expiration chosen date can&#39;t be earlier than '.DateTime->now->ymd.'</div><button id="person_credit_cards_3_add" name="person.credit_cards[3].add" type="submit" value="1">Add a New Credit Card</button>';

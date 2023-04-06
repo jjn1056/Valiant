@@ -10,7 +10,7 @@ has 'registration' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
   html_layout page_title=>'Homepage', sub($layout) {
-    form_for $self->registration, +{style=>'width:35em; margin:auto'}, sub ($fb, $registration) {
+    form_for $self->registration, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $registration) {
       fieldset [
         $fb->legend,
         div +{ class=>'form-group' },

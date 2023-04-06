@@ -2,7 +2,7 @@ package View::Example::View::Hello;
 
 use Moo;
 use View::Example::View
-  -tags => qw(div input hr p button_tag form_for link_to a ul li),
+  -tags => qw(div input hr p button_tag form_for link_to a ul li blockquote),
   -util => qw($sf content_for path ),
   -views => 'Layout', 'Fragments';
 
@@ -42,7 +42,7 @@ sub stuff_long {
 
 sub render {
   my ($self, $c) = @_;
-  return div layout page_title => 'Homepage', sub {
+  return blockquote layout page_title => 'Homepage', sub {
     my ($layout) = @_;
     return
       $self->content_for(css=>'sssssss'),

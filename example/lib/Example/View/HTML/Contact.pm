@@ -11,7 +11,7 @@ has 'contact' => (is=>'ro', required=>1);
 sub render($self, $c) {
   html_layout page_title=>'Contact List', sub($layout) {
     html_navbar active_link=>'/contacts',
-    form_for $self->contact, +{style=>'width:35em; margin:auto'}, sub ($fb, $contact) {
+    form_for $self->contact, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $contact) {
       div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Saved!',
 
       fieldset [
@@ -38,7 +38,7 @@ sub render($self, $c) {
       fieldset [
         div +{ class=>'form-group' }, [
           $fb->errors_for('emails'),
-          $fb->fields_for('emails', sub($fb_e, $e) {
+          $fb->fields_for('emails', sub($self, $fb_e, $e) {
             $fb_e->legend,
             div +{ class=>'form-row' }, [
               div +{ class=>'col form-group' }, [
@@ -51,7 +51,7 @@ sub render($self, $c) {
                 $fb_e->checkbox('_delete'),
               ],
             ]
-          }, sub ($fb_final, $new_e) {
+          }, sub ($self, $fb_final, $new_e) {
             $fb_final->button( '_add', 'Add Email Address');
           }),
         ],
@@ -60,7 +60,7 @@ sub render($self, $c) {
       fieldset [
         div +{ class=>'form-group' }, [
           $fb->errors_for('phones'),
-          $fb->fields_for('phones', sub($fb_e, $e) {
+          $fb->fields_for('phones', sub($self, $fb_e, $e) {
             $fb_e->legend,
             div +{ class=>'form-row' }, [
               div +{ class=>'col form-group' }, [
@@ -73,7 +73,7 @@ sub render($self, $c) {
                 $fb_e->checkbox('_delete'),
               ],
             ]
-          }, sub ($fb_final, $new_e) {
+          }, sub ($self, $fb_final, $new_e) {
             $fb_final->button( '_add', 'Add Phone Number');
           }),
         ],

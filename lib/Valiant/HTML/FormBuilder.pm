@@ -582,8 +582,9 @@ sub fields_for_nested_model {
   }
 
   return $self->tag_helpers->fields_for($name, $model, $options, sub {
+    my $view = shift;
     my $fb = shift;
-    my @output = $codeblock->($fb, $model);
+    my @output = $codeblock->($view, $fb, $model);
     if(@output && $emit_hidden_id && $model->can('primary_columns')) {
       foreach my $id_field ($model->primary_columns) {
         push @output, $fb->hidden($id_field); #TODO this cant be right...

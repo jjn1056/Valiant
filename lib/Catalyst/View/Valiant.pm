@@ -137,9 +137,11 @@ sub _install_tags {
   foreach my $tag (@_) {
     my $method;
     if($form->is_content_tag($tag)) {
-      if($target->can($tag)) {
-        $method = $target->can($tag);
-      } else {
+      #if($target->can($tag)) {
+      #  $method = $target->can($tag);
+      #  use Devel::Dwarn;
+      #  Dwarn [1, $method] if $tag eq 'blockquote';
+      #} else {
         $method = Sub::Util::set_subname "${target}::${tag}" => sub {
           my ($args, $content) = (+{}, '');
           $args = shift if ref $_[0] eq 'HASH';
@@ -152,21 +154,23 @@ sub _install_tags {
           }
           return $form->tags->$tag($args, $content), @_;
         };
-      }
+      #  use Devel::Dwarn;
+      #  Dwarn [2, $method] if $tag eq 'blockquote';
+      #}
     } elsif($form->is_void_tag($tag)) {
-      if($target->can($tag) && $tag ne 'meta') { # meta is a special case 
-        $method = $target->can($tag);
-      } else {
+      #if($target->can($tag) && $tag ne 'meta') { # meta is a special case 
+      #  $method = $target->can($tag);
+      #} else {
         $method = Sub::Util::set_subname "${target}::${tag}" => sub {
           my $args = +{};
           $args = shift if ref $_[0] eq 'HASH';
           return $form->tags->$tag($args), @_;
         };
-      }
+      #}
     } elsif($tag eq 'trow') {
-      if($target->can('tr') && $tag ne 'meta') { # meta is a special case 
-        $method = $target->can('tr');
-      } else {
+      #if($target->can('tr') && $tag ne 'meta') { # meta is a special case 
+      #  $method = $target->can('tr');
+      #} else {
         $method = Sub::Util::set_subname "${target}::tr" => sub {
           my ($args, $content) = (+{}, '');
           $args = shift if ref $_[0] eq 'HASH';
@@ -179,11 +183,11 @@ sub _install_tags {
           }
           return $form->content_tag('tr', $args, $content), @_;
         };
-      }
+      #}
     } elsif($form->can($tag)) {
-      if($target->can($tag)) {
-        $method = $target->can($tag);
-      } else {
+      #if($target->can($tag)) {
+      #  $method = $target->can($tag);
+      #} else {
         $method = Sub::Util::set_subname "${target}::${tag}" => sub {
           ## return $form->safe_concat($form->$tag(@_));
           ## Will ponder this, it seems to be a performance hit
@@ -196,7 +200,7 @@ sub _install_tags {
           }
           return $form->$tag(@args), @_; 
         };
-      }
+      #}
     } else {
       die "No such tag '$tag' for view";
     }
@@ -339,13 +343,157 @@ Catalyst::View::Valiant - Per Request, strongly typed Views in code
 
 =head1 SYNOPSIS
 
+    package Example::View::HTML::Home;
+
+    use Moo;
+    use Catalyst::View::Valiant
+      -tags => qw(div blockquote form_for fieldset),
+      -utils => qw($sf),
+      -views => 'HTML::Layout', 'HTML::Navbar';
+
+    has info => (is=>'rw', predicate=>'has_info');
+    has person => (is=>'ro', required=>1);
+
+    sub render($self, $c) {
+      html_layout page_title => 'Sign In', sub($layout) {
+        html_navbar active_link=>'/',
+        blockquote +{ if=>$self->has_info, 
+          class=>"alert alert-primary", 
+          role=>"alert" }, $self->info,
+        div $self->person->$sf('Welcome {:first_name} {:last_name} to your Example Homepage');
+        div 'Please complete your profile to continue.'
+        form_for $self->person, sub ($self, $fb, $registration) {
+          fieldset [
+            $fb->legend,
+            div +{ class=>'form-group' },
+              $fb->model_errors(+{show_message_on_field_errors=>'Please fix validation errors'}),
+            div +{ class=>'form-group' }, [
+              $fb->label('username'),
+              $fb->input('username'),
+              $fb->errors_for('username'),
+            ],
+            div +{ class=>'form-group' }, [
+              $fb->label('password'),
+              $fb->password('password'),
+              $fb->errors_for('password'),
+            ],
+            div +{ class=>'form-group' }, [
+              $fb->label('password_confirmation'),
+              $fb->password('password_confirmation'),
+              $fb->errors_for('password_confirmation'),
+            ],
+          ],
+          fieldset $fb->submit('Complete Account Setup'),
+        },
+
+      };
+    }
+
+    1;
+
 =head1 DESCRIPTION
 
 B<WARNINGS>: Experimental code that might break to fix issues and /or might be a
 terrible idea that I tell people not to use in the future.  I can't tell if this is
 cool / interesting or a worse version of Mason.
 
+This is a L<Catalyst::View> subclass that provides a way to write views in code
+that are strongly typed and per request.  It also integrates with several of L<Valiant>'s
+HTML form generation code 
+
+=head1 ATTRIBUTES
+
+This class inherits all of the attributes from L<Catalyst::View::BasePerRequest>
+
+=head1 METHODS
+
+This class inherits all of the methods from L<Catalyst::View::BasePerRequest> as well as:
+
+=head2 form
+
+Returns the current C<form> object.
+
+=head2 tags
+
+A convenience method to get the C<tags> object from the current C<form>.
+
+=head2 safe
+
+Marks a string as safe to render by first escaping it and then wrapping it in a L<Valiant::HTML::SafeString> object.
+
+=head2 raw
+
+Marks a string as safe to render by wrapping it in a L<Valiant::HTML::SafeString> object.
+
+=head2 safe_concat
+
+Given one or more strings and / or L<Valiant::HTML::SafeString> objects, returns
+a new L<Valiant::HTML::SafeString> object that is the concatenation of all of the strings.
+
+=head2 escape_html
+
+Given a string, returns a new string that is the escaped version of the original string.
+
+=head2 read_attribute_for_html
+
+Given an attribute name, returns the value of that attribute if it exists.  If the attribute does not exist, it will die.
+
+=head2 attribute_exists_for_html
+
+Given an attribute name, returns true if the attribute exists and false if it does not.
+
+=head1 EXPORTS
+
+=head2 -tags
+
+Export any HTML tag supported in L<Valiant::HTML::TagBuilder> as well as tag helpers from
+L<Valiant::HTML::Util::FormTags> and L<Valiant::HTML::Util::Form>.  Please note the C<tr> tag
+must be imported by the C<trow> name since C<tr> is a reserved word in Perl.
+
+=head2 -utils
+
+Export the following functions:
+
+=over 4
+
+=item $sf
+
+    $person->$sf('Hi there {:first_name} {:last_name} !!')
+
+Exports a coderef helper that wraps the C<sf> method in L<Valiant::HTML::TagBuilder>.  Useful when
+you have an object whos methods you want as values in your view.
+
+=item content
+
+=item content_for
+
+=item content_append
+
+=item content_replace
+
+=item content_around
+
+Wraps the named methods from L<Catalyst::View::BasePerRequest> for export.  You can still call them
+directly on the view object if you prefer.
+
+=item path
+
+Given an instance of L<Catalyst::Action> or the name of an action, returns the full path to that action
+as a url.   Basically a wrapper over C<uri_for> that will die if it can't find the action.  It also
+properly support relatively named actions.
+
+=back
+
+=head2 -views
+
+Create export wrappers for the named Catalyst views.  Export names will be snake cased versions
+of the given view names.
+
 =head1 EXAMPLE
+
+=head1 SUBCLASSING
+
+=head1 TIPS & TRICKS
 
 =head1 SEE ALSO
  

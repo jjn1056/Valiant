@@ -15,7 +15,7 @@ has 'employment_options' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self
 sub render($self, $c) {
   html_layout page_title=>'Homepage', sub($layout) {
     html_navbar active_link=>'/account',
-    form_for $self->account, +{style=>'width:35em; margin:auto'}, sub ($fb, $account) {
+    form_for $self->account, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $account) {
       div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
         $fb->legend,
@@ -40,7 +40,7 @@ sub render($self, $c) {
       fieldset [
         legend $self->account->human_attribute_name('profile'),
         $fb->errors_for('profile', +{ class=>'alert alert-danger', role=>'alert' }),
-        $fb->fields_for('profile', sub ($fb_profile, $profile) {
+        $fb->fields_for('profile', sub ($self, $fb_profile, $profile) {
           div +{ class=>'form-group' }, [
             $fb_profile->label('address'),
             $fb_profile->input('address'),
@@ -129,7 +129,7 @@ sub render($self, $c) {
         legend $self->account->human_attribute_name('credit_cards'),
         div +{ class=>'form-group' }, [
           $fb->errors_for('credit_cards', +{ class=>'alert alert-danger', role=>'alert' }),
-          $fb->fields_for('credit_cards', sub($fb_cc, $cc) {
+          $fb->fields_for('credit_cards', sub($self, $fb_cc, $cc) {
             div +{ class=>'form-row' }, [
               div +{ class=>'col form-group' }, [
                 $fb_cc->label('card_number'),
@@ -148,7 +148,7 @@ sub render($self, $c) {
                 ],
               ],
             ]
-          }, sub ($fb_final, $new_cc) {
+          }, sub ($self, $fb_final, $new_cc) {
             $fb_final->button( '_add', 'Add Credit Card')
           }),
         ],

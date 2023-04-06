@@ -55,8 +55,9 @@ ok !$person->valid;
 
 {
   my $form = $f->form_for($person, sub {
-    my ($fb, $person) = @_;
+    my ($view, $fb, $person) = @_;
 
+    ok $view->isa('Valiant::HTML::Util::View');
     ok $fb->isa('Valiant::HTML::FormBuilder');
     ok $person->isa('Local::Person');
 
@@ -83,7 +84,7 @@ ok !$person->valid;
 {
   $person->persisted(1);
   my $form = $f->form_for($person, +{url=>'person'}, sub {
-    my ($fb, $person) = @_;
+    my ($view, $fb, $person) = @_;
 
     ok $fb->isa('Valiant::HTML::FormBuilder');
     ok $person->isa('Local::Person');
@@ -112,7 +113,7 @@ ok !$person->valid;
 {
   $person->persisted(1);
   my $form = $f->form_for('foo', $person, +{url=>'person'}, sub {
-    my ($fb, $person) = @_;
+    my ($view, $fb, $person) = @_;
 
     ok $fb->isa('Valiant::HTML::FormBuilder');
     ok $person->isa('Local::Person');
@@ -142,10 +143,7 @@ ok !$person->valid;
   # check for edit detection and string model name matches a view attribute
   $person->persisted(1);
   my $form = $f->form_for('person', +{url=>'person'}, sub {
-    my ($fb, $person) = @_;
-
-    ok $fb->isa('Valiant::HTML::FormBuilder');
-    ok $person->isa('Local::Person');
+    my ($view, $fb, $person) = @_;
 
     return $fb->label('first_name'),
     $fb->input('first_name'),
@@ -171,7 +169,7 @@ ok !$person->valid;
 # Test form_for with a new model and default options
 {
   my $result = $f->form_with(+{url=>'post'}, sub {
-    my ($fb) = @_;
+    my ($view,$fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -184,7 +182,7 @@ ok !$person->valid;
 
 {
   my $result = $f->form_with(+{}, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -197,7 +195,7 @@ ok !$person->valid;
 
 {
   my $result = $f->form_with(+{url=>'posts', scope=>'post'}, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -210,7 +208,7 @@ ok !$person->valid;
 
 {
   my $result = $f->form_with(+{url=>'posts', namespace=>'foo', id=>'form1', scope=>'post'}, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -223,7 +221,7 @@ ok !$person->valid;
 
 {
   my $result = $f->form_with(+{url=>'posts', model=>$person}, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -237,7 +235,7 @@ ok !$person->valid;
 {
   $person->persisted(1);
   my $result = $f->form_with(+{url=>'posts', model=>$person}, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -256,7 +254,7 @@ ok !$person->valid;
     extends 'Valiant::HTML::FormBuilder';
   }
   my $result = $f->form_with(+{url=>'posts', csrf_token=>'toke', class=>['bbb','ccc'], builder=>'Local::FormBuilder', model=>$person, html=>+{class=>'aaa'}}, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     ok $fb->isa('Local::FormBuilder'); 
     return $fb->input('fake'),
@@ -271,7 +269,7 @@ ok !$person->valid;
 
 {
   my $result = $f->fields_for($person, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -281,7 +279,7 @@ ok !$person->valid;
 
 {
   my $result = $f->fields_for('person', sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -291,7 +289,7 @@ ok !$person->valid;
 
 {
   my $result = $f->fields_for('foo', $person, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -301,7 +299,7 @@ ok !$person->valid;
 
 {
   my $result = $f->fields_for('foo', sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });
@@ -311,7 +309,7 @@ ok !$person->valid;
 
 {
   my $result = $f->fields_for('foo', $person, sub {
-    my ($fb) = @_;
+    my ($view, $fb) = @_;
     ok $fb->isa('Valiant::HTML::FormBuilder');
     return $fb->input('first_name'),
   });

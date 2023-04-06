@@ -2,7 +2,7 @@ package View::Example::View;
 
 use Moo;
 use Catalyst::View::Valiant
-  -tags => qw(div label_tag);
+  -tags => qw(blockquote label_tag);
 
 sub stuff2 {
   my $self = shift;
@@ -14,7 +14,7 @@ sub stuff2 {
 }
 
 sub stuff3 :Renders {
-  div 'stuff3', 
+  blockquote 'stuff3', 
   shift->div('stuff333')
 }
 

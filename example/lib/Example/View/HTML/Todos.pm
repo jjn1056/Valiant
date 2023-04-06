@@ -18,7 +18,7 @@ sub render($self, $c) {
     warn '2'.$self->form->view;
 
     html_navbar active_link=>'/todos',
-    form_for 'todo', +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
+    form_for 'todo', +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $todo) {
       fieldset [
         $fb->legend,
         $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),

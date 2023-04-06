@@ -176,7 +176,7 @@ sub form_with {
   my $html_options = $self->_html_options_for_form_with($url, $model, $options);
   my $output = $self->join_tags(
     $self->form_tag($html_options, sub {
-      my @form_node = $content_block_coderef->($builder, $model);
+      my @form_node = $content_block_coderef->($self->view, $builder, $model);
       return $builder->view->safe_concat(@form_node);
     })
   );
@@ -288,7 +288,7 @@ sub fields {
   }
 
   my $builder = $self->_instantiate_builder($scope, $options->{model}, $options);
-  my $output = $self->join_tags($block->($builder));
+  my $output = $self->join_tags($block->($self->view, $builder));
 
   return $output;
 }

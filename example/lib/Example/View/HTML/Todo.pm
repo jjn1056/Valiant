@@ -12,7 +12,7 @@ has 'todo' => (is=>'ro', required=>1, handles=>[qw/status_options/] );
 sub render($self, $c) {
   html_layout page_title=>'Homepage', sub($layout) {
     html_navbar active_link=>'/todos',
-    form_for $self->todo, +{style=>'width:35em; margin:auto'}, sub ($fb, $todo) {
+    form_for $self->todo, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $todo) {
       fieldset [
         div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Saved!',
         $fb->legend,

@@ -11,6 +11,10 @@ use Catalyst::Test 'View::Example';
   warn $res->content;
 }
 
+done_testing;
+
+__END__
+
 {
   ok my $res = request '/simple';
   is $res->content, '<div>Hey</div>';
