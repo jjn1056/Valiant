@@ -518,6 +518,91 @@ is preserved.
 Value can be a scalar which will be evaluated as a boolean, or a coderef which will be called 
 and passed the current C<$view> as an argument).
 
+    say $t->hr({omit => sub ($view) { 1 }}); # is empty
+
+=head if
+
+    my $bool = 1;
+    say $t->div({id=>'one', if=>$bool}, sub {
+      my ($view) = @_;
+      $t->p('hello');
+    }): # '<div id="one"><p>hello</p></div>';
+
+    $bool = 0;
+    say $t->div({id=>'one', if=>$bool}, sub {
+      my ($view) = @_;
+      $t->p('hello');
+    }): # '';
+
+If the processed value of the tag is false, the tag and any of its contents are removed from
+the output.  Value can be a scalar value or a coderef (which gets the C<$view> as its one
+argument).
+
+=head with
+
+Create content with a new local context.
+
+    say $t->div({id=>'one', with=>'two'}, sub {
+      my ($view, $var) = @_;
+      $t->p($var);
+    }); # '<div id="one"><p>two</p></div>';
+
+Useful if you need a local value in your template
+
+=head2 repeat
+
+=head2 map
+
+Used to loop over a tags contents (for content tags) or the tag itself (for both content and
+empty tags).  Examples:
+
+    say $t->div({id=>'one', repeat=>[1,2,3]}, sub {
+      my ($view, $item, $idx) = @_;
+      $t->p("hello[$idx] $item");
+    }); # '<div id="one"><p>hello[0] 1</p><p>hello[1] 2</p><p>hello[2] 3</p></div>';
+
+    say $t->div({id=>sub {"one_${_}"}, map=>[1,2,3]}, sub {
+      my ($view) = @_;
+      $t->p('hello');
+    }); # '<div id="one_1"><p>hello</p></div><div id="one_2"><p>hello</p></div><div id="one_3"><p>hello</p></div>';
+
+Values for the looping attributes can be an arrayref, an object that does '->next' (for example a L<DBIx::Class>
+resultset) or a coderef that receives the current view object and returns either of the above.
+
+If your object also does C<reset> that method will be called automatically after the last loop item.
+
+In the case of C<map> if you want to modify the attributes of the enclosing tag you can use coderefs for
+those attributes.  They will be called with the current view object and current loop item value and index.  When also
+localize C<$_> to be to the current loop item value for ease of use.
+
+    say $t->hr({ id => sub { my ($view, $val, $i) = @_; "rule_${val}" }, map => [1,2,3] });
+
+returns
+
+    <hr id='rule_2' /><hr id='rule_2' /><hr id='rule_3' />
+
+and this does the same:
+
+    say $t->hr({ id => sub { "rule_${_}" }, map =>[1,2,3] });
+
+=head2 given / when
+
+Given / When 'switchlike' conditional.  Example:
+
+    say $t->div({id=>'one', given=>'one'}, sub {
+      my ($view) = @_;
+      $t->p({when=>'one'}, "hello one"),
+      $t->p({when=>'two'}, "hello two"),
+      $t->hr({when=>'three'}),
+      $t->p({when_default=>1}, "hello four")
+    }); # '<div id="one"><p>hello one</p></div>';
+
+When a content tag has the C<given> attribute, its content must be a coderef which will get the current
+C<$view> as its one argument.  Inside the coderef we will render a tag with a matching C<when> attribute
+or if there are no matches a tag with the C<when_default> attribute.
+
+The value of C<given=> may be a scalar or a coderef.  If its a coderef we will call it with the current
+view object and expect a scalar.
 
 =head1 AUTHOR
 
