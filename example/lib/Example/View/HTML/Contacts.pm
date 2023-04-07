@@ -8,7 +8,6 @@ use Example::View::HTML
   -views => 'HTML::Layout', 'HTML::Navbar';
 
 has 'list' => (is=>'ro', required=>1, from=>'controller', handles=>['pager']);
-has 'child_controller' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
   html_layout page_title=>'Contact List', sub($layout) {
@@ -23,7 +22,7 @@ sub render($self, $c) {
             ],
           tbody { repeat=>$self->list }, sub ($self, $item, $idx) {
             trow [
-              td a +{ href=>$self->child_link('show_edit', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
+              td a +{ href=>path('show_edit', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
             ],
           },
           tfoot { if=>$self->pager->last_page > 1  },
@@ -35,15 +34,11 @@ sub render($self, $c) {
   };
 }
 
-sub child_link :Renders ($self, $action_name, @args) {
-  return path( $self->child_controller->action_for($action_name), @args);
-}
-
 sub page_window_info :Renders ($self) {
   return '' unless $self->pager->total_entries > 0;
   my $message = $self->pager->last_page == 1 ?
     "@{[ $self->pager->total_entries ]} @{[ $self->pager->total_entries > 1 ? 'todos':'todo' ]}" :
-    $self->pager->$sf('{:first} to {:last} of {:total_entries}');
+    $self->pager->$sf('{:first} to {:last} of {:total_entries} todos');
   return div {style=>'text-align:center; margin-top:0; margin-bottom: .5rem'}, $message;
 }
 

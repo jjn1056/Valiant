@@ -13,10 +13,7 @@ has 'todo' => (is=>'ro', required=>1 );
 ## TODO add bulk operations
 
 sub render($self, $c) {
-  warn '1'.$self->form->view;
   html_layout page_title=>'Todo List', sub($layout) {
-    warn '2'.$self->form->view;
-
     html_navbar active_link=>'/todos',
     form_for 'todo', +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $todo) {
       fieldset [

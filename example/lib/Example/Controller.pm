@@ -2,6 +2,7 @@ package Example::Controller;
 
 use Moose;
 extends 'Catalyst::ControllerPerContext';
+with 'Catalyst::ControllerRole::At';
 
 around gather_default_action_roles => sub {
   my ($orig, $self, %args) = @_;

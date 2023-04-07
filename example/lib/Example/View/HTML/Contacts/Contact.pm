@@ -1,23 +1,30 @@
-package Example::View::HTML::Contact;
+package Example::View::HTML::Contacts::Contact;
 
 use Moo;
 use Example::Syntax;
 use Example::View::HTML
-  -tags => qw(div a fieldset legend br button form_for),
+  -tags => qw(div a fieldset link_to legend br button form_for),
+  -util => qw(path),
   -views => 'HTML::Layout', 'HTML::Navbar';
 
 has 'contact' => (is=>'ro', required=>1);
 
+sub path_to_contact :Renders ($self)  {
+  return $self->contact->in_storage ?
+   path('show_edit', [$self->contact->id]) :
+    path('create');
+}
+
 sub render($self, $c) {
   html_layout page_title=>'Contact List', sub($layout) {
     html_navbar active_link=>'/contacts',
-    form_for $self->contact, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $contact) {
-      div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Saved!',
-
+    form_for $self->contact, +{action=>$self->path_to_contact, style=>'width:35em; margin:auto'}, sub ($self, $fb, $contact) {
+      div +{ if=>$fb->successfully_updated, 
+        class=>'alert alert-success', role=>'alert' 
+      }, 'Successfully Saved!',
       fieldset [
         $fb->legend,
-        div +{ class=>'form-group' },
-          $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
+        div +{ class=>'form-group' }, $fb->form_has_errors(),
         div +{ class=>'form-group' }, [
           $fb->label('first_name'),
           $fb->input('first_name'),
@@ -80,10 +87,11 @@ sub render($self, $c) {
       ],
 
       $fb->submit(),
-      a {href=>'/contacts', class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
+
+      link_to path('list'), {class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
       button {
         if=>$contact->in_storage, 
-        formaction=>'?x-tunneled-method=delete',
+        formaction=>path('delete', [$self->contact->id // 'na'], {'x-tunneled-method'=>'delete'}),
         formmethod=>'POST',
         class=>'btn btn-danger btn-lg btn-block'
       }, 'Delete Contact',

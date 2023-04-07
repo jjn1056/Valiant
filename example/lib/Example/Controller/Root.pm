@@ -6,7 +6,7 @@ use Example::Syntax;
 
 extends 'Catalyst::Controller';
 
-sub root :Chained(/) PathPart('') CaptureArgs(0) Name(Root) ($self, $c) {
+sub root :Chained('/') PathPart('') CaptureArgs(0) Name(Root) ($self, $c) {
   $c->action->next($c->user);
 }
 
