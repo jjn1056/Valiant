@@ -2,6 +2,7 @@ use Test::Most;
 use Valiant::HTML::Util::TagBuilder;
 use Valiant::HTML::Util::View;
 use Valiant::HTML::Util::Collection;
+use HTML::Escape qw/escape_html/;
 
 ok my $view = Valiant::HTML::Util::View->new(aaa=>1,bbb=>2);
 ok my $tb = Valiant::HTML::Util::TagBuilder->new(view=>$view);
@@ -180,20 +181,19 @@ is $tags->div({id=>'one', given=>'three'}, sub {
 }), '<div id="one"><hr/></div>';
 
 {
-  use HTML::Entities;
   # Test 1: link_to with URL only
   my $url = 'http://example.com';
-  my $expected_output = '<a href="' . encode_entities($url) . '">' . encode_entities($url) . '</a>';
+  my $expected_output = '<a href="' . escape_html($url) . '">' . escape_html($url) . '</a>';
   is($tb->link_to($url), $expected_output, 'link_to with URL only');
 
   # Test 2: link_to with URL and content
   my $content = 'Link Text';
-  $expected_output = '<a href="' . encode_entities($url) . '">' . encode_entities($content) . '</a>';
+  $expected_output = '<a href="' . escape_html($url) . '">' . escape_html($content) . '</a>';
   is($tb->link_to($url, $content), $expected_output, 'link_to with URL and content');
 
   # Test 3: link_to with URL, content, and additional attributes
   my $attrs = { class => 'link', target => '_blank' };
-  $expected_output = '<a class="link" href="' . encode_entities($url) . '" target="_blank">' . encode_entities($content) . '</a>';
+  $expected_output = '<a class="link" href="' . escape_html($url) . '" target="_blank">' . escape_html($content) . '</a>';
   is($tb->link_to($url, $attrs, $content), $expected_output, 'link_to with URL, content, and additional attributes');
 }
 

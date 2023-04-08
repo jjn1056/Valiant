@@ -37,4 +37,6 @@ on test => sub {
   requires 'DBIx::Class';
   requires 'DBIx::Class::Candy';
   requires 'Test::DBIx::Class'=> '0.52';
+  requires 'HTML::Escape';
+  requires 'Catalyst::Runtime';
 };
