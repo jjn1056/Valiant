@@ -1,5 +1,10 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001019 2023 April 8
+          - Fixed test cases that regressed in previous release
+          - Fixed assorted bugs in Catalyst::View::Valiant
+          - Lots of tweaks to the example / test application
+
 0.001018 2023 April 6
           - Totally reworked how the HTML generation code integrates with an underlying
           view.  This shouldn't be a breaking change but makes it possible to integrate those
