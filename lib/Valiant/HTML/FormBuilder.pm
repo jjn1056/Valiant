@@ -108,6 +108,39 @@ sub attribute_has_errors {
   return $self->model->can('errors') && $self->model->errors->where($attribute) ? 1:0;
 }
 
+# $fb->has_errors()
+# $fb->model_errors($content)
+# $fb->error_for_form(\&template)
+
+sub form_has_errors {
+  my ($self) = shift;
+  return '' unless $self->model->has_errors # There is at least one field with an error
+    || $self->_get_model_errors; # There is at least one error on the model itself
+
+  my $options = ref($_[0]) eq 'HASH' ? shift : +{};
+  my $content = @_ ? shift : _t('invalid_form'); 
+
+  return $content->($self->view, $self, $self->model) if ref($content) eq 'CODE';
+
+  $options = $self->merge_theme_field_opts('model_errors', undef, $options);
+  $content = $self->model->i18n->translate(
+    $content,
+    scope=>'valiant.html.errors.messages',
+    default=>[ _t("errors.messages.invalid_form"), _t("messages.invalid_form") ],
+  ) if $self->model->i18n->is_i18n_tag($content);
+
+  return $self->tag_helpers->tags->div($options, $content);
+}
+
+sub _default_form_has_errors_content {
+  my ($self) = shift;
+  my $message = $self->_generate_default_model_error; 
+  return sub {
+    my ($view, $self) = @_;
+    return $self->tag_helpers->div($message);
+  }
+}
+
 # Public methods for HTML generation
 
 # $fb->model_errors()
@@ -1111,6 +1144,42 @@ B<NOTE>: In the future the view API might change so keep an eye on this spot.
 =head1 METHODS
 
 This class defines the following public instance methods.
+
+=head2 form_has_errors
+
+Display a message if the form has errors.  This is a convenience method that you can use in your
+template to display a message if there are any errors in the form.  This is useful if you want to
+display a message at the top of the form.  You can also use this method to display a message at the
+top of a sub formbuilder if you are using sub formbuilders.
+
+A form has errors if any of the fields has an error or if the model has errors.
+
+    $fb->form_has_errors();
+    $fb->form_has_errors(\%attrs);
+    $fb->form_has_errors(\%attrs, $content);
+    $fb->form_has_errors(\$content);
+    $fb->form_has_errors(\&template);
+
+Examples:
+
+    # with default content
+    $fb->form_has_errors;
+
+    # with simple content
+    $fb->form_has_errors('There were errors in the form. Please correct them.');
+
+    # Simple content with attributes
+    $fb->form_has_errors({ class=>'alert alert-danger', role=>'alert' },
+      'There were errors in the form. Please correct them and try again.');
+
+    # with complex content
+    $fb->form_has_errors(sub ($self, $fb, $contact) {
+      div +{ class=>'alert alert-danger', role=>'alert' }, [
+        'There were errors in the form. Please correct them and try again.',
+      ]
+    });
+
+If you pass a scalar as content, the scalar can be a string or a translation tag.
 
 =head2 model_errors
 

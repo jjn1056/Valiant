@@ -148,6 +148,12 @@ sub _install_tags {
           if(defined($_[0])) {
             if(Scalar::Util::blessed($_[0]) && $_[0]->isa($class)) {
               $content = shift->get_rendered;
+            } elsif((ref($_[0])||'') eq 'ARRAY') {
+              my $inner = shift;
+              my @content = map {
+                (Scalar::Util::blessed($_) && $_->isa($class)) ? $_->get_rendered : $_;
+              } @{$inner};
+              $content = $class->safe_concat(@content);
             } else {
               $content = shift;
             }
@@ -177,6 +183,12 @@ sub _install_tags {
           if(defined($_[0])) {
             if(Scalar::Util::blessed($_[0]) && $_[0]->isa($class)) {
               $content = shift->get_rendered;
+            } elsif((ref($_[0])||'') eq 'ARRAY') {
+              my $inner = shift;
+              my @content = map {
+                (Scalar::Util::blessed($_) && $_->isa($class)) ? $_->get_rendered : $_;
+              } @{$inner};
+              $content = $class->safe_concat(@content);
             } else {
               $content = shift;
             }
@@ -197,6 +209,13 @@ sub _install_tags {
               !defined($_[0])
               || (Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString';
             push @args, shift;
+            if(ref $_[0] eq 'ARRAY') {
+              my $inner = shift;
+              my @content = map {
+                (Scalar::Util::blessed($_) && $_->isa($class)) ? $_->get_rendered : $_;
+              } @{$inner};
+              push @args, $class->safe_concat(@content);
+            }
           }
           return $form->$tag(@args), @_; 
         };
@@ -231,7 +250,8 @@ sub _install_views {
       while(@_) {
         last if
           !defined($_[0])
-          || (Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString';
+          || ((Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString')
+          || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class));
         push @args, shift;
       }
       return $form->view->ctx->view($view_info{$name}, @args), @_ if @_;
@@ -293,17 +313,17 @@ sub path {
       
   my $action;
   if($action_proto =~/^\/?\*/) {
-    die "$action_proto is not a named action"
+    carp "$action_proto is not a named action"
       unless $action = $c->dispatcher->get_action_by_path($action_proto);
   } elsif($action_proto=~m/^(.*)\:(.+)$/) {
-    die "$1 is not a controller"
+    carp "$1 is not a controller"
       unless my $controller = $c->controller($1||'');
-    die "$2 is not an action for controller ${\$controller->component_name}"
+    carp "$2 is not an action for controller ${\$controller->component_name}"
       unless $action = $controller->action_for($2);
   } elsif($action_proto =~/\//) {
     my $path = $action_proto=~m/^\// ? $action_proto : $c->controller->action_for($action_proto)->private_path;
-    die "$action_proto is not a full or relative private action path" unless $path;
-    die "$path is not a private path" unless $action = $c->dispatcher->get_action_by_path($path);
+    carp "$action_proto is not a full or relative private action path" unless $path;
+    carp "$path is not a private path" unless $action = $c->dispatcher->get_action_by_path($path);
   } elsif($action = $c->controller->action_for($action_proto)) {
     # Noop
   } else {
@@ -311,7 +331,7 @@ sub path {
     $action = $action_proto;
   }
 
-  die "We can't create a URI from $action with the given arguments"
+  carp "We can't create a URI from $action with the given arguments: @{[ join ', ', @args ]}]}"
     unless my $uri = $c->uri_for($action, @args);
 
   return $uri  

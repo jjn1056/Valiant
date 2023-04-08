@@ -1,4 +1,4 @@
-package Example::View::HTML::Layout;
+package Example::View::HTML::Page;
 
 use Moose;
 use Example::Syntax;

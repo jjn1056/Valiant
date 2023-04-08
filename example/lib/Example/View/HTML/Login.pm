@@ -5,7 +5,7 @@ use Example::Syntax;
 use Example::View::HTML
   -tags => qw(fieldset form_for input legend div a),
   -util => qw($sf content_for path ),
-  -views => 'HTML::Layout';
+  -views => 'HTML::Page';
 
 has 'user' => (is=>'ro', required=>1);
 has 'post_login_redirect' => (is=>'rw', predicate=>'has_post_login_redirect');
@@ -18,7 +18,7 @@ sub action_link :Renders ($self) {
 }
 
 sub render($self, $c) {
-  html_layout page_title => 'Sign In', sub($layout) {
+  html_page page_title => 'Sign In', sub($layout) {
     form_for $self->user, +{action=>$self->action_link, class=>'mx-auto', style=>'width:25em'}, sub ($self, $fb, $u) {
       fieldset [
         legend 'Sign In',

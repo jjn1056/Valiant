@@ -5,14 +5,14 @@ use Example::Syntax;
 use Example::View::HTML
   -tags => qw(div a fieldset legend br b u button form_for table thead tbody tfoot trow th td link_to),
   -util => qw(path $sf),
-  -views => 'HTML::Layout', 'HTML::Navbar';
+  -views => 'HTML::Page', 'HTML::Navbar';
 
 has 'list' => (is=>'ro', required=>1, from=>'controller', handles=>['pager']);
 
 sub render($self, $c) {
-  html_layout page_title=>'Contact List', sub($layout) {
+  html_page page_title=>'Contact List', sub($layout) {
     html_navbar active_link=>'/contacts',
-      div { style=>'width: 35em; margin:auto' }, [
+      div {class=>"col-5 mx-auto"}, [
         legend 'Contact List',
         $self->page_window_info,
         table +{ class=>'table table-striped table-bordered' }, [
@@ -22,14 +22,14 @@ sub render($self, $c) {
             ],
           tbody { repeat=>$self->list }, sub ($self, $item, $idx) {
             trow [
-              td a +{ href=>path('show_edit', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
+              td a +{ href=>path('show_update', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
             ],
           },
           tfoot { if=>$self->pager->last_page > 1  },
             td {colspan=>2, style=>'background:white'},
               ["Page: ", $self->pagelist ],
         ],
-        a { href=>path('new'), role=>'button', class=>'btn btn-lg btn-primary btn-block' }, "Create a new Contact",
+        a { href=>path('show_create'), role=>'button', class=>'btn btn-lg btn-primary btn-block' }, "Create a new Contact",
      ],
   };
 }
