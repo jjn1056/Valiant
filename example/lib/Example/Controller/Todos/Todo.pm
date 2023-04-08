@@ -7,13 +7,12 @@ use Example::Syntax;
 extends 'Example::Controller';
 
 sub root :Chained(../root) PathPart('') CaptureArgs(1) ($self, $c, $collection, $id) {
-  warn $self->path_prefix;
   my $todo = $collection->find($id) || return $c->detach_error(404, +{error=>"Todo id $id not found"});
   $c->action->next($todo);
 }
 
   sub setup :Chained(root) PathPart('') CaptureArgs(0) ($self, $c, $todo) {
-    $c->view('HTML::Todo', todo => $todo);
+    $c->view('HTML::Todos::Todo', todo => $todo);
     $c->action->next($todo);
   }
 

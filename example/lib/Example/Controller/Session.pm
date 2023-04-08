@@ -13,7 +13,7 @@ sub login :Chained(*Root) CaptureArgs(0)  QueryModel(LoginQuery) ($self, $c, $us
   $c->action->next($q);
 }
 
-  sub view :GET Chained(login) PathPart('') Args(0) Name(Login) ($self, $c, $q) { }
+  sub show :GET Chained(login) PathPart('') Args(0) Name(Login) ($self, $c, $q) { }
 
   sub do_login :POST Chained(login) PathPart('') Args(0) RequestModel(LoginRequest) ($self, $c, $q, $request) {
     return $c->view->set_http_bad_request unless $c->authenticate($request->person);
@@ -22,7 +22,7 @@ sub login :Chained(*Root) CaptureArgs(0)  QueryModel(LoginQuery) ($self, $c, $us
   }
 
 sub logout :GET Chained(*Secured) PathPart(logout) Args(0) ($self, $c, $user) {
-  return $c->logout && $c->redirect_to_action('*Login');
+  return $c->logout && $c->redirect_to_action('show');
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -4,12 +4,12 @@ use Moo;
 use Example::Syntax;
 use Example::View::HTML
   -tags => qw(div a fieldset form_for),
-  -views => 'HTML::Layout';
+  -views => 'HTML::Page';
 
 has 'registration' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
-  html_layout page_title=>'Homepage', sub($layout) {
+  html_page page_title=>'Homepage', sub($layout) {
     form_for $self->registration, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $registration) {
       fieldset [
         $fb->legend,

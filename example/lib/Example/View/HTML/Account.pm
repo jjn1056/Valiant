@@ -4,7 +4,8 @@ use Moo;
 use Example::Syntax;
 use Example::View::HTML
   -tags => qw(div a fieldset legend br form_for),
-  -views => 'HTML::Layout', 'HTML::Navbar';
+  -util => qw(path),
+  -views => 'HTML::Page', 'HTML::Navbar';
 
 has 'account' => ( is=>'ro', required=>1 );
 has 'states' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { $self->ctx->model('Schema::State') } );
@@ -13,9 +14,10 @@ has 'status_list' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { [ma
 has 'employment_options' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { $self->ctx->model('Schema::Employment') } );
 
 sub render($self, $c) {
-  html_layout page_title=>'Homepage', sub($layout) {
+  html_page page_title=>'Homepage', sub($layout) {
     html_navbar active_link=>'/account',
-    form_for $self->account, +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $account) {
+    div {class=>"col-5 mx-auto"},
+    form_for $self->account, {action=>path('edit')}, sub ($self, $fb, $account) {
       div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
         $fb->legend,

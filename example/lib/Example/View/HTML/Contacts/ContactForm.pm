@@ -4,18 +4,19 @@ use Moo;
 use Example::Syntax;
 use Example::View::HTML
   -tags => qw(div a fieldset link_to legend br form_for),
-  -util => qw(path content);
+  -util => qw(path content),
+  -links => qw(create_or_update_contact_path),
 
 has 'contact' => (is=>'ro', required=>1);
 
-sub path_to_contact :Renders ($self)  {
-  return $self->contact->in_storage ?
-   path('show_update', [$self->contact->id]) :
-    path('create');
+sub create_or_update_contact_path  :Renders ($self, $contact)  {
+  return $contact->in_storage ?
+   path('show_update', [$contact->id]) :
+    path('create');  
 }
 
 sub render($self, $c) {
-  form_for $self->contact, +{action=>$self->path_to_contact}, sub ($self, $fb, $contact) {
+  form_for $self->contact, +{action=>$self->create_or_update_contact_path($self->contact)}, sub ($self, $fb, $contact) {
     div +{ if=>$fb->successfully_updated, 
       class=>'alert alert-success', role=>'alert' 
     }, 'Successfully Saved!',

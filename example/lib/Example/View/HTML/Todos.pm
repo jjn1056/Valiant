@@ -5,7 +5,7 @@ use Example::Syntax;
 use Example::View::HTML
   -tags => qw(div fieldset a b u span form_for table thead tbody tfoot trow th td),
   -util => qw($sf path ),
-  -views => 'HTML::Layout', 'HTML::Navbar';
+  -views => 'HTML::Page', 'HTML::Navbar';
 
 has 'list' => (is=>'ro', required=>1, handles=>[qw/pager status/]);
 has 'todo' => (is=>'ro', required=>1 );
@@ -13,9 +13,10 @@ has 'todo' => (is=>'ro', required=>1 );
 ## TODO add bulk operations
 
 sub render($self, $c) {
-  html_layout page_title=>'Todo List', sub($layout) {
+  html_page page_title=>'Todo List', sub($layout) {
     html_navbar active_link=>'/todos',
-    form_for 'todo', +{style=>'width:35em; margin:auto'}, sub ($self, $fb, $todo) {
+    div +{ class=>'col-5 mx-auto' },
+    form_for 'todo', +{action=>path('create')}, sub ($self, $fb, $todo) {
       fieldset [
         $fb->legend,
         $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
