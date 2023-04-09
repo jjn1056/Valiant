@@ -1,5 +1,11 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001020 2023 April 9
+          - fixed issue with control logic when repeat had an empty set.
+          - improved error messaging in the 'path' utility export helper
+          - updated example application to improve controller consistency and make 
+            better use of view features.
+
 0.001019 2023 April 8
           - Fixed test cases that regressed in previous release
           - Fixed assorted bugs in Catalyst::View::Valiant

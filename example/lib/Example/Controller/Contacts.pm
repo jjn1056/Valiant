@@ -23,7 +23,7 @@ sub collection :Via('*Private') At('contacts/...') ($self, $c, $user) {
 
     # GET /contacts
     sub list :GET Via('setup_list') At('') QueryModel(ContactsQuery) ($self, $c, $contacts, $contacts_query) {
-      return $c->view('HTML::Contacts', list => $list)->set_http_ok;
+      return $c->view('HTML::Contacts', list => $contacts)->set_http_ok;
     }
 
   # /contacts/...

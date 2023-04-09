@@ -11,7 +11,7 @@ has 'contact' => (is=>'ro', required=>1);
 
 sub create_or_update_contact_path  :Renders ($self, $contact)  {
   return $contact->in_storage ?
-   path('show_update', [$contact->id]) :
+   path('update', [$contact->id]) :
     path('create');  
 }
 
