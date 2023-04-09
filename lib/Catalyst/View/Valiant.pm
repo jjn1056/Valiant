@@ -321,7 +321,11 @@ sub path {
     carp "$2 is not an action for controller ${\$controller->component_name}"
       unless $action = $controller->action_for($2);
   } elsif($action_proto =~/\//) {
-    my $path = $action_proto=~m/^\// ? $action_proto : $c->controller->action_for($action_proto)->private_path;
+    my $path = eval {
+      $action_proto=~m/^\// ?
+      $action_proto : 
+      $c->controller->action_for($action_proto)->private_path;
+    } || carp "Error: $@ while trying to get private path for $action_proto";
     carp "$action_proto is not a full or relative private action path" unless $path;
     carp "$path is not a private path" unless $action = $c->dispatcher->get_action_by_path($path);
   } elsif($action = $c->controller->action_for($action_proto)) {

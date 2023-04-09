@@ -227,6 +227,7 @@ sub content_tag {
     return $repeated_content;
   }
     
+  my $processed_code = 0;
   if(defined $code) {
 
     # Handle 'repeat'
@@ -236,6 +237,8 @@ sub content_tag {
       my $repeat = ref($repeat_proto) eq 'ARRAY' ? 
         Valiant::HTML::Util::Collection->new(@$repeat_proto)
           : $repeat_proto;
+
+      $processed_code = 1; # Code is considered processed even if there's no iteration
       while(my $next = $repeat->next) {
         push @repeated_content, $code->($self->view, $next, $idx++);
       }
@@ -243,7 +246,7 @@ sub content_tag {
       $content = $self->safe_concat(@repeated_content);
     }
     #prepare content
-    if(! "$content") {
+    if(! $processed_code ) {
       my @return = $code->(@args);
       $content = $self->safe_concat(@return);
     }
@@ -254,8 +257,6 @@ sub content_tag {
   return $content if $self->_omit_tag($attrs);
   return my $tag = $self->raw("<${name}@{[ $self->_tag_options(%{$attrs}) ]}>${content}</${name}>");
 }
-
-# switch, repeat, map
 
 sub sf {
   my $self = shift;
