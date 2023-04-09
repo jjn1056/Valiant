@@ -6,23 +6,24 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub login :Chained(*Root) CaptureArgs(0)  QueryModel(LoginQuery) ($self, $c, $user, $q) {
+sub setup_new :Via('*Root') At('login/...')  QueryModel(LoginQuery) ($self, $c, $user, $q) {
   $c->redirect_to_action('*home') && $c->detach if $user->authenticated; # Don't bother if already logged in
   $c->view('HTML::Login', user => $user);
   $c->view->post_login_redirect($q->post_login_redirect) if $q->has_post_login_redirect;
-  $c->action->next($q);
 }
 
-  sub show :GET Chained(login) PathPart('') Args(0) Name(Login) ($self, $c, $q) { }
-
-  sub do_login :POST Chained(login) PathPart('') Args(0) RequestModel(LoginRequest) ($self, $c, $q, $request) {
-    return $c->view->set_http_bad_request unless $c->authenticate($request->person);
-    return $c->res->redirect($q->post_login_redirect) if $q->has_post_login_redirect;
-    return $c->redirect_to_action('*home');
+  sub init :GET Via('setup_new') At('/init') Name(Login) ($self, $c) {
+    return $c->view->set_http_ok;
   }
 
-sub logout :GET Chained(*Secured) PathPart(logout) Args(0) ($self, $c, $user) {
-  return $c->logout && $c->redirect_to_action('show');
+  sub create :POST Via('setup_new') At('') BodyModel(LoginRequest) ($self, $c, $request) {
+    return $c->view->set_http_bad_request unless $c->authenticate($request->person);
+    return $c->res->redirect($c->view->post_login_redirect) if $c->view->has_post_login_redirect;
+    return $c->redirect_to_action('*Home');
+  }
+
+sub logout :GET Via('*Private') At('logout') ($self, $c, $user) {
+  return $c->logout && $c->redirect_to_action('init');
 }
 
 __PACKAGE__->meta->make_immutable;

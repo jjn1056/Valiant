@@ -12,8 +12,8 @@ has 'post_login_redirect' => (is=>'rw', predicate=>'has_post_login_redirect');
 
 sub action_link :Renders ($self) {
   return $self->has_post_login_redirect ?
-    path('show', +{post_login_redirect=>$self->post_login_redirect}) :
-    path('show');
+    path('create', +{post_login_redirect=>$self->post_login_redirect}) :
+    path('create');
 }
 
 sub render($self, $c) {
@@ -36,7 +36,7 @@ sub render($self, $c) {
         ],
         input {if=>$self->has_post_login_redirect, type=>'hidden', name=>'post_login_redirect', value=>$self->post_login_redirect},
         div +{ class=>'text-center' },
-          link_to path('/register/view'), 'Register', 
+          link_to path('/register/init'), 'Register', 
       };
     };
 }

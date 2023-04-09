@@ -15,21 +15,21 @@ sub render($self, $c) {
       div {class=>"col-5 mx-auto"}, [
         legend 'Contact List',
         $self->page_window_info,
-        table +{ class=>'table table-striped table-bordered' }, [
+        table +{ if=>($self->pager->total_entries), class=>'table table-striped table-bordered' }, [
           thead
             trow [
               th +{ scope=>"col" }, 'Name',
             ],
           tbody { repeat=>$self->list }, sub ($self, $item, $idx) {
             trow [
-              td a +{ href=>path('show_update', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
+              td a +{ href=>path('edit', [$item->id]) }, $item->$sf('{:first_name} {:last_name}'),
             ],
           },
           tfoot { if=>$self->pager->last_page > 1  },
             td {colspan=>2, style=>'background:white'},
               ["Page: ", $self->pagelist ],
         ],
-        a { href=>path('show_create'), role=>'button', class=>'btn btn-lg btn-primary btn-block' }, "Create a new Contact",
+        a { href=>path('init'), role=>'button', class=>'btn btn-lg btn-primary btn-block' }, "Create a new Contact",
      ],
   };
 }
@@ -45,7 +45,7 @@ sub page_window_info :Renders ($self) {
 sub pagelist :Renders ($self) {
   my @page_html = ();
   foreach my $page (1..$self->pager->last_page) {
-    push @page_html, a {href=>path('list', +{page=>$page}), style=>'margin: .5rem'},
+    push @page_html, a {href=>path('list', +{'contact.page'=>$page}), style=>'margin: .5rem'},
       $page == $self->pager->current_page ? b u $page : $page;
   }
   return @page_html;

@@ -17,7 +17,7 @@ sub render($self, $c) {
   html_page page_title=>'Homepage', sub($layout) {
     html_navbar active_link=>'/account',
     div {class=>"col-5 mx-auto"},
-    form_for $self->account, {action=>path('edit')}, sub ($self, $fb, $account) {
+    form_for $self->account, {action=>path('update')}, sub ($self, $fb, $account) {
       div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
         $fb->legend,

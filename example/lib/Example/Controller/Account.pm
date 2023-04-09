@@ -6,24 +6,23 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub root :Chained(*Secured) PathPart('account') CaptureArgs(0)  ($self, $c, $user) {
-  my $account = $user->account;
-  $c->action->next($account);
+sub setup_entity :Via(*Private) At('account/...') ($self, $c, $user) {
+  $c->action->next($user->account);
 }
 
-  sub setup :Chained(root) PathPart('') CaptureArgs(0) ($self, $c, $account) { 
+  sub setup_update :Via('setup_entity') At('/...') ($self, $c, $account) { 
     $c->view('HTML::Account', account => $account);
     $c->action->next($account);
   }
 
-  sub view :GET Chained(setup) PathPart('') Args(0) ($self, $c, $account) {
-    return  $c->view->set_http_ok;
-  }
+    sub edit :GET Via('setup_update') At('edit') ($self, $c, $account) {
+      return  $c->view->set_http_ok;
+    }
 
-  sub edit :PATCH Chained(setup) PathPart('') Args(0) RequestModel(AccountRequest) ($self, $c, $account, $r) {
-    return $account->update_account($r)->valid ?
-      $c->view->set_http_ok : 
-        $c->view->set_http_bad_request;
-  }
+    sub update :PATCH Via('setup_update') At('') BodyModel(AccountRequest) ($self, $c, $account, $r) {
+      return $account->update_account($r) ?
+        $c->view->set_http_ok : 
+          $c->view->set_http_bad_request;
+    }
 
 __PACKAGE__->meta->make_immutable;

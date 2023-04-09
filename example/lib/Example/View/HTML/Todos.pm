@@ -22,17 +22,19 @@ sub render($self, $c) {
         $fb->model_errors({show_message_on_field_errors=>'Please fix the listed errors.'}),
         $self->page_window_info,
 
-        table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
-          thead
-            trow [
-              th +{scope=>"col"},'Title',
-              th +{scope=>"col", style=>'width:8em'}, 'Status',
-            ],
-          tbody { repeat=>$self->list }, \&rows,
-          tfoot { if=>$self->pager->last_page > 1  }, \&pagelist_row,
-         ],
-        
-        $self->status_filter_box,
+        div {if=>$self->pager->total_entries, omit=>1}, [
+          table +{class=>'table table-striped table-bordered', style=>'margin-bottom:0.5rem'}, [
+            thead
+              trow [
+                th +{scope=>"col"},'Title',
+                th +{scope=>"col", style=>'width:8em'}, 'Status',
+              ],
+            tbody { repeat=>$self->list }, \&rows,
+            tfoot { if=>$self->pager->last_page > 1  }, \&pagelist_row,
+          ],
+          
+          $self->status_filter_box,
+        ],
 
         div +{ class=>'form-group' }, [
           $fb->input('title', +{ placeholder=>'What needs to be done?' }),
@@ -44,9 +46,10 @@ sub render($self, $c) {
   };
 }
 
-sub rows :Renders ($self, $todo, $i) {
+sub rows :Renders  {
+  my ($self, $todo, $i) = @_;
   trow [
-   td a +{ href=>path('todo/view', [$todo->id]) }, $todo->title,
+   td a +{ href=>path('edit', [$todo->id]) }, $todo->title,
    td $todo->status,
   ],
 }
