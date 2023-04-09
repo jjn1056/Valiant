@@ -10,7 +10,7 @@ sub root :At('/...') Name(Root) ($self, $c) {
   $c->action->next($c->user);
 }
 
-  sub not_found :Via('root') At('/...')  ($self, $c, $user, @args) {
+  sub not_found :Via('root') At('/{*}')  ($self, $c, $user, @args) {
     return $c->detach_error(404, +{error=>"Requested URL not found: @{[ $c->req->uri ]}"});
   }
 

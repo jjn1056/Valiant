@@ -28,18 +28,22 @@ sub collection :Via('*Private') At('todos/...') ($self, $c, $user) {
     }
 
   # /todos/...
-  sub setup_new :Via('setup_list') At('/...') ($self, $c, $list) {
-    $c->view('HTML::Todos',
-      list => $list,
+  sub setup_new :Via('collection') At('/...') ($self, $c, $list) {
+    $c->view('HTML::Todos::CreateTodo', 
       todo => my $new_todo = $list->new_todo,
     );
     $c->action->next($new_todo);
   }
 
+    # GET /contacts/init
+    sub init :GET Via('setup_new') At('/init') ($self, $c, $new_contact) {
+      return $c->view->set_http_ok;
+    }
+
     # POST /todos/
     sub create :POST Via('setup_new') At('') BodyModel(TodoRequest) ($self, $c, $new_todo, $r) {
       return $new_todo->set_from_request($r) ?
-        $c->redirect_to_action('list') :  # Redirect because if no error we want a clean form
+        $c->view->set_http_ok :
           $c->view->set_http_bad_request;
     }
 

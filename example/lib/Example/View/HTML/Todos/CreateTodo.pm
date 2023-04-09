@@ -1,4 +1,4 @@
-package Example::View::HTML::Todos::EditTodo;
+package Example::View::HTML::Todos::CreateTodo;
 
 use Moo;
 use Example::Syntax;
