@@ -13,14 +13,14 @@ sub collection :Via('*Private') At('todos/...') ($self, $c, $user) {
 }
 
   # /todos/...
-  sub setup_list :Via('collection') At('/...') QueryModel(TodosQuery) ($self, $c, $collection, $todo_query) {
+  sub search :Via('collection') At('/...') QueryModel(TodosQuery) ($self, $c, $collection, $todo_query) {
     my $sessioned_query = $c->model('TodosQuery::Session', $todo_query);
     my $list = $collection->filter_by_request($sessioned_query);
     $c->action->next($list);
   }
 
     # GET /todos
-    sub list :GET Via('setup_list') At('') ($self, $c, $list) {
+    sub list :GET Via('search') At('') ($self, $c, $list) {
       return $c->view('HTML::Todos',
         list => $list,
         todo => my $new_todo = $list->new_todo,
@@ -28,7 +28,7 @@ sub collection :Via('*Private') At('todos/...') ($self, $c, $user) {
     }
 
   # /todos/...
-  sub setup_new :Via('collection') At('/...') ($self, $c, $list) {
+  sub new_entity :Via('collection') At('/...') ($self, $c, $list) {
     $c->view('HTML::Todos::CreateTodo', 
       todo => my $new_todo = $list->new_todo,
     );
@@ -36,12 +36,12 @@ sub collection :Via('*Private') At('todos/...') ($self, $c, $user) {
   }
 
     # GET /contacts/init
-    sub init :GET Via('setup_new') At('/init') ($self, $c, $new_contact) {
+    sub init :GET Via('new_entity') At('/init') ($self, $c, $new_contact) {
       return $c->view->set_http_ok;
     }
 
     # POST /todos/
-    sub create :POST Via('setup_new') At('') BodyModel(TodoRequest) ($self, $c, $new_todo, $r) {
+    sub create :POST Via('new_entity') At('') BodyModel(TodoRequest) ($self, $c, $new_todo, $r) {
       return $new_todo->set_from_request($r) ?
         $c->view->set_http_ok :
           $c->view->set_http_bad_request;

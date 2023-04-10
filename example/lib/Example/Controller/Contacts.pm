@@ -15,31 +15,31 @@ sub collection :Via('*Private') At('contacts/...') ($self, $c, $user) {
 }
 
   # /contacts/...
-  sub setup_list :Via('collection') At('/...') QueryModel(ContactsQuery) ($self, $c, $collection, $contacts_query) {
+  sub search :Via('collection') At('/...') QueryModel(ContactsQuery) ($self, $c, $collection, $contacts_query) {
     my $sessioned_query = $c->model('ContactsQuery::Session', $contacts_query);
     my $list = $collection->filter_by_request($sessioned_query);
     $c->action->next($list);
   }
 
     # GET /contacts
-    sub list :GET Via('setup_list') At('') QueryModel(ContactsQuery) ($self, $c, $contacts, $contacts_query) {
+    sub list :GET Via('search') At('') QueryModel(ContactsQuery) ($self, $c, $contacts, $contacts_query) {
       return $c->view('HTML::Contacts', list => $contacts)->set_http_ok;
     }
 
   # /contacts/...
-  sub setup_new :Via('collection') At('/...') ($self, $c, $collection) {
+  sub new_entity :Via('collection') At('/...') ($self, $c, $collection) {
     my $new_contact = $collection->new_contact;
     $c->view('HTML::Contacts::CreateContact', contact => $new_contact );
     $c->action->next($new_contact);
   }
 
     # GET /contacts/init
-    sub init :GET Via('setup_new') At('/init') ($self, $c, $new_contact) {
+    sub init :GET Via('new_entity') At('/init') ($self, $c, $new_contact) {
       return $c->view->set_http_ok;
     }
 
     # POST /contacts/
-    sub create :POST Via('setup_new') At('') BodyModel(ContactRequest) ($self, $c, $new_contact, $r) {
+    sub create :POST Via('new_entity') At('') BodyModel(ContactRequest) ($self, $c, $new_contact, $r) {
       return $new_contact->set_from_request($r) ?
         $c->view->set_http_ok : 
           $c->view->set_http_bad_request;

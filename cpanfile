@@ -23,6 +23,9 @@ requires 'HTML::Escape';
 requires 'URI', '5.17';
 requires 'Module::Pluggable::Object';
 requires 'Class::Method::Modifiers';
+requires 'Catalyst::View::BasePerRequest';
+requires 'Sub::Util';
+requires 'Attribute::Handlers';
 
 on test => sub {
   requires 'Test::Most' => '0.34';

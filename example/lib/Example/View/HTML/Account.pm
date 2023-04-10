@@ -14,7 +14,7 @@ has 'status_list' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { [ma
 has 'employment_options' => (is=>'ro', required=>1, lazy=>1, default=>sub ($self) { $self->ctx->model('Schema::Employment') } );
 
 sub render($self, $c) {
-  html_page page_title=>'Homepage', sub($layout) {
+  html_page page_title=>'Homepage', sub($page) {
     html_navbar active_link=>'/account',
     div {class=>"col-5 mx-auto"},
     form_for $self->account, {action=>path('update')}, sub ($self, $fb, $account) {

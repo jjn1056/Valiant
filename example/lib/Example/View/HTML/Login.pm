@@ -17,7 +17,7 @@ sub action_link :Renders ($self) {
 }
 
 sub render($self, $c) {
-  html_page page_title => 'Sign In', sub($layout) {
+  html_page page_title => 'Sign In', sub($page) {
     div +{ class=>'col-5 mx-auto' },
       form_for $self->user, +{action=>$self->action_link}, sub ($self, $fb, $u) {
         fieldset [

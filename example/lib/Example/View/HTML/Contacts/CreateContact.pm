@@ -10,7 +10,7 @@ use Example::View::HTML
 has 'contact' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
-  html_page page_title=>'Contact List', sub($layout) {
+  html_page page_title=>'Contact List', sub($page) {
     html_navbar active_link=>'/contacts',
     div {class=>"col-5 mx-auto"},
       html_contacts_contact_form contact=>$self->contact,

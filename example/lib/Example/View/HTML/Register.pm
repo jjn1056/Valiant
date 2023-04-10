@@ -10,7 +10,7 @@ use Example::View::HTML
 has 'registration' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
-  html_page page_title=>'Homepage', sub($layout) {
+  html_page page_title=>'Homepage', sub($page) {
     div +{ class=>'col-5 mx-auto' },
     form_for $self->registration, +{action=>path('create')}, sub ($self, $fb, $registration) {
       fieldset [

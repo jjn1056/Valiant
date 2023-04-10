@@ -1,5 +1,9 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001021 2023 April 10
+          - Added missing distribution dependencies
+          - minor tweaks to some naming and formating in the example application
+
 0.001020 2023 April 9
           - fixed issue with control logic when repeat had an empty set.
           - improved error messaging in the 'path' utility export helper
