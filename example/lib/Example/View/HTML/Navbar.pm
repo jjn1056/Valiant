@@ -16,6 +16,7 @@ sub links :Renders ($self) {
     +{ href => path('/todos/list'), title => 'Todo List' },
     +{ href => path('/contacts/list'), title => 'Contact List' },
     +{ href => path('/session/logout'), title => 'Logout' },
+    +{ href => path('/posts/list'), title => 'Blog Posts' },  
   );
 
   return map {

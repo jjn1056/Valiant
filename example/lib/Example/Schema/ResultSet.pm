@@ -36,4 +36,22 @@ sub page_or_last($self, $page) {
   return $paged_resultset;
 }
 
+sub filter_by_request($self, $request) {
+  my $filtered_resultset = $self;
+  if($request->can('page')) {
+    $filtered_resultset = $filtered_resultset->page_or_last($request->page // 1);
+  }
+  return $filtered_resultset;
+}
+
+sub build($self, $attrs={}) {
+  my $new = $self->new_result($attrs);
+  return $new;
+} 
+
+sub new_from_request($self, $request) {
+  my $new = $self->create($request->nested_params);
+  return $new;
+}
+
 1;
