@@ -8,7 +8,8 @@ use Types::Standard qw(Int);
 extends 'Example::Controller';
 
 sub collection :Via('*Private') At('public/posts/...') ($self, $c, $user) {
-  $c->action->next(my $collection = $user->viewable_posts);
+  my $collection = $user->viewable_posts;
+  $c->action->next($collection);
 }
 
   sub list :Via('collection') At('') QueryModel(PostsQuery) ($self, $c, $collection, $q) {

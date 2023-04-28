@@ -67,28 +67,14 @@ __PACKAGE__->has_many(
 
 __PACKAGE__->has_many(
   viewable_posts =>
-  'Example::Schema::Result::Post::Viewable',
-  sub {
-    my $args = shift;
-
-    return 
-      +{ },
-       { };
-  },
-  { bind => [333] },
+    'Example::Schema::Result::Post::Viewable',
+    sub {
+      my $args = shift;
+      return 
+        +{ },
+         { "$args->{foreign_alias}.id" => \[' is not null', $args->{self_result_object}->id ] };
+    },
 );
-
-
-#  {
-#      foreign_alias => "me",
-#      foreign_relname => "viewable_posts",
-#      rel_name => "viewable_posts",
-#      self_alias => "viewable_posts",
-#      self_result_object => $selfrow,
-#  }
-
-
-
 
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
 __PACKAGE__->validates( password => (presence=>1, confirmation => 1,  on=>'create' ));
