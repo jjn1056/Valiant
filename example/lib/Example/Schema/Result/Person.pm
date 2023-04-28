@@ -69,11 +69,13 @@ __PACKAGE__->has_many(
   viewable_posts =>
   'Example::Schema::Result::Post::Viewable',
   sub {
-  # my $args = shift;
-    use Devel::Dwarn;
-    Dwarn [111, \@_];
-    return +{ };
+    my $args = shift;
+
+    return 
+      +{ },
+       { };
   },
+  { bind => [333] },
 );
 
 
