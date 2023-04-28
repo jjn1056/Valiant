@@ -1,4 +1,4 @@
-package Example::View::HTML::Posts;
+package Example::View::HTML::Public::Posts::List;
 
 use Moo;
 use Example::Syntax;
@@ -10,28 +10,29 @@ use Example::View::HTML
 has 'list' => (is=>'ro', required=>1, from=>'controller', handles=>['pager']);
 
 sub render($self, $c) {
-  html_page page_title=>'Post List', sub($page) {
+  html_page page_title=>'Recent Posts', sub($page) {
     html_navbar active_link=>path('list'),
       div {class=>"col-5 mx-auto"}, [
         legend 'Post List',
         $self->page_window_info,
         div { if=>!$self->pager->total_entries, class=>'alert alert-danger', role=>'alert'}, 
-          'You have no posts yet.  Click the button below to create one.',
+          'No Posts have been authored recently.',
         table +{ if=>($self->pager->total_entries), class=>'table table-striped table-bordered' }, [
           thead
             trow [
               th +{ scope=>"col" }, 'Title',
+              th +{ scope=>"col" }, 'Author',
             ],
           tbody { repeat=>$self->list }, sub ($self, $item, $idx) {
             trow [
-              td link_to path('edit', [$item->id]), $item->title,
+              td link_to path('show', [$item->id]), $item->title,
+              td $item->author->$sf('{:first_name} {:last_name}'),
             ],
           },
           tfoot { if=>$self->pager->last_page > 1  },
             td {colspan=>2, style=>'background:white'},
               ["Page: ", $self->pagelist ],
         ],
-        a { href=>path('new_entity'), role=>'button', class=>'btn btn-lg btn-primary btn-block' }, "Create a new Post",
      ],
   };
 }

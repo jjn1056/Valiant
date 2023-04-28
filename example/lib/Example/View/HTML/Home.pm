@@ -3,8 +3,9 @@ package Example::View::HTML::Home;
 use Moo;
 use Example::Syntax;
 use Example::View::HTML
-  -tags => qw(div blockquote),
-  -views => 'HTML::Page', 'HTML::Navbar';
+  -tags => qw(div blockquote link_to),
+  -views => 'HTML::Page', 'HTML::Navbar',
+  -helpers => 'path';
 
 has info => (is=>'rw', predicate=>'has_info');
 
@@ -14,7 +15,10 @@ sub render($self, $c) {
     blockquote +{ if=>$self->has_info, 
       class=>"alert alert-primary", 
       role=>"alert" }, $self->info,
-    div 'Welcome to your Example application Homepage';
+    div 'Welcome to your Example application Homepage',
+    div [
+      'See ', link_to path('/public/posts/list'), 'Recent Blogs'
+    ]
   };
 }
 

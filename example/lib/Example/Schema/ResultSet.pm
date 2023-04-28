@@ -50,7 +50,10 @@ sub build($self, $attrs={}) {
 } 
 
 sub new_from_request($self, $request) {
+  use Devel::Dwarn;
+  Dwarn $request->nested_params; 
   my $new = $self->create($request->nested_params);
+  Dwarn +{ $new->get_columns };
   return $new;
 }
 

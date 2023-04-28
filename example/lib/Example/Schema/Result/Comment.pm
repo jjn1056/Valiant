@@ -31,14 +31,14 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key('id');
 
 __PACKAGE__->belongs_to(
-    person => 'MyApp::Schema::Result::Person',
+    person => 'Example::Schema::Result::Person',
     { 'foreign.id' => 'self.person_id' },
     {
         on_delete => 'CASCADE',
     },
 );
 __PACKAGE__->belongs_to(
-    post => 'MyApp::Schema::Result::Post',
+    post => 'Example::Schema::Result::Post',
     { 'foreign.id' => 'self.post_id' },
     {
         on_delete => 'CASCADE',

@@ -65,6 +65,29 @@ __PACKAGE__->has_many(
   { 'foreign.person_id' => 'self.id' }
 );
 
+__PACKAGE__->has_many(
+  viewable_posts =>
+  'Example::Schema::Result::Post::Viewable',
+  sub {
+  # my $args = shift;
+    use Devel::Dwarn;
+    Dwarn [111, \@_];
+    return +{ };
+  },
+);
+
+
+#  {
+#      foreign_alias => "me",
+#      foreign_relname => "viewable_posts",
+#      rel_name => "viewable_posts",
+#      self_alias => "viewable_posts",
+#      self_result_object => $selfrow,
+#  }
+
+
+
+
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
 __PACKAGE__->validates( password => (presence=>1, confirmation => 1,  on=>'create' ));
 __PACKAGE__->validates( password => (confirmation => { 
