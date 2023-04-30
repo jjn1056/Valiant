@@ -4,9 +4,7 @@ use Example::Syntax;
 use base 'Example::Schema::Result';
 
 __PACKAGE__->table_class('DBIx::Class::ResultSource::View');
-#__PACKAGE__->set_primary_key('id');
 __PACKAGE__->table('viewable_posts');
-__PACKAGE__->result_source_instance->is_virtual(1);
 
 __PACKAGE__->add_columns(
     id => {
@@ -36,6 +34,9 @@ __PACKAGE__->add_columns(
     },
 );
 
+__PACKAGE__->set_primary_key('id');
+__PACKAGE__->result_source_instance->is_virtual(1);
+
 __PACKAGE__->result_source_instance->view_definition(q[
   SELECT
     id,
@@ -46,6 +47,8 @@ __PACKAGE__->result_source_instance->view_definition(q[
     created_at
   FROM posts
 ]);
+
+
 
 __PACKAGE__->belongs_to(
     author => 'Example::Schema::Result::Person',

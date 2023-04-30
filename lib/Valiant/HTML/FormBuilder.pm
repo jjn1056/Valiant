@@ -37,7 +37,15 @@ has tag_helpers => (
     return Module::Runtime::use_module('Valiant::HTML::Util::Form')->new(%args);
   }
 
-has _theme => ( is => 'rw', required => 1, init_arg=>'theme', default => sub { +{} } );
+has theme => ( is => 'ro', required => 1, lazy =>1, builder => '_build_theme' );
+
+  sub _build_theme {
+    my ($self) = @_;
+    my $theme = $self->can('default_theme') ? $self->default_theme : +{};
+    my $view_theme = $self->view->can('formbuilder_theme') ? $self->view->formbuilder_theme : +{}; 
+    return +{ %$theme, %$view_theme };
+  }
+
 has _nested_child_index => (is=>'rw', init_arg=>undef, required=>1, default=>sub { +{} });
 
 around BUILDARGS => sub {
@@ -56,12 +64,6 @@ sub DEFAULT_COLLECTION_CHECKBOX_BUILDER { return 'Valiant::HTML::FormBuilder::Ch
 sub DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER { return 'Valiant::HTML::FormBuilder::RadioButton' }
 
 sub id { return shift->options->{id} }
-
-sub theme {
-  my ($self) = @_;
-  my $default_theme = $self->can('default_theme') ? $self->default_theme : +{};
-  return +{ %$default_theme, %{$self->_theme} };
-}
 
 sub nested_child_index {
   my ($self, $attribute) = @_;
@@ -2192,6 +2194,74 @@ separately.  Example:
 
 Supports using a template subroutine reference (like L</collection_radio_buttons>) when you need to be
 fussy about style and positioning.
+
+=head1 THEMING
+
+You can add a method called C<default_theme> to your custom form builder sub class to return a hashref of default
+attributes for the various form elements.  For example:
+
+    package Example::FormBuilder;
+
+    use Moo;
+    use Example::Syntax;
+
+    extends 'Valiant::HTML::FormBuilder';
+
+    sub default_theme($self) {
+      return +{ 
+        errors_for => +{ class=>'invalid-feedback' },
+        label => +{ class=>'form-label' },
+        input => +{ class=>'form-control', errors_classes=>'is-invalid' },
+        date_field => +{ class=>'form-control', errors_classes=>'is-invalid' },
+        password => +{ class=>'form-control', errors_classes=>'is-invalid' },
+        submit => +{ class=>'btn btn-lg btn-success btn-block' },
+        button => +{ class=>'btn btn-lg btn-primary btn-block' },
+        text_area => +{ class=>'form-control' },
+        checkbox => +{ class=>'form-check-input', errors_classes=>'is-invalid' },
+        collection_radio_buttons => +{errors_classes=>'is-invalid'},
+        collection_checkbox => +{errors_classes=>'is-invalid'},
+        collection_select => +{class=>'form-control', errors_classes=>'is-invalid'},
+        select => +{class=>'form-control', errors_classes=>'is-invalid'},
+        radio_buttons => +{errors_classes=>'is-invalid'},
+        radio_button => +{class=>'custom-control-input', errors_classes=>'is-invalid'},
+        model_errors => +{ class=>'alert alert-danger', role=>'alert' },
+        form_has_errors => +{ class=>'alert alert-danger', role=>'alert' },
+        attributes => {
+          password => {
+            password => { autocomplete=>'new-password' }
+          }
+        },
+      };
+    }
+
+In the above example you set class defaults for most of the form elements based on the method name. In
+addition you can set specific attributes for specific model attributes (as in the 'password' attribute
+at the end of the last example. 
+
+Then you you call a method like C<text_field> it will automatically add the default attributes for that
+element.  For example:
+
+    $fb->input('name');
+    # <input class="form-control" id="person_name" name="person.name" type="text" value="">
+
+If you are using a CSS framework you can use this to setup default (but overridable) classes for the various
+form elements.  For example:
+
+    $fb->input('name', {class=>'form-control form-control-lg'});
+    # <input class="form-control form-control-lg" id="person_name" name="person.name" type="text" value="">
+
+You can instead add a method called C<formbuilder_theme> to your view class which does the same thing but
+allows you to make local view specific customatizations.  If you use both the formbuilder default theme is
+added first and the view theme would override it.
+
+Please note that you are not limited to passing HTML attributes here, you an pass anything that is a valid
+attribute for the form field you are generating.
+
+B<NOTE:> I'm still working out some of the rules around how we merge or override the various themes so if you 
+go wild here you will need to follow the release notes for following versions carefully.   I consider theming
+a beta feature subject to breaking changes if that's what I need to do to fix bugs or make it more flexible.
+
+1;
 
 =head1 SEE ALSO
 

@@ -1,7 +1,9 @@
 package Example::Controller;
 
 use Scalar::Util;
+use String::CamelCase;
 use Moose;
+
 extends 'Catalyst::ControllerPerContext';
 with 'Catalyst::ControllerRole::At';
 
@@ -17,52 +19,49 @@ around gather_default_action_roles => sub {
   return @roles;
 };
 
-
-has view_prefix => (
+has _view_prefix_namespace => (
+  init_arg=>'view_prefix_namespace',
   is=>'ro', 
   required=>1, 
   lazy=>1, 
-  builder=>'_build_view_prefix',
+  builder=>'_build_view_prefix_namespace',
 );
 
-  sub _build_view_prefix {
-    my $self = shift;
-    return '';
-  }
+  sub _build_view_prefix_namespace { return '' }
+
+  sub view_prefix_namespace { return shift->_view_prefix_namespace }
 
 sub view {
-  my ($self, %args) = @_;
-  return $self->view_for($self->ctx->action, %args);
+  my ($self, @args) = @_;
+  return $self->ctx->stash->{current_view_instance} if exists($self->ctx->stash->{current_view_instance}) && !@args;
+  return $self->view_for($self->ctx->action, @args);
 }
 
 sub view_for {
-  my ($self, $action_proto, %args) = @_;
+  my ($self, $action_proto, @args) = @_;
   my $action = Scalar::Util::blessed($action_proto) ?
     $action_proto :
       $self->action_for($action_proto);
 
-  my $class = $action->class;
-  my $namespace_part = ($class =~ m/^.+::Controller::(.+)$/)[0];
   my $action_namepart = $self->_action_namepart_from_action($action);
-  my $view = $self->_build_view_name($namespace_part, $action_namepart);
+  my $view = $self->_build_view_name($action_namepart);
 
   $self->ctx->log->debug("Initializing View: $view") if $self->ctx->debug;
-  return $self->ctx->view($view, %args);
+  return $self->ctx->view($view, @args);
 }
 
 sub _action_namepart_from_action {
   my ($self, $action) = @_;
-  my $action_namepart = $action->name;
-  $action_namepart =~ s/_(\w)/\U$1/g;
-  $action_namepart =~ s/^(\w)/\u$1/g;
+  my $action_namepart = String::CamelCase::camelize($action->reverse);
+  $action_namepart =~s/\//::/g;
   return $action_namepart;
 }
 
 sub _build_view_name {
-  my ($self, $namespace_part, $action_namepart) = @_;
-  my $view = "@{[ $self->view_prefix ]}::@{[ $namespace_part ]}::@{[ $action_namepart ]}";
+  my ($self, $action_namepart) = @_;
+  my $view = "@{[ $self->view_prefix ]}::@{[ $action_namepart ]}";
   return $view;
 }
 
 __PACKAGE__->meta->make_immutable;
-__PACKAGE__->config(view_prefix=>'HTML');
+__PACKAGE__->config(view_prefix_namespace=>'HTML');

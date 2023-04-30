@@ -25,7 +25,7 @@ sub render($self, $c) {
             {if=>sub { $comment->person->id == user->id}, class=>'mt-3'}, 'Edit this Post',
         ]
       },
-      link_to path('comments/new_entity', [$self->post->id]), {class=>'btn btn-primary btn-lg btn-block'}, 'Add a new Comment',  
+      link_to path('comments/build_entity', [$self->post->id]), {class=>'btn btn-primary btn-lg btn-block'}, 'Add a new Comment',  
       link_to path('list'), {class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Recent Blogs',
     ],
   },

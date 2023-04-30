@@ -1,5 +1,9 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001023 2023 TBA
+          - Adding documentation around the formbuilder theming function.
+
+
 0.001022 2023 April 18
           - Improved some error reporting and messaging
           - Catalyst View can now import methods from the controller and context

@@ -96,6 +96,16 @@ sub _install_utils {
     if($util eq '$sf') {
       my $sf = sub { $form->sf(@_) };
       *{"${target}::sf"} = \$sf;
+    } elsif($util eq 'user') {
+      Moo::_Utils::_install_tracked($target, "__user", $target->can('user'));
+      my $sub = sub {
+        if(Scalar::Util::blessed($_[0]) && $_[0]->isa('Catalyst::View::Valiant')) {
+          return $target->can("__user")->(@_);
+        } else {
+          return $target->can("__user")->($form->view, @_);
+        }
+      };
+      Moo::_Utils::_install_tracked($target, 'user', $sub);
     } elsif($util eq 'content') {
       Moo::_Utils::_install_tracked($target, "__content", \&{"Catalyst::View::BasePerRequest::content"});  
       my $content_sub = sub {
@@ -269,12 +279,17 @@ sub _install_views {
   foreach my $name (keys %view_info) {
     my $method = Sub::Util::set_subname "${target}::${name}" => sub {
       my @args = ();
-      while(@_) {
-        last if
-          !defined($_[0])
-          || ((Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString')
-          || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class));
-        push @args, shift;
+      if( ref($_[0])||'' eq 'HASH' ) {
+        push @args, %{ shift() };
+        push @args, shift() if ((ref($_[0])||'') eq 'CODE');
+      } else {
+        while(@_) {
+          last if
+            !defined($_[0])
+            || ((Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString')
+            || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class));
+          push @args, shift;
+        }
       }
       return $form->view->ctx->view($view_info{$name}, @args), @_ if @_;
       return $form->view->ctx->view($view_info{$name}, @args);
@@ -314,6 +329,8 @@ sub flatten_rendered {
   my ($self, @rendered) = @_;
   return $self->safe_concat(@rendered);
 }
+
+sub user { shift->ctx->user || croak 'No logged in user' }
 
 sub path {
   my $self = shift;
@@ -553,6 +570,10 @@ Export the following functions as well as any named method from the current cont
 and application context:
 
 =over 4
+
+=item $user
+
+The current logged in user if any (via C<< $c->user >>)
 
 =item $sf
 
