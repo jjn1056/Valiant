@@ -42,7 +42,7 @@ has theme => ( is => 'ro', required => 1, lazy =>1, builder => '_build_theme' );
   sub _build_theme {
     my ($self) = @_;
     my $theme = $self->can('default_theme') ? $self->default_theme : +{};
-    my $view_theme = $self->view->can('formbuilder_theme') ? $self->view->formbuilder_theme : +{}; 
+    my $view_theme = $self->view->can('formbuilder_theme') ? $self->view->formbuilder_theme : +{};
     return +{ %$theme, %$view_theme };
   }
 
@@ -164,7 +164,7 @@ sub model_errors {
   my $show_message_on_field_errors = delete $options->{show_message_on_field_errors};
 
   if(
-    $self->model->has_errors &&     # We have errors
+    $self->_model_has_errors &&     # We have errors
     # !scalar(@errors) &&             # but no model errorsS_VIEW
     ($show_message_on_field_errors)   # And a default model error
   ) {
@@ -180,9 +180,15 @@ sub model_errors {
   return $error_content;
 }
 
+sub _model_has_errors {
+  my ($self) = @_;
+  return $self->model->has_errors if $self->model->can('has_errors');
+  return 0;
+}
 sub _get_model_errors {
   my ($self) = @_;
-  return my @errors = $self->model->errors->model_messages;
+  return my @errors = $self->model->errors->model_messages if $self->model->can('errors');
+  return ();
 }
 
 sub _generate_default_model_error {
@@ -212,7 +218,7 @@ sub _default_model_errors_content {
 
 sub merge_theme {
   my ($self, %theme) = @_;
-  $self->_theme(+{ %{$self->_theme}, %theme });
+  $self->theme(+{ %{$self->theme}, %theme });
 }
 
 sub merge_theme_field_opts {
@@ -269,7 +275,7 @@ sub errors_for {
   }
   $options = $self->merge_theme_field_opts(errors_for=>$attribute, $options);
 
-  die "Can't display errors on a model that doesn't support the errors method" unless $self->model->can('errors');
+  return '' unless $self->model->can('errors');
 
   my @errors = $self->model->errors->full_messages_for($attribute);
   return '' unless @errors;

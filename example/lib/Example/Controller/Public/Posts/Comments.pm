@@ -55,6 +55,4 @@ sub root :Via('../find') At('comments/...') ($self, $c, $post) {
             $c->view->set_http_bad_request;
       }
 
-
-
 __PACKAGE__->meta->make_immutable;
