@@ -6,35 +6,29 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
-sub new_entity :Via('*Root') At('login/...')  QueryModel(LoginQuery) ($self, $c, $user, $q) {
-  $c->redirect_to_action('*home') && $c->detach if $user->authenticated; # Don't bother if already logged in
-  $c->view('HTML::Login', user => $user);
-  $c->view->post_login_redirect($q->post_login_redirect) if $q->has_post_login_redirect;
+has post_login_action => (is=>'ro', isa=>'Str', default=>'/home/user_home');
+
+sub root :Via('../root') At('login/...') ($self, $c, $user) {
+  return $c->redirect_to_action($self->post_login_action) && $c->detach
+    if $user->authenticated;
+  $c->action->next($user);
 }
 
-  sub init :GET Via('new_entity') At('/init') Name(Login) ($self, $c) {
-    return $c->view->set_http_ok;
+  sub prepare_build :Via('root') At('...') ($self, $c, $user) {
+    $self->view_for('build', user => $user); 
+    $c->action->next($user);
   }
 
-  sub create :POST Via('new_entity') At('') BodyModel(LoginRequest) ($self, $c, $request) {
-    return $c->view->set_http_bad_request unless $c->authenticate($request->person);
-    return $c->res->redirect($c->view->post_login_redirect) if $c->view->has_post_login_redirect;
-    return $c->redirect_to_action('*Home');
-  }
+    sub build :GET Via('prepare_build') At('')  ($self, $c, $user) {   }
 
-sub logout :GET Via('*Private') At('logout') ($self, $c, $user) {
-  return $c->logout && $c->redirect_to_action('init');
+    sub create :POST Via('prepare_build') At('') BodyModel ($self, $c, $user, $request) {
+      return $c->authenticate($user, $request->person) ?
+        $c->redirect_to_action($self->post_login_action) :
+          $c->view->http_bad_request;
+    }
+
+sub logout :GET Via('../protected') At('logout') ($self, $c, $user) {
+  return $c->logout && $c->redirect_to_action('build');
 }
-
-sub create_path ($self, $c, @args) {
-  return $c->uri('create', @args);
-}
-
-sub get_collection  {}
-sub find_entity_from_resource {}
-sub validate_entity {}
-sub build_entity_from_colection {}
-sub search_collection {}
-
 
 __PACKAGE__->meta->make_immutable;

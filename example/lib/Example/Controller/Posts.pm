@@ -7,51 +7,68 @@ use Types::Standard qw(Int);
 
 extends 'Example::Controller';
 
-sub collection :Via('*Private') At('posts/...') ($self, $c, $user) {
+sub root :Via('../protected') At('posts/...') ($self, $c, $user) {
   $c->action->next(my $collection = $user->posts);
 }
 
-  sub list :Via('collection') At('') QueryModel(PostsQuery) ($self, $c, $collection, $q) {
+  sub search :Via('root') At('/...') QueryModel ($self, $c, $collection, $q) {
     my $searched_collection = $collection->filter_by_request($q);
-    return $c->view('HTML::Posts', list => $searched_collection)->set_http_ok;
+    $c->action->next($searched_collection);
   }
 
-  sub new_entity :GET Via('collection') At('/new') ($self, $c, $collection) {
-    my $new_post = $collection->build;
-    return $c->view('HTML::Posts::New', post => $new_post )->set_http_ok;
+    # GET /posts
+    sub list :Via('search') At('') ($self, $c, $collection) {
+      return $self->view(list => $collection)->set_http_ok;
+    }
+
+  sub prepare_build :Via('root') At('...') ($self, $c, $collection) {
+    $self->view_for('build', post => my $post = $collection->build);
+    $c->action->next($post);
   }
 
-  sub create :POST Via('collection') At('') BodyModel(PostBody) ($self, $c, $collection, $r) {
-    my $post_from_request = $collection->new_from_request($r);
-    $c->view('HTML::Posts::New', post => $post_from_request );
-    return $post_from_request->valid ?
-      $c->view->set_http_ok : 
-        $c->view->set_http_bad_request;
-  }
+    # GET /posts/new
+    sub build :GET Via('prepare_build') At('new') ($self, $c, $post) {
+      return $c->view->set_http_ok;
+    }
 
-  sub entity :Via('collection') At('{:Int}/...') ($self, $c, $collection, $id) {
+    # POST /posts
+    sub create :POST Via('prepare_build') At('') BodyModel ($self, $c, $post, $r) {
+      return $post->set_from_request($r) ?
+        $c->view->set_http_ok : 
+          $c->view->set_http_bad_request;
+    }
+
+  sub find :Via('root') At('{:Int}/...') ($self, $c, $collection, $id) {
     my $post = $collection->find($id) // $c->detach_error(404, +{error=>"Post Id '$id' not found"});
     $c->action->next($post);
   }
 
-    sub show :GET Via('entity') At('') ($self, $c, $post) {
-      $c->view('HTML::Posts::Show', post => $post)->set_http_ok;
+    # GET /posts/1
+    sub show :GET Via('find') At('') ($self, $c, $post) {
+      $self->view(post => $post)->set_http_ok;
     }
 
-    sub delete :DELETE Via('entity') At('') ($self, $c, $post) {
+    # DELETE /posts/1
+    sub delete :DELETE Via('find') At('') ($self, $c, $post) {
       return $post->delete && $c->redirect_to_action('list');
     }
 
-    sub edit :GET Via('entity') At('edit') ($self, $c, $post) {
-      return $c->view('HTML::Posts::Edit', post => $post)->set_http_ok;
+    sub prepare_edit :Via('find') At('...') ($self, $c, $post) { 
+      $self->view_for('edit',  post => $post);
+      $c->action->next($post);
     }
-  
-    sub update :PATCH Via('entity') At('') BodyModel(PostBody) ($self, $c, $post, $r) {
-      $post->set_from_request($r);
-      $c->view('HTML::Posts::Edit', post => $post);
-      return $post->valid ?
-        $c->view->set_http_ok :
-          $c->view->set_http_bad_request;
-    }
+
+      # GET /posts/1/edit
+      sub edit :GET Via('prepare_edit') At('edit') ($self, $c, $post) {
+        return $c->view->set_http_ok;
+      }
+    
+      # PATCH /posts/1
+      sub update :PATCH Via('prepare_edit') At('') BodyModel('~CreateBody') ($self, $c, $post, $r) {
+        $post->set_from_request($r);
+        return $post->valid ?
+          $c->view->set_http_ok :
+            $c->view->set_http_bad_request;
+      }
 
 __PACKAGE__->meta->make_immutable;

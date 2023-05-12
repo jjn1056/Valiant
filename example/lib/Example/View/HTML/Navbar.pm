@@ -11,12 +11,12 @@ has active_link => (is=>'ro', required=>1, default=>sub($self) { $self->ctx->req
 sub links :Renders ($self) {
   my $class = "nav-item nav-link";
   state @links = (
-    +{ href => '/', title => 'Home' },
+    +{ href => path('/home/user_home'), title => 'Home' },
     +{ href => path('/account/edit'), title => 'Account Details' },
     +{ href => path('/todos/list'), title => 'Todo List' },
     +{ href => path('/contacts/list'), title => 'Contact List' },
-    +{ href => path('/session/logout'), title => 'Logout' },
-    +{ href => path('/posts/list'), title => 'Blog Posts' },  
+    +{ href => path('/posts/list'), title => 'My Posts' }, 
+    +{ href => path('/session/logout'), title => 'Logout' }, 
   );
 
   return map {

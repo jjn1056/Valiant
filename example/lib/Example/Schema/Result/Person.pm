@@ -66,7 +66,7 @@ __PACKAGE__->has_many(
 );
 
 __PACKAGE__->has_many(
-  viewable_posts =>
+  viewable_posts2 =>
     'Example::Schema::Result::Post::Viewable',
     sub {
       my $args = shift;
@@ -75,6 +75,14 @@ __PACKAGE__->has_many(
          { "$args->{foreign_alias}.id" => \[' is not null', $args->{self_result_object}->id ] };
     },
 );
+
+sub viewable_posts($self, $search_args = {}) {
+  my $schema = $self->result_source->schema;
+  return $schema->resultset('Post::Viewable')->search(
+    $search_args,
+    { bind => [ $self->id ] }
+  );
+}
 
 __PACKAGE__->validates(username => presence=>1, length=>[3,24], format=>'alpha_numeric', unique=>1);
 __PACKAGE__->validates( password => (presence=>1, confirmation => 1,  on=>'create' ));
@@ -166,6 +174,24 @@ sub update_account($self, $request) {
   $self->context('account')->set_columns_recursively($request->nested_params);
  $self->context('account')->update; 
   return $self->valid;
+}
+
+## There's are proxied to other resultsets for now but we expect that
+## ecentually they could be impacted by the current user.
+
+sub states {
+  my $self = shift;
+  return $self->result_source->schema->resultset('State');
+}
+
+sub roles {
+  my $self = shift;
+  return $self->result_source->schema->resultset('Role');
+}
+
+sub employment_options {
+  my $self = shift;
+  return $self->result_source->schema->resultset('Employment');
 }
 
 1;

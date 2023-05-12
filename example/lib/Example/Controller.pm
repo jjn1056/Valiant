@@ -59,7 +59,7 @@ sub _action_namepart_from_action {
 
 sub _build_view_name {
   my ($self, $action_namepart) = @_;
-  my $view = "@{[ $self->view_prefix ]}::@{[ $action_namepart ]}";
+  my $view = "@{[ $self->view_prefix_namespace ]}::@{[ $action_namepart ]}";
   return $view;
 }
 
