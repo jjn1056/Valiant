@@ -19,7 +19,7 @@ sub formbuilder_theme($self) {
     password => +{ class=>'form-control', errors_classes=>'is-invalid' },
     submit => +{ class=>'btn btn-lg btn-success btn-block' },
     button => +{ class=>'btn btn-lg btn-primary btn-block' },
-    text_area => +{ class=>'form-control' },
+    text_area => +{ class=>'form-control', errors_classes=>'is-invalid' },
     checkbox => +{ class=>'form-check-input', errors_classes=>'is-invalid' },
     collection_radio_buttons => +{errors_classes=>'is-invalid'},
     collection_checkbox => +{errors_classes=>'is-invalid'},

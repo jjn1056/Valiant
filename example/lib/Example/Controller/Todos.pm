@@ -67,7 +67,7 @@ sub root :Via('../protected') At('todos/...') ($self, $c, $user) {
       }
     
       # PATCH /todos/{:Int}
-      sub update :PATCH Via('prepare_edit') At('') BodyModel('~CreateBody') ($self, $c, $todo, $r) {
+      sub update :PATCH Via('prepare_edit') At('') BodyModelFor('create') ($self, $c, $todo, $r) {
         return $todo->set_from_request($r) ?
           $c->view->set_http_ok :
             $c->view->set_http_bad_request;

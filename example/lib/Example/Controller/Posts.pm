@@ -64,9 +64,8 @@ sub root :Via('../protected') At('posts/...') ($self, $c, $user) {
       }
     
       # PATCH /posts/1
-      sub update :PATCH Via('prepare_edit') At('') BodyModel('~CreateBody') ($self, $c, $post, $r) {
-        $post->set_from_request($r);
-        return $post->valid ?
+      sub update :PATCH Via('prepare_edit') At('') BodyModelFor('create') ($self, $c, $post, $r) {
+        return $post->set_from_request($r) ?
           $c->view->set_http_ok :
             $c->view->set_http_bad_request;
       }

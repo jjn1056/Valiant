@@ -73,7 +73,7 @@ sub root :Via('../protected') At('contacts/...') ($self, $c, $user) {
       }
     
       # PATCH /contacts/{:Int}
-      sub update :PATCH Via('prepare_edit') At('') BodyModel('~CreateBody') ($self, $c, $contact, $r) {
+      sub update :PATCH Via('prepare_edit') At('') BodyModelFor('create') ($self, $c, $contact, $r) {
         return $contact->set_from_request($r) ?
           $c->view->set_http_ok :
             $c->view->set_http_bad_request;

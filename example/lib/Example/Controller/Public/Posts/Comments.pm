@@ -21,8 +21,7 @@ sub root :Via('../find') At('comments/...') ($self, $c, $post) {
     }
 
     sub create :POST Via('prepare_build') At('') BodyModel ($self, $c, $comment, $r) {
-      $comment->set_from_request($r);
-      return $comment->valid ?
+      return $comment->set_from_request($r) ?
         $c->view->set_http_ok : 
           $c->view->set_http_bad_request;
     }
@@ -50,9 +49,8 @@ sub root :Via('../find') At('comments/...') ($self, $c, $post) {
         return $c->view->set_http_ok;
       }
     
-      sub update :PATCH Via('prepare_edit') At('') BodyModel('~CreateBody') ($self, $c, $comment, $r) {
-        $comment->set_from_request($r);
-        return $comment->valid ?
+      sub update :PATCH Via('prepare_edit') At('') BodyModelFor('create') ($self, $c, $comment, $r) {
+        return $comment->set_from_request($r) ?
           $c->view->set_http_ok :
             $c->view->set_http_bad_request;
       }
