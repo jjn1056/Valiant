@@ -5,6 +5,8 @@ use Moose;
 use Example::Syntax;
 use Valiant::I18N; # Needed to load $HOME/locale
 
+__PACKAGE__->request_class_traits(['Catalyst::TraitFor::Request::ContentNegotiationHelpers']);
+
 __PACKAGE__->setup_plugins([qw/
   Session
   Session::State::Cookie
@@ -17,11 +19,10 @@ __PACKAGE__->setup_plugins([qw/
 /]);
 
 __PACKAGE__->config(
-  default_view => 'HTML',
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
   'Plugin::Session' => { storage_secret_key => 'abc123' },
-  'Plugin::CSRFToken' => { auto_check =>1, default_secret => 'abc123' },
+  'Plugin::CSRFToken' => { default_secret => 'abc123' },
   'Model::Schema' => {
     traits => ['SchemaProxy'],
     schema_class => 'Example::Schema',
@@ -52,8 +53,7 @@ sub persist_user_to_session ($self, $user) {
 }
 
 sub authenticate($self, $user, @args) {
-  my $authenticated = $user->authenticate(@args);
-  $self->persist_user_to_session($user) if $authenticated;
+  $self->persist_user_to_session($user) if my $authenticated = $user->authenticate(@args);
   return $authenticated;
 }
 

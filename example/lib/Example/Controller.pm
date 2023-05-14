@@ -19,9 +19,12 @@ around gather_default_action_roles => sub {
   return @roles;
 };
 
-has _view_prefix_namespace => (
+
+## This stuff will go into a role sooner or later
+
+has view_prefix_namespace => (
   init_arg=>'view_prefix_namespace',
-  is=>'ro', 
+  is=>'rw', 
   required=>1, 
   lazy=>1, 
   builder=>'_build_view_prefix_namespace',
@@ -29,7 +32,7 @@ has _view_prefix_namespace => (
 
   sub _build_view_prefix_namespace { return '' }
 
-  sub view_prefix_namespace { return shift->_view_prefix_namespace }
+  sub get_view_prefix_namespace { return shift->view_prefix_namespace }
 
 sub view {
   my ($self, @args) = @_;
@@ -59,7 +62,7 @@ sub _action_namepart_from_action {
 
 sub _build_view_name {
   my ($self, $action_namepart) = @_;
-  my $view = "@{[ $self->view_prefix_namespace ]}::@{[ $action_namepart ]}";
+  my $view = "@{[ $self->get_view_prefix_namespace ]}::@{[ $action_namepart ]}";
   return $view;
 }
 

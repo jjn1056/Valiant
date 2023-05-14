@@ -25,6 +25,7 @@ server:
 	@DBIC_TRACE=1 perl \
 		-I ../lib \
 		-I /Users/jnapiorkowski/Desktop/Catalyst/Catalyst-Runtime/lib \
+		-I /Users/jnapiorkowski/Desktop/Catalyst/Catalyst-Plugin-CSRFToken/lib \
 		-I ./lib \
 		./lib/Example/PSGI.pm
 
