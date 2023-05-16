@@ -15,7 +15,8 @@ around gather_default_action_roles => sub {
   push @roles, 'Catalyst::ActionRole::RequestModel'
     if $args{attributes}->{RequestModel} || 
       $args{attributes}->{QueryModel} || 
-        $args{attributes}->{BodyModel};
+      $args{attributes}->{BodyModel} ||
+      $args{attributes}->{BodyModelFor}; 
   return @roles;
 };
 

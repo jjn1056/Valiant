@@ -5,7 +5,7 @@ use CatalystX::RequestModel;
 
 extends 'Catalyst::Model';
 namespace 'account';
-content_type 'application/x-www-form-urlencoded';
+content_type 'application/x-www-form-urlencoded', 'application/json';
 
 has username => (is=>'ro', property=>1);  
 has first_name => (is=>'ro', property=>1);

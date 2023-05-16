@@ -3,7 +3,7 @@ package Example::View::HTML::Account::Edit;
 use Moo;
 use Example::Syntax;
 use Example::View::HTML
-  -tags => qw(div a fieldset legend br form_for),
+  -tags => qw(div a fieldset legend br form_for script),
   -util => qw(path user),
   -views => 'HTML::Page', 'HTML::Navbar';
 
@@ -17,6 +17,11 @@ sub render($self, $c) {
   my $status_options = [ map { [ucfirst($_) => $_] } $self->account->profile->status_list];
 
   html_page page_title=>'Homepage', sub($page) {
+
+    $page->content_for('js', sub {
+      script +{ src=>"/static/account-edit.js" }, '';
+    });
+
     html_navbar active_link=>'/account',
     div {class=>"col-5 mx-auto"},
     form_for 'account', {action=>path('update')}, sub ($self, $fb, $account) {

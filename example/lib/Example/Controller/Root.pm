@@ -7,7 +7,6 @@ use Example::Syntax;
 extends 'Example::Controller';
 
 sub root :At('/...') ($self, $c) {
-  $c->process_csrf_token || $c->detach_error(403, +{message=>'Bad CSRF Token'});
   $c->req->on_best_media_type(
     'no_match' => sub {  $c->detach_error(415) },
     'text/html' => sub { $c->controller->view_prefix_namespace('HTML') },
