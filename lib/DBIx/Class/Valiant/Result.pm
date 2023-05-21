@@ -366,6 +366,13 @@ sub read_attribute_for_html {
   return $self->read_attribute_for_validation($attribute);
 }
 
+sub get_attribute_for_json {
+  my ($self, $attribute) = @_;
+  return $self->is_marked_for_deletion if $attribute eq '_delete';
+  return 1 if $attribute eq '_add';
+  return $self->read_attribute_for_validation($attribute);
+}
+
 # Provide basic uniqueness checking for columns.  This is basically a dumb DB lookup.  
 # Its probably fine for light work but you'll need something more performant when your
 # table gets big.
