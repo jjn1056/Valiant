@@ -216,7 +216,7 @@ sub object {
   my $cb = pop;
   my %opts = $self->_normalize_opts(@_);
 
-  croak 'You must provide a callback to object' unless ref($cb) eq 'CODE';
+  croak "You must provide a callback for '$key' to object" unless ref($cb) eq 'CODE';
   
   my $model;
   if(blessed $key) {
@@ -246,7 +246,7 @@ sub array {
   my $key = shift;
   my $cb = pop;
 
-  croak 'You must provide a callback to object' unless ref($cb) eq 'CODE';
+  croak "You must provide a callback for '$key' to array" unless ref($cb) eq 'CODE';
 
   my %opts = $self->_normalize_opts(@_);
   
@@ -294,6 +294,13 @@ sub with_model {
   $cb->($self->view, $self, $model);
   $self->pop_model;
   return $self;
+}
+
+sub errors {
+  my $self = shift;
+  my @errors = $self->view->errors_for($self->current_model);
+  return $self unless scalar(@errors);
+  return $self->string('errors', \@errors);
 }
 
 1;

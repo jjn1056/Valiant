@@ -103,6 +103,11 @@ __PACKAGE__->accept_nested_for('contacts', {allow_destroy=>1});
 
 __PACKAGE__->accept_nested_for('profile');
 
+__PACKAGE__->validates_with(sub {
+  my ($self, $opts) = @_;
+  $self->errors->add(undef, "No MEga!!!!!") if (($self->last_name||'') eq 'mega');
+});
+
 sub validate_roles($self, $attribute_name, $value, $opt) {
 
   # Tricky since you want to use the cached rows.  This could likely be optimized

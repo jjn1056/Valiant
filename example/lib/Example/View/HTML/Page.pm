@@ -8,6 +8,12 @@ use Example::View::HTML
   -views => 'Layout';
 
 has 'page_title' => (is=>'ro', required=>1);
+has 'scripts' => (
+  traits => ['Array'],
+  is => 'ro',
+  default => sub { [] },
+  handles => { add_script => 'push', all_scripts => 'elements' },
+);
 
 sub render($self, $c, $content) {
   return  html +{ lang=>'en' }, [
@@ -24,19 +30,15 @@ sub render($self, $c, $content) {
               $self->content('css'),
             ],
             body [
-              $content,
-              br,
+              $content, br,
               $self->the_time,
-              #script +{ src=>'https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js',
-              #          integrity=>'sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj',
-              #          crossorigin=>"anonymous" }, '',
               script +{ src=>'https://code.jquery.com/jquery-3.7.0.min.js',
                         integrity=>'sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=',
                         crossorigin=>"anonymous" }, '',
               script +{ src=>'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js',
                         integrity=>'sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct',
                         crossorigin=>"anonymous" }, '',
-              script +{ src=>"/static/serialize.js" }, '',
+              script +{ map=>[$self->all_scripts], src=>sub {$ }  }, '',
               $self->content('js'),
             ],
           ];

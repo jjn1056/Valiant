@@ -20,9 +20,6 @@ sub root :Via('../protected') At('account/...') ($self, $c, $user) {
     }
 
     sub update :PATCH Via('prepare_edit') At('') BodyModel ($self, $c, $account, $r) {
-      use Devel::Dwarn;
-      Dwarn +{params => $r->nested_params};
-
       return $account->update_account($r) ?
         $c->view->set_http_ok : 
           $c->view->set_http_bad_request;

@@ -2,7 +2,10 @@ $(document).ready(function() {
   $("#edit_account").submit(function(event) {
     event.preventDefault(); // Prevent the default form submission
 
-    // Get form data
+    var formData = $(this).serialize();
+    console.log(formData);
+
+    /* Get form data
     let JSONData = $(this).serializeJSON();
     console.log(JSONData);
 
@@ -17,16 +20,24 @@ $(document).ready(function() {
         "Accept": "application/json",
       },
       data: JSON.stringify(JSONData)
-    };
+    };*/
+
+    var options = {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+      },
+      data: formData
+    }; 
 
     $.ajax(this.action, options)
       .done(function(response) {
         // Handle the response from the server
-        console.log(response);
+        console.log(response.responseJSON);
       })
       .fail(function(error) {
         // Handle errors
-        console.error(error);
+        console.error(error.responseJSON);
     });
   });
 });

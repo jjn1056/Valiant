@@ -16,13 +16,9 @@ sub render($self, $c) {
   my $employment_options = user->employment_options;
   my $status_options = [ map { [ucfirst($_) => $_] } $self->account->profile->status_list];
 
-  html_page page_title=>'Homepage', sub($page) {
-
-    $page->content_for('js', sub {
-      script +{ src=>"/static/account-edit.js" }, '';
-    });
-
-    html_navbar active_link=>'/account',
+  return html_page page_title=>'Homepage', sub($page) {
+    $page->add_script('/static/account-edit.js');
+    return html_navbar active_link=>'/account',
     div {class=>"col-5 mx-auto"},
     form_for 'account', {action=>path('update')}, sub ($self, $fb, $account) {
       div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',

@@ -66,6 +66,45 @@ sub render {
   return $json;
 }
 
+sub errors_for {
+  my ($self, $model) = @_;
+  carp "model $model does not support the errors API" unless $model->can('errors');
+
+  # 'multipart/form-data' 
+  my ($content_type, @params) = $self->ctx->req->content_type;
+  my $cb;
+  if(
+    ($content_type eq 'application/x-www-form-urlencoded')
+      ||
+    ($content_type eq 'multipart/form-data')
+  ) {
+    $cb = sub {
+      my $field = shift;
+      return +{ parameter => $field };
+    };
+  } elsif($content_type eq 'application/json') {
+    $cb = sub {
+      my $field = shift;
+      $field =~ s/\./\//g;
+      $field =~ s/\[/\//g;
+      $field =~ s/\]//g;
+      return +{ pointer => $field };
+    };
+  }
+
+  my %errors = $model->errors->to_hash(1);
+  my @errors = ();
+  foreach my $field (keys %errors) {
+    my @error_messages = $errors{$field};
+    foreach my $error_message (@error_messages) {
+      my $info = +{ detail => $error_message };
+      $info->{source} = $cb->($field) if $field ne '*';
+      push @errors, $info;
+    }
+  }
+  return @errors; 
+}
+
 __PACKAGE__->config(content_type=>'application/json');
 
 =head1 NAME
