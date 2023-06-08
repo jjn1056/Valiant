@@ -189,7 +189,7 @@ sub states {
   return $self->result_source->schema->resultset('State');
 }
 
-sub roles {
+sub viewable_roles {
   my $self = shift;
   return $self->result_source->schema->resultset('Role');
 }

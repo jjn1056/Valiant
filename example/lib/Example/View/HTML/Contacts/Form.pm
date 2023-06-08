@@ -15,7 +15,7 @@ sub create_or_update_contact_path  :Renders ($self, $contact)  {
 }
 
 sub render($self, $c) {
-  form_for 'contact', +{action=>$self->create_or_update_contact_path($self->contact)}, sub ($self, $fb, $contact) {
+  form_for 'contact', +{action=>$self->create_or_update_contact_path($self->contact), ajax=>0}, sub ($self, $fb, $contact) {
     div +{ if=>$fb->successfully_updated, 
       class=>'alert alert-success', role=>'alert' 
     }, 'Successfully Saved!',

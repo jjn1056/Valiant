@@ -7,10 +7,6 @@ use Example::Syntax;
 extends 'Example::Controller';
 
 sub root :At('/...') ($self, $c) {
-  $c->req->on_best_media_type(
-    'no_match' => sub {  $c->detach_error(415) },
-    'text/html' => sub { $c->controller->view_prefix_namespace('HTML') },
-    'application/json' => sub { $c->controller->view_prefix_namespace('JSON') });
   $c->action->next($c->user);
 }
 
@@ -27,9 +23,12 @@ sub root :At('/...') ($self, $c) {
     }
   
   sub protected :Via('root') At('/...') ($self, $c, $user) {
-    return $user->authenticated ?
-      $c->action->next($user) : 
-        $c->redirect_to_action('/session/build') && $c->detach; 
+    return $c->redirect_to_action('/session/build') && $c->detach unless $user->authenticated;
+    $c->req->on_best_media_type(
+      'no_match' => sub {  $c->detach_error(415) },
+      'text/html' => sub { $c->controller->view_prefix_namespace('HTML') },
+      'application/json' => sub { $c->controller->view_prefix_namespace('JSON') });
+    $c->action->next($user); 
   }
 
 sub end :Action Does('RenderErrors') Does('RenderView') { }  # The order of the Action Roles is important!!

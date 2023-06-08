@@ -8,14 +8,22 @@ extends 'Catalyst::View::JSONBuilder';
 has account => (is=>'ro', required=>1);
 
 sub render_json($self, $c) {
-  return $self->json_builder('account')
-    ->string('username')
+  my $jb = $self->json_builder('account');
+
+use Devel::Dwarn;
+Dwarn $jb->data;
+Dwarn $jb->data_pointer;
+Dwarn $jb->data;
+
+  $jb->string('username')
     ->string('first_name')
     ->string('last_name')
     ->object('profile', \&render_profile)
     ->array('person_roles', \&render_person_role)
     ->array('credit_cards', \&render_credit_card)
     ->errors();
+
+  return $jb;
 }
 
 sub render_profile($self, $jb, $profile) {

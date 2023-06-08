@@ -12,7 +12,8 @@ has 'account' => ( is=>'ro', required=>1 );
 sub render($self, $c) {
 
   my $states = user->states;
-  my $roles = user->roles;
+  my $roles = user->viewable_roles;
+
   my $employment_options = user->employment_options;
   my $status_options = [ map { [ucfirst($_) => $_] } $self->account->profile->status_list];
 
@@ -20,7 +21,7 @@ sub render($self, $c) {
     $page->add_script('/static/account-edit.js');
     return html_navbar active_link=>'/account',
     div {class=>"col-5 mx-auto"},
-    form_for 'account', {action=>path('update')}, sub ($self, $fb, $account) {
+    form_for 'account', {action=>path('update'), ajax=>1}, sub ($self, $fb, $account) {
       div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
       fieldset [
         $fb->legend,
