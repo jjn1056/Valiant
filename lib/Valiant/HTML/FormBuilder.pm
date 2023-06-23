@@ -278,23 +278,29 @@ sub errors_for {
   return '' unless $self->model->can('errors');
 
   my @errors = $self->model->errors->full_messages_for($attribute);
-  return '' unless @errors;
+  return '' unless scalar(@errors);
   
   my $max_errors = exists($options->{max_errors}) ? delete($options->{max_errors}) : undef;
   @errors = @errors[0..($max_errors-1)] if($max_errors);
-  $content = $self->_default_errors_for_content($self->process_options($attribute, $options)) unless defined($content);
+  $options = $self->process_options($attribute, $options);
+  $content = $self->_default_errors_for_content($options) unless defined($content);
 
-  return $content->(@errors);  
+  my $response = $self->view->safe('');
+  $response = $content->(@errors) if @errors;
+
+  return $response;
 }
 
 sub _default_errors_for_content {
   my ($self, $options) = @_;
   return sub {
     my (@errors) = @_;
+
     if( scalar(@errors) == 1 ) {
-       return $self->tag_helpers->content_tag('div', $errors[0], $options);
+       return $self->tag_helpers->content_tag('div', $errors[0], {%$options, data=>{error_param=>1}});
     } else {
-       return $self->tag_helpers->content_tag('ol', $options, sub { map { $self->tag_helpers->content_tag('li', $_) } @errors });
+      my @li_content = map { $self->tag_helpers->content_tag('li', $_, {data=>{error_param=>1}}) } @errors;
+      return $self->tag_helpers->content_tag('ol', $self->view->safe_concat(@li_content), $options);
     }
   }
 }
@@ -326,20 +332,35 @@ sub process_options {
 sub input {
   my ($self, $attribute, $options) = (shift, shift, (@_ ? shift : +{}));
   $options = $self->merge_theme_field_opts($options->{type} || 'input', $attribute, $options);
-  my $errors_classes = exists($options->{errors_classes}) ? delete($options->{errors_classes}) : undef;
+
+  my %flags = ();
+  $flags{force_validity} = delete $options->{force_validity} if exists $options->{force_validity};
+  $flags{errors_classes} = delete $options->{errors_classes} if exists $options->{errors_classes};
+
+  my $response = $self->_input($attribute, $options, \%flags);
+  return $response;
+}
+
+sub _input {
+  my ($self, $attribute, $html_attrs, $flags) = @_;
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
+  my $valid = 1;
+  if(exists($flags->{force_validity})) {
+    $valid = $flags->{force_validity};
+  } elsif($model->can('errors')) {
+    $valid = $model->errors->where($attribute) ? 0 : 1;
+  }
 
-  $options->{class} = join(' ', (grep { defined $_ } $options->{class}, $errors_classes))
-    if $errors_classes && $model->can('errors') && $model->errors->where($attribute);
+  $html_attrs->{class} = join(' ', (grep { defined $_ } $html_attrs->{class}, $flags->{errors_classes}))
+    if $flags->{errors_classes} && !$valid;
 
-  set_unless_defined(type => $options, 'text');
-  set_unless_defined(id => $options, $self->tag_id_for_attribute($attribute));
-  set_unless_defined(name => $options, $self->tag_name_for_attribute($attribute));
-  $options->{value} = $self->tag_value_for_attribute($attribute) unless defined($options->{value});
+  set_unless_defined(type => $html_attrs, 'text');
+  set_unless_defined(id => $html_attrs, $self->tag_id_for_attribute($attribute));
+  set_unless_defined(name => $html_attrs, $self->tag_name_for_attribute($attribute));
+  $html_attrs->{value} = $self->tag_value_for_attribute($attribute) unless defined($html_attrs->{value});
+  $html_attrs = $self->process_options($attribute, $html_attrs);
 
-  $options = $self->process_options($attribute, $options);
-
-  return $self->tag_helpers->input_tag($attribute, $options);
+  my $response = $self->tag_helpers->input_tag($attribute, $html_attrs);
 }
 
 sub password {
@@ -718,7 +739,7 @@ sub collection_select {
   my $include_hidden = exists($options->{include_hidden}) ? delete($options->{include_hidden}) : 1;
   $collection = $model->$collection unless Scalar::Util::blessed($collection); 
 
-  my (@selected, $name, $id) = @_;
+  my (@selected, $name, $id) = ();
   if(ref $method_proto) {
     $options->{multiple} = 1 unless exists($options->{multiple});
     $options->{include_hidden} = 0 unless exists($options->{include_hidden}); # Avoid adding two
@@ -748,7 +769,7 @@ sub collection_select {
     }
 
     $name = $self->tag_name_for_attribute($method_proto);
-    $id = $self->tag_id_for_attribute($method_proto);
+    $options->{id} = $id = $self->tag_id_for_attribute($method_proto);
   }
   
   my @disabled = ( @{delete($options->{disabled})||[]});

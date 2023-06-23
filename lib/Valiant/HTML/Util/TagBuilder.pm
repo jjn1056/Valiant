@@ -321,8 +321,9 @@ sub _tag_options {
 
 sub _tag_option {
   my $self = shift;
-  my ($attr, $value) = @_;
-  return qq[${attr}="@{[ $self->escape_html(( defined($value) ? $value : '' )) ]}"];
+  my $attr = shift;
+  my $value = defined($_[0]) ? shift() : '';
+  return qq[${attr}="@{[ $self->safe($value) ]}"];
 }
 
 sub _dasherize {

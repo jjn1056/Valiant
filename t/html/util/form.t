@@ -74,10 +74,10 @@ ok !$person->valid;
     '<form accept-charset="UTF-8" class="new_local_person" enctype="application/x-www-form-urlencoded" id="new_local_person" method="post">' .
       '<label for="local_person_first_name">First Name</label>' .
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>' .
-      '<div>First Name is too short (minimum is 3 characters)</div>' .
+      '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>' .
       '<label for="local_person_last_name">Last Name</label>' .
       '<input id="local_person_last_name" name="local_person.last_name" type="text" value="napiorkowski"/>' .
-      '<div>Last Name is too long (maximum is 10 characters)</div>' .
+      '<div data-error-param="1">Last Name is too long (maximum is 10 characters)</div>' .
     '</form>'; 
 }
 
@@ -103,10 +103,10 @@ ok !$person->valid;
     '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_local_person" enctype="application/x-www-form-urlencoded" id="edit_local_person" method="post">' .
       '<label for="local_person_first_name">First Name</label>' .
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>' .
-      '<div>First Name is too short (minimum is 3 characters)</div>' .
+      '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>' .
       '<label for="local_person_last_name">Last Name</label>' .
       '<input id="local_person_last_name" name="local_person.last_name" type="text" value="napiorkowski"/>' .
-      '<div>Last Name is too long (maximum is 10 characters)</div>' .
+      '<div data-error-param="1">Last Name is too long (maximum is 10 characters)</div>' .
     '</form>'; 
 }
 
@@ -132,10 +132,10 @@ ok !$person->valid;
     '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_foo" enctype="application/x-www-form-urlencoded" id="edit_foo" method="post">' .
       '<label for="foo_first_name">First Name</label>' .
       '<input id="foo_first_name" name="foo.first_name" type="text" value="aa"/>' .
-      '<div>First Name is too short (minimum is 3 characters)</div>' .
+      '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>' .
       '<label for="foo_last_name">Last Name</label>' .
       '<input id="foo_last_name" name="foo.last_name" type="text" value="napiorkowski"/>' .
-      '<div>Last Name is too long (maximum is 10 characters)</div>' .
+      '<div data-error-param="1">Last Name is too long (maximum is 10 characters)</div>' .
     '</form>'; 
 }
 
@@ -159,10 +159,10 @@ ok !$person->valid;
     '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_person" enctype="application/x-www-form-urlencoded" id="edit_person" method="post">'.
       '<label for="person_first_name">First Name</label>'.
       '<input id="person_first_name" name="person.first_name" type="text" value="aa"/>'.
-        '<div>First Name is too short (minimum is 3 characters)</div>'.
+        '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>'.
       '<label for="person_last_name">Last Name</label>'.
       '<input id="person_last_name" name="person.last_name" type="text" value="napiorkowski"/>'.
-        '<div>Last Name is too long (maximum is 10 characters)</div>'.
+        '<div data-error-param="1">Last Name is too long (maximum is 10 characters)</div>'.
     '</form>'
 }
 

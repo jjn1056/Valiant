@@ -16,6 +16,7 @@ requires 'Carp';
 requires 'Devel::StackTrace', '2.03';
 requires 'Data::Dumper';
 requires 'namespace::autoclean';
+requires 'namespace::clean';
 requires 'overload';
 requires 'DBIx::Class';
 requires 'Sub::Util';

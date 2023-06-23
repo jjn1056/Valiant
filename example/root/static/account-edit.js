@@ -68,11 +68,16 @@ $(document).ready(function() {
           fieldID = fieldID.replace(/\[/g, "_"); // Replace all "[" with "_"
           
           var errors = fieldErrors[fieldName];
+          var replacementTarget = fieldID;
           if (errors) {
             var templateNode = document.getElementById(fieldID + '_template_error');
             if(!templateNode) {
-              console.log("no error template for " + fieldID);
-              continue;
+              templateNode = document.getElementById(fieldID + '_' + newFieldValue + '_template_error');
+              if(!templateNode) {
+                console.log("no error template id ("+fieldID+"_template_error) for " + fieldID);
+                continue;
+              }
+              replacementTarget = fieldID + '_' + newFieldValue
             }
 
             var template = templateNode.innerHTML;
@@ -83,7 +88,7 @@ $(document).ready(function() {
             console.log(template);
             console.log(fieldNode);
 
-            $("#"+fieldID).replaceWith(fieldNode)
+            $("#"+replacementTarget).replaceWith(fieldNode)
 
             var errorsForTemplate = document.getElementById(fieldID + '_template_errors_for_multi').innerHTML;
             var errorsForNode = $(errorsForTemplate);

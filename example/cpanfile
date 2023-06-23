@@ -10,8 +10,9 @@ requires 'Catalyst::Plugin::ServeFile', '0.004';
 requires 'Catalyst::Plugin::CSRFToken', '0.006';
 requires 'CatalystX::Errors', '0.001009';
 requires 'CatalystX::RequestModel', '0.017';
-requires 'Catalyst::ControllerPerContext', '0.004';
+requires 'Catalyst::ControllerPerContext', '0.005';
 requires 'Catalyst::View::BasePerRequest', '0.010';
+requires 'Catalyst::View::MojoTemplate::PerContext', '0.005';
 requires 'Catalyst::ActionRole::RenderView', '0.001';
 requires 'Catalyst::TraitFor::Request::ContentNegotiationHelpers';
 

@@ -2,7 +2,7 @@ package Example::View::HTML;
 
 use Moo;
 use Example::Syntax;
-use Catalyst::View::Valiant -tags => qw(p);
+use Catalyst::View::Valiant::HTMLBuilder -tags => qw(p);
 
 sub the_time :Renders ($self) {
   return p {class=>'timestamp'}, scalar localtime;

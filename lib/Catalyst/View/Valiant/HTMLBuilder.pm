@@ -1,12 +1,13 @@
-package Catalyst::View::Valiant;
+package Catalyst::View::Valiant::HTMLBuilder;
 
-use Moo;
+use Moose;
 use Sub::Util;
 use Valiant::HTML::SafeString ();
 use Attribute::Handlers;
 use Module::Runtime;
 use Carp;
-use Catalyst::View::Valiant::Form;
+use Catalyst::View::Valiant::HTMLBuilder::Form;
+use namespace::clean ();
 
 extends 'Catalyst::View::BasePerRequest';
 
@@ -21,7 +22,7 @@ sub _install_form {
   my $target = shift;
   my $form_class = shift;
   my $view = Module::Runtime::use_module('Valiant::HTML::Util::View')->new; # Placeholder
-  $form = Catalyst::View::Valiant::Form->new(view=>$view, $class->form_args);
+  $form = Catalyst::View::Valiant::HTMLBuilder::Form->new(view=>$view, $class->form_args);
 }
 
 ## Code Attributes
@@ -44,6 +45,14 @@ sub Renders :ATTR(CODE) {
     });
   }
 }
+
+my %exports_by_class;
+
+sub unimport {
+  my $class = shift;
+  my $target = caller;
+  namespace::clean->clean_subroutines($target, @{$exports_by_class{$target}||[]});
+} 
 
 sub import {
   my $class = shift;
@@ -82,6 +91,8 @@ sub import {
   $class->_install_tags($target, @tags);
   $class->_install_views($target, @views);
   $class->_install_utils($target, @utils);
+
+  $exports_by_class{$target} = [ @tags, @views, @utils ];
 }
 
 sub form { $form }
@@ -399,17 +410,18 @@ around 'execute_code_callback' => sub {
 };
 
 __PACKAGE__->config(content_type=>'text/html');
+__PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Catalyst::View::Valiant - Per Request, strongly typed Views in code
+Catalyst::View::Valiant::HTMLBuilder - Per Request, strongly typed Views in code
 
 =head1 SYNOPSIS
 
     package Example::View::HTML::Home;
 
     use Moo;
-    use Catalyst::View::Valiant
+    use Catalyst::View::Valiant::HTMLBuilder
       -tags => qw(div blockquote form_for fieldset),
       -helpers => qw($sf),
       -views => 'HTML::Layout', 'HTML::Navbar';

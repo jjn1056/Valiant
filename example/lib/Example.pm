@@ -43,6 +43,9 @@ has user => (
 );
 
 sub _get_user_from_session($self) {
+  return $self->model('Schema::Person')->find($self->req->header('X-Devuser'))
+    if $self->req->header('X-Devuser') && $self->debug;
+
   my $id = $self->model('Session')->user_id // return $self->model('Schema::Person')->unauthenticated_user;
   my $person = $self->model('Schema::Person')->find($id) // $self->logout && die "Bad ID '$id' in session";
   return $person;
