@@ -808,9 +808,10 @@ sub collection_checkbox {
   my $container_tag = exists($options->{container_tag}) ? delete($options->{container_tag}) : 'div';
 
   # It's either +{ person_roles => role_id } or roles
-  my ($attribute, $attribute_value_method) = ();
+  my ($attribute, $attribute_value_method, $is_spec_attribute) = ();
   if( (ref($attribute_spec)||'') eq 'HASH' ) {
     ($attribute, $attribute_value_method) = (%{ $attribute_spec });
+    $is_spec_attribute = 1;
   } else {
     $attribute = $attribute_spec;
     $attribute_value_method = $value_method;
@@ -824,7 +825,15 @@ sub collection_checkbox {
     if (ref($value_collection)||'') eq 'ARRAY';
 
   while(my $value_model = $value_collection->next) {
-    push @checked_values, $value_model->$attribute_value_method unless $value_model->can('is_marked_for_deletion') && $value_model->is_marked_for_deletion;
+    if($value_model->can($attribute_value_method)) {
+      push @checked_values, $value_model->$attribute_value_method
+        unless $value_model->can('is_marked_for_deletion') && $value_model->is_marked_for_deletion;
+    } elsif($value_model->isa('Valiant::HTML::Util::Collection::Item') && $value_model->can('value')) {
+      push @checked_values, $value_model->value
+        unless $value_model->can('is_marked_for_deletion') && $value_model->is_marked_for_deletion;
+    }else {
+      warn "Can't find value for " . ref($value_model) . " for $attribute";
+    }
   }
 
   my @checkboxes = ();
@@ -836,6 +845,7 @@ sub collection_checkbox {
     parent_builder => $self,
     attribute => $attribute,
     tag_helpers => $self->tag_helpers,
+    is_spec_attribute => $is_spec_attribute,
     errors => [$model->errors->where($attribute)],
   };
   $checkbox_builder_options->{namespace} = $self->namespace if $self->has_namespace;
@@ -843,7 +853,7 @@ sub collection_checkbox {
   $collection = $model->$collection unless Scalar::Util::blessed($collection);
 
   while (my $checkbox_model = $collection->next) {
-    my $index = $self->nested_child_index($attribute); 
+    #my $index = $self->nested_child_index($attribute); 
     my $name = "@{[ $self->name ]}.${attribute}";
     my $checked = grep {
       my $current_value = $checkbox_model->can('read_attribute_for_html') ? 
@@ -853,12 +863,12 @@ sub collection_checkbox {
     } @checked_values;
 
     if($include_hidden && !scalar(@checkboxes)) { # Add nop as first to handle empty list
-      my $hidden_fb = $self->tag_helpers->_instantiate_builder($name, $value_collection->build, {%$checkbox_builder_options, index=>$index});
-      push @checkboxes, $hidden_fb->hidden('_nop', +{value=>'1'});
-      $index = $self->nested_child_index($attribute);
+      my $hidden_fb = $self->tag_helpers->_instantiate_builder($name, $value_collection->build, {%$checkbox_builder_options});
+      my $hidden_value = $self->_collection_checkbox_hidden_value($attribute, $is_spec_attribute, $options); 
+      push @checkboxes, $hidden_fb->hidden($name, +{name=>$name, id=>$self->tag_id_for_attribute($attribute).'_hidden', value=>$hidden_value});
     }
 
-    $checkbox_builder_options->{index} = $index;
+    #$checkbox_builder_options->{index} = $index;
     $checkbox_builder_options->{checked} = $checked;
     $checkbox_builder_options->{parent_builder} = $self;
     my $checkbox_fb = $self->tag_helpers->_instantiate_builder($name, $checkbox_model, $checkbox_builder_options);
@@ -875,6 +885,12 @@ sub collection_checkbox {
     id => $self->tag_id_for_attribute($attribute),
     %$options,
   }); 
+}
+
+sub _collection_checkbox_hidden_value {
+  my ($self, $attribute, $is_spec_attribute, $options) = @_;
+  my $value = $is_spec_attribute ? '{"_nop":""}' : '';
+  return $value;
 }
 
 sub _default_collection_checkbox_content {
@@ -2105,9 +2121,9 @@ If provided C<%options> is a hashref of the following optional values
 =item include_hidden
 
 Defaults to whatever the method C<default_collection_checkbox_include_hidden> returns.  In the core code
-the returns true.   If true will include a hidden field set to the name of the collection, which is uses
+this returns true.   If true will include a hidden field set to the name of the collection, which is uses
 to indicate 'no checked values' since HTML will send nothing by default if there's no checked values.  It
-will add this hidden field for each checkbox item to represent the 'off' value.
+will add this hidden field for each checkbox item to represent the 'none checked' value.
 
 =item builder
 

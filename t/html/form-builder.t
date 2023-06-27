@@ -98,9 +98,9 @@ ok my $roles_collection = Valiant::HTML::Util::Collection->new($user, $admin, $g
 ok my ($tx, $ny, $ca) = map {
   Local::State->new($_);
 } (
-  {id=>1, name=>'TX'},
-  {id=>2, name=>'NY'},
-  {id=>3, name=>'CA'},
+  {id=>10, name=>'TX'},
+  {id=>20, name=>'NY'},
+  {id=>30, name=>'CA'},
 );
 
 ok my $states_collection = Valiant::HTML::Util::Collection->new($tx, $ny, $ca);
@@ -116,8 +116,8 @@ ok my $person = Local::Person->new(
     Local::CreditCard->new(number=>'342342342322', expiration=>DateTime->now->add(months=>11)),
     Local::CreditCard->new(number=>'111112222233', expiration=>DateTime->now->subtract(months=>11)),
   ],
-  state_id => 1,
-  state_ids => [1,3],
+  state_id => 10,
+  state_ids => [10,30],
   roles=>[$user,$admin],
   type=>'admin');
 
@@ -255,11 +255,11 @@ is $fb->fields_for('credit_cards', sub {
 is $fb->select('state_id', [11,22,33], +{class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option value="11">11</option><option value="22">22</option><option value="33">33</option></select>';
 
 
-is $fb->select('state_id', [1,2,3], +{class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option selected value="1">1</option><option value="2">2</option><option value="3">3</option></select>';
+is $fb->select('state_id', [10,20,30], +{class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option selected value="10">10</option><option value="20">20</option><option value="30">30</option></select>';
 
-is $fb->select('state_id', [1,2,3], +{selected=>[3], disabled=>[1],class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option disabled value="1">1</option><option value="2">2</option><option selected value="3">3</option></select>';
+is $fb->select('state_id', [10,20,30], +{selected=>[30], disabled=>[10],class=>'foo'} ), '<select class="foo" id="person_state_id" name="person.state_id"><option disabled value="10">10</option><option value="20">20</option><option selected value="30">30</option></select>';
 
-is $fb->select('state_id', [map { [$_->name, $_->id] } $states_collection->all], +{include_blank=>1} ), '<select id="person_state_id" name="person.state_id"><option label=" " value=""></option><option selected value="1">TX</option><option value="2">NY</option><option value="3">CA</option></select>';
+is $fb->select('state_id', [map { [$_->name, $_->id] } $states_collection->all], +{include_blank=>1} ), '<select id="person_state_id" name="person.state_id"><option label=" " value=""></option><option selected value="10">TX</option><option value="20">NY</option><option value="30">CA</option></select>';
 
 is $fb->select('state_id', sub {
   my ($model, $attribute, $value) = @_;
@@ -267,7 +267,7 @@ is $fb->select('state_id', sub {
     my $selected = $_->id eq $value ? 1:0;
     $fb->tag_helpers->option_tag($_->name, +{class=>'foo', selected=>$selected, value=>$_->id}); 
   } $states_collection->all;
-}), '<select id="person_state_id" name="person.state_id"><option class="foo" selected value="1">TX</option><option class="foo" value="2">NY</option><option class="foo" value="3">CA</option></select>';
+}), '<select id="person_state_id" name="person.state_id"><option class="foo" selected value="10">TX</option><option class="foo" value="20">NY</option><option class="foo" value="30">CA</option></select>';
 
 is $fb->select('state_id', +{multiple=>1}, sub {
   my ($model, $attribute, $value) = @_;
@@ -277,9 +277,9 @@ is $fb->select('state_id', +{multiple=>1}, sub {
   } $states_collection->all;
 }),
   '<select id="person_state_id" multiple name="person.state_id[]">'.
-    '<option class="foo" selected value="1">TX</option>'.
-    '<option class="foo" value="2">NY</option>'.
-    '<option class="foo" value="3">CA</option>'.
+    '<option class="foo" selected value="10">TX</option>'.
+    '<option class="foo" value="20">NY</option>'.
+    '<option class="foo" value="30">CA</option>'.
   '</select>';
 
 
@@ -294,19 +294,19 @@ is $fb->select({roles => 'id'}, [map { [$_->label, $_->id] } $roles_collection->
 is $fb->select('state_ids', [map { [$_->label, $_->id] } $roles_collection->all], {unselected_value=>-1} ),
   '<input id="person_state_ids_hidden" name="person.state_ids[0]" type="hidden" value="-1"/>'.
   '<select id="person_state_ids" multiple name="person.state_ids[]">'.
-    '<option selected value="1">user</option>'.
+    '<option value="1">user</option>'.
     '<option value="2">admin</option>'.
-    '<option selected value="3">guest</option>'.
+    '<option value="3">guest</option>'.
   '</select>';
 
 is $fb->collection_select('state_id', $states_collection, id=>'name'),
-  '<select id="person_state_id" name="person.state_id"><option selected value="1">TX</option><option value="2">NY</option><option value="3">CA</option></select>';
+  '<select id="person_state_id" name="person.state_id"><option selected value="10">TX</option><option value="20">NY</option><option value="30">CA</option></select>';
 
 is $fb->collection_select('state_id', $states_collection, id=>'name', {class=>'foo', include_blank=>1}),
-  '<select class="foo" id="person_state_id" name="person.state_id"><option label=" " value=""></option><option selected value="1">TX</option><option value="2">NY</option><option value="3">CA</option></select>';
+  '<select class="foo" id="person_state_id" name="person.state_id"><option label=" " value=""></option><option selected value="10">TX</option><option value="20">NY</option><option value="30">CA</option></select>';
 
-is $fb->collection_select('state_id', $states_collection, id=>'name', {selected=>[3], disabled=>[1]}),
-  '<select id="person_state_id" name="person.state_id"><option disabled value="1">TX</option><option value="2">NY</option><option selected value="3">CA</option></select>';
+is $fb->collection_select('state_id', $states_collection, id=>'name', {selected=>[30], disabled=>[10]}),
+  '<select id="person_state_id" name="person.state_id"><option disabled value="10">TX</option><option value="20">NY</option><option selected value="30">CA</option></select>';
 
 is $fb->collection_select({roles => 'id'}, $roles_collection, id=>'label'), 
   '<input id="person_roles_id_hidden" name="person.roles[0]._nop" type="hidden" value="1"/>'.
@@ -316,51 +316,69 @@ is $fb->collection_select({roles => 'id'}, $roles_collection, id=>'label'),
     '<option value="3">guest</option>'.
   '</select>';
 
-is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'), 
-  '<div id="person_roles"><input id="person_roles_0__nop" name="person.roles[0]._nop" type="hidden" value="1"/>'.
-  '<label for="person_roles_1_id">user</label>'.
-  '<input checked id="person_roles_1_id" name="person.roles[1].id" type="checkbox" value="1"/>'.
-  '<label for="person_roles_2_id">admin</label>'.
-  '<input checked id="person_roles_2_id" name="person.roles[2].id" type="checkbox" value="2"/>'.
-  '<label for="person_roles_3_id">guest</label>'.
-  '<input id="person_roles_3_id" name="person.roles[3].id" type="checkbox" value="3"/></div>';
-
-is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', {include_hidden=>0}), 
-  '<div id="person_roles"><label for="person_roles_4_id">user</label>'.
-  '<input checked id="person_roles_4_id" name="person.roles[4].id" type="checkbox" value="1"/>'.
-  '<label for="person_roles_5_id">admin</label>'.
-  '<input checked id="person_roles_5_id" name="person.roles[5].id" type="checkbox" value="2"/>'.
-  '<label for="person_roles_6_id">guest</label>'.
-  '<input id="person_roles_6_id" name="person.roles[6].id" type="checkbox" value="3"/></div>';
-
-is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', sub {
-  my $fb_roles = shift;
-  return  $fb_roles->checkbox({class=>'form-check-input'}),
-          $fb_roles->label({class=>'form-check-label'});
-}), '<div id="person_roles"><input id="person_roles_7__nop" name="person.roles[7]._nop" type="hidden" value="1"/><input checked class="form-check-input" id="person_roles_8_id" name="person.roles[8].id" type="checkbox" value="1"/><label class="form-check-label" for="person_roles_8_id">user</label><input checked class="form-check-input" id="person_roles_9_id" name="person.roles[9].id" type="checkbox" value="2"/><label class="form-check-label" for="person_roles_9_id">admin</label><input class="form-check-input" id="person_roles_10_id" name="person.roles[10].id" type="checkbox" value="3"/><label class="form-check-label" for="person_roles_10_id">guest</label></div>';
-
 is $fb->collection_radio_buttons('state_id', $states_collection, id=>'name'),
   '<div id="person_state_id"><input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/>'.
-  '<label for="person_state_id_1">TX</label>'.
-  '<input checked id="person_state_id_1" name="person.state_id" type="radio" value="1"/>'.
-  '<label for="person_state_id_2">NY</label>'.
-  '<input id="person_state_id_2" name="person.state_id" type="radio" value="2"/>'.
-  '<label for="person_state_id_3">CA</label>'.
-  '<input id="person_state_id_3" name="person.state_id" type="radio" value="3"/></div>';
+  '<label for="person_state_id_10">TX</label>'.
+  '<input checked id="person_state_id_10" name="person.state_id" type="radio" value="10"/>'.
+  '<label for="person_state_id_20">NY</label>'.
+  '<input id="person_state_id_20" name="person.state_id" type="radio" value="20"/>'.
+  '<label for="person_state_id_30">CA</label>'.
+  '<input id="person_state_id_30" name="person.state_id" type="radio" value="30"/></div>';
 
 is $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', {include_hidden=>0}),
-  '<div id="person_state_id"><label for="person_state_id_1">TX</label>'.
-  '<input checked id="person_state_id_1" name="person.state_id" type="radio" value="1"/>'.
-  '<label for="person_state_id_2">NY</label>'.
-  '<input id="person_state_id_2" name="person.state_id" type="radio" value="2"/>'.
-  '<label for="person_state_id_3">CA</label>'.
-  '<input id="person_state_id_3" name="person.state_id" type="radio" value="3"/></div>';
+  '<div id="person_state_id"><label for="person_state_id_10">TX</label>'.
+  '<input checked id="person_state_id_10" name="person.state_id" type="radio" value="10"/>'.
+  '<label for="person_state_id_20">NY</label>'.
+  '<input id="person_state_id_20" name="person.state_id" type="radio" value="20"/>'.
+  '<label for="person_state_id_30">CA</label>'.
+  '<input id="person_state_id_30" name="person.state_id" type="radio" value="30"/></div>';
 
 is $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', sub {
   my $fb_states = shift;
   return  $fb_states->radio_button({class=>'form-check-input'}),
           $fb_states->label({class=>'form-check-label'});  
-}), '<div id="person_state_id"><input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/><input checked class="form-check-input" id="person_state_id_1" name="person.state_id" type="radio" value="1"/><label class="form-check-label" for="person_state_id_1">TX</label><input class="form-check-input" id="person_state_id_2" name="person.state_id" type="radio" value="2"/><label class="form-check-label" for="person_state_id_2">NY</label><input class="form-check-input" id="person_state_id_3" name="person.state_id" type="radio" value="3"/><label class="form-check-label" for="person_state_id_3">CA</label></div>';
+}), '<div id="person_state_id"><input id="person_state_id_hidden" name="person.state_id" type="hidden" value=""/><input checked class="form-check-input" id="person_state_id_10" name="person.state_id" type="radio" value="10"/><label class="form-check-label" for="person_state_id_10">TX</label><input class="form-check-input" id="person_state_id_20" name="person.state_id" type="radio" value="20"/><label class="form-check-label" for="person_state_id_20">NY</label><input class="form-check-input" id="person_state_id_30" name="person.state_id" type="radio" value="30"/><label class="form-check-label" for="person_state_id_30">CA</label></div>';
+
+
+is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'), 
+  '<div id="person_roles">'.
+    '<input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/>'.
+    '<label for="person_roles_1">user</label>'.
+    '<input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/>'.
+    '<label for="person_roles_2">admin</label>'.
+    '<input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/>'.
+    '<label for="person_roles_3">guest</label>'.
+    '<input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/>'.
+    '</div>';
+
+is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', {include_hidden=>0}), 
+  '<div id="person_roles">'.
+    '<label for="person_roles_1">user</label>'.
+    '<input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/>'.
+    '<label for="person_roles_2">admin</label>'.
+    '<input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/>'.
+    '<label for="person_roles_3">guest</label>'.
+    '<input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/>'.
+    '</div>';
+
+
+is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', sub {
+  my $fb_roles = shift;
+  return  $fb_roles->checkbox({class=>'form-check-input'}),
+          $fb_roles->label({class=>'form-check-label'});
+}),
+  '<div id="person_roles">'.
+    '<input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/>'.
+    '<input checked class="form-check-input" id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/>'.
+    '<label class="form-check-label" for="person_roles_1">user</label>'.
+    '<input checked class="form-check-input" id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/>'.
+    '<label class="form-check-label" for="person_roles_2">admin</label>'.
+    '<input class="form-check-input" id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/>'.
+    '<label class="form-check-label" for="person_roles_3">guest</label>'.
+  '</div>';
+
+
+is $fb->collection_checkbox('state_ids', $states_collection, id=>'name'), '<div id="person_state_ids"><input id="person_state_ids_hidden" name="person.state_ids" type="hidden" value=""/><label for="person_state_ids_10">TX</label><input checked id="person_state_ids_10" name="person.state_ids" type="checkbox" value="10"/><label for="person_state_ids_20">NY</label><input id="person_state_ids_20" name="person.state_ids" type="checkbox" value="20"/><label for="person_state_ids_30">CA</label><input checked id="person_state_ids_30" name="person.state_ids" type="checkbox" value="30"/></div>';
+is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'), '<div id="person_roles"><input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/><label for="person_roles_1">user</label><input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/><label for="person_roles_2">admin</label><input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/><label for="person_roles_3">guest</label><input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/></div>';
 
 done_testing;
-

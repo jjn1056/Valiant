@@ -11,7 +11,7 @@ has username => (is=>'ro', property=>1);
 has first_name => (is=>'ro', property=>1);
 has last_name => (is=>'ro', property=>1);
 has profile => (is=>'ro', property=>+{model=>'::Profile' });
-has person_roles => (is=>'ro', property=>+{ indexed=>1, model=>'::PersonRole' });
+has person_roles => (is=>'ro', property=>+{ expand=>'JSON', always_array=>1, indexed=>1, model=>'::PersonRole' });
 has credit_cards => (is=>'ro', property=>+{ indexed=>1, model=>'::CreditCard' });
 
 __PACKAGE__->meta->make_immutable();

@@ -653,7 +653,7 @@ sub set_multi_related_from_params {
   debug 2, "starting loop to update/create related $related (total @{[ scalar @param_rows ]} rows in loop)";
   foreach my $param_row (@param_rows) {
     debug 3, "top of new loop on param_rows";
-    if($param_row->{_nop}) {
+    if(exists $param_row->{_nop}) {
       debug 3, "Is a NOP row, so skipping";
       next;
     }

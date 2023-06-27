@@ -51,16 +51,21 @@ sub _action_namepart_from_action {
   return $action_namepart;
 }
 
-
+our %content_prefixes = (
+  'HTML' => ['application/xhtml+xml', 'text/html'],
+  'JSON' => ['application/json'],
+  'XML' => ['application/xml', 'text/xml'],
+  'JS' => ['application/javascript', 'text/javascript'],
+);
 
 our %content_types_to_prefixes = map {
   my $prefix = $_; 
   map {
     $_ => $prefix
-  } @{$prefixes{$prefix}}
-} keys %prefixes;
+  } @{$content_prefixes{$prefix}}
+} keys %content_prefixes;
 
-our @content_types = map { @$_ } values %prefixes;
+our @content_types = map { @$_ } values %content_prefixes;
 
 our $n = HTTP::Headers::ActionPack->new->get_content_negotiator;
 
@@ -86,12 +91,7 @@ sub _build_view_name {
   return $view;
 }
 
-our %content_prefixes = (
-  'HTML' => ['application/xhtml+xml', 'text/html'],
-  'JSON' => ['application/json'],
-  'XML' => ['application/xml', 'text/xml'],
-  'JS' => ['application/javascript', 'text/javascript'],
-);
+
 
 __PACKAGE__->config(
   content_prefixes => \%content_prefixes,

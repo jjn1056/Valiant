@@ -4,6 +4,7 @@ use Moo;
 use Sub::Util;
 use Carp;
 use Scalar::Util;
+use JSON::MaybeXS ('encode_json');
 use overload 
   bool => sub {1}, 
   '""' => sub { shift->to_string },
@@ -323,7 +324,15 @@ sub _tag_option {
   my $self = shift;
   my $attr = shift;
   my $value = defined($_[0]) ? shift() : '';
-  return qq[${attr}="@{[ $self->safe($value) ]}"];
+
+  if(ref($value) eq 'HASH') {
+    $value = encode_json($value);
+    $value = $self->safe($value);
+  } else {
+    $value = $self->safe($value);
+  }
+
+  return qq[${attr}="@{[ $value ]}"];
 }
 
 sub _dasherize {
