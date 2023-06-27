@@ -51,47 +51,61 @@ sub _action_namepart_from_action {
   return $action_namepart;
 }
 
+sub _build_view_name {
+  my ($self, $action_namepart) = @_;
+
+  my $accept = $self->ctx->request->headers->header('Accept');
+  my $available_content_types = $self->_content_negotiation->{content_types};
+  my $content_type = $self->_content_negotiation->{negotiator}->choose_media_type($available_content_types, $accept);
+  my $matched_content_type = $self->_content_negotiation->{content_types_to_prefixes}->{$content_type};
+
+  $self->ctx->log->warn("no matching type for $accept") unless $matched_content_type;
+  $self->ctx->detach_error(406, +{error=>"Requested not acceptable."}) unless $matched_content_type;
+  $self->ctx->log->debug( "Content-Type: $content_type, Matched: $matched_content_type") if $self->ctx->debug;
+
+  my $view = $self->_view_from_parts($matched_content_type, $action_namepart);
+  return $view;
+}
+
+sub _view_from_parts {
+  my ($self, @view_parts) = @_;
+  my $view = join('::', @view_parts);
+  $self->ctx->log->debug("Negotiated View: $view") if $self->ctx->debug;
+  return $view;
+}
+
+has '_content_negotiation' => (is => 'ro', required=>1);
+
+sub process_component_args {
+  my ($class, $app, $args) = @_;
+
+  my $n = HTTP::Headers::ActionPack->new->get_content_negotiator;
+  my %content_prefixes = %{ delete($args->{content_prefixes}) || +{} };
+  my @content_types = map { @$_ } values %content_prefixes;
+  my %content_types_to_prefixes = map {
+    my $prefix = $_; 
+    map {
+      $_ => $prefix
+    } @{$content_prefixes{$prefix}}
+  } keys %content_prefixes;
+
+  return +{
+    %$args,
+    _content_negotiation => +{
+      content_prefixes => \%content_prefixes,
+      content_types_to_prefixes => \%content_types_to_prefixes,
+      content_types => \@content_types,
+      negotiator => $n,
+    },
+  };
+}
+
 our %content_prefixes = (
   'HTML' => ['application/xhtml+xml', 'text/html'],
   'JSON' => ['application/json'],
   'XML' => ['application/xml', 'text/xml'],
   'JS' => ['application/javascript', 'text/javascript'],
 );
-
-our %content_types_to_prefixes = map {
-  my $prefix = $_; 
-  map {
-    $_ => $prefix
-  } @{$content_prefixes{$prefix}}
-} keys %content_prefixes;
-
-our @content_types = map { @$_ } values %content_prefixes;
-
-our $n = HTTP::Headers::ActionPack->new->get_content_negotiator;
-
-sub _build_view_name {
-  my ($self, $action_namepart) = @_;
-  my @view_parts = ($action_namepart);
-
-
-  my %views = map { $_ => 1 } $self->ctx->views;
-
-  my $accept = $self->ctx->request->headers->header('Accept');
-  my $content_type = $n->choose_media_type(\@content_types, $accept);
-  my $matched_content_type = $content_types_to_prefixes{$content_type};
-
-  $self->ctx->log->warn("no matching type for $accept") unless $matched_content_type;
-  $self->ctx->detach_error(406, +{error=>"Requested not acceptable."}) unless $matched_content_type;
-
-  warn "Content-Type: $content_type, Matched: $matched_content_type";
-  unshift @view_parts, $matched_content_type;
-
-  my $view = join('::', @view_parts);
-
-  return $view;
-}
-
-
 
 __PACKAGE__->config(
   content_prefixes => \%content_prefixes,
