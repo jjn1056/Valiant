@@ -60,7 +60,7 @@ sub human_attribute_name {
   # The final default is just our best attempt to make a name out of the actual
   # attribute name.  This is passed as a plain string so we don't actually try
   # to localize it.
-  push @defaults, $self->_humanize($attribute);
+  push @defaults, $self->_humanize_attribute($attribute);
 
   my $key = shift @defaults;
   $options->{default} = \@defaults;
@@ -113,7 +113,7 @@ sub human_label_name {
   # The final default is just our best attempt to make a name out of the actual
   # attribute name.  This is passed as a plain string so we don't actually try
   # to localize it.
-  push @defaults, $self->_humanize($attribute);
+  push @defaults, $self->_humanize_label($attribute);
 
   my $key = shift @defaults;
   $options->{default} = \@defaults;
@@ -121,6 +121,9 @@ sub human_label_name {
 
   return  my $localized = $self->i18n->translate($key, %{$options||+{}});
 }
+
+sub _humanize_label { shift->_humanize(@_) }
+sub _humanize_attribute { shift->_humanize(@_) }
 
 sub _humanize {
   my ($self, $text) = @_;
