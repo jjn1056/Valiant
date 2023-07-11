@@ -299,7 +299,15 @@ sub _install_views {
             !defined($_[0])
             || ((Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString')
             || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class));
-          push @args, shift;
+
+          # If $_[0] is a scalar value, then it must be the key of a key => value pair so
+          # get both key and value in case value just happens to be a safe string lol
+          if( (ref(\$_[0])||'') eq 'SCALAR') {
+            push @args, shift;
+            push @args, shift;
+          } else {
+            push @args, shift;
+          }
         }
       }
       return $form->view->ctx->view($view_info{$name}, @args), @_ if @_;

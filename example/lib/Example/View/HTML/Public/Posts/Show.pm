@@ -10,8 +10,8 @@ use Example::View::HTML
 has 'post' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
-  html_page +{ page_title=>$self->post->author->$sf("{:first_name} {:last_name}") }, sub($page) {
-    html_navbar +{ active_link=>path('show', [$self->post->id]) },
+  html_page page_title=>$self->post->author->$sf("{:first_name} {:last_name}"), sub($page) {
+    html_navbar active_link=>path('show', [$self->post->id]),
     div {class=>"col-5 mx-auto"}, [
       h1 $self->post->title,
       p $self->post->content,
