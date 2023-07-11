@@ -37,7 +37,8 @@ sub checked {
 around 'label', sub {
   my ($orig, $self, $attrs) = @_;
   $attrs = +{} unless defined($attrs);
-  return $self->$orig($self->value, $attrs, $self->text);
+  my $text = $self->human_name_for_label($self->text);
+  return $self->$orig($self->value, $attrs, $text);
 };
 
 around 'checkbox', sub {

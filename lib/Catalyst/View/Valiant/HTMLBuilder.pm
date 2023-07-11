@@ -110,7 +110,7 @@ sub _install_utils {
     } elsif($util eq 'user') {
       Moo::_Utils::_install_tracked($target, "__user", $target->can('user'));
       my $sub = sub {
-        if(Scalar::Util::blessed($_[0]) && $_[0]->isa('Catalyst::View::Valiant')) {
+        if(Scalar::Util::blessed($_[0]) && $_[0]->isa('Catalyst::View::Valiant::HTMLBuilder')) {
           return $target->can("__user")->(@_);
         } else {
           return $target->can("__user")->($form->view, @_);
@@ -140,7 +140,7 @@ sub _install_utils {
     } elsif($util eq 'path') {
       Moo::_Utils::_install_tracked($target, "__path", $target->can('path'));
       my $sub = sub {
-        if(Scalar::Util::blessed($_[0]) && $_[0]->isa('Catalyst::View::Valiant')) {
+        if(Scalar::Util::blessed($_[0]) && $_[0]->isa('Catalyst::View::Valiant::HTMLBuilder')) {
           return $target->can("__path")->(@_);
         } else {
           return $target->can("__path")->($form->view, @_);

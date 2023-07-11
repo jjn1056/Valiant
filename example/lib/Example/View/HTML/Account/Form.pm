@@ -14,7 +14,8 @@ sub render($self, $c) {
   my $roles = user->viewable_roles;
 
   my $employment_options = user->employment_options;
-  my $status_options = [ map { [ucfirst($_) => $_] } $self->account->profile->status_list];
+  my @status_options = $self->account->profile->status_list;
+
 
   return form_for 'account', {action=>path('update'), data=>{remote=>'true'}}, sub ($self, $fb, $account) {
     div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
@@ -92,7 +93,7 @@ sub render($self, $c) {
           div +{ class=>'col form-group' }, [
             fieldset [
               $fb_profile->legend_for('status'),
-              $fb_profile->radio_buttons(status => $status_options, sub ($fb_status) {
+              $fb_profile->radio_buttons(status => \@status_options, sub ($fb_status) {
                 div +{class=>'custom-control custom-radio'}, [
                   $fb_status->radio_button(),
                   $fb_status->label({class=>'custom-control-label'}),

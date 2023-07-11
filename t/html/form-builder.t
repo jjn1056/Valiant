@@ -20,6 +20,11 @@ use Valiant::HTML::Util::Form;
 
   has ['id', 'name'] => (is=>'ro', required=>1);
 
+  sub _humanize {
+    my ($self, $text) = @_;
+    return $text;
+  }
+
   package Local::Profile;
 
   use Moo;
@@ -343,21 +348,21 @@ is $fb->collection_radio_buttons('state_id', $states_collection, id=>'name', sub
 is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'), 
   '<div id="person_roles">'.
     '<input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/>'.
-    '<label for="person_roles_1">user</label>'.
+    '<label for="person_roles_1">User</label>'.
     '<input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/>'.
-    '<label for="person_roles_2">admin</label>'.
+    '<label for="person_roles_2">Admin</label>'.
     '<input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/>'.
-    '<label for="person_roles_3">guest</label>'.
+    '<label for="person_roles_3">Guest</label>'.
     '<input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/>'.
     '</div>';
 
 is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', {include_hidden=>0}), 
   '<div id="person_roles">'.
-    '<label for="person_roles_1">user</label>'.
+    '<label for="person_roles_1">User</label>'.
     '<input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/>'.
-    '<label for="person_roles_2">admin</label>'.
+    '<label for="person_roles_2">Admin</label>'.
     '<input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/>'.
-    '<label for="person_roles_3">guest</label>'.
+    '<label for="person_roles_3">Guest</label>'.
     '<input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/>'.
     '</div>';
 
@@ -370,15 +375,15 @@ is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label', sub
   '<div id="person_roles">'.
     '<input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/>'.
     '<input checked class="form-check-input" id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/>'.
-    '<label class="form-check-label" for="person_roles_1">user</label>'.
+    '<label class="form-check-label" for="person_roles_1">User</label>'.
     '<input checked class="form-check-input" id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/>'.
-    '<label class="form-check-label" for="person_roles_2">admin</label>'.
+    '<label class="form-check-label" for="person_roles_2">Admin</label>'.
     '<input class="form-check-input" id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/>'.
-    '<label class="form-check-label" for="person_roles_3">guest</label>'.
+    '<label class="form-check-label" for="person_roles_3">Guest</label>'.
   '</div>';
 
 
 is $fb->collection_checkbox('state_ids', $states_collection, id=>'name'), '<div id="person_state_ids"><input id="person_state_ids_hidden" name="person.state_ids" type="hidden" value=""/><label for="person_state_ids_10">TX</label><input checked id="person_state_ids_10" name="person.state_ids" type="checkbox" value="10"/><label for="person_state_ids_20">NY</label><input id="person_state_ids_20" name="person.state_ids" type="checkbox" value="20"/><label for="person_state_ids_30">CA</label><input checked id="person_state_ids_30" name="person.state_ids" type="checkbox" value="30"/></div>';
-is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'), '<div id="person_roles"><input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/><label for="person_roles_1">user</label><input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/><label for="person_roles_2">admin</label><input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/><label for="person_roles_3">guest</label><input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/></div>';
+is $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'), '<div id="person_roles"><input id="person_roles_hidden" name="person.roles" type="hidden" value="&#123;&quot;_nop&quot;:&quot;&quot;&#125;"/><label for="person_roles_1">User</label><input checked id="person_roles_1" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:1&#125;"/><label for="person_roles_2">Admin</label><input checked id="person_roles_2" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:2&#125;"/><label for="person_roles_3">Guest</label><input id="person_roles_3" name="person.roles" type="checkbox" value="&#123;&quot;id&quot;:3&#125;"/></div>';
 
 done_testing;

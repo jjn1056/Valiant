@@ -105,6 +105,13 @@ sub human_name_for_attribute {
       $self->tag_helpers->_humanize($attribute);
 }
 
+sub human_name_for_label {
+  my ($self, $label) = @_;
+  return $self->model->can('human_label_name') ?
+    $self->model->human_label_name($label) :
+      $self->tag_helpers->_humanize($label);
+}
+
 sub attribute_has_errors {
   my ($self, $attribute) = @_;
   return $self->model->can('errors') && $self->model->errors->where($attribute) ? 1:0;
@@ -977,8 +984,13 @@ sub _default_collection_radio_buttons_content {
 
 sub radio_buttons {
   my ($self, $attribute, $collection_proto) = (shift, shift, shift);
-  $collection_proto = $self->model->$collection_proto unless (ref($collection_proto)||'') eq 'ARRAY';
-  my $collection = $self->tag_helpers->array_to_collection(@$collection_proto);
+
+  my $collection;
+  $collection = $self->model->$collection_proto if (ref(\$collection_proto)||'') eq 'SCALAR';
+  $collection = $self->tag_helpers->array_to_collection(@$collection_proto) if (ref($collection_proto)||'') eq 'ARRAY';
+
+  #$collection_proto = $self->model->$collection_proto unless (ref($collection_proto)||'') eq 'ARRAY';
+  #my $collection = $self->tag_helpers->array_to_collection(@$collection_proto);
   return $self->collection_radio_buttons($attribute, $collection, @_);
 }
 
@@ -1225,6 +1237,13 @@ Examples:
     });
 
 If you pass a scalar as content, the scalar can be a string or a translation tag.
+
+B<Note> Please note this method doesn't show any of the model or field errors,
+it just shows a generic 'form has errors' message.  You can either call the field or
+L</model_errors> methods, or you can loop over errors in the custom complex
+content callback.  Alternatively if you have model level errors for this object
+you might prefer to use the L</model_errors> method with the C<show_message_on_field_errors>
+option.
 
 =head2 model_errors
 
