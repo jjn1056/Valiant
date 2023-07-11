@@ -14,7 +14,7 @@ has 'todo' => (is=>'ro', required=>1, clearer=>'clear_todo');
 
 sub render($self, $c) {
   html_page page_title=>'Todo List', sub($layout) {
-    html_navbar active_link=>'/todos',
+    html_navbar active_link=>'todo_list',
     div +{ class=>'col-5 mx-auto' },
     form_for 'todo', +{action=>path('create')}, sub ($self, $fb, $todo) {
       fieldset [

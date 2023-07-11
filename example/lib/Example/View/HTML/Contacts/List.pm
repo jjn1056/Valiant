@@ -11,7 +11,7 @@ has 'list' => (is=>'ro', required=>1, from=>'controller', handles=>['pager']);
 
 sub render($self, $c) {
   html_page page_title=>'Contact List', sub($page) {
-    html_navbar active_link=>'/contacts',
+    html_navbar active_link=>'contact_list',
       div {class=>"col-5 mx-auto"}, [
         legend 'Contact List',
         $self->page_window_info,

@@ -18,7 +18,7 @@ sub add_info($self, $info) {
 sub render($self, $c) {
   html_page page_title => 'Home', sub($page) {
     $page->add_script('/static/home-test.js');
-    html_navbar active_link=>'/',
+    html_navbar active_link=>'home',
     blockquote +{ if=>$self->has_info, 
       class=>"alert alert-primary", 
       role=>"alert" }, $self->info,

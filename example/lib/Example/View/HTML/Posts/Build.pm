@@ -11,7 +11,7 @@ has 'post' => (is=>'ro', required=>1);
 
 sub render($self, $c) {
   html_page page_title => 'Post', sub($page) {
-    html_navbar active_link => '/posts',
+    html_navbar active_link => 'my_posts',
     div {class=>"col-5 mx-auto"}, [
       html_posts_form post => $self->post,
     ],

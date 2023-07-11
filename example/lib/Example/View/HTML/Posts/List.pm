@@ -11,7 +11,7 @@ has 'list' => (is=>'ro', required=>1, from=>'controller', handles=>['pager']);
 
 sub render($self, $c) {
   html_page page_title=>'Post List', sub($page) {
-    html_navbar active_link=>path('list'),
+    html_navbar active_link=>'my_posts',
       div {class=>"col-5 mx-auto"}, [
         legend 'Post List',
         $self->page_window_info,

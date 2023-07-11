@@ -1,4 +1,7 @@
-requires 'Catalyst', '5.90130';
+requires 'Catalyst',
+  git => 'https://github.com/perl-catalyst/catalyst-runtime.git';
+
+  
 requires 'Catalyst::Model::DBIC::Schema', '0.65';
 requires 'Catalyst::Plugin::ConfigLoader', '0.34';
 requires 'Catalyst::Plugin::RedirectTo', '0.004';
