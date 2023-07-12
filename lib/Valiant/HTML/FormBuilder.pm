@@ -5,8 +5,7 @@ use Scalar::Util ();
 use Module::Runtime ();
 use Valiant::I18N;
 
-with 'Valiant::Naming';
-
+with 'Valiant::Naming'
 # Non public helper methods
 
 sub set_unless_defined {
@@ -2098,13 +2097,15 @@ In these examples C<$collection> and C<$roles_collection> can be either a collec
 which is the method name on the current model which provides the collection.
 
     $fb->collection_checkbox({roles => 'id'}, $roles_collection, id=>'label'); 
-    # <input id="person_roles_0__nop" name="person.roles[0]._nop" type="hidden" value="1"/>
-    # <label for="person_roles_1_id">user</label>
-    # <input checked id="person_roles_1_id" name="person.roles[1].id" type="checkbox" value="1"/>
-    # <label for="person_roles_2_id">admin</label>
-    # <input checked id="person_roles_2_id" name="person.roles[2].id" type="checkbox" value="2"/>
-    # <label for="person_roles_3_id">guest</label>
-    # <input id="person_roles_3_id" name="person.roles[3].id" type="checkbox" value="3"/>
+    # <div id="person_roles">
+    #   <input id="person_roles_hidden" name="person.roles" type="hidden" value="{'_nop':1}"/>
+    #   <label for="person_roles_1">user</label>
+    #   <input checked id="person_roles_1" name="person.roles" type="checkbox" value="{'id':1}"/>
+    #   <label for="person_roles_2">admin</label>
+    #   <input checked id="person_roles_2" name="person.roles" type="checkbox" value="{'id':2}"/>
+    #   <label for="person_roles_3">guest</label>
+    #   <input id="person_roles_3" name="person.roles" type="checkbox" value="{'id':3}"/>
+    # </div>
 
 Please note when the $attribute is a collection value we add a hidden field to allow you to send a signal
 to the form processor that this namespace contains no records.   Otherwise the form will just send 
@@ -2121,13 +2122,15 @@ L<Valiant::HTML::FormBuilder::Checkbox>):
               $fb_roles->label({class=>'form-check-label'});
     });
 
-    # <input id="person_roles_4__nop" name="person.roles[4]._nop" type="hidden" value="1"/>
-    # <input checked class="form-check-input" id="person_roles_5_id" name="person.roles[5].id" type="checkbox" value="1"/>
-    # <label class="form-check-label" for="person_roles_5_id">user</label>
-    # <input checked class="form-check-input" id="person_roles_6_id" name="person.roles[6].id" type="checkbox" value="2"/>
-    # <label class="form-check-label" for="person_roles_6_id">admin</label>
-    # <input class="form-check-input" id="person_roles_7_id" name="person.roles[7].id" type="checkbox" value="3"/>
-    # <label class="form-check-label" for="person_roles_7_id">guest</label>
+    # <div id="person_roles">
+    #   <input id="person_roles_hidden" name="person.roles" type="hidden" value="{'_nop':1}"/>
+    #   <label for="person_roles_1" class="form-check-label">user</label>
+    #   <input checked class="form-check-input" id="person_roles_1" name="person.roles" type="checkbox" value="{'id':1}"/>
+    #   <label for="person_roles_2" class="form-check-label">admin</label>
+    #   <input checked class="form-check-input" id="person_roles_2" name="person.roles" type="checkbox" value="{'id':2}"/>
+    #   <label for="person_roles_3" class="form-check-label">guest</label>
+    #   <input  class="form-check-input" id="person_roles_3" name="person.roles" type="checkbox" value="{'id':3}"/>
+    # </div>
 
 In addition to overriding C<checkbox> and C<label> to already contain value and state (if its checked or
 not) information.   This special builder contains some additional methods of possible use, you should see
