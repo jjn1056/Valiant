@@ -1,4 +1,22 @@
 $(document).ready(function() {
+
+  $('[data-remote="link"]').click(function(event) {
+    event.preventDefault();
+    callingObject = this;
+    // Load the script using getScript()
+    $.getScript($(this).attr('formaction'))
+      .done(function() {
+        var customEvent = document.createEvent('CustomEvent');
+        customEvent.initCustomEvent('ajaxSuccess', true, true, { message: "hi", element: $(callingObject)});
+
+        // Dispatch the custom event
+        document.dispatchEvent(customEvent);
+      })
+      .fail(function(jqxhr, settings, exception) {
+        // Error handling if the script fails to load
+      });
+  });
+
   $('[data-remote="true"]').submit(function(event) {
     event.preventDefault();
 
@@ -26,7 +44,7 @@ $(document).ready(function() {
       // Handle the response from the server
       console.log(response);
       var customEvent = document.createEvent('CustomEvent');
-      customEvent.initCustomEvent('ajaxSuccess', true, true, { message: 'Custom event triggered' });
+      customEvent.initCustomEvent('ajaxSuccess', true, true, { message: {element:this} });
 
       // Dispatch the custom event
       document.dispatchEvent(customEvent);

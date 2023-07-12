@@ -2,7 +2,7 @@ package Example::View::JS::Account::Edit;
 
 use Moo;
 use Example::Syntax;
-extends 'Catalyst::View::MojoTemplate::PerContext';
+extends 'Example::View::JS';
 
 has 'account' => ( is=>'ro', required=>1 );
 
@@ -13,7 +13,7 @@ sub get_form_html($self) {
   )->get_rendered;
 }
 
-__PACKAGE__->config(content_type=>'application/javascript', file_extension=>'html');
+1;
 
 __DATA__
 % my ($self, $c) = @_;

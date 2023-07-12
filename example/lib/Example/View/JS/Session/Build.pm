@@ -2,16 +2,13 @@ package Example::View::JS::Session::Build;
 
 use Moo;
 use Example::Syntax;
-extends 'Catalyst::View::MojoTemplate::PerContext';
+extends 'Example::View::JS';
 
 sub login_path($self) {
   return my $login_path = $self->ctx->uri('build');
 };
 
-__PACKAGE__->config(
-  content_type => 'application/javascript',
-  file_extension => 'js'
-);
+1;
 
 __DATA__
 % my ($self, $c) = @_;
@@ -20,4 +17,3 @@ document.addEventListener('ajaxSuccess', function(event) {
   alert("Your session has expired; redirecting to login page.");
   window.location.href = "<%= $self->login_path %>";
 });
-

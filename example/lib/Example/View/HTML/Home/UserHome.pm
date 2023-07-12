@@ -17,7 +17,7 @@ sub add_info($self, $info) {
 
 sub render($self, $c) {
   html_page page_title => 'Home', sub($page) {
-    $page->add_script('/static/home-test.js');
+    $page->add_script('/static/remote.js');
     html_navbar active_link=>'home',
     blockquote +{ if=>$self->has_info, 
       class=>"alert alert-primary", 
@@ -31,7 +31,7 @@ sub render($self, $c) {
         formaction=>path('user_home'),
         type=>'button', 
         class=>'btn btn-primary',
-        data=>{remote=>'true'} }, 'Test Button'
+        data=>{remote=>'link'} }, 'Test Button'
     ]   
   };
 }
