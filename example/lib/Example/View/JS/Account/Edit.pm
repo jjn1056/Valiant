@@ -20,9 +20,8 @@ __DATA__
 document.addEventListener('ajaxSuccess', function(event) {
   // Access the custom event data
   var message = event.detail.message;
-
-  // Perform actions in response to the custom event
   console.log('Custom event triggered:', message);
+
   $("#edit_account").html('<%=  $self->get_form_html %>');
 });
 

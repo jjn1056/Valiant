@@ -1,16 +1,6 @@
-var AcceptHeaders = {
-  "*": "*/*",
-  text: "text/plain",
-  html: "text/html",
-  xml: "application/xml, text/xml",
-  json: "application/json, text/javascript",
-  script: "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript"
-};
-
 $(document).ready(function() {
   $('[data-remote="true"]').submit(function(event) {
     event.preventDefault();
-    var callingObject = this;
 
     // get the form fields
     var submittedButton = $(this).find(':submit:focus'); // Get the focused submit button
@@ -52,7 +42,6 @@ $(document).ready(function() {
       var script = document.createElement("script");
       script.text = error.responseText;
       document.head.appendChild(script).parentNode.removeChild(script);
-
 
       var customEvent = document.createEvent('CustomEvent');
       customEvent.initCustomEvent('ajaxSuccess', true, true, { message: 'Custom event triggered' });
