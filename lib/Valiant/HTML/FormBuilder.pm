@@ -5,7 +5,7 @@ use Scalar::Util ();
 use Module::Runtime ();
 use Valiant::I18N;
 
-with 'Valiant::Naming'
+with 'Valiant::Naming';
 # Non public helper methods
 
 sub set_unless_defined {
