@@ -37,7 +37,7 @@ __PACKAGE__->config(content_type=>'application/json');
 
 =head1 NAME
 
-Catalyst::View::JSONBuilder - Per Request, JSON view that wraps a model
+Catalyst::View::Valiant::JSONBuilder - Per Request, JSON view that wraps a model
 
 =head1 SYNOPSIS
 
