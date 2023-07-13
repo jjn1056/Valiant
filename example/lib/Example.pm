@@ -22,7 +22,7 @@ __PACKAGE__->config(
   disable_component_resolution_regex_fallback => 1,
   using_frontend_proxy => 1,
   'Plugin::Session' => { storage_secret_key => 'abc123' },
-  'Plugin::CSRFToken' => { default_secret => 'abc123' },
+  'Plugin::CSRFToken' => { auto_check =>1, default_secret => 'abc123' },
   'Model::Schema' => {
     traits => ['SchemaProxy'],
     schema_class => 'Example::Schema',
