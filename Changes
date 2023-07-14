@@ -1,5 +1,8 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001024 2023 July 14
+          - fix goofs in previous release to get tests passing
+
 0.001023 2023 July 12
           - Adding documentation around the formbuilder theming function.
           - Changes the way nested validation errors are structured to make
