@@ -5,8 +5,6 @@ use Moose;
 use Example::Syntax;
 use Valiant::I18N; # Needed to load $HOME/locale
 
-__PACKAGE__->request_class_traits(['Catalyst::TraitFor::Request::ContentNegotiationHelpers']);
-
 __PACKAGE__->setup_plugins([qw/
   Session
   Session::State::Cookie

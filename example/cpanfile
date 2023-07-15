@@ -5,7 +5,7 @@ requires 'Catalyst',
 requires 'Catalyst::Model::DBIC::Schema', '0.65';
 requires 'Catalyst::Plugin::ConfigLoader', '0.34';
 requires 'Catalyst::Plugin::RedirectTo', '0.004';
-requires 'Catalyst::ControllerRole::At', '0.007';
+requires 'Catalyst::ControllerRole::At', '0.008';
 requires 'Catalyst::Plugin::URI', '0.005';
 requires 'Catalyst::Plugin::Session';
 requires 'Catalyst::Plugin::CurrentComponents', '0.010';
@@ -17,7 +17,6 @@ requires 'Catalyst::ControllerPerContext', '0.005';
 requires 'Catalyst::View::BasePerRequest', '0.010';
 requires 'Catalyst::View::MojoTemplate::PerContext', '0.005';
 requires 'Catalyst::ActionRole::RenderView', '0.001';
-requires 'Catalyst::TraitFor::Request::ContentNegotiationHelpers';
 
 requires 'DBIx::Class', '0.082840';
 requires 'DBIx::Class::Helpers', '2.033003';
