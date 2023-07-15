@@ -7,50 +7,53 @@ use Types::Standard qw(Int);
 
 extends 'Example::Controller';
 
-sub root :Via('../find') At('comments/...') ($self, $c, $post) {
+## TODO this needs to be fixed, its under public but users $user.  So need to
+## not show certain controls if not logged in or something somthing
+
+sub root :At('$path_end/...') Via('../find') ($self, $c, $post) {
   $c->action->next(my $collection = $post->comments); # $post->comments_for($c->user);
 }
 
-  sub prepare_build :Via('root') At('...') ($self, $c, $collection) { 
+  sub prepare_build :At('...') Via('root') ($self, $c, $collection) { 
     $self->view_for('build', comment => my $comment = $collection->build({person_id=>$c->user->id}));
     $c->action->next($comment);
   }
 
-    sub build :GET Via('prepare_build') At('new') ($self, $c, $comment) {
+    sub build :Get('new') Via('prepare_build') ($self, $c, $comment) {
       return $self->view->set_http_ok;
     }
 
-    sub create :POST Via('prepare_build') At('') BodyModel ($self, $c, $comment, $r) {
-      return $comment->set_from_request($r) ?
+    sub create :Post('') Via('prepare_build') BodyModel ($self, $c, $comment, $bm) {
+      return $comment->set_from_request($bm) ?
         $c->view->set_http_ok : 
           $c->view->set_http_bad_request;
     }
 
-  sub find :Via('root') At('{:Int}/...') ($self, $c, $collection, $id) {
+  sub find :At('{:Int}/...') Via('root') ($self, $c, $collection, $id) {
     my $comment = $collection->find({id=>$id}, {prefetch=>'person'}) //
       $c->detach_error(404, +{error=>"Post Id '$id' not found"});
     $c->action->next($comment);
   }
 
-    sub show :GET Via('find') At('') ($self, $c, $comment) {
+    sub show :Get('') Via('find') ($self, $c, $comment) {
       $self->view(comment => $comment)->set_http_ok;
     }
 
-    sub delete :DELETE Via('find') At('') ($self, $c, $comment) {
+    sub delete :Delete('') Via('find') ($self, $c, $comment) {
       return $comment->delete && $c->redirect_to_action('../show', [$comment->post_id]);
     }
 
-    sub prepare_edit :Via('find') At('...') ($self, $c, $comment) { 
+    sub prepare_edit :At('...') Via('find') ($self, $c, $comment) { 
       $self->view_for('edit', comment => $comment);
       $c->action->next($comment);
     }
 
-      sub edit :GET Via('prepare_edit') At('edit') ($self, $c, $comment) {
+      sub edit :Get('edit') Via('prepare_edit') ($self, $c, $comment) {
         return $c->view->set_http_ok;
       }
     
-      sub update :PATCH Via('prepare_edit') At('') BodyModelFor('create') ($self, $c, $comment, $r) {
-        return $comment->set_from_request($r) ?
+      sub update :Patch('') Via('prepare_edit') BodyModelFor('create') ($self, $c, $comment, $bm) {
+        return $comment->set_from_request($bm) ?
           $c->view->set_http_ok :
             $c->view->set_http_bad_request;
       }

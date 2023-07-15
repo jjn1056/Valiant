@@ -8,19 +8,19 @@ use Types::Standard qw(Int);
 extends 'Example::Controller';
 
 # /todos/...
-sub root :Via('../protected') At('todos/...') ($self, $c, $user) {
+sub root :At('$path_end/...') Via('../protected') ($self, $c, $user) {
   $c->action->next(my $collection = $user->todos);
 }
 
   # /todos/...
-  sub search :Via('root') At('/...') QueryModel ($self, $c, $collection, $todo_query) {
+  sub search :At('/...') Via('root') QueryModel ($self, $c, $collection, $todo_query) {
     my $sessioned_query = $c->model('Todos::Session', $todo_query);
     $collection = $collection->filter_by_request($sessioned_query);
     $c->action->next($collection);
   }
 
     # GET /todos
-    sub list :GET Via('search') At('') ($self, $c, $collection) {
+    sub list :Get('') Via('search') ($self, $c, $collection) {
       return $self->view(
         list => $collection,
         todo => $collection->new_todo,
@@ -28,7 +28,7 @@ sub root :Via('../protected') At('todos/...') ($self, $c, $user) {
     }
 
   # /todos/...
-  sub prepare_build :Via('search') At('/...') ($self, $c, $collection) {
+  sub prepare_build :At('/...') Via('search') ($self, $c, $collection) {
     $self->view_for('list',
       list => $collection,
       todo => my $new_todo = $collection->new_todo
@@ -37,38 +37,37 @@ sub root :Via('../protected') At('todos/...') ($self, $c, $user) {
   }
 
     # GET /todos/new
-    sub build :GET Via('prepare_build') At('new') ($self, $c, $new_todo) {
+    sub build :Get('new') Via('prepare_build') ($self, $c, $new_todo) {
       return $c->view->set_http_ok;
     }
 
     # POST /todos/
-    sub create :POST Via('prepare_build') At('') BodyModel ($self, $c, $new_todo, $r) {
-      $new_todo->set_from_request($r);
-      return $new_todo->set_from_request($r) ?
+    sub create :Post('') Via('prepare_build') BodyModel ($self, $c, $new_todo, $bm) {
+      return $new_todo->set_from_request($bm) ?
         $c->view->clear_todo && $c->view->set_http_ok :
           $c->view->set_http_bad_request;
     }
 
   # /todos/{:Int}/...
-  sub find :Via('root') At('{:Int}/...') ($self, $c, $collection, $id) {
+  sub find :At('{:Int}/...') Via('root') ($self, $c, $collection, $id) {
     my $todo = $collection->find($id) // $c->detach_error(404, +{error=>"Todo id $id not found"});
     $c->action->next($todo);
   }
 
     # /todos/{:Int}/...
-    sub prepare_edit :Via('find') At('/...') ($self, $c, $todo) {
+    sub prepare_edit :At('/...') Via('find') ($self, $c, $todo) {
       $self->view_for('edit', todo => $todo);
       $c->action->next($todo);
     }
 
       # GET /todos/{:Int}/edit
-      sub edit :GET Via('prepare_edit') At('edit') ($self, $c, $todo) {
+      sub edit :Get('edit') Via('prepare_edit') ($self, $c, $todo) {
         return $c->view->set_http_ok;
       }
     
       # PATCH /todos/{:Int}
-      sub update :PATCH Via('prepare_edit') At('') BodyModelFor('create') ($self, $c, $todo, $r) {
-        return $todo->set_from_request($r) ?
+      sub update :Patch('') Via('prepare_edit') BodyModelFor('create') ($self, $c, $todo, $bm) {
+        return $todo->set_from_request($bm) ?
           $c->view->set_http_ok :
             $c->view->set_http_bad_request;
       }
