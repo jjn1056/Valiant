@@ -1,6 +1,6 @@
 package Valiant;
 
-our $VERSION = '0.001024';
+our $VERSION = '0.001025';
 $VERSION = eval $VERSION;
 
 1;

@@ -138,6 +138,11 @@ sub insert {
   }
 
   $args{context} = \@context;
+  debug 2, "Checking if row for insert is marked for deletion @{[$self]}";
+  if($self->is_marked_for_deletion) {
+    debug 2, "Skipping insert for @{[$self]} because its marked for deletion";
+    return $self;
+  }
 
   debug 2, "About to run validations for @{[$self]} on insert";
   $self->validate(%args) if $self->auto_validation;
@@ -208,7 +213,7 @@ sub update {
 
   if(grep { defined $_ } values %found) {
     my $related = join(', ', grep { $found{$_} } keys %found);
-    die "You are trying to create a relationship ($related) without setting 'accept_nested_for'";
+    die "You are trying to create a relationship ($related) on @{[ $self ]} without setting 'accept_nested_for'";
   }
 
   my %validate_args = (context => \@context) if @context;
@@ -240,6 +245,12 @@ sub update {
     $self->set_related_from_params($related, $related{$related});
 
     delete $self->{_valiant_nested_info};
+  }
+
+  debug 2, "Checking if row for update is marked for deletion @{[$self]}";
+  if($self->is_marked_for_deletion) {
+    debug 2, "Skipping update for @{[$self]} because its marked for deletion";
+    return $self;
   }
 
   debug 2, "About to run validations for @{[$self]} on update";
