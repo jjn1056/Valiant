@@ -33,7 +33,7 @@ requires 'Catalyst::Plugin::InjectionHelpers';
 requires 'Catalyst::Plugin::Session::Store::Cookie', '0.005';
 requires 'Catalyst::Plugin::Session::State::Cookie';
 requires 'App::Sqitch';
-requires 'DBD::Pg';
+requires 'DBD::SQLite';
 requires 'DateTime::Format::Strptime';
 requires 'DateTime';
 requires 'Digest::MD5';

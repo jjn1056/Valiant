@@ -827,7 +827,7 @@ sub collection_checkbox {
 
   my @checked_values = ();
   my $value_collection = $self->tag_value_for_attribute($attribute);
-  $value_collection = $self->tag_helpers->array_to_collection(map { $_->can('to_model') ? $_->to_model : $_ } @$value_collection)
+  $value_collection = $self->tag_helpers->array_to_collection(map { Scalar::Util::blessed($_) && $_->can('to_model') ? $_->to_model : $_ } @$value_collection)
     if (ref($value_collection)||'') eq 'ARRAY';
 
   while(my $value_model = $value_collection->next) {

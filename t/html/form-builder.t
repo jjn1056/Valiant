@@ -20,10 +20,10 @@ use Valiant::HTML::Util::Form;
 
   has ['id', 'name'] => (is=>'ro', required=>1);
 
-  sub _humanize {
-    my ($self, $text) = @_;
+  around '_humanize' => sub {
+    my ($orig, $self, $text) = @_;
     return $text;
-  }
+  };
 
   package Local::Profile;
 

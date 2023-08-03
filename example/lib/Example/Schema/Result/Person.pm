@@ -102,6 +102,7 @@ __PACKAGE__->accept_nested_for('person_roles', {allow_destroy=>1});
 __PACKAGE__->accept_nested_for('contacts', {allow_destroy=>1});
 
 __PACKAGE__->accept_nested_for('profile');
+__PACKAGE__->accept_nested_for('roles');
 
 __PACKAGE__->validates_with(sub {
   my ($self, $opts) = @_;
