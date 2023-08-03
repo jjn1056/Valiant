@@ -87,7 +87,7 @@ sub render($self, $c) {
     $fb->submit(),
     link_to path('list'), {class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
   },
-  $self->delete_button;
+  $self->delete_button,
 }
 
 sub delete_button :Renders ($self) {

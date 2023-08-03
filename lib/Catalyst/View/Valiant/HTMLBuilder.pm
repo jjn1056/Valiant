@@ -247,6 +247,15 @@ sub _install_tags {
               push @args, shift(); # if arg2 is not a hash, then one more arg required
             }
           }
+          if($tag eq 'form_for') {
+            while(@_) {
+              my $element = shift;
+              push @args, $element;
+              last if ref($element) eq 'CODE';
+            }
+            return $form->$tag(@args), @_;
+          }
+
           while(@_) {
             last if
               !defined($_[0])
