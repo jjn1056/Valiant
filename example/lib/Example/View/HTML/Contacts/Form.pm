@@ -3,7 +3,7 @@ package Example::View::HTML::Contacts::Form;
 use Moo;
 use Example::Syntax;
 use Example::View::HTML
-  -tags => qw(div a fieldset link_to legend br form_for),
+  -tags => qw(div a fieldset link_to legend br form button form_for),
   -util => qw(path content);
 
 has 'contact' => (is=>'ro', required=>1);
@@ -86,8 +86,17 @@ sub render($self, $c) {
 
     $fb->submit(),
     link_to path('list'), {class=>'btn btn-secondary btn-lg btn-block'}, 'Return to Contact List',
-    content('form_footer'),
-  };
+  },
+  $self->delete_button;
+}
+
+sub delete_button :Renders ($self) {
+  return '' unless $self->contact->in_storage;
+  return form {
+    method => 'POST',
+    action => path('delete', [$self->contact->id], {'x-tunneled-method'=>'delete'}),
+  },
+    button { class => 'btn btn-danger btn-lg btn-block'}, 'Delete Contact';
 }
 
 1;

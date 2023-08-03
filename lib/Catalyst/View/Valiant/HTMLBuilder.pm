@@ -250,7 +250,9 @@ sub _install_tags {
           while(@_) {
             last if
               !defined($_[0])
-              || (Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString';
+              || ((Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString')
+              || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class))
+              || $_[0] eq '';
             push @args, shift;
             if(ref $_[0] eq 'ARRAY') {
               my $inner = shift;
@@ -298,7 +300,8 @@ sub _install_views {
           last if
             !defined($_[0])
             || ((Scalar::Util::blessed($_[0])||'') eq 'Valiant::HTML::SafeString')
-            || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class));
+            || (Scalar::Util::blessed($_[0]) && $_[0]->isa($class))
+            || $_[0] eq '';
 
           # If $_[0] is a scalar value, then it must be the key of a key => value pair so
           # get both key and value in case value just happens to be a safe string lol

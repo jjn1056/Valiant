@@ -14,8 +14,6 @@ sub render($self, $c) {
     html_navbar active_link => 'contact_list',
     div {class=>"col-5 mx-auto"}, [
       html_contacts_form contact => $self->contact,
-      form { method=>'POST', action=>path('delete', [$self->contact->id], {'x-tunneled-method'=>'delete'}) },
-        button { class => 'btn btn-danger btn-lg btn-block'}, 'Delete Contact',
     ],
   };
 }

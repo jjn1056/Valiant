@@ -22,7 +22,7 @@ sub render($self, $c) {
           $comment->person->$sf("{:first_name} {:last_name} said:"),
           span { class=>'mt-3'}, $comment->content,
           link_to path('comments/edit', [$comment->post_id, $comment->id]),
-            {if=>sub { $comment->person->id == user->id}, class=>'mt-3'}, 'Edit this Post',
+            {if=>sub { $comment->person->id == user->id}, class=>'mt-3'}, 'Edit this Comment',
         ]
       },
       link_to path('comments/build', [$self->post->id]), {class=>'btn btn-primary btn-lg btn-block'}, 'Add a new Comment',  
