@@ -1,5 +1,8 @@
 The following logs changes for the CPAN distribution Valiant
 
+0.001025 2023 August 03
+          - Minor fixes to HTML Builder
+
 0.001025 2023 August 02
           - Make sure we don't insert or update a DBIC row that has
             been marked for delete
