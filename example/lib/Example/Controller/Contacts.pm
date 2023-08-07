@@ -26,6 +26,10 @@ sub root :At('$path_end/...') Via('../protected')  ($self, $c, $user) {
       return $self->view(list => $collection)->set_http_ok;
     }
 
+    sub list_path($self, @args) {
+      return $self->ctx->uri('list', @args);
+    }
+
   # /contacts/...
   sub prepare_build :At('/...') Via('root') ($self, $c, $collection) {
     $self->view_for('build', contact => my $new_contact = $collection->new_contact);
