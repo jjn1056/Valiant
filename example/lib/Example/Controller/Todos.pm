@@ -41,7 +41,7 @@ sub root :At('$path_end/...') Via('../protected') ($self, $c, $user) {
     # POST /todos/
     sub create :Post('') Via('prepare_build') BodyModel ($self, $c, $new_todo, $bm) {
       return $c->view->clear_todo && $c->view->set_list_to_last_page
-        if $new_todo->set_from_request($bm);
+        if $new_todo->set_from_request($bm)->valid;
     }
 
   # /todos/{:Int}/...

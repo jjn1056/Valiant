@@ -52,7 +52,7 @@ sub root :At('$path_end/...') Via('../find') ($self, $c, $post) {
     
       # PATCH /posts/{post-id}/comments/{comment-id}
       sub update :Patch('') Via('prepare_edit') BodyModelFor('create') ($self, $c, $comment, $bm) {
-        return $comment->set_from_request($bm)
+        return $comment->set_from_request($bm);
       }
 
 __PACKAGE__->meta->make_immutable;
