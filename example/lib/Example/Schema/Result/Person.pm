@@ -94,10 +94,10 @@ __PACKAGE__->validates( password => (confirmation => {
 __PACKAGE__->validates(first_name => (presence=>1, length=>[2,24]));
 __PACKAGE__->validates(last_name => (presence=>1, length=>[2,48]));
 
-__PACKAGE__->validates(credit_cards => (set_size=>{min=>2, max=>4}, on=>'account' ));
+__PACKAGE__->validates(credit_cards => (set_size=>{min=>2, max=>4, skip_if_blank=>1} ));
 __PACKAGE__->accept_nested_for('credit_cards', +{allow_destroy=>1});
 
-__PACKAGE__->validates(person_roles => (set_size=>{min=>1}, with=>'validate_roles', on=>'account' ));
+__PACKAGE__->validates(person_roles => (set_size=>{min=>1}, with=>'validate_roles' ));
 __PACKAGE__->accept_nested_for('person_roles', {allow_destroy=>1});
 __PACKAGE__->accept_nested_for('contacts', {allow_destroy=>1});
 
@@ -174,12 +174,6 @@ sub register($self, $request) {
     ->insert_or_update;
 
   return $self->registered;
-}
-
-sub update_account($self, $request) {
-  $self->context('account')->set_columns_recursively($request->nested_params);
- $self->context('account')->update; 
-  return $self->valid;
 }
 
 ## There's are proxied to other resultsets for now but we expect that

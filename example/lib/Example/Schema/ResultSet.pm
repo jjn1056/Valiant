@@ -26,10 +26,9 @@ sub debug($self) {
   return $self;
 }
 
-sub page_or_last($self, $page) {
+sub page_or_last($self, $page = $self->pager->current_page // 1) {
   my $paged_resultset = $self->page($page);
   my $last_page = $paged_resultset->pager->last_page;
-
   $paged_resultset = $paged_resultset->page($last_page)
     if $page > $last_page;
 
@@ -39,7 +38,9 @@ sub page_or_last($self, $page) {
 sub filter_by_request($self, $request) {
   my $filtered_resultset = $self;
   if($request->can('page')) {
-    $filtered_resultset = $filtered_resultset->page_or_last($request->page // 1);
+    $filtered_resultset = $filtered_resultset->page($request->page);
+  } else {
+    $filtered_resultset = $filtered_resultset->page(1);
   }
   return $filtered_resultset;
 }
@@ -50,10 +51,7 @@ sub build($self, $attrs={}) {
 } 
 
 sub new_from_request($self, $request) {
-  use Devel::Dwarn;
-  Dwarn $request->nested_params; 
   my $new = $self->create($request->nested_params);
-  Dwarn +{ $new->get_columns };
   return $new;
 }
 

@@ -260,11 +260,13 @@ sub label {
 
   $options = $self->merge_theme_field_opts(label=>$attribute, $options);
 
+  my $label ='';
   if((ref($content)||'') eq 'CODE') {
-    return $self->tag_helpers->label_tag($attribute, $self->process_options($attribute, $options), sub { $content->($translated_attribute) } );
+    $label = $self->tag_helpers->label_tag($attribute, $self->process_options($attribute, $options), sub { $content->($translated_attribute) } );
   } else {
-    return $self->tag_helpers->label_tag($attribute, $content, $self->process_options($attribute, $options));
+    $label = $self->tag_helpers->label_tag($attribute, $content, $self->process_options($attribute, $options));
   }
+  return $label;
 }
 
 # $fb->errors_for($attribute)

@@ -11,7 +11,7 @@ has 'page_title' => (is=>'ro', required=>1);
 has 'scripts' => (
   is => 'rw',
   required => 1,
-  default => sub { [] },
+  default => sub { ['/static/ujs.js'] },
 );
 
 sub add_script($self, $url) {

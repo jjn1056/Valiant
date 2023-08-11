@@ -12,7 +12,7 @@ sub login_path($self) {
 
 __DATA__
 % my ($self, $c) = @_;
-document.addEventListener('ajaxSuccess', function(event) {
+$(document).on('ajax:success', function(event, data, status, xhr) {
   console.log("Redirecting: <%= $self->login_path %>");
   alert("Your session has expired; redirecting to login page.");
   window.location.href = "<%= $self->login_path %>";

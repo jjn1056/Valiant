@@ -9,7 +9,7 @@ has active_link => (is=>'ro', required=>1);
 
 sub navlinks ($self) {
   state @links = (
-    +{ href => $self->path('/home/user_home'), data => {title=>'Home', key=>'home'} },
+    +{ href => $self->path('/home/user_show'), data => {title=>'Home', key=>'home'} },
     +{ href => $self->path('/account/edit'), data => {title=>'Account Details', key=>'account_details'} },
     +{ href => $self->path('/todos/list'), data => {title=>'Todo List', key=>'todo_list'} },
     +{ href => $self->path('/contacts/list'), data => {title=>'Contact List', key=>'contact_list'} },

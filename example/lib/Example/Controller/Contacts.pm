@@ -11,19 +11,18 @@ extends 'Example::Controller';
 
 # /contacts/...
 sub root :At('$path_end/...') Via('../protected')  ($self, $c, $user) {
-  $c->action->next(my $collection = $user->contacts);
+  $c->action->next(my $contacts = $user->contacts);
 }
 
   # /contacts/...
-  sub search :At('/...') Via('root') QueryModel ($self, $c, $collection, $query) {
-    my $sessioned_query = $c->model('Contacts::Session', $query);
-    $collection = $collection->filter_by_request($sessioned_query);
-    $c->action->next($collection);
+  sub search :At('/...') Via('root') QueryModel ($self, $c, $contacts, $query) {
+    $contacts = $contacts->filter_by_request($query);
+    $c->action->next($contacts);
   }
 
     # GET /contacts
-    sub list :Get('') Via('search') ($self, $c, $collection) {
-      return $self->view(list => $collection)->set_http_ok;
+    sub list :Get('') Via('search') ($self, $c, $contacts) {
+      return $self->view(list => $contacts);
     }
 
     sub list_path($self, @args) {
@@ -31,26 +30,22 @@ sub root :At('$path_end/...') Via('../protected')  ($self, $c, $user) {
     }
 
   # /contacts/...
-  sub prepare_build :At('/...') Via('root') ($self, $c, $collection) {
-    $self->view_for('build', contact => my $new_contact = $collection->new_contact);
+  sub prepare_build :At('/...') Via('root') ($self, $c, $contacts) {
+    $self->view_for('build', contact => my $new_contact = $contacts->new_contact);
     $c->action->next($new_contact);
   }
 
     # GET /contacts/new
-    sub build :Get('/new') Via('prepare_build') ($self, $c, $new_contact) {
-      return $c->view->set_http_ok;
-    }
+    sub build :Get('/new') Via('prepare_build') ($self, $c, $new_contact) { return }
 
     # POST /contacts/
     sub create :Post('') Via('prepare_build') BodyModel ($self, $c, $new_contact, $bm) {
-      return $new_contact->set_from_request($bm) ?
-        $c->view->set_http_ok : 
-          $c->view->set_http_bad_request;
+      return $new_contact->set_from_request($bm);
     }
 
   # /contacts/{:Int}/...
-  sub find :At('{:Int}/...') Via('root')  ($self, $c, $collection, $id) {
-    my $contact = $collection->find($id) // $c->detach_error(404, +{error=>"Contact id $id not found"});
+  sub find :At('{:Int}/...') Via('root')  ($self, $c, $contacts, $id) {
+    my $contact = $contacts->find($id) // $c->detach_error(404, +{error=>"Contact id $id not found"});
     $c->action->next($contact);
   }
 
@@ -72,15 +67,11 @@ sub root :At('$path_end/...') Via('../protected')  ($self, $c, $user) {
     }
 
       # GET /contacts/{:Int}/edit
-      sub edit :Get('edit') Via('prepare_edit') ($self, $c, $contact) {
-        return $c->view->set_http_ok;
-      }
+      sub edit :Get('edit') Via('prepare_edit') ($self, $c, $contact) { return }
     
       # PATCH /contacts/{:Int}
       sub update :Patch('') Via('prepare_edit') BodyModelFor('create') ($self, $c, $contact, $bm) {
-        return $contact->set_from_request($bm) ?
-          $c->view->set_http_ok :
-            $c->view->set_http_bad_request;
+        return $contact->set_from_request($bm);
       }
 
 __PACKAGE__->meta->make_immutable;

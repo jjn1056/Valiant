@@ -17,11 +17,7 @@ sub get_form_html($self) {
 
 __DATA__
 % my ($self, $c) = @_;
-document.addEventListener('ajaxSuccess', function(event) {
-  // Access the custom event data
-  var message = event.detail.message;
-  console.log('Custom event triggered:', message);
-
-  $("#edit_account").html('<%=  $self->get_form_html %>');
+$(document).on('ajax:success', function(event, data, status, xhr) {
+  $(event.target).html('<%=  $self->get_form_html %>');
 });
 

@@ -10,7 +10,6 @@ has 'account' => ( is=>'ro', required=>1 );
 
 sub render($self, $c) {
   return html_page page_title=>'Homepage', sub($page) {
-    $page->add_script('/static/remote.js');
     return html_navbar active_link=>'account_details',
     div {class=>"col-5 mx-auto"},
       html_account_form { account=>$self->account };

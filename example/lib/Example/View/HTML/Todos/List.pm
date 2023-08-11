@@ -7,10 +7,14 @@ use Example::View::HTML
   -util => qw($sf path ),
   -views => 'HTML::Page', 'HTML::Navbar';
 
-has 'list' => (is=>'ro', required=>1, handles=>[qw/pager status/]);
+has 'list' => (is=>'rw', required=>1, handles=>[qw/pager status/]);
 has 'todo' => (is=>'ro', required=>1, clearer=>'clear_todo');
 
 ## TODO add bulk operations
+
+sub set_list_to_last_page($self) {
+  $self->list($self->list->get_last_page);
+}
 
 sub render($self, $c) {
   html_page page_title=>'Todo List', sub($layout) {
@@ -32,10 +36,9 @@ sub render($self, $c) {
             tbody { repeat=>$self->list }, \&rows,
             tfoot { if=>$self->pager->last_page > 1  }, \&pagelist_row,
           ],
-          
-          $self->status_filter_box,
         ],
-
+        $self->status_filter_box,
+        
         div +{ class=>'form-group' }, [
           $fb->input('title', +{ placeholder=>'What needs to be done?' }),
           $fb->errors_for('title'),

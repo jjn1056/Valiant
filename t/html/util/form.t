@@ -100,7 +100,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_local_person" enctype="application/x-www-form-urlencoded" id="edit_local_person" method="post">' .
+    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_local_person" data-tunneled-method="patch" enctype="application/x-www-form-urlencoded" id="edit_local_person" method="post">' .
       '<label for="local_person_first_name">First Name</label>' .
       '<input id="local_person_first_name" name="local_person.first_name" type="text" value="aa"/>' .
       '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>' .
@@ -129,7 +129,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_foo" enctype="application/x-www-form-urlencoded" id="edit_foo" method="post">' .
+    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_foo" data-tunneled-method="patch" enctype="application/x-www-form-urlencoded" id="edit_foo" method="post">' .
       '<label for="foo_first_name">First Name</label>' .
       '<input id="foo_first_name" name="foo.first_name" type="text" value="aa"/>' .
       '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>' .
@@ -156,7 +156,7 @@ ok !$person->valid;
 
   ok $form->isa('Valiant::HTML::SafeString');
   is $form, 
-    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_person" enctype="application/x-www-form-urlencoded" id="edit_person" method="post">'.
+    '<form accept-charset="UTF-8" action="person?x-tunneled-method=patch" class="edit_person" data-tunneled-method="patch" enctype="application/x-www-form-urlencoded" id="edit_person" method="post">'.
       '<label for="person_first_name">First Name</label>'.
       '<input id="person_first_name" name="person.first_name" type="text" value="aa"/>'.
         '<div data-error-param="1">First Name is too short (minimum is 3 characters)</div>'.

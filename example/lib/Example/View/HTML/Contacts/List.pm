@@ -15,6 +15,8 @@ sub render($self, $c) {
       div {class=>"col-5 mx-auto"}, [
         legend 'Contact List',
         $self->page_window_info,
+        div { class=>"alert alert-warning", role=>"alert", if=>!$self->pager->total_entries },
+          "No contacts found. Click on 'Create a new Contact' to get started.",
         table +{ if=>($self->pager->total_entries), class=>'table table-striped table-bordered' }, [
           thead
             trow [

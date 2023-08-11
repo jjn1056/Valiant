@@ -8,44 +8,40 @@ use Types::Standard qw(Int);
 extends 'Example::Controller';
 
 sub root :At('$path_end/...') Via('../protected') ($self, $c, $user) {
-  $c->action->next(my $collection = $user->posts);
+  $c->action->next(my $posts = $user->posts);
 }
 
-  sub search :At('/...') Via('root') QueryModel ($self, $c, $collection, $q) {
-    my $searched_collection = $collection->filter_by_request($q);
-    $c->action->next($searched_collection);
+  sub search :At('/...') Via('root') QueryModel ($self, $c, $posts, $q) {
+    $posts = $posts->filter_by_request($q);
+    $c->action->next($posts);
   }
 
     # GET /posts
-    sub list :Get('') Via('search')  ($self, $c, $collection) {
-      return $self->view(list => $collection)->set_http_ok;
+    sub list :Get('') Via('search')  ($self, $c, $posts) {
+      return $self->view(list => $posts);
     }
 
-  sub prepare_build :At('...') Via('root')  ($self, $c, $collection) {
-    $self->view_for('build', post => my $post = $collection->build);
+  sub prepare_build :At('...') Via('root')  ($self, $c, $posts) {
+    $self->view_for('build', post => my $post = $posts->build);
     $c->action->next($post);
   }
 
     # GET /posts/new
-    sub build :Get('new') Via('prepare_build') ($self, $c, $post) {
-      return $c->view->set_http_ok;
-    }
+    sub build :Get('new') Via('prepare_build') ($self, $c, $post) { return }
 
     # POST /posts
     sub create :Post('') Via('prepare_build') BodyModel ($self, $c, $post, $r) {
-      return $post->set_from_request($r) ?
-        $c->view->set_http_ok : 
-          $c->view->set_http_bad_request;
+      return $post->set_from_request($r);
     }
 
-  sub find :At('{:Int}/...') Via('root') ($self, $c, $collection, $id) {
-    my $post = $collection->find($id) // $c->detach_error(404, +{error=>"Post Id '$id' not found"});
+  sub find :At('{:Int}/...') Via('root') ($self, $c, $posts, $id) {
+    my $post = $posts->find($id) // $c->detach_error(404, +{error=>"Post Id '$id' not found"});
     $c->action->next($post);
   }
 
     # GET /posts/1
     sub show :Get('') Via('find') ($self, $c, $post) {
-      $self->view(post => $post)->set_http_ok;
+      $self->view(post => $post);
     }
 
     # DELETE /posts/1
@@ -59,15 +55,11 @@ sub root :At('$path_end/...') Via('../protected') ($self, $c, $user) {
     }
 
       # GET /posts/1/edit
-      sub edit :Get('edit') Via('prepare_edit') ($self, $c, $post) {
-        return $c->view->set_http_ok;
-      }
+      sub edit :Get('edit') Via('prepare_edit') ($self, $c, $post) { return }
     
       # PATCH /posts/1
       sub update :Patch('') Via('prepare_edit') BodyModelFor('create') ($self, $c, $post, $r) {
-        return $post->set_from_request($r) ?
-          $c->view->set_http_ok :
-            $c->view->set_http_bad_request;
+        return $post->set_from_request($r);
       }
 
 __PACKAGE__->meta->make_immutable;

@@ -1,4 +1,4 @@
-package Example::View::HTML::Home::UserHome;
+package Example::View::HTML::Home::UserShow;
 
 use Moo;
 use Example::Syntax;
@@ -17,7 +17,6 @@ sub add_info($self, $info) {
 
 sub render($self, $c) {
   html_page page_title => 'Home', sub($page) {
-    $page->add_script('/static/remote.js');
     html_navbar active_link=>'home',
     blockquote +{ if=>$self->has_info, 
       class=>"alert alert-primary", 
@@ -28,10 +27,10 @@ sub render($self, $c) {
     ],
      div [
       button {
-        formaction=>path('user_home'),
+        formaction=>path('user_show'),
         type=>'button', 
         class=>'btn btn-primary',
-        data=>{remote=>'link'} }, 'Test Button'
+        data=>{remote=>'true', confirm=>'Are you Sure'} }, 'Test Button'
     ]   
   };
 }
