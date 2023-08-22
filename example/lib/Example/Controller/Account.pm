@@ -6,6 +6,10 @@ use Example::Syntax;
 
 extends 'Example::Controller';
 
+sub update_account_uri($self, $model_path, @args) {
+  return $self->update_uri(@args);
+}
+
 sub root :At('$path_end/...') Via('../protected')  ($self, $c, $user) {
   $c->action->next(my $account = $user->account);
 }

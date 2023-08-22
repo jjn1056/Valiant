@@ -40,6 +40,7 @@ requires 'Digest::MD5';
 requires 'Plack::Runner';
 requires 'Scalar::Util';
 requires 'Sub::Exporter';
+requires 'Term::Size::Any';
 
 
 

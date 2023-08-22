@@ -1,6 +1,19 @@
 The following logs changes for the CPAN distribution Valiant
 
-0.001025 2023 August 03
+0.002001 2023 August 11
+          - HTML Form helper sets tunneled method info as a data attribute.
+          - The DBIC Resultset SetSize validator now distinguished between
+            empty and blank correctly.  This fix allows you to more properly
+            exclude the validation in the correct condition.
+          - Improvements to the example code
+          - Incremented revision information to indicate I consider the code
+            to be pretty stable and contains at least 80% of the features I
+            intend for this code.  I've been able to use it on commercial 
+            projects without issue.  I do not intend to make breaking changes
+            unless its absolutely necessary to fix major security issues or
+            to move the code forward.
+
+0.001026 2023 August 03
           - Minor fixes to HTML Builder
 
 0.001025 2023 August 02
