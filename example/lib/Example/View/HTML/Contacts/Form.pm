@@ -3,8 +3,8 @@ package Example::View::HTML::Contacts::Form;
 use Moo;
 use Example::Syntax;
 use Example::View::HTML
-  -tags => qw(div a fieldset link_to legend br form button form_for),
-  -util => qw(list_uri delete_uri content);
+  -tags => qw(div a fieldset title link_to legend br form button form_for),
+  -util => qw(list_uri delete_uri);
 
 has 'contact' => (is=>'ro', required=>1);
 
