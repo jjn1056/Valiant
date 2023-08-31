@@ -296,6 +296,30 @@ sub link_to {
   return $self->content_tag('a', $attrs, $content);
 }
 
+sub escape_javascript {
+  my ($self, $javascript) = @_; 
+  if ($javascript) {
+    my %JS_ESCAPE_MAP = (
+        '\\' => '\\\\',
+        '</' => '<\/',
+        "\r\n" => '\n',
+        "\3342\2200\2250" => '\x{3342}\x{2200}\x{2250}',
+        "\3342\2200\2251" => '\x{3342}\x{2200}\x{2251}',
+        "\n" => '\n',
+        "\r" => '\n',
+        '"' => '\"',
+        "'" => "\\'"
+    );
+    
+    my $pattern = join '|', map quotemeta, keys %JS_ESCAPE_MAP;
+    my $result = $javascript =~ s/($pattern)/$JS_ESCAPE_MAP{$1}/egr;
+    
+    return $result;
+  } else {
+      return "";
+  }
+}
+
 # private
 
 sub _tag_options {
@@ -488,6 +512,17 @@ Helper method to generate a link tag.
 
 C<$url> is the URL to link to and is required.  Both C<%attrs> and c<$content>
 are optional. If C<$content> is not provided, the link text will be the URL.
+
+=head2 escape_javascript
+
+    $fb->escape_javascript($string);
+
+Escapes a string so it can be used in a javascript string.  This is a wrapper around
+The same method from L<Valiant::HTML::Util::TagBuilder/escape_javascript>.
+
+Basically this escapes ' and " and \ and newlines and a few other neaten up so that you can
+use a string as a javascript value.   Helps with injection attackes (but isn't everything
+you need).
 
 =head2 to_string
 

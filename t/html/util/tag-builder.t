@@ -206,6 +206,17 @@ is  $tags->hr({omit=>sub {1}}) +
 is $tags->input({value=>'&amp;'}), '<input value="&amp;amp;"/>';
 is $tags->input({value=>$tb->raw('&amp;')}), '<input value="&amp;"/>';
 
+{
+  my $string = qq[
+    This
+    is a 
+    test
+    "
+    '
+  ];
+  is $tb->escape_javascript($string), q[\n    This\n    is a \n    test\n    \"\n    \'\n  ], "properly escaped";
+}
+
 done_testing;
 
 __END__
