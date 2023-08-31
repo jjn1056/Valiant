@@ -132,17 +132,6 @@ ok my $fb = Valiant::HTML::FormBuilder->new(
   model => $person,
   name => 'person');
 
-{
-  my $string = qq[
-    This
-    is a 
-    test
-    "
-    '
-  ];
-  is $fb->escape_javascript($string), q[\n    This\n    is a \n    test\n    \"\n    \'\n  ], "properly escaped";
-}
-
 is $fb->model_errors, '<ol><li>Trouble 1</li><li>Trouble 2</li></ol>';
 is $fb->model_errors({class=>'foo'}), '<ol class="foo"><li>Trouble 1</li><li>Trouble 2</li></ol>';
 is $fb->model_errors({max_errors=>1}), '<div>Trouble 1</div>';

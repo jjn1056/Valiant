@@ -62,8 +62,6 @@ sub DEFAULT_MODEL_ERROR_TAG_ON_FIELD_ERRORS { return 'invalid_form' }
 sub DEFAULT_COLLECTION_CHECKBOX_BUILDER { return 'Valiant::HTML::FormBuilder::Checkbox' }
 sub DEFAULT_COLLECTION_RADIO_BUTTON_BUILDER { return 'Valiant::HTML::FormBuilder::RadioButton' }
 
-sub escape_javascript { shift->tag_helpers->escape_javascript(shift) }
-
 sub id { return shift->options->{id} }
 
 sub nested_child_index {
