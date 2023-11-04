@@ -39,12 +39,13 @@ sub render($self, $c) {
                 td $todo->status,
               ],
             },
-            tfoot { if=>$pg->pager->last_page > 1  },
+            tfoot ,
               td {colspan=>2, style=>'background:white'},
                 $pg->navigation_line,
           ],
         }, sub ($self, $list) {
-          div "There are no tasks to display."
+          div { class=>"alert alert-warning", role=>"alert" },
+            "There are no tasks to display."
         },
   
         $self->status_filter_box,
@@ -67,7 +68,10 @@ sub status_filter_box($self) {
 
 sub status_filter($self, $status) {
   return span {style=>'margin: .5rem'}, [b u $status] if $self->status eq $status;
-  return a { href=>list_uri(+{'todo.page'=>1, 'todo.status'=>$status}), style=>'margin: .5rem'}, $status;
+  return a {
+    href=>list_uri(+{'todo.page'=>1, 'todo.status'=>$status}),
+    style=>'margin: .5rem'
+  }, $status;
 }
 
 1;

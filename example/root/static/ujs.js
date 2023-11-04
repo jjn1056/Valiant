@@ -120,6 +120,7 @@
         if (element.is('form')) {
           method = element.data('ujs:submit-button-formmethod') || 
             element.data('tunneled-method') || 
+            element.data('method') || 
             element.attr('method');
 
           url = element.data('ujs:submit-button-formaction') || element.attr('action');

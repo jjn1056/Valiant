@@ -22,6 +22,8 @@ sub root :At('$path_end/...') Via('../public')  ($self, $c, $user) {
     # POST /register
     sub create :Post('') Via('prepare_build') BodyModel ($self, $c, $user, $bm) {
       return $c->redirect_to_action('/session/build') if $user->register($bm);
+      use Devel::Dwarn;
+      Dwarn $user->errors->_dump;
     }
 
 __PACKAGE__->meta->make_immutable; 

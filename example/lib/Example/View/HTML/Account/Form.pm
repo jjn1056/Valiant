@@ -16,7 +16,7 @@ sub render($self, $c) {
   my $employment_options = user->employment_options;
   my @status_options = $self->account->profile->status_list;
 
-  return form_for 'account', +{data=>{remote=>'true', method=>'patch'}}, sub ($self, $fb, $account) {
+  return form_for 'account', +{data=>{remote=>'true'}}, sub ($self, $fb, $account) {
     div +{ if=>$fb->successfully_updated, class=>'alert alert-success', role=>'alert' }, 'Successfully Updated',
     fieldset [
       $fb->legend,
