@@ -39,7 +39,7 @@ sub render($self, $c) {
                 td $todo->status,
               ],
             },
-            tfoot ,
+            tfoot,
               td {colspan=>2, style=>'background:white'},
                 $pg->navigation_line,
           ],
