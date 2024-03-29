@@ -28,6 +28,7 @@ requires 'Catalyst::View::BasePerRequest';
 requires 'Sub::Util';
 requires 'Attribute::Handlers';
 requires 'JSON::MaybeXS';
+requires 'URI::Escape';
 
 on test => sub {
   requires 'Test::Most' => '0.34';

@@ -96,10 +96,8 @@ sub model_persisted {
 sub form_for {
   my $self = shift;
   my $proto = shift; # required; at the start
-  my $content_block_coderef = pop; # required; at the end
+  my $content_block_coderef = (ref($_[-1])||'') eq 'CODE' ? pop : undef; 
   my $options = ref($_[-1]||'') eq 'HASH' ? pop : +{};
-
-  croak "You must provide a content block to form_for" unless ref($content_block_coderef) eq 'CODE';
 
   my ($model, $object_name);
   if( ref(\$proto) eq 'SCALAR') {
@@ -164,7 +162,7 @@ sub _apply_form_for_options {
 
 sub form_with {
   my $self = shift;
-  my $content_block_coderef = pop; # required; at the end
+  my $content_block_coderef = (ref($_[-1])||'') eq 'CODE' ? pop : undef; 
   my $options = @_ ? shift : +{};
     my $scope = exists $options->{scope} ? $options->{scope} : undef;
 
@@ -188,16 +186,37 @@ sub form_with {
   $url ||= delete $options->{url} if exists $options->{url};
   $url = $url->($self, $model_path) if (ref($url)||'') eq 'CODE';
 
-  my $builder = $self->_instantiate_builder($scope, $model, $options);
   my $html_options = $self->_html_options_for_form_with($url, $model, $options);
-  my $output = $self->join_tags(
-    $self->form_tag($html_options, sub {
-      my @form_node = $content_block_coderef->($self->view, $builder, $model);
-      return $builder->view->safe_concat(@form_node);
-    })
-  );
+  $options->{html}{csrf_token} = $html_options->{csrf_token} if exists $html_options->{csrf_token};
+  my $builder = $self->_instantiate_builder($scope, $model, $options);
 
-  return $output;
+  if($html_options->{data}{remote}) {
+    my $url = $html_options->{action}->clone;
+    my $replace = exists($html_options->{data}{replace})
+      ? $html_options->{data}{replace}
+      : '#'.$html_options->{id};
+    $url->query_param(replace=>$replace);
+
+    $html_options->{action} = $url;
+    $html_options->{data}{method} ||= $html_options->{method};
+  }
+
+  if($content_block_coderef) {
+    return my $output = $self->join_tags(
+      $self->form_tag($html_options, sub {
+        my @form_node = $content_block_coderef->($self->view, $builder, $model);
+        return $builder->view->safe_concat(@form_node);
+      })
+    );
+  } else {
+    return my $obj = bless +{
+      fb => $builder,
+      model => $model,
+      html_options => $html_options,
+      util_form => $self,
+      view => $self->view,
+    }, 'Valiant::HTML::Util::Form::FormObject';
+  }
 }
 
 # if url is empty
@@ -214,11 +233,11 @@ sub _polymorphic_path_for_model {
 
   if($self->model_persisted($model_path->[-1])) {
     return $edit_url ?
-      $edit_url->($self, $model_path) :
+      $edit_url->($self->view, $model_path) :
       $self->_edit_action_for_model(@args)
   } else {
     return $new_url ?
-      do { pop @{$model_path}; $new_url->($self, $model_path) } :
+      do { pop @{$model_path}; $new_url->($self->view, $model_path) } :
       $self->_new_action_for_model(@args);
   } 
 }
@@ -363,6 +382,30 @@ sub fields {
   return $output;
 }
 
+package Valiant::HTML::Util::Form::FormObject;
+
+use warnings;
+use strict;
+use Carp;
+
+sub fb { shift->{fb} }
+
+sub render {
+  my ($self, $content_block_coderef) = @_;
+  croak "No content block provided" unless $content_block_coderef;
+
+  return my $output = $self->{util_form}->join_tags(
+    $self->{util_form}->form_tag($self->{html_options}, sub {
+      my @form_node = $content_block_coderef->(
+        $self->{view},
+        $self->{fb},
+        $self->{model},
+      );
+      return $self->{fb}->view->safe_concat(@form_node);
+    })
+  );
+}
+
 1;
 
 =head1 NAME
@@ -414,6 +457,20 @@ Generates something like:
       <label for="person_last_name">Last Name</label>
       <input id="person_last_name" name="person.last_name" type="text" value="Napiorkowski"/>
     </form>
+
+Alternatively you can create a form object and then render it later:
+
+    my $form = $f->form_for($person);
+    $form->render(sub($fb, $person) {
+      return  $fb->label('first_name'),
+              $fb->input('first_name'),
+              $fb->errors_for('first_name', +{ class=>'invalid-feedback' }),
+              $fb->label('last_name'),
+              $fb->input('last_name'),
+              $fb->errors_for('last_name'+{ class=>'invalid-feedback' });
+    });
+
+Would return the same output.
 
 =head1 DESCRIPTION
 

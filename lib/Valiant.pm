@@ -1,5 +1,8 @@
 package Valiant;
 
+use warnings;
+use strict;
+
 our $VERSION = '0.002003';
 $VERSION = eval $VERSION;
 

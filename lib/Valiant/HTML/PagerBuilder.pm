@@ -7,8 +7,6 @@ use Carp 'croak';
 
 has model => (is=>'ro', required=>1);
 has pager => (is=>'ro', required=>1, lazy=>1, builder=>1);
-has options => (is=>'ro', required=>1, default=>sub { +{} });
-
 has uri_base => (is=>'ro', predicate=>'has_uri_base');
 
 sub _build_pager {
@@ -240,3 +238,153 @@ sub navigation_line {
 }
 
 1;
+
+=head1 NAME
+
+Valiant::HTML::PagerBuilder - A Perl module for building HTML paginators
+
+=head1 SYNOPSIS
+
+  use Valiant::HTML::PagerBuilder;
+
+  my $pager_builder = Valiant::HTML::PagerBuilder->new(
+    model => $model,
+    pager => $pager_object,
+  );
+
+  my $window_info_html = $pager_builder->window_info(%args);
+
+  my $navigation_line_html = $pager_builder->navigation_line(%args);
+
+=head1 DESCRIPTION
+
+The C<Valiant::HTML::PagerBuilder> module is designed for building HTML paginators for web applications. It provides methods for generating window information and navigation lines for paginated data.
+
+=head1 CONSTRUCTOR
+
+=over 4
+
+=item new
+
+Creates a new C<Valiant::HTML::PagerBuilder> object.
+
+  my $pager_builder = Valiant::HTML::PagerBuilder->new(
+    model => $model,
+    pager => $pager_object,
+  );
+
+The constructor accepts the following parameters:
+
+=over 4
+
+=item model (required)
+
+The model object representing the data to be paginated.
+
+=item pager (required)
+
+The pager object used for pagination.
+
+=item uri_base (optional)
+
+The base URI for the paginator's navigation links.  Should be a L<URI> object.
+
+=back
+
+=back
+
+=head1 METHODS
+
+This class supports the following public methods:
+
+=head2 window_info
+
+Generates window information HTML for the paginator.
+
+  my $window_info_html = $pager_builder->window_info(%args);
+
+The C<window_info> method accepts a hash of arguments, which can include custom window
+ information templates. It generates HTML for the paginator's window information.
+
+Where args are:
+
+=over 4
+
+=item none
+
+The template for the window information when there are no entries to paginate.
+
+=item one
+
+The template for the window information when there is only one entry to paginate.
+
+=item many
+
+The template for the window information when there are multiple entries to paginate.
+
+=item container
+
+The template for the window information container.
+
+=item container_attrs
+
+The attributes for the window information container.
+
+=back
+
+=head2 navigation_line
+
+Generates navigation line HTML for the paginator.
+
+  my $navigation_line_html = $pager_builder->navigation_line(%args);
+
+The C<navigation_line> method accepts a hash of arguments, which can include custom navigation
+ line templates. It generates HTML for the paginator's navigation line.
+
+Where args are:
+
+=over 4
+
+=item none
+
+The template for the navigation line when there are no entries to paginate.
+
+=item page
+
+The template for the navigation line when there are multiple pages to paginate.
+
+=item page_attrs
+
+The attributes for the navigation line pages.
+
+=item current_page
+
+The template for the navigation line when the current page is selected.
+
+=item current_page_attrs
+
+The attributes for the navigation line current page.
+
+=item container
+
+The template for the navigation line container.
+
+=item container_attrs
+
+The attributes for the navigation line container.
+
+=back
+
+=head1 SEE ALSO
+ 
+L<Valiant>, L<Valiant::HTML::FormBuilder>, L<Valiant::HTML::Util::FormTags>
+
+=head1 AUTHOR
+ 
+See L<Valiant>
+
+=head1 COPYRIGHT & LICENSE
+ 
+See L<Valiant>
+
+=cut
