@@ -755,7 +755,6 @@ sub select {
 
 #collection_select(object, method, collection, value_method, text_method, options = {}, html_options = {})
 sub collection_select {
-  #my ($self, $method_proto, $collection) = (shift, shift, shift);
   my ($self, $method_proto) = (shift, shift);
   my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
