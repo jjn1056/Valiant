@@ -76,6 +76,10 @@ __PACKAGE__->validates(status => (
 __PACKAGE__->validates_with(\&valid_employment_registration );
 __PACKAGE__->validates_with(\&valid_state_registration );
 
+
+##__PACKAGE_->add_text_field('state_id');
+## add_select_options_rs_for => add_select_options_itr_for
+
 __PACKAGE__->add_select_options_rs_for('state_id', sub($self, %options) {
   return $self->person->states->search_rs({}, {order_by => 'name'});
 });

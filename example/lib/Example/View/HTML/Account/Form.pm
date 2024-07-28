@@ -141,7 +141,7 @@ sub render($self, $c) {
         }),
       ],
     ],
-    Fieldset $fb->submit(),
+    Fieldset $fb->submit(+{data=>{'disable-with'=>'Submitting...'}}),
   });
 }
 

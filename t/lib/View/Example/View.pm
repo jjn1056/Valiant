@@ -13,7 +13,7 @@ sub stuff2 {
   return $self->tags->div('stuff2');
 }
 
-sub stuff3 :Renders {
+sub stuff3  {
   blockquote 'stuff3', 
   shift->div('stuff333')
 }

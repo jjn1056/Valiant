@@ -13,7 +13,7 @@ sub root :At('$path_end/...') Via('../protected')  ($self, $c) { }
   # /account/{:Int}/...
   sub find :At('...') Via('root')  ($self, $c) { }
 
-    sub prepare_edit :At('...') Via('find') QueryModel ($self, $c) { 
+    sub prepare_edit :At('...') Via('find') QueryModel ($self, $c, $q) { 
       $self->view_for('edit');
     }
 

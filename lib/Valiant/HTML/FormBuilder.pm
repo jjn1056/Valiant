@@ -756,28 +756,29 @@ sub select {
 #collection_select(object, method, collection, value_method, text_method, options = {}, html_options = {})
 sub collection_select {
   #my ($self, $method_proto, $collection) = (shift, shift, shift);
-  my ($self, $method_proto) = (shift, shift);  
+  my ($self, $method_proto) = (shift, shift);
+  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
   my $options = (ref($_[-1])||'') eq 'HASH' ? pop(@_) : +{};
   $options = $self->merge_theme_field_opts('collection_select', undef, $options);
 
-  my $model = $self->model->can('to_model') ? $self->model->to_model : $self->model;
-
   my ($collection, $value_method, $label_method) = @_;
+
+  # If the collection of options is not provided then we need to figure out what it is
   if(!defined $collection) {
+    my ($options_model, $options_method) = ($model, $method_proto);
     if(ref $method_proto) {
-      my ($bridge, $method) = %$method_proto;
+      my $bridge; ($bridge, $options_method) = %$method_proto;
       if($model->can('related_model')) {
-        ($collection, $label_method, $value_method) = $model->related_model($bridge)->select_options_for($method, %$options);
+        $options_model = $model->related_model($bridge);
       } else {
         my $local_model = $model->$bridge;
         if($local_model->can('next')) {
           $local_model = $local_model->next;
         }
-        ($collection, $label_method, $value_method) = $local_model->select_options_for($method, %$options);
+        $options_model = $local_model;
       }
-    } else {
-      ($collection, $label_method, $value_method) = $model->select_options_for($method_proto, %$options);
     }
+    ($collection, $label_method, $value_method) = $options_model->select_options_for($options_method, %$options);
   }
   $collection = $model->$collection if (ref(\$collection)||'') eq 'SCALAR'; 
   $value_method = 'value' unless defined($value_method);

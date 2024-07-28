@@ -1,4 +1,4 @@
-use Test::Most;
+cse Test::Most;
 use Test::Lib;
 use Catalyst::Test 'View::Example';
 

@@ -261,7 +261,7 @@ ok !$person->valid;
   });
 
   is $result,
-    '<form accept-charset="UTF-8" action="posts" class="aaa bbb ccc" enctype="application/x-www-form-urlencoded" method="post">'.
+    '<form accept-charset="UTF-8" action="posts" class="aaa bbb ccc" data-csrf-token="toke" enctype="application/x-www-form-urlencoded" method="post">'.
       '<input id="csrf_token" name="csrf_token" type="hidden" value="toke"/>'.
       '<input id="local_person_fake" name="local_person.fake" type="text" value=""/>'.
     '</form>'
