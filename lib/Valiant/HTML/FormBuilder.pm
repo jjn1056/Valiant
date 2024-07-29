@@ -2374,6 +2374,36 @@ separately.  Example:
 Supports using a template subroutine reference (like L</collection_radio_buttons>) when you need to be
 fussy about style and positioning.
 
+=head1 REMOTE FORMS
+
+Remote forms are forms that submit via AJAX.  They are a bit more complex than regular forms because
+they need to handle the AJAX response and update the DOM.  The form builder has some support for
+remote forms but you will need to write some javascript to handle the response.  Here's an example
+
+    $fb->remote_form_for(sub {
+      my $fb = shift;
+      return $fb->input('name'),
+             $fb->submit('Save');
+    }, +{url=>'/person', method=>'POST', remote=>1, success=>'alert("Saved")'});
+
+See L<https://github.com/rails/jquery-ujs> for more information on how to handle the response.
+You can also look at the example application for more examples of how this works.
+
+When adding C<remote=1> to the options hashref we will automatically add the following attributes
+to the form tag:
+
+=over 4
+
+=item data-replace
+
+The ID of the element to replace with the response.  If not provided we will replace the form itself.
+
+=back
+
+B<NOTE> Remote support is evolving and may change in the future.  Please see the release notes for
+changes.  I consider this a beta feature and will break compatibility if needed to fix bugs.  Its
+also possible remote support might be moved to a separate module in the future.
+
 =head1 HELPERS
 
 The following methods don't make form controls but just useful methods to help you build your form.

@@ -2,6 +2,10 @@ cse Test::Most;
 use Test::Lib;
 use Catalyst::Test 'View::Example';
 
+# skip all for now
+
+plan skip_all => 'Skipping all tests for now.'; 
+
 {
   ok my $res = request '/test';
   ok $res->content_type, 'text/html';

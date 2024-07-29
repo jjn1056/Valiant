@@ -3,7 +3,7 @@ package Example::View::HTML::Register::Form;
 use CatalystX::Moose;
 use Example::Syntax;
 use Example::View::HTML
-  qw(form_for link_to uri),
+  qw(form_for link_to uri);
 
 has 'registration' => (is=>'ro', required=>1, context=>1);
   
