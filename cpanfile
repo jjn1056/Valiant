@@ -20,7 +20,6 @@ requires 'Module::Runtime', '0.016';
 requires 'Moo', '2.005005';
 requires 'namespace::autoclean', '0.29';
 requires 'namespace::clean', '0.27';
-requires 'overload', '1.37';
 requires 'Role::Tiny::With', '2.002004';
 requires 'Scalar::Util', '1.63';
 requires 'String::CamelCase', '0.04';
@@ -32,6 +31,10 @@ requires 'Text::Autoformat', '1.75';
 requires 'Type::Tiny', '2.004000';
 requires 'URI', '5.28';
 
+# these come bundled with Perl so just use whatever version we have
+requires 'overload';
+requires 'File::Spec';
+requires 'Data::Dumper', '2.183';
 
 on test => sub {
   requires 'Test::Most' => '0.34';
