@@ -46,4 +46,6 @@ on test => sub {
   requires 'Test::DBIx::Class'=> '0.52';
   requires 'HTML::Escape';
   requires 'Catalyst::Runtime';
+  requires 'MooseX::NonMoose';
+  requires 'MooseX::MarkAsMethods';
 };
