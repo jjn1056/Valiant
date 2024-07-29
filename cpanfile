@@ -10,7 +10,6 @@ requires 'DateTime::Format::Strptime', '1.79';
 requires 'DBIx::Class', '0.082843';
 requires 'DBIx::Class::Candy', '0.005003';
 requires 'Devel::StackTrace', '2.05';
-requires 'ExtUtils::MakeMaker', '7.70';
 requires 'File::Spec', '3.88';
 requires 'FreezeThaw', '0.5001';
 requires 'HTML::Escape', '1.11';
