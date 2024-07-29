@@ -3,7 +3,7 @@ package Valiant;
 use warnings;
 use strict;
 
-our $VERSION = '0.002003';
+our $VERSION = '0.002004';
 $VERSION = eval $VERSION;
 
 1;
@@ -1449,7 +1449,7 @@ Or to any dog charity that fits best with your personal beliefs and economic mea
 
 =head1 COPYRIGHT & LICENSE
  
-Copyright 2023, John Napiorkowski L<email:jjnapiork@cpan.org>
+Copyright 2024, John Napiorkowski L<email:jjnapiork@cpan.org>
  
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
