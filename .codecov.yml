@@ -1,0 +1,4 @@
+codecov:
+  exclude:
+    - "example/*"
+    - "t/*"
