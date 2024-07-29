@@ -1,10 +1,12 @@
 package View::Example::View::Hello;
 
+1;
+
+__END__
 use Moo;
-use View::Example::View
-  -tags => qw(div input hr p button_tag form_for link_to a ul li blockquote),
-  -util => qw($sf content_for path ),
-  -views => 'Layout', 'Fragments';
+use View::Example::View;
+
+
 
 has name => (is=>'ro', required=>1);
 

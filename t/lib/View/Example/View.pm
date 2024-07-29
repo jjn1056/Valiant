@@ -1,5 +1,7 @@
 package View::Example::View;
 
+1;
+__END__
 use Moo;
 use Catalyst::View::Valiant::HTMLBuilder
   -tags => qw(blockquote label_tag);
