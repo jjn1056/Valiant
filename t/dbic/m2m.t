@@ -39,7 +39,7 @@ Schema->resultset("Role")->populate([
 
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     person_roles => [
-      "Person Roles Is Invalid",
+      "Person Roles Are Invalid",
     ],
     "person_roles[1].role" => [
       "Person Roles Role Is Invalid",
@@ -48,7 +48,7 @@ Schema->resultset("Role")->populate([
       "Person Roles Role Label adminx is not a valid",
     ],
     roles => [
-      "Roles Is Invalid",
+      "Roles Are Invalid",
     ],
     "roles[1].label" => [
       "Roles Label adminx is not a valid",
@@ -92,7 +92,7 @@ Schema->resultset("Role")->populate([
   ok $person->invalid;
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     person_roles => [
-      "Person Roles Is Invalid",
+      "Person Roles Are Invalid",
     ],
     "person_roles[0].role" => [
       "Person Roles Role Is Invalid",
@@ -101,7 +101,7 @@ Schema->resultset("Role")->populate([
       "Person Roles Role Label superuserX is not a valid",
     ],
     roles => [
-      "Roles Is Invalid",
+      "Roles Are Invalid",
     ],
     "roles[0].label" => [
       "Roles Label superuserX is not a valid",
