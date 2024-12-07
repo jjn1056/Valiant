@@ -37,6 +37,9 @@ Schema->resultset("Role")->populate([
   ok $person->invalid;
   ok !$person->in_storage;
 
+  use Devel::Dwarn;
+  Dwarn +{ $person->errors->to_hash(full_messages=>1) };
+
   is_deeply +{$person->errors->to_hash(full_messages=>1)}, +{
     person_roles => [
       "Person Roles Are Invalid",
@@ -54,6 +57,8 @@ Schema->resultset("Role")->populate([
       "Roles Label adminx is not a valid",
     ],
   }, 'Got expected errors';
+
+  #die;
 
   ok my $roles_rs = $person->roles;
   is scalar @{$roles_rs->get_cache||[]}, 2;  
