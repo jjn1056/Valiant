@@ -419,7 +419,7 @@ sub _input {
     $valid = $flags->{force_validity};
   } elsif($model->can('errors')) {
     $valid = $model->errors->where($attribute) ? 0 : 1;
-  }
+  }z
 
   $html_attrs->{class} = join(' ', (grep { defined $_ } $html_attrs->{class}, $flags->{errors_classes}))
     if $flags->{errors_classes} && !$valid;
@@ -430,7 +430,7 @@ sub _input {
   $html_attrs->{value} = $self->tag_value_for_attribute($attribute) unless defined($html_attrs->{value});
   $html_attrs = $self->process_options($attribute, $html_attrs);
 
-  return my $response_obj = $self->tag_helpers->input_tag($attribute, $html_attrs);
+  return my $input_safe_string = $self->tag_helpers->input_tag($attribute, $html_attrs);
 }
 
 sub password {
@@ -1679,6 +1679,11 @@ Special \%options:
 =item errors_classes
 
 A string that is appended to the C<class> attribute if the $attribute has errors (as defined by the model API)
+
+=item force_validity
+
+Defaults to undefined.  Use this if you want to force the field to be either valid or invalid.   At
+this time the only thing this does is control if C<errors_classes> are added to the field.
 
 =back
 
