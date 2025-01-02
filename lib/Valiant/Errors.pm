@@ -235,7 +235,7 @@ sub as_rfc_7807 {
   return \%rfc;
 }
 
-sub TO_JSON { +{ shift->as_json } }
+sub TO_JSON { shift->as_json }
 
 # Adds +message+ to the error messages and used validator type to +details+ on +attribute+.
 # More than one error can be added to the same +attribute+.
