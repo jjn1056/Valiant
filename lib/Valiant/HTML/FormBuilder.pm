@@ -419,7 +419,7 @@ sub _input {
     $valid = $flags->{force_validity};
   } elsif($model->can('errors')) {
     $valid = $model->errors->where($attribute) ? 0 : 1;
-  }z
+  }
 
   $html_attrs->{class} = join(' ', (grep { defined $_ } $html_attrs->{class}, $flags->{errors_classes}))
     if $flags->{errors_classes} && !$valid;
