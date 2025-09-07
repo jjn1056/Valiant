@@ -21,15 +21,19 @@ my %JS_ESCAPE_MAP = (
 );
 
 sub escape_javascript {
-  my ($javascript) = @_; 
-  if ($javascript) {
-    my $pattern = join '|', map quotemeta, keys %JS_ESCAPE_MAP;
-    my $result = $javascript =~ s/($pattern)/$JS_ESCAPE_MAP{$1}/egr;
-    return $result;
-  } else {
-      return "";
-  }
+  my ($javascript) = @_;
+  return "" unless $javascript;
+
+  # Longest-first to avoid partial matches shadowing longer ones
+  my $pattern = join '|',
+    map { quotemeta }
+    sort { length($b) <=> length($a) } keys %JS_ESCAPE_MAP;
+
+  my $result = $javascript;              # make a copy (since 5.10 lacks /r)
+  $result =~ s/($pattern)/$JS_ESCAPE_MAP{$1}/eg;
+  return $result;
 }
+
 1;
 
 =head1 NAME
