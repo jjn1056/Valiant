@@ -24,6 +24,7 @@
 - **Test failures are findings**: when a ported test fails, find the root cause. If the root cause is a genuine DBIC↔DBIO behavior difference, STOP, record it in `dbio-integration-notes.md`, and raise it with John before working around anything. Never delete or weaken a test assertion to get green.
 - **Commit after every task** (and at the intermediate points marked below). Commit messages end with:
   `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`
+- **Coverage mandate (from John)**: the DBIC-era test depth is known-thin; the DBIO lane should end up with BETTER coverage than the DBIC lane, not equal. Ported test files (Tasks 6-13) stay faithful mirrors — do NOT add assertions to them. Instead, while porting, append every under-tested behavior you notice to `t/dbio/COVERAGE-GAPS.md` (one bullet per gap: feature, where it lives, why you think it's untested). Task 17 turns that list into new dedicated test files.
 
 ---
 
@@ -1404,6 +1405,42 @@ git commit -m "Add DBIO::Valiant main documentation and Changes entry
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
+
+---
+
+### Task 17: Coverage deepening
+
+**Files:**
+- Create: `t/dbio/nested-options.t`, `t/dbio/pseudo-params.t`, `t/dbio/column-info.t`, `t/dbio/contexts.t` (exact split may vary; one file per concern below)
+- Consume + delete when done: `t/dbio/COVERAGE-GAPS.md` (gap notes accumulated during Tasks 6-13)
+
+**Interfaces:**
+- Consumes: all schemas and components from earlier tasks.
+
+The DBIC lane's known-thin spots, enumerated from the source read (`dbio-integration-notes.md` Part 1) — each bullet becomes a test block with both a positive and a negative case, using `SchemaIO::Create` or `SchemaIO::Nested` (or a small inline schema where those don't fit). Cover, at minimum:
+
+1. `accept_nested_for` options, each in isolation: `reject_if` (coderef skips matching nested rows), `limit` (scalar AND coderef forms; exceeding throws `DBIO::Valiant::Util::Exception::TooManyRows`), `update_only => 1` (existing related row updated even without PK), `find_with_uniques => 1` (found via unique key; not-found sets a `related_not_found` error) and `find_with_uniques => 'allow_create'` (not-found creates instead), `allow_destroy` (both constant and coderef; `_delete` without it is a no-op).
+2. Pseudo-params on `set_from_params_recursively`: `_delete` (incl. the checkbox array form where only the last value counts), `_add`, `_nop`, `_restore`, `_action => 'delete'` / `'nop'`; deletion pruning of children (`is_pruned` / `is_removed`).
+3. `ResultSet->set_recursively` with `rollback_on_invalid => 1` (invalid graph rolls back rows already written) and without.
+4. Column-definition metadata: `validates => [...]` and `filters => [...]` keys inside `add_columns` info hashes (the `register_column` path — note `ExampleIO::Schema::Result::Person` already uses this for `password`; add the `filters` case).
+5. Validation contexts end-to-end: automatic `create`/`update` contexts, user `__context` on `create`, `update`, and `new_result`, context-scoped validations firing only in their context.
+6. `is_unique` / `unique => 1`: rejects a duplicate on create; accepts an update that does not change the unique column (the in-storage short-circuit); rejects an update that changes it to a taken value.
+7. `build_related` / `build_related_if_empty`: builds into the cache without inserting; `if_empty` is a no-op when the cache is populated; the m2m form.
+8. `Validator::Result` on an optional (`might_have`, LEFT join) relation: undef related is NOT an error; undef on a required single relation IS.
+9. `SetSize` boundaries: exactly `min`, one below, exactly `max`, one above, and `skip_if_empty`.
+10. FormFields registries end-to-end on a deployed schema: `add_select_options_rs_for` + `select_options_for` (label/value method resolution via `option_label`/`option_value` tags), `add_checkbox_rs_for` + `checkboxes_for`, `add_radio_buttons_for` + `radio_buttons_for`, `add_form_field_for` + `read_form_field_for`, and `read_attribute_for_html` fallback order (registered field > column > method > single rel > `Valiant::BadAttribute`).
+11. Whatever else `t/dbio/COVERAGE-GAPS.md` accumulated.
+
+Work test-first per concern: write the test block, run it, fix only genuine port bugs it exposes (a failure that also reproduces on the DBIC side is a pre-existing upstream Valiant bug — record it in `dbio-integration-notes.md` and STOP for discussion rather than changing shared `lib/Valiant` code under this plan). Commit per test file:
+
+```bash
+git add t/dbio/<file>.t
+git commit -m "Deepen DBIO lane coverage: <concern>
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+```
+
+Finish by deleting `t/dbio/COVERAGE-GAPS.md` (its content now lives as tests) and running `prove -lr t/dbio` — all green.
 
 ---
 
