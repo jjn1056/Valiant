@@ -196,6 +196,19 @@ Every API from Part 1 was checked against the DBIO source. Status:
 
 ### Questions to settle before implementation
 
+**DECIDED 2026-07-07 (John):**
+1. Packaging — **inside the Valiant dist** (mirrors DBIx::Class::Valiant; DBIO +
+   DBIO::SQLite as develop/test deps only).
+2. Code sharing — **straight copy-port**, two parallel trees; revisit extraction later.
+3. `${rel}_pks` helper — **drop** in the DBIO port.
+4. v1 async scope — as proposed (sync + immediate fully supported; `insert_async`
+   validation override; validation itself stays synchronous).
+5. Test lanes — **in-memory SQLite (sync + immediate mode)** plus an **env-guarded
+   PostgreSQL lane** for real non-blocking (`future_io`/`ev`) coverage. Forked-mode
+   file-backed SQLite lane: skipped for v1.
+
+Original questions kept below for the record.
+
 1. **Packaging**: `DBIO::Valiant` inside the Valiant dist (mirroring
    `DBIx::Class::Valiant`), or a separate `DBIO-Valiant` dist (matching the DBIO
    ecosystem's dist-per-concern pattern, and letting it depend on DBIO 0.900000 without
