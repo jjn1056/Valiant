@@ -44,3 +44,21 @@ assertions), so gaps noticed during porting are logged here instead of fixed in 
   update-path trigger for `TooManyRows` is therefore untested in the DBIO
   lane (and, for the record, in the DBIC lane's `t/dbic/basic.t` too — this
   predates the port).
+
+- **`accept_nested_for(..., {allow_destroy=>1})` / the `_delete` marker is
+  declared in five places in the Nested schema but exercised by zero tests,
+  in either lane.** `t/lib/SchemaIO/Nested/Result/Parent.pm` (`children`),
+  `Person.pm` (`person_roles`, `roles`), `PersonRole.pm` (`role`), and
+  `Meeting.pm` (`attendees`) all set `allow_destroy=>1`, and
+  `DBIO::Valiant::Result` has a substantial amount of dedicated logic for it
+  (`_related_allow_destroy`, `_param_is_delete`, `is_marked_for_deletion`,
+  `__valiant_allow_destroy`, spanning roughly lines 140-1060 of
+  `lib/DBIO/Valiant/Result.pm`). Submitting a nested update with a `_delete`
+  key (e.g. `$parent->update({children => [{id=>$id, _delete=>1}]})`) to mark
+  a related row for destruction during a nested `update`/`create` is never
+  attempted by `t/dbio/nested.t` (860 lines) nor by its oracle
+  `t/dbic/nested.t` (859 lines) — `grep -rln '_delete\|allow_destroy'
+  t/dbio/*.t t/dbic/*.t` returns nothing. This predates the port (the gap
+  exists identically in the DBIC lane) but is worth flagging because it's a
+  whole, non-trivial code path in `DBIO::Valiant::Result` with no test
+  coverage anywhere in this repo.
