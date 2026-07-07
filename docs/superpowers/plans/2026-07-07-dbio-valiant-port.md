@@ -403,8 +403,8 @@ use Test::Needs 'DBIO', 'DBIO::SQLite';
   use base 'DBIO::Core';
 
   __PACKAGE__->load_components('Valiant::Result');
-  __PACKAGE__->resultset_class('C1::Schema::ResultSet');
   __PACKAGE__->table("album");
+  __PACKAGE__->resultset_class('C1::Schema::ResultSet');
   __PACKAGE__->add_columns(
     id => { data_type => 'integer', is_nullable => 0, is_auto_increment => 1 },
     artist_id => { data_type => 'integer', is_nullable => 1 },
@@ -419,8 +419,8 @@ use Test::Needs 'DBIO', 'DBIO::SQLite';
   use base 'DBIO::Core';
 
   __PACKAGE__->load_components('Valiant::Result');
-  __PACKAGE__->resultset_class('C1::Schema::ResultSet');
   __PACKAGE__->table("artist");
+  __PACKAGE__->resultset_class('C1::Schema::ResultSet');
   __PACKAGE__->add_columns(
     id => { data_type => 'integer', is_nullable => 0, is_auto_increment => 1 },
     name => { data_type => 'varchar', is_nullable => 0, size => 48 },
