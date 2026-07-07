@@ -50,4 +50,6 @@ on test => sub {
   requires 'Catalyst::Runtime';
   requires 'MooseX::NonMoose';
   requires 'MooseX::MarkAsMethods';
+  requires 'DBIO' => '0.900000';
+  requires 'DBIO::SQLite' => '0.900000';
 };
