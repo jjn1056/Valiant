@@ -111,6 +111,14 @@ Checkout: `~/Desktop/dbio` (https://codeberg.org/dbio/dbio). Verified facts, not
     EV add-on dists).
   - `immediate` — the former silent sync-degrade, now explicit (`DBIO::Future::Immediate`).
 - `*_async` on a **sync** instance croaks. No auto-fallback, no silent degrade.
+- **SQLite and async**: SQLite is an in-process library with no async binding, so
+  `future_io` and `ev` are unavailable — `forked` is the only real-async mode for it,
+  and `DBIO::Forked`'s POD names SQLite explicitly as a target. Caveat verified in
+  dbio-forked's own `t/05-sqlite-live.t`: the forked child *reconnects fresh* per
+  query, so it requires a **file-backed** SQLite DB (`sqlite_use_file => 1`) —
+  `:memory:` cannot work (a fresh child connection sees an empty database). The
+  `DBIO::SQLite` dist ships a `DBIO::SQLite::Test->init_schema` helper supporting
+  exactly this pattern.
 - `DBIO::Future` is a duck-type contract (`then`/`catch`/`get`/`is_ready`/`is_failed`);
   `then` callbacks may return plain values (auto-wrapped).
 - RS/Row async surface: `all_async`/`first_async`/`single_async`/`count_async`/
@@ -203,8 +211,12 @@ Every API from Part 1 was checked against the DBIO source. Status:
 4. **v1 async scope**: sync + `immediate` mode fully supported; real-async simple
    creates validated via the `insert_async` override; async `update` doesn't exist
    upstream so nothing to do. Agreed?
-5. **Test strategy**: real SQLite via `DBIO::SQLite` (recommended; no mocks), and do we
-   also want a `forked`-mode async test lane (needs `dbio-forked` installed)?
+5. **Test strategy**: real SQLite via `DBIO::SQLite` (recommended; no mocks). For the
+   async lane: `immediate` mode runs on in-memory SQLite (covers the `insert_async`
+   validation-gating logic and Future shapes); a real `forked`-mode lane needs
+   **file-backed** SQLite (upstream's own pattern — `:memory:` can't cross the fork).
+   Real `future_io`/`ev` coverage would need an env-guarded PostgreSQL/MySQL lane —
+   defer?
 
 ### Proposed work breakdown (each step commit-able)
 
