@@ -275,3 +275,31 @@ Original questions kept below for the record.
 - `insert` context push has a `## ?? IS this a bug? Why update` comment (Result.pm:138).
 - These behave identically under DBIO; flagging so a port doesn't silently "fix" or
   fork behavior.
+
+### Pre-existing bugs found during coverage deepening (Task 17)
+
+- **`allow_destroy` never takes effect on single relations** (`belongs_to` /
+  `might_have` / `has_one`). `set_single_related_from_params` reads the option
+  with `my $allow_destroy = $nested{allow_destroy};` — but `%nested` is keyed
+  by *relation name*, so the lookup is always undef and
+  `__valiant_allow_destroy` is never set on the related result. Since
+  `mark_for_deletion` is a guarded no-op without that flag, submitting
+  `_delete => 1` (or `_action => 'delete'`) inside a nested *single* relation
+  silently does nothing, even when the schema declares
+  `accept_nested_for($rel, { allow_destroy => 1 })` (as
+  `Schema::Nested::Result::PersonRole` does for `role`). The correct read
+  would be `$nested{$related}{allow_destroy}` (mirroring
+  `_related_allow_destroy`, which the *multi*-relation path uses and which
+  works). Locations: `lib/DBIO/Valiant/Result.pm:852` and, identically,
+  `lib/DBIx/Class/Valiant/Result.pm:888`.
+
+  DBIC-lane repro (Test::DBIx::Class + `Schema::Nested`): create a Person
+  with one person_role, reload with `prefetch => { person_roles => 'role' }`,
+  then `$person_role->update({ role => { id => $role_id, _delete => 1 } })` —
+  the role row stays in storage and `is_marked_for_deletion` remains false in
+  BOTH lanes, so this predates the port. Per the port ground rules no
+  `lib/` code was changed; the planned "single-relation nested destroy"
+  test block was dropped from Task 17 (multi-relation `allow_destroy`,
+  where the option works, is covered in `t/dbio/nested-options.t` and
+  `t/dbio/pseudo-params.t`). Fix upstream in both lanes together, with a
+  test, as post-plan work.
