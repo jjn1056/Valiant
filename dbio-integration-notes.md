@@ -98,6 +98,21 @@ Checkout: `~/Desktop/dbio` (https://codeberg.org/dbio/dbio). Verified facts, not
 
 ### The async model (ADRs 0014 / 0030 / 0031)
 
+**RELEASE-GAP CORRECTION (found during implementation, 2026-07-07):** the
+per-connection mode subsystem described below (ADRs 0028-0031: `{async => ...}`
+at connect, mode registry, `Row::insert_async`, `DBIO::Future::Immediate`)
+exists ONLY in the dev checkout — it postdates the v0.900000 tag (2026-06-23)
+and is in no CPAN release. CPAN DBIO 0.900000 carries the older ADR-0014
+semantics: `*_async` always silently degrades to the synchronous op wrapped in
+an immediately-resolved `DBIO::Test::Future`. Consequence: on released DBIO,
+`create_async` runs the composed synchronous `create`, so DBIO::Valiant
+validation already gates it — the live-backend bypass we designed the
+`insert_async` override for cannot occur. Decision (John): target released
+DBIO for v1; the override + its backend test are deferred (fully specified in
+the plan, Task 14) until DBIO ships the subsystem; `t/dbio/async-pg.t` carries
+a `register_async_mode` capability skip-guard. Pinned by
+`t/dbio/async-immediate.t` (9 assertions) against 0.900000.
+
 - Async is an **explicit per-connection mode**: `Schema->connect($dsn, $u, $p,
   { async => 'forked' | 'future_io' | 'ev' | 'immediate' })`. Schema classes carry no
   async declaration; one class can have sync and several async instances side by side.

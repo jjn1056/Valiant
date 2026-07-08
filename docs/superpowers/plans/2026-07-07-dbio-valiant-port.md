@@ -999,6 +999,18 @@ Note: `t/dbic/todo_tests.t` is a stub (`ok 1` + design notes in `__END__`) — d
 
 ### Task 14: insert_async validation gating
 
+> **EXECUTION NOTE (2026-07-07, decided with John):** Steps 1-3 are DONE (commit
+> 894fd37 — the immediate-mode contract test passes on released DBIO 0.900000
+> with zero lib/ changes, because 0.900000's `create_async` runs the composed
+> synchronous `create`, so validation already gates it). Steps 4-9 are
+> **DEFERRED**: they target DBIO's per-connection async-mode subsystem
+> (`Row::insert_async`, `register_async_mode`, `DBIO::Future::Immediate` —
+> ADRs 0028-0031), which exists only in unreleased post-v0.900000 commits.
+> There is no validation bypass on any released DBIO. Implement Steps 4-9
+> verbatim when DBIO's next release ships the subsystem (see Post-plan
+> follow-ups). Do not ship the override against 0.900000 — it would be
+> untestable dead code.
+
 **Files:**
 - Modify: `lib/DBIO/Valiant/Result.pm` (add `insert_async` after `sub insert`, plus POD)
 - Test: `t/dbio/async-immediate.t` (immediate mode — pins the already-working sync-funnel contract)
@@ -1266,6 +1278,14 @@ BEGIN {
 }
 
 use Test::Needs 'DBIO', 'DBIO::PostgreSQL', 'DBIO::Async::Storage';
+use DBIO::Storage::DBI;
+
+# The future_io per-connection async mode ships in DBIO releases AFTER
+# 0.900000; on older DBIO this lane cannot run (connect would not bind a
+# real async backend), so skip rather than mislead.
+plan skip_all => 'installed DBIO lacks the per-connection async-mode subsystem (needs a post-0.900000 release)'
+  unless DBIO::Storage::DBI->can('register_async_mode');
+
 use Test::Lib;
 
 require SchemaIO::Create;
@@ -1350,19 +1370,21 @@ Apply the Standard Rename. Then hand-edit the prose for the genuine deltas (read
 ```pod
 =head1 ASYNC
 
-DBIO connections opened with an C<< { async => ... } >> mode work with
-DBIO::Valiant.  C<create_async> validates exactly like C<create>: the returned
+DBIO's Future-returning async interface works with DBIO::Valiant.  In DBIO
+0.900000, C<create_async> runs the ordinary synchronous C<create> internally
+and wraps the result in an immediately-resolved Future, so every validation
+behavior described in this document applies to async creates unchanged: the
 Future resolves with the result object, and if validation failed the row is
-not inserted and carries its C<errors> collection.  Rows with nested related
-data are processed by DBIO through the composed synchronous C<insert> (see
-L<DBIO::Row/insert_async>), so all nested validation behavior described in
-this document applies unchanged.
+not inserted and carries its C<errors> collection.
 
 Validation itself always runs synchronously; validators which query the
 database (such as C<unique>) will block the event loop while they run.
 
-See C<t/dbio/async-pg.t> in this distribution for a runnable example against
-a real non-blocking PostgreSQL backend.
+DBIO development newer than 0.900000 adds an explicit per-connection async
+mode system in which a simple insert on a live non-blocking backend routes
+around the synchronous C<insert> path; DBIO::Valiant will gate that path
+with validation when a DBIO release ships it.  C<t/dbio/async-pg.t> in this
+distribution is the (currently self-skipping) test lane for that case.
 =cut
 ```
 
@@ -1445,6 +1467,13 @@ Finish by deleting `t/dbio/COVERAGE-GAPS.md` (its content now lives as tests) an
 ---
 
 ## Post-plan follow-ups (explicitly OUT of this plan's scope)
+
+- **Implement Task 14 Steps 4-9 (insert_async override + t/dbio/async-backend.t) when
+  DBIO releases the per-connection async-mode subsystem** (first release containing
+  `DBIO::Storage::DBI->register_async_mode` / `DBIO::Row::insert_async`; in the dev
+  checkout these are ADRs 0028-0031, commits 01aa74ed..28130bee). The design, code,
+  POD, and failing-test are complete in Task 14 above — implement verbatim, bump the
+  cpanfile DBIO floor to that release, and drop the skip-guard from t/dbio/async-pg.t.
 
 - File the upstream DBIO proposal to bless `_relationship_data` / resultset-cache / `_storage_ident_condition` / `_async_storage` as public contract (ADR-0023-style). Owner: John + Bot, after v1 lands.
 - Runtime `requires 'DBIO'` in cpanfile (vs test-only): decide at release time — DBIC precedent in this dist is a hard runtime requires; DBIO test-only keeps installs light. John's call.
