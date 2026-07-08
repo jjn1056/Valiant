@@ -1,6 +1,6 @@
 use Test::Most;
-use Test::Lib;
 use Test::Needs 'DBIO', 'DBIO::SQLite';
+use Test::Lib;
 use TestDBIO
   -schema_class => 'SchemaIO::Create';
 

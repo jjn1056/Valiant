@@ -1,3 +1,4 @@
+# NOTE: requires an EMPTY scratch database -- deploy is unconditional and will die on rerun against an already-deployed database.
 use Test::Most;
 
 BEGIN {
@@ -5,6 +6,7 @@ BEGIN {
     unless $ENV{VALIANT_TEST_DBIO_PG_DSN};
 }
 
+# 'DBIO::Async::Storage' is the anticipated module name from the unreleased dbio-async dist; recheck the name when DBIO ships the per-connection async-mode subsystem.
 use Test::Needs 'DBIO', 'DBIO::PostgreSQL', 'DBIO::Async::Storage';
 use DBIO::Storage::DBI;
 

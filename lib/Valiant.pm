@@ -110,7 +110,8 @@ L<https://rubyonrails.org>, L<https://github.com/typestack/class-validator>
 
 Documentation here details using L<Valiant> with L<Moo> or L<Moose> based classes.
 If you want to use L<Valiant> with L<DBIx::Class> you will also wish to review
-L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class>.
+L<DBIx::Class::Valiant> which details how L<Valiant> glues into L<DBIx::Class> (or
+L<DBIO::Valiant> for L<DBIO>, the asynchronous fork of DBIx::Class).
 
 This document reviews all the bits of the L<Valiant> system as a whole (validations, filters,
 internationalization, errores etc).   You might also like to review API details from the following
@@ -1357,7 +1358,8 @@ that ship with L<Valiant>
 =head1 HTML FORM GENERATION
 
 HTML Form generation is not specifically added to the L<Valiant> validation code, but there is
-a set of packages designed to work with L<Valiant> as well as L<DBIx::Class::Valiant> ORM integration:
+a set of packages designed to work with L<Valiant> as well as L<DBIx::Class::Valiant> (or
+L<DBIO::Valiant> for L<DBIO> users) ORM integration:
 L<Valiant::HTML::FormBuilder>, L<Valiant::HTML::Form> and L<Valiant::HTML::FormTags>.  This code
 is currently under active development although I expect that the publically documented API
 is very likely to remain stable.  Here's a simple example of what this form integration looks like;

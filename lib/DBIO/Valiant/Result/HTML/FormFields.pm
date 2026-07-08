@@ -219,7 +219,7 @@ sub _auto_read_attribute_for_html {
 
 =head1 NAME
 
-DBIO::Valiant::Result::HTML::FormFields - Map DBIC Fields to HTML Form Fields
+DBIO::Valiant::Result::HTML::FormFields - Map DBIO Fields to HTML Form Fields
 
 =head1 SYNOPSIS
 

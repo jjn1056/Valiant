@@ -3,8 +3,11 @@ The following logs changes for the CPAN distribution Valiant
 0.002020 {{TBD}}
           - New: DBIO::Valiant - the full DBIx::Class::Valiant feature set
           ported to DBIO (https://codeberg.org/dbio/dbio), the asynchronous
-          fork of DBIx::Class.  Includes validation gating for the async
-          create_async / insert_async paths.  See DBIO::Valiant.
+          fork of DBIx::Class.  On DBIO 0.900000, async creates via
+          create_async are validation gated (they run the composed
+          synchronous create); gating for the live-backend insert_async
+          fast path lands when DBIO releases its per-connection async-mode
+          subsystem.  See DBIO::Valiant.
 
 0.002019 2025 July 10
           - This release contains some undocumented changes which are in place for

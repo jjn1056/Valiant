@@ -1218,7 +1218,7 @@ Or just add to your base Result class
 
 =head1 DESCRIPTION
 
-Glue L<Valiant> validations into your DBIC result sources.   This package just has some basic
+Glue L<Valiant> validations into your DBIO result sources.   This package just has some basic
 API level docs, you should see L<DBIO::Valiant> for a somewhat more detailed documentation
 and examples.
 

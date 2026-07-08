@@ -28,7 +28,7 @@ to your result and result classes:
 
     __PACKAGE__->load_components('Valiant::ResultSet');
 
-Alternatively (and likely easier if you wish to use this across your entire DBIC schema) you can set these
+Alternatively (and likely easier if you wish to use this across your entire DBIO schema) you can set these
 on your base result / resultset classes:
 
     package Example::Schema::Result;
@@ -97,7 +97,7 @@ and L<Valiant::HTML::FormBuilder> (or refer to the example application under dir
 
 Assuming a base result and resultset as described above, you can add L<Valiant> style
 validations to the result source columns or on the object as a whole.  The helpers described
-in the L<Valiant> core documentations all work the same on your DBIC result source fields; the
+in the L<Valiant> core documentations all work the same on your DBIO result source fields; the
 main difference is that you must call these helpers as class/package methods:
 
     package Example::Schema::Result::Profile;
@@ -153,7 +153,7 @@ methods there are a few other changes from the core L<Valiant> behavior.
 
 First C<validate> is automatically run for you when you attempt to C<create> or C<insert>
 a record (or use related methods such as C<find_or_create>).  If validation fails the database
-operation will not occur but you will get a DBIC result with the records in cache along
+operation will not occur but you will get a DBIO result with the records in cache along
 with any validation results.  This makes it easier to round trip things like form validation
 since you can use the database result in your form response logic.  For example:
 
@@ -245,7 +245,7 @@ fewer lines of code.
 
 As in the example above you can define filters this way as well.
 
-=head2 DBIC Candy
+=head2 DBIO Candy
 
 This has L<DBIO::Candy> integration if you use that and prefer it:
 
@@ -357,7 +357,7 @@ to consume the Valiant components as in the L</SYNOPSIS>.
     use strict;
     use base 'Example::Schema::Result';
 
-    # This first part is just the normal DBIC class data you assign to a result class
+    # This first part is just the normal DBIO class data you assign to a result class
     # in order to read and update tables as well as follow relationships:
 
     __PACKAGE__->table("person");
@@ -655,7 +655,7 @@ from a web form you are potentially opening yourself to SQL injection and simila
 recommend being very careful to sanitize incoming parameters, especially any related keys.
 
 B<NOTE>Be careful when reusing a result that has deeply nested values after you create or update.
-In order to keep data consistent, DBIC will blow away any prefetch caches after create or update.
+In order to keep data consistent, DBIO will blow away any prefetch caches after create or update.
 So that means if you try to reuse a result you may encounter errors that cause following
 creates or inserts to fails, especially if you have constraints on the related data, such as SetSize.
 
@@ -683,7 +683,6 @@ mode system in which a simple insert on a live non-blocking backend routes
 around the synchronous C<insert> path; DBIO::Valiant will gate that path
 with validation when a DBIO release ships it.  C<t/dbio/async-pg.t> in this
 distribution is the (currently self-skipping) test lane for that case.
-=cut
 
 =head1 SEE ALSO
  

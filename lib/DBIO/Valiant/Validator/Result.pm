@@ -54,7 +54,7 @@ sub validate_each {
 
 =head1 NAME
 
-DBIO::Valiant::Validator::Result - Verify a DBIC related result
+DBIO::Valiant::Validator::Result - Verify a DBIO related result
 
 =head1 SYNOPSIS
 
