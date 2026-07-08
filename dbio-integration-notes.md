@@ -3,7 +3,9 @@
 Working notes for porting `DBIx::Class::Valiant` to DBIO (https://codeberg.org/dbio/dbio),
 the asynchronous DBIx::Class successor. Branch: `dbio-integration`.
 
-Status: research phase — no implementation yet.
+Status: v1 port implemented (see docs/superpowers/plans/2026-07-07-dbio-valiant-port.md);
+upstream follow-ups pending (bless _relationship_data/get_cache contract; row-level
+update_async/delete_async when upstream adds them).
 
 ## Part 1: What DBIx::Class::Valiant actually depends on
 
