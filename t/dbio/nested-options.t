@@ -266,7 +266,9 @@ use Test::Needs 'DBIO', 'DBIO::SQLite';
   __PACKAGE__->set_primary_key("id");
   __PACKAGE__->has_many(albums => 'NO1::Album::Destroy', { 'foreign.artist_id' => 'self.id' });
   __PACKAGE__->validates(name => (presence => 1, length => [2, 48]));
-  __PACKAGE__->accept_nested_for(albums => { allow_destroy => 1 });
+  # This section exercises the omission-diff, so it also needs delete_omitted
+  # (Rails-parity: allow_destroy alone no longer implies replace-set deletes).
+  __PACKAGE__->accept_nested_for(albums => { allow_destroy => 1, delete_omitted => 1 });
 
   package NO1::Album::DestroyCode;
 
@@ -296,8 +298,13 @@ use Test::Needs 'DBIO', 'DBIO::SQLite';
   __PACKAGE__->set_primary_key("id");
   __PACKAGE__->has_many(albums => 'NO1::Album::DestroyCode', { 'foreign.artist_id' => 'self.id' });
   __PACKAGE__->validates(name => (presence => 1, length => [2, 48]));
+  # This section exercises the omission-diff, so delete_omitted needs the same
+  # predicate as allow_destroy (Rails-parity: allow_destroy alone no longer
+  # implies replace-set deletes).
+  my $destroyer_only = sub { my $self = shift; $self->name eq 'destroyer' ? 1:0 };
   __PACKAGE__->accept_nested_for(albums => {
-    allow_destroy => sub { my $self = shift; $self->name eq 'destroyer' ? 1:0 },
+    allow_destroy => $destroyer_only,
+    delete_omitted => $destroyer_only,
   });
 
   package NO1::Album::Keep;

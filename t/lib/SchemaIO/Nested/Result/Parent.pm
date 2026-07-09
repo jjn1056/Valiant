@@ -19,7 +19,7 @@ __PACKAGE__->has_many(
 
 __PACKAGE__->validates( value => (presence=>1, length=>[1,48]) );
 
-__PACKAGE__->accept_nested_for('children', {allow_destroy=>1});
+__PACKAGE__->accept_nested_for('children', {allow_destroy=>1, delete_omitted=>1});
 
 1;
 

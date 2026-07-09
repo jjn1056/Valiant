@@ -85,6 +85,7 @@ sub accept_nested_for {
   my $class = blessed($_[0]) ? ref(shift) : shift;
   my %default_config = (
     allow_destroy => 0,
+    delete_omitted => 0,
     reject_if => 0,
     limit => 0,
     update_only => 0,
@@ -179,6 +180,16 @@ sub _related_allow_destroy {
   if(my $proto = $info{allow_destroy}) {
     my $allow_or_not = (ref($proto)||'' eq 'CODE') ? $proto->($self) : $proto;
     return $allow_or_not;
+  }
+  return 0;
+}
+
+sub _related_delete_omitted {
+  my ($self, $related) = @_;
+  my %info = $self->_nested_info_for_related($related);
+  if(my $proto = $info{delete_omitted}) {
+    my $delete_or_not = (ref($proto)||'' eq 'CODE') ? $proto->($self) : $proto;
+    return $delete_or_not;
   }
   return 0;
 }
@@ -627,6 +638,7 @@ sub set_multi_related_from_params {
   }
 
   my $allow_destroy = $self->_related_allow_destroy($related);
+  my $delete_omitted = $self->_related_delete_omitted($related);
 
   # Queue up some meta data here just once.  We get existing rows ans
   # uniqiue key info (including PK info)
@@ -841,10 +853,11 @@ sub set_multi_related_from_params {
 
     debug 2, "ok its not a new one";
 
-    # Only mark for deletion if its actually in store.
-    if($current->in_storage) {
+    # Only mark for deletion if its actually in store and the relationship
+    # opted into replace-set semantics via delete_omitted.
+    if($current->in_storage && $delete_omitted) {
       debug 2, "Marking $current for deletion";
-      $current->{__valiant_allow_destroy} = 1 if $allow_destroy;
+      $current->{__valiant_allow_destroy} = 1;
       $current->mark_for_deletion;  # might be a good idea to find a way to expose this via an override-able method
 
       # Mark its children as pruned, recursively
@@ -1288,6 +1301,17 @@ might_have or has_many defined relationships).  Accepts the following hashref of
 =item allow_destroy
 
 By default you cannot delete related (nested) results.  Setting this to true allows that.
+
+=item delete_omitted
+
+By default (Rails parity, matching C<accepts_nested_attributes_for>) rows omitted from
+a C<has_many> update are left alone; the only way to delete a related row is an explicit
+C<_delete> request under C<allow_destroy>.  Setting this to true opts back into the old
+replace-the-whole-set behavior: any existing related row not present in the update gets
+deleted, and passing C<< [] >> deletes the entire collection.  Accepts a coderef (called
+with the parent result) for conditional behavior, exactly like C<allow_destroy>.  This
+option is independent of C<allow_destroy> -- C<allow_destroy> only governs the explicit
+C<_delete> request; C<delete_omitted> is itself sufficient permission for omission deletes.
 
 =item reject_if
 

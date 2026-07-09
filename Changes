@@ -15,6 +15,14 @@ The following logs changes for the CPAN distribution Valiant
           related row, matching the existing has_many behavior.  If you were
           (knowingly or not) relying on those deletes being ignored, review
           your accept_nested_for configs before upgrading.
+          - Behavior change (DBIx::Class::Valiant and DBIO::Valiant): nested
+          collection updates no longer implicitly delete rows omitted from
+          the update arguments.  Deleting now always requires either an
+          explicit '_delete' request (under allow_destroy) or the new
+          accept_nested_for option 'delete_omitted', which restores the old
+          replace-the-whole-set semantics as a deliberate opt-in.  If you
+          relied on omitted rows being deleted, add delete_omitted => 1 to
+          the relevant accept_nested_for configuration.
 
 0.002019 2025 July 10
           - This release contains some undocumented changes which are in place for

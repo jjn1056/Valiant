@@ -631,17 +631,26 @@ directly using the C<_delete> flag:
 
     $person->update({
       username => 'jjn2',
-        person_roles => [   
+        person_roles => [
           { role_id => 1 },
           { role_id => 2, _delete => 1 },
           { role_id => 4, _delete => 1 },
         ],
     });
 
-B<Inplicit Deletion>: When deletion is permitted we automatically mark nested object that are fetched from
-'prefetch' as deleted if they do not appear in the update statement.  B<NOTE>: This behavior is still
-under review and might change in the future so if you rely on it please be sure to follow update notes
-on newer versions of this code.
+This works for C<has_many> relationships as shown above, and also for single relationships
+(C<might_have> / C<belongs_to>) declared with C<accept_nested_for>:
+
+    $artist->update({ bio => { id => $bio_id, _delete => 1 } });
+
+B<Replace-set updates>: By default, rows omitted from a C<has_many> update are left alone -- matching
+Rails' C<accepts_nested_attributes_for>, the only way to delete a related row is the explicit
+C<_delete> flag shown above.  If you want the old "replace the whole set" behavior, where any
+existing related row not mentioned in the update gets deleted, set the C<delete_omitted>
+C<accept_nested_for> option to true.  This fires whenever the relationship key is present in the
+update on an already-in-storage parent (whether or not the relationship was prefetched), and
+passing C<< [] >> deletes the entire collection.  See
+L<DBIO::Valiant::Result/delete_omitted> for details, including its coderef form.
 
 This example is far from complete, for now see example in C<example> directory of the distribution
 and more examples in the tests directory.  In particular this example doesn't really cover all the
