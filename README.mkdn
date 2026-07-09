@@ -98,7 +98,8 @@ extensively when writing this code:
 
 Documentation here details using [Valiant](https://metacpan.org/pod/Valiant) with [Moo](https://metacpan.org/pod/Moo) or [Moose](https://metacpan.org/pod/Moose) based classes.
 If you want to use [Valiant](https://metacpan.org/pod/Valiant) with [DBIx::Class](https://metacpan.org/pod/DBIx%3A%3AClass) you will also wish to review
-[DBIx::Class::Valiant](https://metacpan.org/pod/DBIx%3A%3AClass%3A%3AValiant) which details how [Valiant](https://metacpan.org/pod/Valiant) glues into [DBIx::Class](https://metacpan.org/pod/DBIx%3A%3AClass).
+[DBIx::Class::Valiant](https://metacpan.org/pod/DBIx%3A%3AClass%3A%3AValiant) which details how [Valiant](https://metacpan.org/pod/Valiant) glues into [DBIx::Class](https://metacpan.org/pod/DBIx%3A%3AClass) (or
+[DBIO::Valiant](https://metacpan.org/pod/DBIO%3A%3AValiant) for [DBIO](https://metacpan.org/pod/DBIO), the asynchronous fork of DBIx::Class).
 
 This document reviews all the bits of the [Valiant](https://metacpan.org/pod/Valiant) system as a whole (validations, filters,
 internationalization, errores etc).   You might also like to review API details from the following
@@ -1333,7 +1334,8 @@ that ship with [Valiant](https://metacpan.org/pod/Valiant)
 # HTML FORM GENERATION
 
 HTML Form generation is not specifically added to the [Valiant](https://metacpan.org/pod/Valiant) validation code, but there is
-a set of packages designed to work with [Valiant](https://metacpan.org/pod/Valiant) as well as [DBIx::Class::Valiant](https://metacpan.org/pod/DBIx%3A%3AClass%3A%3AValiant) ORM integration:
+a set of packages designed to work with [Valiant](https://metacpan.org/pod/Valiant) as well as [DBIx::Class::Valiant](https://metacpan.org/pod/DBIx%3A%3AClass%3A%3AValiant) (or
+[DBIO::Valiant](https://metacpan.org/pod/DBIO%3A%3AValiant) for [DBIO](https://metacpan.org/pod/DBIO) users) ORM integration:
 [Valiant::HTML::FormBuilder](https://metacpan.org/pod/Valiant%3A%3AHTML%3A%3AFormBuilder), [Valiant::HTML::Form](https://metacpan.org/pod/Valiant%3A%3AHTML%3A%3AForm) and [Valiant::HTML::FormTags](https://metacpan.org/pod/Valiant%3A%3AHTML%3A%3AFormTags).  This code
 is currently under active development although I expect that the publically documented API
 is very likely to remain stable.  Here's a simple example of what this form integration looks like;
@@ -1427,7 +1429,7 @@ Or to any dog charity that fits best with your personal beliefs and economic mea
 
 # COPYRIGHT & LICENSE
 
-Copyright 2024, John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpan.org)
+Copyright 2025, John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpan.org)
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.

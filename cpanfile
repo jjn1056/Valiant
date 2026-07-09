@@ -2,7 +2,6 @@ requires 'Carp', '1.50';
 requires 'Catalyst::Runtime', '5.90132';
 requires 'Catalyst::View::BasePerRequest', '0.010';
 requires 'Class::Method::Modifiers', '2.15';
-requires 'Data::Dumper', '2.183';
 requires 'Data::Localize', '0.00028';
 requires 'Data::Perl::Collection::Array', '0.002011';
 requires 'DateTime', '1.65';
@@ -33,7 +32,7 @@ requires 'URI', '5.28';
 # these come bundled with Perl so just use whatever version we have
 requires 'overload';
 requires 'File::Spec';
-requires 'Data::Dumper', '2.183';
+requires 'Data::Dumper';
 
 on test => sub {
   requires 'Test::Most' => '0.34';
@@ -50,6 +49,4 @@ on test => sub {
   requires 'Catalyst::Runtime';
   requires 'MooseX::NonMoose';
   requires 'MooseX::MarkAsMethods';
-  requires 'DBIO' => '0.900000';
-  requires 'DBIO::SQLite' => '0.900000';
 };
