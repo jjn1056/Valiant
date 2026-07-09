@@ -216,6 +216,12 @@ Every API from Part 1 was checked against the DBIO source. Status:
 **DECIDED 2026-07-07 (John):**
 1. Packaging — **inside the Valiant dist** (mirrors DBIx::Class::Valiant; DBIO +
    DBIO::SQLite as develop/test deps only).
+   **REVISED 2026-07-08 (John):** DBIO::Valiant should ultimately be **its own
+   distribution**, not part of Valiant — and DBIx::Class::Valiant should eventually be
+   extracted the same way ("just need time for that"). This branch lands the code
+   in-tree as the staging ground; extraction into a standalone dist happens before any
+   CPAN release of this code. The runtime-vs-test cpanfile question from the final
+   review is dissolved by extraction (the new dist declares its own DBIO dependency).
 2. Code sharing — **straight copy-port**, two parallel trees; revisit extraction later.
 3. `${rel}_pks` helper — **drop** in the DBIO port.
 4. v1 async scope — as proposed (sync + immediate fully supported; `insert_async`
