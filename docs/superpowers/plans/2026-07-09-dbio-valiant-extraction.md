@@ -78,8 +78,9 @@ Expected: PR state `MERGED`; test summary ends `Result: PASS` (≈102 files / 24
 
 - [ ] **Step 1: Fresh single-branch clone** (leaves the dead 2021 branches and stale `origin/master` behind)
 
-Run: `git clone --single-branch --branch main /Users/jnapiorkowski/Desktop/Valiant /Users/jnapiorkowski/Desktop/DBIO-Valiant`
+Run: `git clone --no-local --single-branch --branch main /Users/jnapiorkowski/Desktop/Valiant /Users/jnapiorkowski/Desktop/DBIO-Valiant`
 Expected: `Cloning into '.../DBIO-Valiant'... done.`
+Note: `--no-local` is REQUIRED when cloning a local path — without it git hardlinks objects and `git-filter-repo` refuses to run ("does not look like a fresh clone").
 
 - [ ] **Step 2: Filter to the DBIO path set**
 
