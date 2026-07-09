@@ -254,14 +254,14 @@ Then: if a committed test has a leftover `use Devel::Dwarn;` (a debugging line, 
 - [ ] **Step 3: Install deps in isolation** (core Valiant satisfied from the local checkout so we don't depend on CPAN release timing; everything else from CPAN/local perlbrew)
 
 ```bash
-bash -c 'cd /Users/jnapiorkowski/Desktop/DBIO-Valiant && source ~/perl5/perlbrew/etc/bashrc && perlbrew use perl-5.40.0@default && PERL5LIB=/Users/jnapiorkowski/Desktop/Valiant/lib cpanm --installdeps --skip-satisfied .'
+bash -c 'cd /Users/jnapiorkowski/Desktop/DBIO-Valiant && source ~/perl5/perlbrew/etc/bashrc && perlbrew use perl-5.40.0@default && PERL5LIB=/Users/jnapiorkowski/Desktop/Valiant/lib:$PERL5LIB cpanm --installdeps --skip-satisfied .'
 ```
 Expected: `<== OK` / "installed" for any missing deps; no unresolved-dependency error. If a dependency is reported missing that the runtime genuinely needs, add it to `cpanfile` and re-run.
 
 - [ ] **Step 4: Run the suite in isolation** (`-l` adds `lib/`; `PERL5LIB` supplies core Valiant)
 
 ```bash
-bash -c 'cd /Users/jnapiorkowski/Desktop/DBIO-Valiant && source ~/perl5/perlbrew/etc/bashrc && perlbrew use perl-5.40.0@default && PERL5LIB=/Users/jnapiorkowski/Desktop/Valiant/lib prove -lr t 2>&1 | tail -8'
+bash -c 'cd /Users/jnapiorkowski/Desktop/DBIO-Valiant && source ~/perl5/perlbrew/etc/bashrc && perlbrew use perl-5.40.0@default && PERL5LIB=/Users/jnapiorkowski/Desktop/Valiant/lib:$PERL5LIB prove -lr t 2>&1 | tail -8'
 ```
 Expected: `Result: PASS`, with the same DBIO lane counts as the monorepo (28 `t/dbio/` files). Any failure here is a real gap — fix (missing dep or file) before continuing; do not paper over.
 
