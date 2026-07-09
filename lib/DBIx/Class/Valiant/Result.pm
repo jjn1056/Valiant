@@ -885,7 +885,7 @@ sub set_multi_related_from_params {
 sub set_single_related_from_params {
   my ($self, $related, $params) = @_;
   my %nested = $self->result_class->accept_nested_for;
-  my $allow_destroy = $nested{allow_destroy};
+  my $allow_destroy = $self->_related_allow_destroy($related);
 
   # Is there an existing related object in the cache?  If so then we
   # will merge params with existing rather than create a new one or

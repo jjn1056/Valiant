@@ -8,6 +8,13 @@ The following logs changes for the CPAN distribution Valiant
           synchronous create); gating for the live-backend insert_async
           fast path lands when DBIO releases its per-connection async-mode
           subsystem.  See DBIO::Valiant.
+          - Fixed (DBIx::Class::Valiant and DBIO::Valiant): 'allow_destroy'
+          on single relationships (might_have / has_one / belongs_to) never
+          took effect - a nested '_delete' request was silently ignored even
+          when accept_nested_for declared allow_destroy.  It now deletes the
+          related row, matching the existing has_many behavior.  If you were
+          (knowingly or not) relying on those deletes being ignored, review
+          your accept_nested_for configs before upgrading.
 
 0.002019 2025 July 10
           - This release contains some undocumented changes which are in place for

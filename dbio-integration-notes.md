@@ -309,3 +309,12 @@ Original questions kept below for the record.
   where the option works, is covered in `t/dbio/nested-options.t` and
   `t/dbio/pseudo-params.t`). Fix upstream in both lanes together, with a
   test, as post-plan work.
+
+  **FIXED 2026-07-08** (with John, post-plan): both lanes now use
+  `$self->_related_allow_destroy($related)` — the same helper the multi path
+  uses, which also gives single relations the documented coderef form of
+  `allow_destroy` for free. Twin regression tests:
+  `t/dbic/single-rel-allow-destroy.t` and `t/dbio/single-rel-allow-destroy.t`
+  (each written first and confirmed failing 2/10 before the fix). Full suite
+  after: 100 files / 2281 tests PASS. User-visible behavior change recorded
+  in `Changes` under 0.002020.
