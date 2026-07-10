@@ -297,6 +297,10 @@ is_deeply [$errors->errors->full_attribute_messages], [
   "Name has wrong value",
 ];
 
+my ($imported) = ($errors->errors->errors->all)[-1];
+is $imported->raw_type, 'is always in error!',
+  'import_error preserves the original error type instead of defaulting to invalid';
+
 my @results = map { $_->full_message } $errors->errors->where('name');
 is_deeply \@results, [
   "Name is too short",

@@ -80,6 +80,7 @@ sub import_error {
       inner_error => $error,
       object => $error->object,
       attribute => $error->attribute,
+      type => $error->type,
       %{ $options||+{} },
     )
   );
