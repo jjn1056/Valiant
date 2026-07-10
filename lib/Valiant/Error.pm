@@ -179,6 +179,7 @@ sub generate_message {
   my $local_attribute;
   if(defined $attribute) {
     $local_attribute = $attribute if defined $attribute;
+    $local_attribute =~s/\.\d+//g;
     $local_attribute =~s/\[\d+\]//g;
   }
 
