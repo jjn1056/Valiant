@@ -63,8 +63,7 @@ I recommend you not use this approach in 'hot' code paths.  Its probably best if
 create all these during your application startup once (for long lived applications).  Maybe
 not ideal for 'fire and forget' scripts like cron jobs or CGI.
 
-You probably won't use this directly (although you can) since we have L<Valiant::Class> to
-encapsulate the most common patterns for this need.
+You probably won't use this directly, although you can.
 
 =head1 SEE ALSO
 

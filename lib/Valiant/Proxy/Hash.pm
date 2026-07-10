@@ -36,8 +36,7 @@ Valiant::Proxy::Hash - Wrap a hashref in a result object for validation.
 
 Allows you to run validations against a HashRef.
 
-You probably won't use this directly (although you can) since we have L<Valiant::Class> to
-encapsulate the most common patterns for this need.
+You probably won't use this directly, although you can.
 
 =head1 SEE ALSO
 

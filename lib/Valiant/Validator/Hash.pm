@@ -170,13 +170,13 @@ or custom validator classes.
 
 =head2 validator
 
-This contains an instance of L<Valiant::Class> or subclass. Default value
+This contains an instance of L<Valiant::Proxy::Hash> or subclass. Default value
 does the right thing but you can override if you need a special subclass
 or you need to pass one in that's already constructed.
 
 =head2 validator_class 
 
-Defaults to L<Valiant::Class>, which value should be a subclass of.  You probably
+Defaults to L<Valiant::Proxy::Hash>, which value should be a subclass of.  You probably
 only need this again if you are doing very custom validations.  You probably only
 want do to this if there's no other idea.
 
