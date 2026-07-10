@@ -86,6 +86,12 @@ Checks that a value is absent (undefinef or empty).
 
 See L<Valiant::Validator::Absence> for details.
 
+=head2 Acceptance
+
+Checks that a value was accepted (for example a "terms of service" checkbox).
+
+See L<Valiant::Validator::Acceptance> for details.
+
 =head2 Array
 
 Validations on an array value.  Has options for nested errors when the array contains objects that

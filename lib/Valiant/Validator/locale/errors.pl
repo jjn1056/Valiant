@@ -68,6 +68,8 @@
         #boolean
         is_not_true => 'must be a true value',
         is_not_false => 'must be a false value',
+        #acceptance
+        accepted => 'must be accepted',
         #unique
         is_not_unique => 'chosen is not unique',
         #date
