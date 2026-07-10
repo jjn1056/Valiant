@@ -1,4 +1,5 @@
 use Test::Most;
+use Valiant::I18N;
 
 {
   package Local::Object::User;
@@ -108,6 +109,11 @@ is_deeply +{ $user1->errors->to_hash }, +{
 
 ok $user2->errors->of_kind('test01', "Is Invalid");
 ok ! $user2->errors->of_kind('test0x', "Is Invalid");
+
+ok $user2->errors->of_kind('test01', _t('invalid')),
+  'of_kind matches a tag-typed error while ignoring its stored options';
+ok $user2->errors->added('test01', _t('invalid')),
+  'added matches a tag-typed error while ignoring its stored options';
 
 is_deeply [$user2->errors->full_messages], [
     "test01 another test error1",
