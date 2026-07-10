@@ -59,7 +59,7 @@ around BUILDARGS => sub {
 
 sub form_action { shift->options->{html}{action} }
 sub form_method { shift->options->{html}{method} }
-sub form_enctype { shift->options->{html}{method} }
+sub form_enctype { shift->options->{html}{enctype} }
 sub csrf_token { shift->options->{html}{data}{csrf_token} }
 sub containing_view { shift->options->{view} }
 
