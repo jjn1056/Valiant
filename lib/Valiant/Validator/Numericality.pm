@@ -18,7 +18,7 @@ our %CHECKS = (
   even                      => sub { $_[0] % 2 ? 0:1 },
   odd                       => sub { $_[0] % 2 ? 1:0 },
   divisible_by              => sub { $_[0] % $_[1] ? 0:1 },
-  decimals                  => sub { length(($_[0] =~ /\.(\d*)/)[0]) == $_[1] ? 1:0  },
+  decimals                  => sub { length((($_[0] =~ /\.(\d*)/)[0]) // '') == $_[1] ? 1:0  },
   is_integer                => sub { $_[0]=~/\A-?[0-9]+\z/ }, # Taken from Types::Standard
   is_number                 => sub {
                               my $val = shift;

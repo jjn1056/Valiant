@@ -87,4 +87,24 @@ use Test::Most;
     };
 }
 
+{
+  package Local::Test::Decimals;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has amount => (is=>'ro');
+
+  validates amount => ( numericality => { decimals => 2 } );
+}
+
+{
+  # decimals check must not warn on a value with no decimal point
+  my @warnings;
+  local $SIG{__WARN__} = sub { push @warnings, @_ };
+  ok my $object = Local::Test::Decimals->new(amount => 5);
+  $object->validate;
+  is_deeply \@warnings, [], 'decimals check does not warn on integer value';
+}
+
 done_testing;
