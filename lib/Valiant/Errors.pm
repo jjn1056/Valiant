@@ -219,6 +219,18 @@ sub to_hash {
   return %hash;
 }
 
+# Returns a Hash of attributes with their error details (see Error->detail),
+# grouped the same way as to_hash.
+sub details {
+  my $self = shift;
+  my %grouped = $self->group_by_attribute;
+  my %details;
+  foreach my $attr (keys %grouped) {
+    $details{$attr} = [ map { $_->detail } @{ $grouped{$attr}||[] } ];
+  }
+  return %details;
+}
+
 sub as_json {
   my ($self, @args) = @_;
   return $self->object->errors_as_json($self) if $self->object->can('errors_as_json');
@@ -498,6 +510,19 @@ Returns an array of the full messages of all attributes (localized if needed).
 Returns a hash where each key is an attribute (or '*' for the model) and
 each value is an arrayref of errors.  C<?$flag> when true will return
 the full messages for each error.
+
+=head2 details
+
+Returns a hash grouped the same way as L</to_hash>, but each value is an
+arrayref of the raw error details (see L<Valiant::Error/detail>) rather than
+rendered messages.  Each detail is a hashref of the form
+C<< { error => $type, %options } >>, useful for programmatic inspection or
+building a machine-readable error response.
+
+    my %details = $object->errors->details;
+    # (
+    #   name => [ { error => 'too_short', count => 3 } ],
+    # )
 
 =head2 add ($attribute|undef, $message, \%opts)
 

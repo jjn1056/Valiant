@@ -324,4 +324,20 @@ is_deeply \@results, [
   ], 'uniq keeps the first of each distinct error';
 }
 
+{
+  # details() groups Error->detail hashes by attribute, like to_hash does
+  my $d = Local::Uniq->new;
+  $d->errors->add(undef, 'Form is invalid');
+  $d->errors->add(name => 'is too short', +{ count => 3 });
+  $d->errors->add(name => 'is invalid');
+
+  is_deeply +{ $d->errors->details }, {
+    '*'  => [ { error => 'Form is invalid' } ],
+    name => [
+      { error => 'is too short', count => 3 },
+      { error => 'is invalid' },
+    ],
+  };
+}
+
 done_testing;
