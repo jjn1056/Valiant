@@ -298,4 +298,30 @@ is_deeply \@results, [
   "Name has wrong value",
 ];
 
+{
+  package Local::Uniq;
+
+  use Moo;
+  use Valiant::Validations;
+
+  has name => (is=>'ro');
+}
+
+{
+  # uniq() returns a flat list of errors with duplicates removed (per Error::equals)
+  my $u = Local::Uniq->new;
+  $u->errors->add(name => 'is too short', +{count=>3});
+  $u->errors->add(name => 'is too short', +{count=>3});   # exact duplicate
+  $u->errors->add(name => 'is invalid');
+
+  is scalar($u->errors->errors->all), 3, 'three raw errors';
+
+  my @uniq = $u->errors->uniq;
+  is scalar(@uniq), 2, 'uniq collapses the exact duplicate';
+  is_deeply [ map { $_->full_message } @uniq ], [
+    'Name is too short',
+    'Name is invalid',
+  ], 'uniq keeps the first of each distinct error';
+}
+
 done_testing;

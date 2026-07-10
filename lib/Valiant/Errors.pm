@@ -40,9 +40,16 @@ has 'i18n' => (
 
 sub error_class { 'Valiant::Error' }
 
-# return a flat list of all errors with duplicated removed. To we probably
-# need to make use the the equals method on Valiant::Error
-sub uniq { die 'todo' }
+# Return a flat list of all errors with duplicates removed, comparing errors
+# with Valiant::Error's equals method (object + attribute + type + options).
+sub uniq {
+  my ($self) = @_;
+  my @uniq;
+  foreach my $error ($self->errors->all) {
+    push @uniq, $error unless grep { $_->equals($error) } @uniq;
+  }
+  return @uniq;
+}
 
 sub any {
   my ($self, $code) = @_;
@@ -425,6 +432,15 @@ contains at least one type of error.
     my $has_invalids = $user1->errors->any(sub {
       ${\$_->type} eq 'invalid';
     });
+
+=head2 uniq
+
+Returns a flat list of the error objects in the collection with duplicates
+removed.  Two errors are considered duplicates when L<Valiant::Error/equals>
+reports them equal (same object, attribute, type, and options).  The first
+occurrence of each distinct error is kept.
+
+    my @distinct = $user1->errors->uniq;
 
 =head2 copy
 
