@@ -192,7 +192,7 @@ which is commonly used in databases as a Date field and its also the canonical
 pattern for the HTML5 input date type.  
 
 Can accept a 'min' and 'max' attribute, which should be either a string in the 
-standard form or a M<DateTime> object.
+standard form or a L<DateTime> object.
 
 If you are using the Form helpers the max and min attributes can be reflected into
 the date input type automatically.

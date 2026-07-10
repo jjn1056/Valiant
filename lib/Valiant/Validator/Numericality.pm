@@ -241,32 +241,32 @@ also set it to the following to get more limited integer types:
 
 =item greater_than
 
-Accepts numeric value or coderef.  Returns error message tag V<greater_than> if
+Accepts numeric value or coderef.  Returns error message tag C<greater_than> if
 the attribute value isn't greater.
 
 =item greater_than_or_equal_to
 
-Accepts numeric value or coderef.  Returns error message tag V<greater_than_or_equal_to_err> if
+Accepts numeric value or coderef.  Returns error message tag C<greater_than_or_equal_to_err> if
 the attribute value isn't equal or greater.
 
 =item equal_to
 
-Accepts numeric value or coderef.  Returns error message tag V<equal_to_err> if
+Accepts numeric value or coderef.  Returns error message tag C<equal_to_err> if
 the attribute value isn't equal.
 
 =item other_than
 
-Accepts numeric value or coderef.  Returns error message tag V<other_than_err> if
+Accepts numeric value or coderef.  Returns error message tag C<other_than_err> if
 the attribute value isn't different.
 
 =item less_than
 
-Accepts numeric value or coderef.  Returns error message tag V<less_than_err> if
+Accepts numeric value or coderef.  Returns error message tag C<less_than_err> if
 the attribute value isn't less than.
 
 =item less_than_or_equal_to
 
-Accepts numeric value or coderef.  Returns error message tag V<less_than_or_equal_to_err> if
+Accepts numeric value or coderef.  Returns error message tag C<less_than_or_equal_to_err> if
 the attribute value isn't less than or equal.
 
 =item between
@@ -276,12 +276,12 @@ second is an inclusive upper number bound.
 
 =item even
 
-Accepts numeric value or coderef.  Returns error message tag V<even_err> if
+Accepts numeric value or coderef.  Returns error message tag C<even_err> if
 the attribute value isn't an even number.
 
 =item odd
 
-Accepts numeric value or coderef.  Returns error message tag V<odd_err> if
+Accepts numeric value or coderef.  Returns error message tag C<odd_err> if
 the attribute value isn't an odd number.
 
 =item divisible_by
@@ -293,7 +293,7 @@ divisible value was 4 that woule be false and generate an error message.
 
 =item decimals
 
-Accepts numeric value or coderef.  Returns error message tag V<decimals_err> if
+Accepts numeric value or coderef.  Returns error message tag C<decimals_err> if
 the attribute value doesn't contain exactly the requird number of places after
 the decimal point.
 

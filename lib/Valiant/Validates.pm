@@ -467,7 +467,7 @@ arguments for the validate set as a whole:
 
 If you use a validator class name then the hashref of arguments that follows is not optional.  If you pass
 an options hashref it should contain arguments that are defined for the validation type you are passing
-or one of the global arguments: C<on>, C<message>, C<if> and C<unless>.  See L</"GLOBAL OPTIONS"> for more.
+or one of the global arguments C<on>, C<message>, C<if> and C<unless> (the shared parameters accepted by every validator).
 
 For subroutine reference and L<Type::Tiny> objects you can or not pass an options hashref depending on your
 needs.  Additionally the three types can be mixed and matched within a single C<validates> clause.

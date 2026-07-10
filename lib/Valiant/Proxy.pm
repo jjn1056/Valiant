@@ -52,9 +52,9 @@ Valiant::Proxy - Create a validation ruleset dynamically
 
 =head1 SYNOPSIS
 
-    my $validator = Valiant::Class->new(
+    my $validator = Valiant::Proxy::Object->new(
       validations => [
-        [ sub { unless($_[0]->is_active) { $_[0]->errors->add(_base=>'Cannot change inactive user') } } ],
+        sub { unless($_[0]->is_active) { $_[0]->errors->add(undef, 'Cannot change inactive user') } },
         [ name => length => [2,15], format => qr/[a-zA-Z ]+/ ],
         [ age => numericality => 'positive_integer' ],
       ]
@@ -92,11 +92,11 @@ that has no validation rules of its own:
     warn $result->errors->_dump;
 
     $VAR = {
-      '_base' => [
-                   'Cannot change inactive user'
-                 ],
+      '*' => [
+               'Cannot change inactive user'
+             ],
       'age' => [
-                 'Age must be greater than or equal to zero'
+                 'Age must be a positive integer'
                ],
       'name' => [
                   'Name does not match the required pattern'

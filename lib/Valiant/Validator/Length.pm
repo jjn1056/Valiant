@@ -108,12 +108,12 @@ This validator supports the following constraints.
 
 =item maximum
 
-Accepts numeric value or coderef.  Returns error message tag V<too_long> if
+Accepts numeric value or coderef.  Returns error message tag C<too_long> if
 the attribute length exceeds the value.
 
 =item minimum
 
-Accepts numeric value or coderef.  Returns error message tag V<too_short> if
+Accepts numeric value or coderef.  Returns error message tag C<too_short> if
 the attribute length is smaller than the value.
 
 =item in
@@ -124,7 +124,7 @@ of either C<too_short> or C<too_long> if the value length is outside the range s
 
 =item is 
 
-Accepts numeric value or coderef.  Returns error message tag V<wrong_length> if
+Accepts numeric value or coderef.  Returns error message tag C<wrong_length> if
 the attribute value equal to the check value.
 
 =back

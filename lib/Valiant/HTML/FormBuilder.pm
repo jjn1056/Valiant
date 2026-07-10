@@ -2622,7 +2622,7 @@ using the C<container_tag> option.  For example:
 Here's all the values for the '%options' argument.  Any options that are not one of these will be passed to 
 the container tag as html attributes:
 
-=over4
+=over 4
 
 =item checked_value
 
