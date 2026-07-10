@@ -292,7 +292,7 @@ sub match {
   # only the passed options need to match.  So if there's options
   # in the error object that are not in the passed options its
   # still ok to match.
-  foreach my $key (%{$options||+{}}) {
+  foreach my $key (keys %{$options||+{}}) {
     if( ($self->options->{$key}||'') ne ($options->{$key}||'')) {
       return 0;
     }

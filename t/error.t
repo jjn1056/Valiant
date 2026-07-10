@@ -67,4 +67,17 @@ ok $all[0]->equals($all[0]);
 
 ##clone
 
+{
+  # match() must iterate option KEYS only (bug: iterated keys AND values,
+  # so a passed value colliding with another option key forced a false non-match)
+  ok my $err = Valiant::Error->new(
+    object => $model,
+    attribute => 'name',
+    type => 'is too short',
+    options => +{ aaa => 'bbb', bbb => 'xxx' },
+  );
+  ok $err->match(name => 'is too short', +{ aaa => 'bbb' }),
+    'match iterates option keys only';
+}
+
 done_testing;
