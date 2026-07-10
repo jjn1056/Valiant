@@ -21,8 +21,8 @@
         negative_integer_err => 'must be a negative integer',
         positive_err => 'must be a positive number',
         negative_err => 'must be a negative number',
-        pg_serial => 'is not in acceptable value range',
-        pg_bigserial => 'is not in acceptable value range',
+        pg_serial_err => 'is not in acceptable value range',
+        pg_bigserial_err => 'is not in acceptable value range',
         # length
         too_short => {
           one => 'is too short (minimum is 1 character)',

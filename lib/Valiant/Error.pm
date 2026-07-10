@@ -316,6 +316,7 @@ sub clone {
 sub strict_match {
   my ($self, $attribute, $type, $options) = @_;
   return 0 unless $self->match($attribute, $type);
+  return 1 unless defined $options;
 
   # This is different from match because ALL the keys/values in options need to match
   # exactly.  Its possible my approach here is suspect around object comparisons.

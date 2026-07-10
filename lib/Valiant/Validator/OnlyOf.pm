@@ -29,7 +29,7 @@ sub validate_each {
   push @group_values, $value;
 
   my $count_not_blank = grep {
-    defined $_ && ( $_ ne '' || $value !~m/^\s+$/)
+    defined $_ && ( $_ ne '' && $_ !~m/^\s+$/)
   } @group_values;
 
   my $max_allowed = $self->_cb_value($record, $self->max_allowed);

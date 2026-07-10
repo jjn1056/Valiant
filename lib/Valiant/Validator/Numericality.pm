@@ -68,12 +68,12 @@ around BUILDARGS => sub {
     }
 
     if($integer eq 'pg_serial') {
-      $args->{greater_than_or_equal_to} = 0;
-      $args->{less_than_or_equal_to} = 0;
+      $args->{greater_than_or_equal_to} = 1;
+      $args->{less_than_or_equal_to} = 2147483647;
       $args->{message} = _t("pg_serial_err") unless defined $args->{message};
     }
     if($integer eq 'pg_bigserial') {
-      $args->{greater_than_or_equal_to} = 2147483647;
+      $args->{greater_than_or_equal_to} = 1;
       $args->{less_than_or_equal_to} = 9223372036854775807;
       $args->{message} = _t("pg_bigserial_err") unless defined $args->{message};
     }

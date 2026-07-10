@@ -87,6 +87,7 @@ sub import_error {
       inner_error => $error,
       object => $error->object,
       attribute => $error->attribute,
+      type => $error->type,
       %{ $options||+{} },
     )
   );
@@ -269,7 +270,6 @@ sub add {
   if(my $exception = $options->{strict}) {
     my $message = $error->full_message;
     throw_exception('Strict' => (msg=>$message)) if $exception =~m/^\d+$/ && $exception == 1;
-    throw_exception('Strict' => (msg=>$exception)) if( (ref(\$exception)||'') eq 'SCALAR');
     $exception->($self->object, $message) if( (ref($exception)||'') eq 'CODE');
     $exception->throw($message); # If not 1 then assume its a package name or exception object.
   }
