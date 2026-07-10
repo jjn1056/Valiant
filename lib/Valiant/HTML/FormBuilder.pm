@@ -253,7 +253,6 @@ sub _default_model_errors_content {
     my (@errors) = @_;
     if( scalar(@errors) == 1 ) {
       return $self->tag_helpers->content_tag('div', $errors[0], $options);
-       return $self->tag_helpers->content_tag('div', $errors[0], $options);
     } else {
        return $self->tag_helpers->content_tag('ol', $options, sub { map { $self->tag_helpers->content_tag('li', $_) } @errors });
     }

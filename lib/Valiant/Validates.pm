@@ -398,6 +398,7 @@ sub _run_post_validations {
 sub inject_attribute {
   my ($class, $attribute_to_inject) = @_;
   eval "package $class; has $attribute_to_inject => (is=>'ro');";
+  die $@ if $@;
 }
 
 1;
