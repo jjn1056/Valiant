@@ -26,9 +26,9 @@ sub BUILD {
 }
 
 sub validate_each {
-  my ($self, $record, $attribute, $value) = @_;
+  my ($self, $record, $attribute, $value, $options) = @_;
   my $length = length($value||'') || 0; # TODO not sure if this is best behavior
-  my %opts = (%{$self->options});
+  my %opts = (%{$self->options}, %{$options||+{}});
   if($self->has_maximum) {
     my $max = $self->_cb_value($record, $self->maximum);
     $record->errors->add($attribute, $self->too_long, +{%opts, count=>$max})
