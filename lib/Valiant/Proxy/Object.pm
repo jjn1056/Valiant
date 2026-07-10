@@ -18,10 +18,11 @@ sub read_attribute_for_validation {
 sub AUTOLOAD {
   my $self = shift;
   ( my $method = our $AUTOLOAD ) =~ s{.*::}{};
+  return if $method eq 'DESTROY' or $method eq 'can';
   if(blessed($self->for) && $self->for->can($method)) {
     return $self->for->$method(@_);
   } else {
-    # warn "cannot find $method in ${\$self->data}";
+    throw_exception MissingMethod => (object=>$self->for, method=>$method);
   }
 }
 
@@ -45,7 +46,9 @@ a third party library).  Lastly you may need to build validation sets based on e
 metadata, such as via database introspection or from a file containing validation
 instructions.
 
-This uses AUTOLOAD to delegate method calls to the underlying object.
+This uses AUTOLOAD to delegate method calls to the underlying object.  Calling
+a method that the underlying object does not provide throws a
+L<Valiant::Util::Exception::MissingMethod> rather than silently returning undef.
 
 Please note that the code used to create the validation object is not speed optimized so
 I recommend you not use this approach in 'hot' code paths.  Its probably best if you can
