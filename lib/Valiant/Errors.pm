@@ -461,7 +461,7 @@ new instances of L<Valiant::Error>, not references to the original objects.
 
 =head2 import_error ($error)
 
-Given a single L<Valiant::Error> inport it into the current errors collection
+Given a single L<Valiant::Error> import it into the current errors collection
 
 =head2 merge ($collectio)
 

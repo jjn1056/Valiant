@@ -128,16 +128,6 @@ The class this validator is for.  Used to load locale files and to look for cust
 validation objects.  Should something that ISA or DOES of the class that you are going
 to run validations on (this currently isnt enforced but please to rely on that).
 
-=head2 result_class
-
-Defaults to L<Valiant::Result::Object>.  Needs to be something that does L<Valiant::Result>.
-Write your own if you have an object with unusual attribute accessors.
-
-=head2 meta_class
-
-Defaults to L<Valiant::Meta>.  Should be something that is a subclass of that.  You
-probably won't overrride this unless you are doing extremely odd stuff.
-
 =head2 validations
 
 Should be an arrayref of validation rules, where each rule is an arrayref containing

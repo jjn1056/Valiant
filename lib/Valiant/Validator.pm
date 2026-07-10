@@ -171,7 +171,7 @@ See L<Valiant::Validator::OnlyOf> for details.
 
 That the value is defined and not empty
 
-See L<Valiant::Validator::Absence> for details.
+See L<Valiant::Validator::Presence> for details.
 
 =head2 Unique
 

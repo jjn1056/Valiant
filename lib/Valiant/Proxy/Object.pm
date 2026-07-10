@@ -30,11 +30,19 @@ sub AUTOLOAD {
 
 =head1 NAME
 
-Valiant::Result::Object - Wrap any object into a validatable result object.
+Valiant::Proxy::Object - Wrap any object into a validatable result object.
 
 =head1 SYNOPSIS
 
-    TBD
+    my $proxy = Valiant::Proxy::Object->new(
+      validations => [
+        [ name => length => [2,15] ],
+        [ age => numericality => 'positive_integer' ],
+      ],
+    );
+
+    my $result = $proxy->validate($user_object);
+    $result->invalid; # true when $user_object breaks the rules
 
 =head1 DESCRIPTION
 
@@ -60,7 +68,7 @@ encapsulate the most common patterns for this need.
 
 =head1 SEE ALSO
 
-This does the interface defined by L<Valiant::Result> so see the docs on that.
+This does the interface defined by L<Valiant::Proxy> so see the docs on that.
  
 Also: L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
 

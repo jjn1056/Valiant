@@ -307,6 +307,17 @@ A number less than zero
 
 =back
 
+=head2 Cross-attribute comparison
+
+Any comparison constraint value may be a coderef instead of a constant.  The
+coderef receives the object being validated as its first argument, so you can
+compare one attribute against another.  Valiant ships no separate C<comparison>
+validator because this covers the need:
+
+    validates max_price => (
+      numericality => { greater_than_or_equal_to => sub { shift->min_price } },
+    );
+
 =head1 SHORTCUT FORM
 
 This validator supports the follow shortcut forms:
