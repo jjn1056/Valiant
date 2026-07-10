@@ -28,7 +28,7 @@ sub human_attribute_name {
 
   my @defaults = ();
   my $i18n_scope = $self->i18n_scope;
-  my @parts = split '.', $attribute;
+  my @parts = split /\./, $attribute;
   my $attribute_name = pop @parts;
   my $namespace = join '/', @parts if @parts;
   my $attributes_scope = "${i18n_scope}.attributes";
@@ -38,7 +38,7 @@ sub human_attribute_name {
     if($namespace) {
       @defaults = map {
         my $class = $_;
-        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.${attribute}"     
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.${attribute_name}"
       } grep { $_->model_name->can('i18n_key') } $self->i18n_lookup;
     } else {
       @defaults = map {
@@ -80,7 +80,7 @@ sub human_label_name {
 
   my @defaults = ();
   my $i18n_scope = $self->i18n_scope;
-  my @parts = split '.', $attribute;
+  my @parts = split /\./, $attribute;
   my $attribute_name = pop @parts;
   my $namespace = join '/', @parts if @parts;
   my $attributes_scope = "${i18n_scope}.labels";
@@ -90,7 +90,7 @@ sub human_label_name {
     if($namespace) {
       @defaults = map {
         my $class = $_;
-        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.${attribute}"     
+        "${attributes_scope}.${\$class->model_name->i18n_key}/${namespace}.${attribute_name}"
       } grep { $_->model_name->can('i18n_key') } $self->i18n_lookup;
     } else {
       @defaults = map {
