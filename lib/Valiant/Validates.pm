@@ -85,8 +85,8 @@ sub csrf_token {
   return $arg ? $self : $self->_csrf_token;
 }
 
-has 'validated' => (is=>'rw', required=>1, init_args=>undef, default=>0);
-has 'skip_validation' =>  (is=>'rw', required=>1, init_args=>undef, default=>0);
+has 'validated' => (is=>'rw', required=>1, init_arg=>undef, default=>0);
+has 'skip_validation' =>  (is=>'rw', required=>1, init_arg=>undef, default=>0);
 
 sub skip_validate {
   my ($self) = @_;
