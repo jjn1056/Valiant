@@ -19,11 +19,18 @@ sub values { return map { $_[0]->for->{$_} } $_[0]->keys }
 
 =head1 NAME
 
-Valiant::Result::Hash - Wrap a hashref in a result object for validation.
+Valiant::Proxy::Hash - Wrap a hashref in a result object for validation.
 
 =head1 SYNOPSIS
 
-    TBD
+    my $proxy = Valiant::Proxy::Hash->new(
+      validations => [
+        [ name => presence => 1, length => [2,15] ],
+      ],
+    );
+
+    my $result = $proxy->validate({ name => 'Jo' });
+    $result->valid;
 
 =head1 DESCRIPTION
 

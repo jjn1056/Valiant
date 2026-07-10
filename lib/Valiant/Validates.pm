@@ -85,8 +85,8 @@ sub csrf_token {
   return $arg ? $self : $self->_csrf_token;
 }
 
-has 'validated' => (is=>'rw', required=>1, init_args=>undef, default=>0);
-has 'skip_validation' =>  (is=>'rw', required=>1, init_args=>undef, default=>0);
+has 'validated' => (is=>'rw', required=>1, init_arg=>undef, default=>0);
+has 'skip_validation' =>  (is=>'rw', required=>1, init_arg=>undef, default=>0);
 
 sub skip_validate {
   my ($self) = @_;
@@ -398,6 +398,7 @@ sub _run_post_validations {
 sub inject_attribute {
   my ($class, $attribute_to_inject) = @_;
   eval "package $class; has $attribute_to_inject => (is=>'ro');";
+  die $@ if $@;
 }
 
 1;
@@ -540,7 +541,7 @@ context.  All other arguments will be passed down to the C<$opts> hashref.
 
 =head2 validate_only
 
-    $obj->vadate_only('name', context=>'create');
+    $obj->validate_only('name', context=>'create');
     $obj->validate_only(['name', 'age'], context=>'update');
 
 Similar to C<validate> but will run only those validations that are associated with the named 
@@ -572,15 +573,15 @@ Clears any errors and sets the object as though validations hd never been run.
 
 =head2 do_validate
 
-Sets C<skip_validation> to true and returns C<$self>
+Sets C<skip_validation> to false and returns C<$self>
 
 =head2 skip_validate
 
-Sets C<skip_validation> to false and returns C<$self>
+Sets C<skip_validation> to true and returns C<$self>
 
 =head2 context
 
-Set a validation context (or arrayref of contexts) that will be used on an following validations.ß
+Set a validation context (or arrayref of contexts) that will be used on any following validations.
 
 =head1 ATTRIBUTES
 

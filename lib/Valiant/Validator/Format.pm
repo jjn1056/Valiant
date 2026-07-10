@@ -178,7 +178,7 @@ sub validate_each {
   }
   if($self->has_without) {
     my $with = $self->_cb_value($record, $self->without);
-    if($value =~m/$with/) {
+    if(defined($value) && $value =~m/$with/) {
       $record->errors->add($attribute, $self->invalid_format_without, $opts);
     }
   }

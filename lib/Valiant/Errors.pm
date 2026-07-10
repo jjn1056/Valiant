@@ -40,9 +40,16 @@ has 'i18n' => (
 
 sub error_class { 'Valiant::Error' }
 
-# return a flat list of all errors with duplicated removed. To we probably
-# need to make use the the equals method on Valiant::Error
-sub uniq { die 'todo' }
+# Return a flat list of all errors with duplicates removed, comparing errors
+# with Valiant::Error's equals method (object + attribute + type + options).
+sub uniq {
+  my ($self) = @_;
+  my @uniq;
+  foreach my $error ($self->errors->all) {
+    push @uniq, $error unless grep { $_->equals($error) } @uniq;
+  }
+  return @uniq;
+}
 
 sub any {
   my ($self, $code) = @_;
@@ -211,6 +218,18 @@ sub to_hash {
     ];
   }
   return %hash;
+}
+
+# Returns a Hash of attributes with their error details (see Error->detail),
+# grouped the same way as to_hash.
+sub details {
+  my $self = shift;
+  my %grouped = $self->group_by_attribute;
+  my %details;
+  foreach my $attr (keys %grouped) {
+    $details{$attr} = [ map { $_->detail } @{ $grouped{$attr}||[] } ];
+  }
+  return %details;
 }
 
 sub as_json {
@@ -426,6 +445,15 @@ contains at least one type of error.
       ${\$_->type} eq 'invalid';
     });
 
+=head2 uniq
+
+Returns a flat list of the error objects in the collection with duplicates
+removed.  Two errors are considered duplicates when L<Valiant::Error/equals>
+reports them equal (same object, attribute, type, and options).  The first
+occurrence of each distinct error is kept.
+
+    my @distinct = $user1->errors->uniq;
+
 =head2 copy
 
 Copy an errors collection into the current (replacing any existing).  The copies are
@@ -433,7 +461,7 @@ new instances of L<Valiant::Error>, not references to the original objects.
 
 =head2 import_error ($error)
 
-Given a single L<Valiant::Error> inport it into the current errors collection
+Given a single L<Valiant::Error> import it into the current errors collection
 
 =head2 merge ($collectio)
 
@@ -482,6 +510,19 @@ Returns an array of the full messages of all attributes (localized if needed).
 Returns a hash where each key is an attribute (or '*' for the model) and
 each value is an arrayref of errors.  C<?$flag> when true will return
 the full messages for each error.
+
+=head2 details
+
+Returns a hash grouped the same way as L</to_hash>, but each value is an
+arrayref of the raw error details (see L<Valiant::Error/detail>) rather than
+rendered messages.  Each detail is a hashref of the form
+C<< { error => $type, %options } >>, useful for programmatic inspection or
+building a machine-readable error response.
+
+    my %details = $object->errors->details;
+    # (
+    #   name => [ { error => 'too_short', count => 3 } ],
+    # )
 
 =head2 add ($attribute|undef, $message, \%opts)
 

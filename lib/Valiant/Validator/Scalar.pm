@@ -14,7 +14,7 @@ sub normalize_shortcut {
 
 sub validate_each {
   my ($self, $record, $attribute, $value, $opts) = @_;
-  return if ref( \$value ) eq 'SCALAR' or ref( \( my $val = $value ) ) eq 'SCALAR';
+  return if ref( \$value ) eq 'SCALAR';
 
   $record->errors->add($attribute, $self->is_not_scalar, $opts)
 }

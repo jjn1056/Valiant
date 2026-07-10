@@ -59,7 +59,7 @@ around BUILDARGS => sub {
 
 sub form_action { shift->options->{html}{action} }
 sub form_method { shift->options->{html}{method} }
-sub form_enctype { shift->options->{html}{method} }
+sub form_enctype { shift->options->{html}{enctype} }
 sub csrf_token { shift->options->{html}{data}{csrf_token} }
 sub containing_view { shift->options->{view} }
 
@@ -253,7 +253,6 @@ sub _default_model_errors_content {
     my (@errors) = @_;
     if( scalar(@errors) == 1 ) {
       return $self->tag_helpers->content_tag('div', $errors[0], $options);
-       return $self->tag_helpers->content_tag('div', $errors[0], $options);
     } else {
        return $self->tag_helpers->content_tag('ol', $options, sub { map { $self->tag_helpers->content_tag('li', $_) } @errors });
     }
@@ -2149,6 +2148,27 @@ $attribute.  Allows you to pass some additional HTML attributes to the legend ta
     
     $fb->legend_for('status', {class=>'foo'})
     # <legend id="status_legend" class="foo" >Status</legend>
+
+=head2 field
+
+B<EXPERIMENTAL / prototype>: C<field> and the
+C<Valiant::HTML::FormBuilder::Proxy> it returns are a prototype API that may
+change or be removed in a future release.
+
+Returns a proxy scoped to a single attribute, giving a fluent way to build that
+field's controls.  Any FormBuilder method called on the proxy is delegated to
+the builder with the attribute supplied automatically, and the accumulated
+parts stringify to the concatenated markup:
+
+    $fb->field('name')->label->input;
+
+A coderef form is also supported; it receives the proxy:
+
+    $fb->field('name', sub {
+      my $f = shift;
+      $f->label;
+      $f->input;
+    });
 
 =head2 fields_for
 

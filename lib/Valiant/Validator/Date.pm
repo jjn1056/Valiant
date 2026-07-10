@@ -256,6 +256,14 @@ format or a L<DateTime> object.  The date must be less than or equal to this val
 
 Value may also be a coderef so that you can set dynamic dates (such as always today)
 
+The coderef receives the object being validated as its first argument (and the
+validator instance as its second, giving access to the date L</HELPERS>), so you
+can also compare against another attribute:
+
+    validates end_date => (
+      date => { min => sub { shift->start_date } },
+    );
+
 =head2 cb
 
 A code reference that lets you create custom validation logic.  This is basically the

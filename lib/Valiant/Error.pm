@@ -179,6 +179,7 @@ sub generate_message {
   my $local_attribute;
   if(defined $attribute) {
     $local_attribute = $attribute if defined $attribute;
+    $local_attribute =~s/\.\d+//g;
     $local_attribute =~s/\[\d+\]//g;
   }
 
@@ -292,7 +293,7 @@ sub match {
   # only the passed options need to match.  So if there's options
   # in the error object that are not in the passed options its
   # still ok to match.
-  foreach my $key (%{$options||+{}}) {
+  foreach my $key (keys %{$options||+{}}) {
     if( ($self->options->{$key}||'') ne ($options->{$key}||'')) {
       return 0;
     }
