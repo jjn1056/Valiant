@@ -180,8 +180,8 @@ Valiant::Validator::Date - Verify that a value is is a standard Date (YYY-MM-DD)
 
     $VAR1 = {
       'birthday' => [
-         'chosen date can't be above {{max}}',  # In real life {{max}} would be
-                                                # interpolated as DateTime->now
+         'chosen date can't be later than {{max}}',  # In real life {{max}} would be
+                                                     # interpolated as DateTime->now
       ]
     };
 
@@ -387,14 +387,24 @@ Which is the same as:
 Lastly you can specify that the date must be either future or past with a shortcut:
 
     validates attribute => ( date => 'is_future', ... );
+
+Which is the same as:
+
+    validates attribute => (
+      date => +{
+        min => sub { pop->now },
+      },
+    );
+
+And:
+
     validates attribute => ( date => 'is_past', ... );
 
 Which is the same as:
 
     validates attribute => (
       date => +{
-        min => sub { pop->is_future },
-        max => sub { pop->is_past }
+        max => sub { pop->now },
       },
     );
 

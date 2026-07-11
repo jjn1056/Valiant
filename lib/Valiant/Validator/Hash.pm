@@ -74,7 +74,7 @@ sub validate_each {
 
 =head1 NAME 
 
-Valiant::Validator::Hash - Verify a related object
+Valiant::Validator::Hash - Verify the values of a hashref
 
 =head1 SYNOPSIS
 

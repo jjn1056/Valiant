@@ -241,10 +241,12 @@ This validator supports the follow shortcut forms:
 Which is the same as:
 
     validates attribute => (
-      validations => [
-        presence => 1,
-        length => [2,10],
-      ],
+      array => {
+        validations => [
+          presence => 1,
+          length => [2,10],
+        ],
+      },
     );
 
 =head1 GLOBAL PARAMETERS

@@ -124,8 +124,8 @@ of either C<too_short> or C<too_long> if the value length is outside the range s
 
 =item is 
 
-Accepts numeric value or coderef.  Returns error message tag C<wrong_length> if
-the attribute value equal to the check value.
+Accepts numeric value or coderef.  Returns error message tag C<wrong_length> unless
+the attribute value's length is exactly the check value.
 
 =back
 
