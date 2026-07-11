@@ -186,6 +186,12 @@ A hashref of args that get passed to the C<new> method of C<validator_class>.
 Defaults to an empty hashref.  You might need this if you build a custom validator
 class and have special arguments it needs.
 
+=head2 invalid_msg
+
+The message returned when the hash is generically invalid.  A hash becomes invalid
+should any validations you define on its values fail to validate.  Default is
+translation tag 'invalid'.
+
 =head1 SHORTCUT FORM
 
 This validator supports the follow shortcut forms:

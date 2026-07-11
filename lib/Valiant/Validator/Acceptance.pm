@@ -73,6 +73,11 @@ C<< ['1', 1, 'true', 'yes'] >>.
       acceptance => { accept => ['on'] },
     );
 
+=item accepted
+
+The error message used when the value is not accepted.  Default is translation
+tag 'accepted'.
+
 =back
 
 =head1 SHORTCUT FORM

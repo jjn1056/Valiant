@@ -216,6 +216,22 @@ any validations you define on array items fail to validate.  Default is translat
 An arrayref of validations that are run on each item in the list.  Keep in mind the performance
 inplications of this should the list be very long.
 
+=head2 validator_class
+
+Defaults to L<Valiant::Proxy::Array>, which value should be a subclass of.  You probably
+only need this if you are doing very custom validations.
+
+=head2 validator_class_args
+
+A hashref of args that get passed to the C<new> method of C<validator_class>.
+Defaults to an empty hashref.  You might need this if you build a custom validator
+class and have special arguments it needs.
+
+=head2 not_array_err
+
+The error message used when the value under validation is not an arrayref at all.
+Default is translation tag 'not_array_err'.
+
 =head1 SHORTCUT FORM
 
 This validator supports the follow shortcut forms:
