@@ -15,6 +15,8 @@ has view => ( is=>'ro', required=>1);
 
 has namespace => (is=>'ro', required=>1, default=>'');
 
+has content_type => (is=>'ro', required=>1, default=>'application/json');
+
 has data => (is=>'rw', required=>1, default=>sub { +{ data => +{}} });
 has index => (is=>'rw', clearer=>1, predicate=>1);
 
@@ -387,18 +389,21 @@ sub errors {
   my $self = shift;
   my @errors = $self->_errors_for($self->current_model, $self->namespace);
   return $self unless scalar(@errors);
-  $self->data->{errors} = \@errors; 
+  $self->data_pointer unless $self->has_data_pointer;
+  $self->data->{data}{errors} = \@errors;
   return $self;
 }
 
 sub _errors_for {
   my ($self, $model, $ns) = @_;
-  carp "model $model does not support the errors API" unless $model->can('errors');
+  unless($model->can('errors')) {
+    carp "model $model does not support the errors API";
+    return ();
+  }
 
   $ns ||= $model->model_name->param_key if $model->can('model_name');
 
-  # 'multipart/form-data' 
-  my ($content_type, @params) = $self->view->ctx->req->content_type;
+  my $content_type = $self->content_type;
   my $cb;
   if(
     ($content_type eq 'application/x-www-form-urlencoded')
@@ -409,7 +414,8 @@ sub _errors_for {
       my $field = shift;
       return +{ parameter => $field };
     };
-  } elsif($content_type eq 'application/json') {
+  } else {
+    # Anything that isn't a classic form post gets JSON pointer style sources
     $cb = sub {
       my $field = shift;
       $field =~ s/\./\//g;
@@ -421,8 +427,8 @@ sub _errors_for {
 
   my %errors = $model->errors->to_hash(1);
   my @errors = ();
-  foreach my $field (keys %errors) {
-    my @error_messages = $errors{$field};
+  foreach my $field (sort keys %errors) {
+    my @error_messages = @{ $errors{$field} || [] };
     foreach my $error_message (@error_messages) {
       my $info = +{ detail => $error_message };
       if($field eq '*') {
@@ -544,6 +550,14 @@ use the C<model_name> of the object if it has one.  If the object does not have 
 then it will use the class name of the object.  If you want to render the object without a
 top level field then set this to an empty string.
 
+=head2 content_type
+
+The content type of the request this JSON is a response to.  This is used by L</errors> to
+choose the style of its error source references: C<application/x-www-form-urlencoded> and
+C<multipart/form-data> get C<parameter> style sources, anything else (including the default
+of C<application/json>) gets JSON pointer style sources.  If you are using this builder
+inside a web framework you can pass the request content type here.
+
 =head2 view
 
 This is an optional view object.  If provided we can use view attributes to provide models.
@@ -657,6 +671,32 @@ response is:
 
 =head2 array
 
+
+=head2 errors
+
+    $jb->string('username')->errors;
+
+If the current model has validation errors (it supports the errors API of
+L<Valiant::Validates>) this adds an C<errors> field at the top level of the rendered
+structure, containing one entry per validation message in the style of the JSON:API
+error format:
+
+    {
+      "local_test_user" : { "username" : "" },
+      "errors" : [
+        {
+          "detail" : "Username can't be blank",
+          "source" : { "pointer" : "local_test_user/username" }
+        }
+      ]
+    }
+
+Each entry has a C<detail> (the human readable message) and a C<source> which locates the
+failing input: a JSON pointer style path by default, or a C<parameter> name when
+L</content_type> is a classic HTML form type.  Fields are emitted in sorted order.
+
+If the model has no errors this is a no op; if the model doesn't support the errors API
+it warns and is a no op.
 
 =head1 METHODS FOR OBJECTS
 
