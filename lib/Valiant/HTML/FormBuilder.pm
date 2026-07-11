@@ -1418,6 +1418,9 @@ to true prevents that so you should set C<id> manually unless you don't want the
 Please note that even if this is false, you can always override the C<id> on a per
 field basis by setting it manually.
 
+B<NOTE> This is a constructor option only; no accessor of this name is provided on
+the builder.
+
 =head2 view
 
 Optional.  The view or template object that is using the formbuilder.  If available can be used to
@@ -1521,6 +1524,25 @@ name that strictly isn't a method on the model.  This is useful if you want to c
 that doesn't correspond to a model attribute but still respects the current namespace and index.
 
 You can pass this via the options hashref for most tag generating methods.
+
+=head2 tag_id_for_attribute
+
+    $fb->tag_id_for_attribute('name');
+
+Given an attribute, returns the html C<id> attribute value that the builder would
+generate for that attribute's form control, respecting the current namespace and
+index.  Useful when writing custom fields or when you need to reference a control
+from labels or javascript.
+
+=head2 tag_name_for_attribute
+
+    $fb->tag_name_for_attribute('name');
+    $fb->tag_name_for_attribute('name', +{multiple=>1});
+
+Given an attribute, returns the html C<name> attribute value that the builder would
+generate for that attribute's form control, respecting the current namespace and
+index.  Pass C<< multiple=>1 >> in the options hashref for controls that submit
+multiple values (the name gets C<[]> appended).
 
 =head2 form_action_for
 
@@ -2684,52 +2706,6 @@ the form builder when needed.  However you might find you need tricky placement 
 (for example some tricky CSS) and in that case you can call this method manually in fields that allow
 you to disable the automatic placement of the hidden fields (for example in C<fields_for>, you can set 
 the C<include_id> option to false and then call this method manually).
-
-=head1 REMOTE FORMS
-
-Remote forms are forms that submit via AJAX.  They are a bit more complex than regular forms because
-they need to handle the AJAX response and update the DOM.  The form builder has some support for
-remote forms but you will need to write some javascript to handle the response.  Here's an example
-
-    $fb->remote_form_for(sub {
-      my $fb = shift;
-      return $fb->input('name'),
-             $fb->submit('Save');
-    }, +{url=>'/person', method=>'POST', remote=>1, success=>'alert("Saved")'});
-
-See L<https://github.com/rails/jquery-ujs> for more information on how to handle the response.
-You can also look at the example application for more examples of how this works.
-
-When adding C<remote=1> to the options hashref we will automatically add the following attributes
-to the form tag:
-
-=over 4
-
-=item data-replace
-
-The ID of the element to replace with the response.  If not provided we will replace the form itself.
-
-=back
-
-B<NOTE> Remote support is evolving and may change in the future.  Please see the release notes for
-changes.  I consider this a beta feature and will break compatibility if needed to fix bugs.  Its
-also possible remote support might be moved to a separate module in the future.
-
-=head1 HELPERS
-
-The following methods don't make form controls but just useful methods to help you build your form.
-
-=head2 escape_javascript
-
-    $fb->escape_javascript($string);
-
-Escapes a string so it can be used in a javascript string.  This is a wrapper around
-The same method from L<Valiant::HTML::Util::TagBuilder/escape_javascript>.
-
-Basically this escapes ' and " and \ and newlines and a few other neaten up so that you can
-use a string as a javascript value.   Helps with injection attackes (but isn't everything
-you need).
-
 
 =head1 THEMING
 
