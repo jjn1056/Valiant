@@ -236,7 +236,7 @@ See C<validates> in either L<Valiant> or L<Valiant::Validates> for more.
 
 The following class methods are available for subclasses
 
-=head2 default_role
+=head2 default_roles
 
 Roles that are applied when using this class.  Default is L<Valiant::Validates>.  If
 you are subclassing and wish to apply more roles, or if you've made your own version
