@@ -13,6 +13,7 @@ requires 'Module::Runtime', '0.016';
 requires 'Moo', '2.005005';
 requires 'namespace::autoclean', '0.29';
 requires 'Scalar::Util', '1.63';
+requires 'Sub::Util', '1.63';
 requires 'String::CamelCase', '0.04';
 requires 'Text::Autoformat', '1.75';
 requires 'Type::Tiny', '2.004000';

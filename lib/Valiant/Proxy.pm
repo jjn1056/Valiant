@@ -126,7 +126,7 @@ This object has the followed attributes
 
 The class this validator is for.  Used to load locale files and to look for custom
 validation objects.  Should something that ISA or DOES of the class that you are going
-to run validations on (this currently isnt enforced but please to rely on that).
+to run validations on (this currently isn't enforced but please don't rely on that).
 
 =head2 validations
 

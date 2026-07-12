@@ -73,3 +73,10 @@ Also: L<Valiant>, L<Valiant::Validator>, L<Valiant::Validator::Each>.
 
 =head1 AUTHOR
 
+See L<Valiant>
+
+=head1 COPYRIGHT & LICENSE
+
+See L<Valiant>
+
+=cut

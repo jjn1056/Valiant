@@ -1323,9 +1323,9 @@ Wrap a formbuilder object around it and generate HTML form field controls:
     # <div>First Name is too short (minimum is 3 characters)</div> 
 
 Although you can create a formbuilder instance directly as in the above example you might
-find it easier to use the export helper method L<Valiant::HTML::Form/form_for> which encapsulates
+find it easier to use the helper method L<Valiant::HTML::Util::Form/form_for> which encapsulates
 the display logic needed for creating the C<form> tags.  This builder creates form tag elements
-but not the actual C<form> open and close tags.  
+but not the actual C<form> open and close tags.
 
 =head1 DESCRIPTION
 
@@ -1341,7 +1341,7 @@ you'll need to review the source, test cases and example application bundled wit
 for for hand holding.
 
 Currently this is designed to work mostly with the L<Valiant> model validation framework as well as the
-glue for L<DBIx:Class>, L<DBIx:Class::Valiant>, although I did take pains to try and make the API
+glue for L<DBIx::Class>, L<DBIx::Class::Valiant>, although I did take pains to try and make the API
 agnostic many of the test cases are assuming that stack and getting that integration working well is
 the primary use case for me.  Thoughts and code to make this more stand alone are very welcomed.
 
@@ -1352,11 +1352,11 @@ This class defines the following attributes used in creating an instance.
 =head2 model
 
 This is the data model that the formbuilder inspects for field state and error conditions.   This should be
-a model that does the API described here: L<Valiant::HTML::Form/'REQUIRED MODEL API'>. Required but the API
+a model that does the API described here: L<Valiant::HTML::Util::Form/"REQUIRED MODEL API">. Required but the API
 is pretty flexible (see docs).
 
 Please note that my initial use case for this is using L<Valiant> for validation and L<DBIx::Class> as the
-model (via L<DBIx:Class::Valiant>) so that combination has the most testing and examples.   If you are using
+model (via L<DBIx::Class::Valiant>) so that combination has the most testing and examples.   If you are using
 a different storage or validation setup you need to complete the API described.  Please send test cases
 and pull requests to improve interoperability!
 
