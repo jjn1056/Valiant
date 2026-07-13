@@ -187,7 +187,7 @@ Valiant::Validator::Numericality - Validate numeric attributes
 
     validates equals => (numericality => [5, 100]);
 
-    my $object = Local::Test::Numericality->new(age=>8, equal=>40);
+    my $object = Local::Test::Numericality->new(age=>8, equals=>40);
     $object->validate;
 
     warn $object->errors->_dump;
@@ -241,7 +241,7 @@ also set it to the following to get more limited integer types:
 
 =item greater_than
 
-Accepts numeric value or coderef.  Returns error message tag C<greater_than> if
+Accepts numeric value or coderef.  Returns error message tag C<greater_than_err> if
 the attribute value isn't greater.
 
 =item greater_than_or_equal_to

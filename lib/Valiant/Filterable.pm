@@ -203,7 +203,7 @@ around BUILDARGS => sub {
 
 =head1 NAME
 
-Valiant::Filters - Role that adds class and instance methods supporting field filters
+Valiant::Filterable - Role that adds class and instance methods supporting field filters
 
 =head1 SYNOPSIS
 

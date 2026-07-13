@@ -137,6 +137,12 @@ Value must be a string tht matched a given format or regular expression.
 
 See L<Valiant::Validator::Format> for details.
 
+=head2 Hash
+
+Value is a hashref whose values pass a set of validation rules.
+
+See L<Valiant::Validator::Hash> for details.
+
 =head2 Inclusion
 
 Value must be one of a fixed list

@@ -50,6 +50,15 @@ Valiant::Validator::Scalar - Validate that a value is a scalar (like a string or
 
 Validates that the value in question is a scalar.
 
+=head1 ATTRIBUTES
+
+This validator supports the following attributes:
+
+=head2 is_not_scalar
+
+The error message used when the value is not a scalar.  Default is translation
+tag 'is_not_a_scalar'.
+
 =head1 SHORTCUT FORM
 
 This validator supports the follow shortcut forms:

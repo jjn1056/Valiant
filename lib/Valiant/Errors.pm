@@ -492,10 +492,22 @@ has more than one error message, yields once for each error message.
 
 If the error is a model error then C<$attribute> will be '*'.
 
+=head2 model_errors
+
+Returns an array of the L<Valiant::Error> objects associated with the model as
+a whole (rather than with any single attribute).  See L</model_messages> for
+the rendered message version.
+
 =head2 model_messages
 
 Returns an array of all the errors that are associated with the model (Localized
 if needed).
+
+=head2 attribute_errors
+
+Returns an array of the L<Valiant::Error> objects associated with attributes
+(rather than with the model as a whole).  See L</attribute_messages> for the
+rendered message version.
 
 =head2 attribute_messages
 
@@ -504,6 +516,12 @@ Returns an array of all the errors that are associated with attributes (localize
 =head2 full_attribute_messages
 
 Returns an array of the full messages of all attributes (localized if needed).
+
+=head2 group_by_attribute
+
+Returns a hash where each key is an attribute name (or '*' for the model) and
+each value is an arrayref of the L<Valiant::Error> objects for that attribute.
+This is the object-returning primitive underneath L</to_hash>.
 
 =head2 to_hash (?$flag)
 

@@ -389,6 +389,23 @@ is for the model
 
 This class exposes the following methods for public users.
 
+=head2 message
+
+Returns the translated, human readable message for this error.  Resolves the
+error's type: a translation tag is localized via L<Valiant::I18N> (an override
+passed as the C<message> option wins over the original type), a coderef is
+called with C<< ($object, $attribute, $value, \%options) >> and may return
+either a string or a translation tag, a scalar ref is treated as a template
+with C<{{placeholder}}> substitution, and a plain string is returned as is.
+
+=head2 detail
+
+Returns a hashref of the raw error information: the untranslated error type
+under the C<error> key, plus any options that were passed when the error was
+added (things like C<count> or C<minimum>).  Useful for programmatic
+inspection when you need to know I<what> failed rather than the rendered
+message.  See L<Valiant::Errors/details> for the collection level version.
+
 =head2 match ($attribute, $type, $options)
 
 Returns true of the error matches (has the same parameters) as the arguments 

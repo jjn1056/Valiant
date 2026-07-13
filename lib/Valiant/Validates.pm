@@ -418,7 +418,7 @@ The main point of entry for use and documentation currently is L<Valiant>. Here
 we have API level documentation without details or examples.  You should read L<Valiant>
 first and then you can refer to documentation her for further details.
 
-In addition to methods this class provides, it also proves all methods from L<Valiant::Translation>
+In addition to methods this class provides, it also provides all methods from L<Valiant::Translation>
 
 =head1 CLASS METHODS
 
@@ -566,6 +566,24 @@ returning true or false.
 Returns a boolean indicating if the object currently has errors.   This does not run a validation
 check first (unlike C<valid> or C<invalid>).   So if you just want to check the current state of
 the errors list and not tamper with that state you can use this.
+
+=head2 no_errors
+
+The opposite of L</has_errors>: returns true if the object currently has no errors.  Like
+C<has_errors> this does not run a validation check first.
+
+=head2 get_context
+
+Returns the current validation context (an arrayref) as set via C<context>, or undef if
+no context has been set.
+
+=head2 csrf_token
+
+    $object->csrf_token($token);   # set (returns $object for chaining)
+    my $token = $object->csrf_token; # get
+
+Get or set a CSRF token on the object.  This is glue for web frameworks (used for example
+by the form generation code) and has no effect on validation itself.
 
 =head2 clear_validated
 

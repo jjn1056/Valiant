@@ -38,6 +38,18 @@ Allows you to run validations against a HashRef.
 
 You probably won't use this directly, although you can.
 
+=head1 METHODS
+
+In addition to the interface defined by L<Valiant::Proxy> this class provides:
+
+=head2 keys
+
+Returns the keys of the wrapped hashref.
+
+=head2 values
+
+Returns the values of the wrapped hashref, in the same order as L</keys>.
+
 =head1 SEE ALSO
 
 This does the interface defined by L<Valiant::Proxy> so see the docs on that.
