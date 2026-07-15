@@ -2195,29 +2195,29 @@ A coderef form is also supported; it receives the proxy:
 =head2 fields_for
 
     $fb->fields_for($attribute, sub {
-      my ($nested_fb, $model) = @_;
+      my ($view, $nested_fb, $model) = @_;
     });
 
     $fb->fields_for($attribute, \%options, sub {
-      my ($nested_fb, $model) = @_;
+      my ($view, $nested_fb, $model) = @_;
     });
 
     # With a 'finally' block when $attribute is a collection
 
     $fb->fields_for($attribute, sub {
-      my ($nested_fb, $model) = @_;
+      my ($view, $nested_fb, $model) = @_;
     }, sub {
-      my ($nested_fb, $new_model) = @_;
+      my ($view, $nested_fb, $new_model) = @_;
     });
 
 Where C<$attribute> is a string that refers to a nested object or collection of objects on the model
 OR its an object or collection of objects itself.
 
 Used to create sub form builders under the current one for nested models (either a collection of models
-or a single model.)  This sub form builder will be passed as the first argument to the enclosing subref
-and will encapsulate any indexing or namespacing; its model will be set to the sub model.   You also get
-a second argument which is the sub model for ease of access.  Note that if the $attribute refers to a collection
-then $model will be set to the current item model of that collection.
+or a single model.)  The enclosing subref receives three arguments: the current view (first), a sub form
+builder (second) which will encapsulate any indexing or namespacing and whose model will be set to the
+sub model, and the sub model itself (third) for ease of access.  Note that if the $attribute refers to a
+collection then $model will be set to the current item model of that collection.
 
 When the $attribute refers to a collection the collection object must provide a C<next> method which should
 iterate thru the collection in the order desired and return C<undef> to indicate all records have been rolled
@@ -2282,6 +2282,7 @@ Example of an attribute that refers to a nested object.
     $person->profile(Local::Profile->new(zip=>'78621', address=>'ab'));
 
     $fb->fields_for('profile', sub {
+      my $view = shift;
       my $fb_profile = shift;
       return  $fb_profile->input('address'),
               $fb_profile->errors_for('address'),
@@ -2301,11 +2302,13 @@ Example of an attribute that refers to a nested collection object (and with a "f
     ]);
 
     $fb->fields_for('credit_cards', sub {
+      my $view = shift;
       my $fb_cc = shift;
       return  $fb_cc->input('number'),
               $fb_cc->date_field('expiration'),
               $fb_cc->errors_for('expiration');
     }, sub {
+      my $view = shift;
       my $fb_finally = shift;
       return  $fb_finally->button('add', +{value=>1}, 'Add a New Credit Card');
     });
