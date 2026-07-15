@@ -1,6 +1,6 @@
 The following logs changes for the CPAN distribution Valiant
 
-0.002020 {{TBD}}
+0.002020 2026 July 15
           - This distribution is now the framework agnostic core (validations,
           filters, i18n, HTML form generation, JSON generation).  The ORM and
           web framework integrations are no longer bundled: DBIx::Class::Valiant
