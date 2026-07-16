@@ -1,3 +1,7 @@
 .vscode/
 .vscode/**/*
 ./example/var/db.db
+.DS_Store
+.build/
+.claude/
+.superpowers/
