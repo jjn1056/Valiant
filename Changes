@@ -2,10 +2,7 @@ The following logs changes for the CPAN distribution Valiant
 
 0.002020 2026 July 15
           - *** BREAKING CHANGE *** DBIx::Class::Valiant is no longer bundled; it
-          is now the standalone DBIx-Class-Valiant distribution. Install it
-          separately, and see its Changes for two nested-update behavior changes
-          (allow_destroy on single relationships now works; omitted rows are no
-          longer implicitly deleted).
+          is now the standalone DBIx-Class-Valiant distribution. 
           - Now the framework-agnostic core (validations, filters, i18n,
           HTML/JSON generation); ORM/web integrations ship separately as
           DBIx-Class-Valiant, Catalyst-View-Valiant, and async DBIO-Valiant.
