@@ -1,70 +1,40 @@
 The following logs changes for the CPAN distribution Valiant
 
 0.002020 2026 July 15
-          - This distribution is now the framework agnostic core (validations,
-          filters, i18n, HTML form generation, JSON generation).  The ORM and
-          web framework integrations are no longer bundled: DBIx::Class::Valiant
-          and Catalyst::View::Valiant ship as their own distributions
-          (DBIx-Class-Valiant, Catalyst-View-Valiant), joined by the new
-          DBIO::Valiant (DBIO-Valiant), the asynchronous DBIO port of the
-          DBIx::Class integration.  If you used the bundled DBIx::Class::Valiant
-          install DBIx-Class-Valiant, and see its Changes for two behavior
-          changes in nested updates (allow_destroy on single relationships now
-          works; omitted rows are no longer implicitly deleted).
-          - Fixed: errors->added and errors->of_kind never matched errors
-          created from translation tags.
-          - Fixed: numericality's pg_serial/pg_bigserial rules rejected every
-          value except 0 and crashed when rendering their error message.
-          - Fixed: strict => 'My::Exception::Class' always raised the generic
-          strict exception instead of the named class.
+          - *** BREAKING CHANGE *** DBIx::Class::Valiant is no longer bundled; it
+          is now the standalone DBIx-Class-Valiant distribution. Install it
+          separately, and see its Changes for two nested-update behavior changes
+          (allow_destroy on single relationships now works; omitted rows are no
+          longer implicitly deleted).
+          - Now the framework-agnostic core (validations, filters, i18n,
+          HTML/JSON generation); ORM/web integrations ship separately as
+          DBIx-Class-Valiant, Catalyst-View-Valiant, and async DBIO-Valiant.
+          - Fixed: errors->added/of_kind never matched translation-tag errors.
+          - Fixed: numericality pg_serial/pg_bigserial rejected every value but 0.
+          - Fixed: strict => 'My::Class' raised the generic exception, not it.
           - Fixed: only_of counted empty strings as filled group members.
-          - Fixed: the check validator crashed on its coderef and arrayref
-          forms.
-          - Fixed: the Upper and UcFirst filters clobbered attribute defaults
-          and warned on undefined values.
-          - Fixed: errors->merge and errors->import_error silently reset every
-          imported error's type to 'invalid'; imported errors now keep their
-          original type (visible through added/of_kind/details on nested
-          validation errors).
+          - Fixed: the check validator crashed on its coderef and arrayref forms.
+          - Fixed: Upper/UcFirst filters clobbered defaults and warned on undef.
+          - Fixed: errors->merge/import_error now preserve imported error types.
           - Fixed: the length validator dropped per-check message overrides.
-          - Fixed: translation keys containing '.' never resolved through the
-          nested lookup.
-          - Fixed: form_enctype read the wrong option key, so the enctype set
-          in form options never reached the form tag.
-          - Fixed: 'validated' and 'skip_validation' are internal state and can
-          no longer be set from constructor arguments.
-          - Fixed: the format and numericality validators warned on undefined
-          values.
-          - Fixed: JSONBuilder->errors was unusable outside Catalyst (it
-          reached through view->ctx->req for the content type) and its output
-          never appeared in the rendered JSON.  It now takes the request
-          content type as a builder attribute (content_type, default
-          application/json) and renders a JSON:API style top level 'errors'
-          member - if you called ->errors before, note it now actually
-          renders.
-          - New: acceptance validator (Rails parity) for terms-of-service
-          style checkboxes.
-          - New: errors->details returns raw error details keyed by attribute;
-          errors->uniq is implemented (it previously returned everything).
-          - Behavior change: Valiant::Proxy::Object now throws a MissingMethod
-          exception when the proxied object lacks a requested method, instead
-          of silently returning nothing.
-          - Behavior change: generate_message now strips trailing dot indices
-          from attribute names the same way full_message always did.
-          - Removed: the dead undocumented Valiant::HTML::Tag and
-          Valiant::HTML::Tag::Label modules, and the never-used 'exclusion'
-          attribute on the format validator.
-          - The example Catalyst application (example/) is no longer shipped
-          in the release tarball since it depends on the split out
-          distributions; it remains in the git repository.
-          - Documentation truth pass across the distribution: documented
-          methods and options now exist under their documented names
-          (Confirmation's 'suffix', 'default_roles', ...), previously
-          undocumented public API is documented (Valiant::Translation,
-          Error's message/detail, the JSONBuilder builder methods, ...),
-          phantom methods are no longer documented (remote_form_for,
-          FormBuilder escape_javascript), and broken SYNOPSIS examples were
-          corrected so they run as shown.
+          - Fixed: translation keys containing '.' now resolve via nested lookup.
+          - Fixed: form_enctype read the wrong option key, so enctype was ignored.
+          - Fixed: 'validated'/'skip_validation' are no longer constructor-set.
+          - Fixed: format and numericality validators warned on undef values.
+          - Fixed: JSONBuilder->errors, unusable outside Catalyst, now takes
+          content_type (default application/json) and emits a JSON:API 'errors'.
+          - New: acceptance validator (Rails parity) for TOS-style checkboxes.
+          - New: errors->details (raw details by attribute); errors->uniq dedupes.
+          - Behavior change: Valiant::Proxy::Object throws MissingMethod on an
+          absent method, instead of silently returning nothing.
+          - Behavior change: generate_message strips trailing dot indices from
+          attribute names, as full_message always did.
+          - Removed: the dead Valiant::HTML::Tag and Valiant::HTML::Tag::Label
+          modules, plus the unused format 'exclusion' option.
+          - example/ (the Catalyst demo) is no longer shipped (needs the
+          split-out dists); it stays in git.
+          - Documentation truth pass: documented names now exist, undocumented
+          public API is documented, phantom methods removed, SYNOPSIS fixed.
 
 0.002019 2025 July 10
           - This release contains some undocumented changes which are in place for
